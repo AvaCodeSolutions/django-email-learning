@@ -1,0 +1,35 @@
+# Python
+*.pyc
+__pycache__/
+.venv/
+venv/
+
+# Django
+db.sqlite3
+.env
+.env.*
+
+# Node.js
+node_modules/
+npm-debug.log*
+dist/
+build/
+
+# Testing & Tools
+.mypy_cache/
+.pytest_cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# IDEs & OS
+.DS_Store
+.idea/
+.vscode/

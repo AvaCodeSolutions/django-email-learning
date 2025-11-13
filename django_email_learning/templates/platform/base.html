@@ -1,0 +1,22 @@
+{% load django_vite %}
+<!doctype html>
+<html lang="en">
+  <head>
+    {% vite_hmr_client %}
+    {% vite_react_refresh %}
+    {% block extra_head %}{% endblock %}
+    <script>
+        localStorage.setItem('activeOrganizationId', '{{ active_organization_id }}');
+        localStorage.setItem('apiBaseUrl', '{{ api_base_url }}');
+        localStorage.setItem('platformBaseUrl', '{{ platform_base_url }}');
+        localStorage.setItem('isPlatformAdmin', {{ is_platform_admin|yesno:"true,false" }});
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}{{ page_title }}{% endblock %}</title>
+  </head>
+  <body>
+    <div id="root"></div>
+
+  </body>
+</html>
