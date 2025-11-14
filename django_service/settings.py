@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_email_learning",
     "corsheaders",
-    "django_vite",
 ]
 
 MIDDLEWARE = [
@@ -52,8 +51,6 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
-
-DJANGO_VITE = {"default": {"dev_mode": True, "dev_server_port": 3000}}
 
 CORS_ALLOW_ALL_ORIGINS = True
 CSRF_TRUSTED_ORIGINS = [

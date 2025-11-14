@@ -1,0 +1,2 @@
+import{c as t,b as o,j as e,r as a,T as s}from"./Base-DIAH_WbB.js";const n=t({palette:{primary:{main:"#00d5be"},secondary:{main:"#7c86ff"}},components:{MuiDrawer:{styleOverrides:{backdrop:{backgroundColor:"#fff"}}}}});function d({children:r}){o.createRoot(document.getElementById("root")).render(e.jsx(a.StrictMode,{children:e.jsx(s,{theme:n,children:r})}))}export{d as r};
+//# sourceMappingURL=render-CvsS24pT.js.map

@@ -1,5 +1,5 @@
 {% extends "platform/base.html" %}
-{% load django_vite %}
+{% load vite_assets %}
 {% block extra_head %}
-    {% vite_asset 'organizations/Organizations.jsx' %}
+    {% vite_asset_tags 'organizations/index.html' %}
 {% endblock %}

@@ -1,5 +1,5 @@
 {% extends "platform/base.html" %}
-{% load django_vite %}
+{% load vite_assets %}
 {% block extra_head %}
-    {% vite_asset 'courses/Courses.jsx' %}
+    {% vite_asset_tags 'courses/index.html' %}
 {% endblock %}

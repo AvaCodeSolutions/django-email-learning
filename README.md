@@ -49,6 +49,39 @@ urlpatterns = [
 python manage.py migrate
 ```
 
+## Development
+
+### Building Frontend Assets
+
+The package includes pre-built React frontend assets. If you need to rebuild them:
+
+```bash
+./build_frontend.sh
+```
+
+This script will:
+1. Install frontend dependencies
+2. Build the React application using Vite
+3. Copy the built assets to `django_email_learning/static/`
+
+### Running in Development Mode
+
+For development with hot module replacement, you can:
+
+1. Start the Django development server:
+```bash
+python manage.py runserver
+```
+
+2. In a separate terminal, start the Vite dev server:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Note: The templates are configured to use static built assets. For live development, you may want to temporarily use django-vite (available as a dev dependency).
+
 ## License
 
 This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
