@@ -1,0 +1,55 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-json
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.8
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: bandit
+        name: bandit
+        entry: bandit
+        language: system
+        types: [python]
+        args: [--configfile, pyproject.toml]
+        exclude: ^(tests/|migrations/|django_service)
+        pass_filenames: true
+        stages: [pre-push]
+
+      - id: mypy
+        name: mypy
+        entry: mypy
+        language: system
+        types: [python]
+        args: [--config-file=pyproject.toml]
+        exclude: ^(tests/|migrations/)
+        require_serial: true
+
+      - id: django-check
+        name: Django Check
+        entry: python manage.py check
+        language: system
+        pass_filenames: false
+        files: \.py$
+
+      - id: pytest-with-coverage
+        name: Tests with Coverage
+        entry: pytest
+        language: system
+        args: [--cov=django_email_learning, --cov-fail-under=80, tests/]
+        pass_filenames: false
+        files: \.py$
+        stages: [pre-push]
