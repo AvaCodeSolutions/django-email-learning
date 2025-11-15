@@ -9,7 +9,7 @@ license = "BSD-3-Clause"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "django (==5.0)",
+    "django (==5.2.8)",
     "cryptography (>=46.0.3,<47.0.0)",
     "pillow (>=12.0.0,<13.0.0)",
     "pydantic (>=2.12.4,<3.0.0)",
