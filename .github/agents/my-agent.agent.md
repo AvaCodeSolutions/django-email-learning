@@ -238,4 +238,4 @@ make full-build               # Build including frontend assets
 
 ### Technical Improvements
 - **Advanced caching** strategies
-- 
+-
