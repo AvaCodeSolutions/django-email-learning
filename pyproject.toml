@@ -14,6 +14,16 @@ dependencies = [
     "pillow (>=12.0.0,<13.0.0)",
     "pydantic (>=2.12.4,<3.0.0)",
 ]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: Django",
+    "Framework :: Django :: 5.0",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Education",
+]
 
 license-files = ["LICENSE*"]
 [dependency-groups]
@@ -29,7 +39,6 @@ dev = [
     "bandit (>=1.8.6,<2.0.0)",
     "pytest-cov (>=7.0.0,<8.0.0)"
 ]
-
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -139,14 +148,3 @@ skip_covered = false
 
 [tool.coverage.html]
 directory = "htmlcov"
-
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Framework :: Django",
-    "Framework :: Django :: 5.0",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: BSD License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
-    "Topic :: Education",
-]
