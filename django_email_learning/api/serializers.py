@@ -23,7 +23,17 @@ class CreateCourseRequest(BaseModel):
             raise ValueError(f"Organization with id {organization_id} does not exist.")
         imap_connection = None
         if self.imap_connection_id:
-            imap_connection = ImapConnection.objects.get(id=self.imap_connection_id)
+            try:
+                imap_connection = ImapConnection.objects.get(
+                    id=self.imap_connection_id, organization=organization
+                )
+            except ImapConnection.DoesNotExist:
+                raise ValueError(
+                    f"ImapConnection with id {self.imap_connection_id} does not exist."
+                )
+            imap_connection = ImapConnection.objects.get(
+                id=self.imap_connection_id, organization=organization
+            )
         course = Course(
             title=self.title,
             slug=self.slug,
