@@ -1,6 +1,8 @@
 import argparse
 from pathlib import Path
 import json
+import re
+
 
 TEMPLATES = {"", "courses", "organizations", "users"}
 
@@ -8,7 +10,16 @@ TEMPLATES = {"", "courses", "organizations", "users"}
 def rewrite_backend_file(
     backend_file: Path, manifest: dict, frontend_path: str
 ) -> None:
-    new_content = '{{% extends "platform/base.html" %}}\n{{% block extra_head %}}\n{manifest_tags}\n{{% endblock %}}\n'
+    file_content = backend_file.read_text()
+    file_content = file_content.replace("{% load django_vite %}", "")
+    file_content = file_content.replace("{", "{{").replace("}", "}}")
+    search_result = re.search("{{% vite_asset.*%}}", file_content)
+    if not search_result:
+        print(f"No vite asset tag found in {backend_file}")
+        return
+    vite_asset_tag = search_result.group(0)
+    new_content = file_content.replace(vite_asset_tag, "{manifest_tags}")
+
     main_manifest = manifest.get(frontend_path, {})
     script_tags = [
         f'<script type="module" crossorigin src="/static/{main_manifest.get("file", "")}"></script>'
@@ -25,7 +36,7 @@ def rewrite_backend_file(
             for css_file in manifest[item].get("css", []):
                 css_tags.append(f'<link rel="stylesheet" href="/static/{css_file}">')
 
-    manifest_tags = "\n".join(link_tags + css_tags + script_tags)
+    manifest_tags = "\n    ".join(link_tags + css_tags + script_tags)
     new_content = new_content.format(manifest_tags=manifest_tags)
     backend_file.write_text(new_content)
 
