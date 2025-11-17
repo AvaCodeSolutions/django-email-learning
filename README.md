@@ -11,43 +11,37 @@ A Django package for creating email-based learning platforms with IMAP integrati
 
 **This project is currently in early development and is not yet ready for production use.**
 
+## What is django-email-learning?
 
-## Quick Start
+**django-email-learning** is an open-source Django app—currently under active development—designed to provide a complete email-based learning platform.
+It is inspired by the Darsnameh email-learning service, which unfortunately shut down in July 2017. This library aims to revive that concept and make it accessible to anyone who wants to launch a similar service.
 
-### Installation
+### Why an email learning platform?
 
-```bash
-pip install django-email-learning
-```
+An email learning platform is a type of e-learning system where course content is delivered directly to learners’ inboxes. Platform admins can create courses, lessons, and quizzes, and configure the timing rules that determine when each next lesson or quiz is sent.
 
-### Django Setup
+The system exposes management commands and/or API endpoints that can be triggered by cron jobs or cloud schedulers to:
 
-1. Add to your `INSTALLED_APPS`:
+- Track learner progress
 
-```python
-INSTALLED_APPS = [
-    # ... your apps
-    'django_email_learning',
-]
-```
+- Send lessons and quizzes via email
 
-2. Include URLs in your project:
+- Handle automated transitions between course steps
 
-```python
-# urls.py
-from django.urls import path, include
+Additionally, the platform can issue online completion certificates that learners can verify using a QR code.
 
-urlpatterns = [
-    # ... your URLs
-    path('email-learning/', include('django_email_learning.urls', namespace='django_email_learning')),
-]
-```
+### Why use email for e-learning?
 
-3. Run migrations:
+While modern e-learning platforms often rely heavily on video content and complex web interfaces, email remains a powerful and inclusive channel. Some of the reasons:
 
-```bash
-python manage.py migrate
-```
+- **Low bandwidth requirement:** Email works well in regions with slow or unstable internet.
+
+- **High accessibility:** No need to install apps or log into a portal—lessons arrive directly in the inbox.
+
+- **Resilience to censorship:** Emails are often less likely to be blocked than certain websites or platforms under restrictive governments.
+
+- **Simplicity:** Email is universal, familiar, and works on virtually any device.
+
 
 ## License
 
