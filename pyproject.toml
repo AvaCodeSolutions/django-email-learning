@@ -109,7 +109,6 @@ markers = [
 ]
 testpaths = ["tests"]
 filterwarnings = [
-    "ignore::django.utils.deprecation.RemovedInDjango51Warning",  # Changed to Django 51
     "ignore::DeprecationWarning",
     # Add these common Django warning filters:
     "ignore::django.utils.deprecation.RemovedInDjango60Warning",
