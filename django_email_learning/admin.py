@@ -10,6 +10,7 @@ from .models import (
     Answer,
     CourseContent,
     Organization,
+    BlockedEmail,
 )
 
 
@@ -89,3 +90,4 @@ admin.site.register(CourseContent, CourseContentAdmin)
 admin.site.register(Question, QuestionAdmin)
 admin.site.register(Answer)
 admin.site.register(Organization)
+admin.site.register(BlockedEmail)

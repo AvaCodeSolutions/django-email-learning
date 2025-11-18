@@ -39,3 +39,12 @@ def course(db, imap_connection) -> Course:
     )
     course.save()
     return course
+
+
+@pytest.fixture()
+def blocked_email(db):
+    from django_email_learning.models import BlockedEmail
+
+    blocked_email = BlockedEmail(email="blacklisted@email.com")
+    blocked_email.save()
+    return blocked_email
