@@ -66,6 +66,10 @@ lint:
 	poetry run mypy .
 	poetry run bandit -r django_email_learning/ -f json || true
 
+# Run pre-commit hooks only
+pre-commit:
+	poetry run pre-commit run --all-files
+
 # Format code
 format:
 	poetry run ruff format .
