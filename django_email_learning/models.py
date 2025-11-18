@@ -240,3 +240,15 @@ class CourseContent(models.Model):
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class BlockedEmail(models.Model):
+    email = models.EmailField(unique=True)
+
+    def __str__(self) -> str:
+        return self.email
+
+    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        self.email = self.email.lower()
+        self.full_clean()
+        super().save(*args, **kwargs)
