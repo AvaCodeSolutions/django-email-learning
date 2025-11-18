@@ -13,7 +13,7 @@ A Django package for creating email-based learning platforms with IMAP integrati
 
 ## What is django-email-learning?
 
-**django-email-learning** is an open-source Django app—currently under active development—designed to provide a complete email-based learning platform.
+**django-email-learning** is an open-source Django app, currently under active development, designed to provide a complete email-based learning platform.
 It is inspired by the Darsnameh email-learning service, which unfortunately shut down in July 2017. This library aims to revive that concept and make it accessible to anyone who wants to launch a similar service.
 
 ### Why an email learning platform?
