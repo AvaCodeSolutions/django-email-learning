@@ -58,7 +58,7 @@ django_email_learning = [
 ]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.11"
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 warn_unreachable = true
