@@ -43,6 +43,10 @@ While modern e-learning platforms often rely heavily on video content and comple
 - **Simplicity:** Email is universal, familiar, and works on virtually any device.
 
 
+## Contributing
+
+We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) to learn about our development process, how to set up the development environment, and how to submit pull requests.
+
 ## License
 
 This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
