@@ -12,7 +12,6 @@ def rewrite_backend_file(
 ) -> None:
     file_content = backend_file.read_text()
     file_content = file_content.replace("{% load django_vite %}", "")
-    file_content = file_content.replace("{", "{{").replace("}", "}}")
     search_result = re.search("{{% vite_asset.*%}}", file_content)
     if not search_result:
         print(f"No vite asset tag found in {backend_file}")
@@ -62,6 +61,15 @@ def run_prebuild() -> None:
             / f"{template}.html"
         )
         rewrite_backend_file(backend_file, manifest, frontend_path)
+
+    base_html_path = (
+        root_path / "django_email_learning" / "templates" / "platform" / "base.html"
+    )
+    file_content = base_html_path.read_text()
+    file_content = file_content.replace("{% load django_vite %}", "")
+    file_content = file_content.replace("{% vite_react_refresh %}", "")
+    file_content = file_content.replace("{% vite_hmr_client %}", "")
+    base_html_path.write_text(file_content)
 
 
 if __name__ == "__main__":
