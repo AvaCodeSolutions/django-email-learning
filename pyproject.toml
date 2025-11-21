@@ -1,6 +1,6 @@
 [project]
 name = "django-email-learning"
-version = "0.1.6"
+version = "0.1.7"
 description = "A platform for creating and delivering  learning materials via email within a Django application. It provides tools for content management, user role-based administration, and scheduler integration for automated content delivery."
 authors = [
     {name = "Payam Najafizadeh",email = "payam.nj@gmail.com"}
