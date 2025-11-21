@@ -215,6 +215,9 @@ class CourseContent(models.Model):
     )
     lesson = models.ForeignKey(Lesson, null=True, blank=True, on_delete=models.CASCADE)
     quiz = models.ForeignKey(Quiz, null=True, blank=True, on_delete=models.CASCADE)
+    waiting_period = models.IntegerField(
+        help_text="Waiting period in seconds after previous content is sent or submited."
+    )
 
     def __str__(self) -> str:
         if self.type == "lesson" and self.lesson:
