@@ -1,4 +1,11 @@
-from django_email_learning.models import ImapConnection, Quiz, Lesson, Course
+from django_email_learning.models import (
+    ImapConnection,
+    Quiz,
+    Lesson,
+    Course,
+    BlockedEmail,
+    Learner,
+)
 import pytest
 
 
@@ -42,9 +49,14 @@ def course(db, imap_connection) -> Course:
 
 
 @pytest.fixture()
-def blocked_email(db):
-    from django_email_learning.models import BlockedEmail
-
+def blocked_email(db) -> BlockedEmail:
     blocked_email = BlockedEmail(email="blacklisted@email.com")
     blocked_email.save()
     return blocked_email
+
+
+@pytest.fixture()
+def learner(db) -> Learner:
+    learner = Learner(email="user@example.com")
+    learner.save()
+    return learner
