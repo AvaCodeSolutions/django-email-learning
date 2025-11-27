@@ -47,6 +47,13 @@ While modern e-learning platforms often rely heavily on video content and comple
 
 We welcome contributions! Please read our [Contributing Guide](CONTRIBUTING.md) to learn about our development process, how to set up the development environment, and how to submit pull requests.
 
+## Sponsorship
+
+Support our open-source work and community projects by sponsoring us through [GitHub Sponsors](https://github.com/sponsors/AvaCodeSolutions) or [Open Collective](https://opencollective.com/django-email-learning). Depending on your sponsorship tier, we can feature your logo and link on the project’s README and documentation.
+
+[![Sponsor us](https://img.shields.io/badge/Sponsor_our_project-white?style=for-the-badge&logo=githubsponsors)](https://opencollective.com/django-email-learning)
+
+
 ## License
 
 This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
