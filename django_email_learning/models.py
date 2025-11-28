@@ -10,6 +10,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from django.forms import ValidationError
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 
 FIXED_SALT = b"\x00" * 16
@@ -255,3 +256,102 @@ class BlockedEmail(models.Model):
         self.email = self.email.lower()
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class Learner(models.Model):
+    email = models.EmailField(unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        self.email = self.email.lower()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+
+class Enrollment(models.Model):
+    state_transitions = {
+        "unverified": ["active", "deactivated"],
+        "active": ["completed", "deactivated"],
+        "completed": [],
+        "deactivated": [],
+    }
+    learner = models.ForeignKey(Learner, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    enrolled_at = models.DateTimeField(auto_now_add=True)
+    next_send_timestamp = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(
+        max_length=50,
+        choices=[
+            ("unverified", "Unverified"),
+            ("active", "Active"),
+            ("completed", "Completed"),
+            ("deactivated", "Deactivated"),
+        ],
+        default="unverified",
+    )
+    deactivation_reason = models.CharField(
+        null=True,
+        blank=True,
+        choices=[
+            ("canceled", "Canceled"),
+            ("blocked", "Blocked"),
+            ("failed", "Failed"),
+            ("inactive", "Inactive"),
+        ],
+        max_length=50,
+    )
+    activation_code = models.CharField(max_length=100, null=True, blank=True)
+
+    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        if self.pk:
+            old_status = Enrollment.objects.get(pk=self.pk).status
+            if old_status != self.status:
+                allowed_transitions = self.state_transitions.get(old_status, [])
+                if self.status not in allowed_transitions:
+                    raise ValidationError(
+                        f"Invalid status transition from {old_status} to {self.status}."
+                    )
+        if self.status != "deactivated" and self.deactivation_reason is not None:
+            raise ValidationError(
+                "Deactivation reason must be null unless status is 'deactivated'."
+            )
+        if self.status == "deactivated" and not self.deactivation_reason:
+            raise ValidationError(
+                "Deactivation reason must be provided when status is 'deactivated'."
+            )
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["learner", "course"],
+                condition=models.Q(status__in=["unverified", "active", "completed"]),
+                name="unique_active_enrollment",
+            )
+        ]
+
+
+class EventTimestamp(models.Model):
+    time = models.DateTimeField(
+        default=timezone.localtime(timezone.now()), db_index=True
+    )
+
+
+class SentItem(models.Model):
+    enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE)
+    course_content = models.ForeignKey(CourseContent, on_delete=models.CASCADE)
+    send_events = models.ManyToManyField(EventTimestamp)
+    quiz_score = models.IntegerField(null=True, blank=True)
+    is_quiz_passed = models.BooleanField(null=True, blank=True)
+    times_sent = models.IntegerField(default=1)
+
+    class Meta:
+        unique_together = [["enrollment", "course_content"]]
+
+    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        self.full_clean()
+        super().save(*args, **kwargs)
+        if not self.send_events.exists():
+            timestamp = EventTimestamp.objects.create()
+            self.send_events.add(timestamp)
