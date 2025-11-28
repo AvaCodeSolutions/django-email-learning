@@ -333,9 +333,7 @@ class Enrollment(models.Model):
 
 
 class EventTimestamp(models.Model):
-    time = models.DateTimeField(
-        default=timezone.localtime(timezone.now()), db_index=True
-    )
+    time = models.DateTimeField(default=timezone.now, db_index=True)
 
 
 class SentItem(models.Model):
