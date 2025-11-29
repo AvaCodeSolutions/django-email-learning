@@ -340,8 +340,6 @@ class SentItem(models.Model):
     enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE)
     course_content = models.ForeignKey(CourseContent, on_delete=models.CASCADE)
     send_events = models.ManyToManyField(EventTimestamp)
-    quiz_score = models.IntegerField(null=True, blank=True)
-    is_quiz_passed = models.BooleanField(null=True, blank=True)
     times_sent = models.IntegerField(default=1)
 
     class Meta:
@@ -353,3 +351,16 @@ class SentItem(models.Model):
         if not self.send_events.exists():
             timestamp = EventTimestamp.objects.create()
             self.send_events.add(timestamp)
+
+
+class QuizSubmission(models.Model):
+    sent_item = models.ForeignKey(SentItem, on_delete=models.CASCADE)
+    score = models.IntegerField()
+    is_passed = models.BooleanField()
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        if self.sent_item.course_content.type != "quiz":
+            raise ValidationError("Sent item must be associated with a quiz content.")
+        self.full_clean()
+        super().save(*args, **kwargs)
