@@ -5,6 +5,8 @@ from django_email_learning.models import (
     Course,
     BlockedEmail,
     Learner,
+    Enrollment,
+    CourseContent,
 )
 import pytest
 
@@ -60,3 +62,25 @@ def learner(db) -> Learner:
     learner = Learner(email="user@example.com")
     learner.save()
     return learner
+
+
+@pytest.fixture()
+def enrollment(db, learner, course) -> Enrollment:
+    enrollment = Enrollment.objects.create(learner=learner, course=course)
+    return enrollment
+
+
+@pytest.fixture
+def course_lesson_content(db, course, lesson) -> CourseContent:
+    content = CourseContent.objects.create(
+        course=course, priority=1, type="lesson", lesson=lesson, waiting_period=10
+    )
+    return content
+
+
+@pytest.fixture
+def course_quiz_content(db, course, quiz) -> CourseContent:
+    content = CourseContent.objects.create(
+        course=course, priority=2, type="quiz", quiz=quiz, waiting_period=5
+    )
+    return content
