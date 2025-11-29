@@ -245,6 +245,24 @@ class CourseContent(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["course", "quiz"],
+                condition=models.Q(quiz__isnull=False),
+                name="unique_quiz_per_course",
+            ),
+            models.UniqueConstraint(
+                fields=["course", "lesson"],
+                condition=models.Q(lesson__isnull=False),
+                name="unique_lesson_per_course",
+            ),
+            models.UniqueConstraint(
+                fields=["course", "priority"],
+                name="unique_priority_per_course",
+            ),
+        ]
+
 
 class BlockedEmail(models.Model):
     email = models.EmailField(unique=True)

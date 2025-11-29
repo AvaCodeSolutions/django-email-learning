@@ -55,3 +55,23 @@ def test_valid_quiz_content_creation(course, quiz):
     assert content.quiz == quiz
     assert content.lesson is None
     assert content.waiting_period == 10
+
+
+def test_unique_lesson_content_per_course(course, lesson):
+    CourseContent.objects.create(
+        course=course, priority=1, type="lesson", lesson=lesson, waiting_period=10
+    )
+    with pytest.raises(ValidationError):
+        CourseContent.objects.create(
+            course=course, priority=2, type="lesson", lesson=lesson, waiting_period=20
+        )
+
+
+def test_unique_quiz_content_per_course(course, quiz):
+    CourseContent.objects.create(
+        course=course, priority=1, type="quiz", quiz=quiz, waiting_period=10
+    )
+    with pytest.raises(ValidationError):
+        CourseContent.objects.create(
+            course=course, priority=2, type="quiz", quiz=quiz, waiting_period=20
+        )
