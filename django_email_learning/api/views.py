@@ -3,7 +3,9 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db.utils import IntegrityError
 from django.http import JsonResponse
+from django.core.exceptions import ValidationError as DjangoValidationError
 from pydantic import ValidationError
+
 from django_email_learning.api import serializers
 from django_email_learning.models import (
     Course,
@@ -55,6 +57,29 @@ class CourseView(View):
                 serializers.CourseResponse.model_validate(course).model_dump()
             )
         return JsonResponse({"courses": response_list}, status=200)
+
+
+@method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
+class CourseContentView(View):
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        payload = json.loads(request.body)
+        try:
+            serializer = serializers.CreateCourseContentRequest.model_validate(payload)
+            course = Course.objects.get(id=kwargs["course_id"])
+            course_content = serializer.to_django_model(course=course)
+
+            return JsonResponse(
+                serializers.CourseContentResponse.model_validate(
+                    course_content
+                ).model_dump(),
+                status=201,
+            )
+        except Course.DoesNotExist:
+            return JsonResponse({"error": "Course not found"}, status=404)
+        except ValidationError as e:
+            return JsonResponse({"error": e.errors()}, status=400)
+        except DjangoValidationError as e:
+            return JsonResponse({"error": e.messages}, status=400)
 
 
 @method_decorator(accessible_for(roles={"admin", "editor"}), name="post")

@@ -1,7 +1,17 @@
-from pydantic import BaseModel, ConfigDict, Field
-from typing import Optional
-from django_email_learning.models import Course
-from django_email_learning.models import Organization, ImapConnection
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
+from typing import Optional, Literal, Any
+from django.core.exceptions import ValidationError
+from django_email_learning.models import (
+    Organization,
+    ImapConnection,
+    Lesson,
+    Quiz,
+    Question,
+    Answer,
+    CourseContent,
+    Course,
+)
+import enum
 
 
 class CreateCourseRequest(BaseModel):
@@ -156,3 +166,179 @@ class SessionInfo(BaseModel):
         return super().model_validate(
             {"active_organization_id": session.get("active_organization_id")}
         )
+
+
+class LessonCreate(BaseModel):
+    title: str
+    content: str
+    type: Literal["lesson"]
+
+
+class LessonResponse(BaseModel):
+    id: int
+    title: str
+    content: str
+    is_published: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AnswerCreate(BaseModel):
+    text: str
+    is_correct: bool = Field(examples=[True])
+
+
+class AnswerResponse(BaseModel):
+    id: int
+    text: str
+    is_correct: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class QuestionCreate(BaseModel):
+    text: str
+    priority: int = Field(gt=0, examples=[1])
+    answers: list[AnswerCreate] = Field(min_length=2)
+
+    @field_validator("answers")
+    @classmethod
+    def at_least_one_correct_answer(
+        cls, answers: list[AnswerCreate]
+    ) -> list[AnswerCreate]:
+        correct_answers = [answer for answer in answers if answer.is_correct]
+        if not correct_answers:
+            raise ValidationError("At least one answer must be marked as correct.")
+        return answers
+
+
+class QuestionResponse(BaseModel):
+    id: int
+    text: str
+    priority: int
+    answers: Any  # Will be converted to list in field_serializer
+
+    @field_serializer("answers")
+    def serialize_answers(self, answers: Any) -> list[dict]:
+        return [
+            AnswerResponse.model_validate(answer).model_dump()
+            for answer in answers.all()
+        ]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class QuizCreate(BaseModel):
+    title: str
+    required_score: int = Field(ge=0, examples=[80])
+    questions: list[QuestionCreate] = Field(min_length=1)
+    type: Literal["quiz"]
+
+
+class QuizResponse(BaseModel):
+    id: int
+    title: str
+    required_score: int
+    questions: Any  # Will be converted to list in field_serializer
+    is_published: bool
+
+    @field_serializer("questions")
+    def serialize_questions(self, questions: Any) -> list[dict]:
+        return [
+            QuestionResponse.model_validate(question).model_dump()
+            for question in questions.all()
+        ]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PeriodType(enum.StrEnum):
+    HOURS = "hours"
+    DAYS = "days"
+
+
+class WaitingPeriod(BaseModel):
+    period: int = Field(gt=0, examples=[7])
+    type: PeriodType
+
+    def to_seconds(self) -> int:
+        if self.type == PeriodType.HOURS:
+            return self.period * 3600
+        elif self.type == PeriodType.DAYS:
+            return self.period * 86400
+        else:
+            raise ValueError(f"Unsupported period type: {self.type}")
+
+    @classmethod
+    def from_seconds(cls, seconds: int) -> "WaitingPeriod":
+        if seconds % 86400 == 0:
+            return cls(period=seconds // 86400, type=PeriodType.DAYS)
+        elif seconds % 3600 == 0:
+            return cls(period=seconds // 3600, type=PeriodType.HOURS)
+        else:
+            raise ValueError(
+                f"Cannot convert {seconds} seconds to a valid WaitingPeriod."
+            )
+
+
+class CreateCourseContentRequest(BaseModel):
+    priority: int = Field(gt=0, examples=[1])
+    waiting_period: WaitingPeriod
+    content: LessonCreate | QuizCreate = Field(discriminator="type")
+
+    def to_django_model(self, course: Course) -> CourseContent:
+        lesson = None
+        quiz = None
+        if isinstance(self.content, LessonCreate):
+            lesson = Lesson(
+                title=self.content.title,
+                content=self.content.content,
+            )
+            lesson.save()
+            content_type = "lesson"
+        elif isinstance(self.content, QuizCreate):
+            quiz = Quiz(
+                title=self.content.title,
+                required_score=self.content.required_score,
+            )
+            quiz.save()
+            for question_data in self.content.questions:
+                question = Question(
+                    text=question_data.text,
+                    priority=question_data.priority,
+                    quiz=quiz,
+                )
+                question.save()
+                for answer_data in question_data.answers:
+                    answer = Answer(
+                        text=answer_data.text,
+                        is_correct=answer_data.is_correct,
+                        question=question,
+                    )
+                    answer.save()
+            content_type = "quiz"
+        course_content = CourseContent.objects.create(
+            course=course,
+            priority=self.priority,
+            waiting_period=self.waiting_period.to_seconds(),
+            lesson=lesson,
+            quiz=quiz,
+            type=content_type,
+        )
+
+        return course_content
+
+
+class CourseContentResponse(BaseModel):
+    id: int
+    priority: int
+    waiting_period: int
+    type: str
+    lesson: Optional[LessonResponse] = None
+    quiz: Optional[QuizResponse] = None
+
+    @field_serializer("waiting_period")
+    def serialize_waiting_period(self, waiting_period: int) -> dict:
+        return WaitingPeriod.from_seconds(waiting_period).model_dump()
+
+    model_config = ConfigDict(from_attributes=True)
