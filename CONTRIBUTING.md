@@ -97,6 +97,6 @@ make pre-commit
 
 - **Type Safety**: All Python code must pass MyPy type checking
 - **Code Style**: Use Ruff for formatting and linting
-- **Test Coverage**: Maintain minimum 75% test coverage
+- **Test Coverage**: Maintain minimum 80% test coverage
 - **Security**: Code is scanned with Bandit for security issues
 - **Commit Messages**: Follow [Conventional Commits](https://www.conventionalcommits.org/) specification

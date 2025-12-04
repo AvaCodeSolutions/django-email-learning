@@ -60,6 +60,7 @@ class CourseView(View):
 
 
 @method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
+@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
 class CourseContentView(View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         payload = json.loads(request.body)
@@ -80,6 +81,21 @@ class CourseContentView(View):
             return JsonResponse({"error": e.errors()}, status=400)
         except DjangoValidationError as e:
             return JsonResponse({"error": e.messages}, status=400)
+
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            course = Course.objects.get(id=kwargs["course_id"])
+            course_contents = course.coursecontent_set.all().order_by("priority")
+            response_list = []
+            for content in course_contents:
+                response_list.append(
+                    serializers.CourseContentSummaryResponse.model_validate(
+                        content
+                    ).model_dump()
+                )
+            return JsonResponse({"course_contents": response_list}, status=200)
+        except Course.DoesNotExist:
+            return JsonResponse({"error": "Course not found"}, status=404)
 
 
 @method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
