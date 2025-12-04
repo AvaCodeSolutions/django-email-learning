@@ -342,3 +342,17 @@ class CourseContentResponse(BaseModel):
         return WaitingPeriod.from_seconds(waiting_period).model_dump()
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CourseContentSummaryResponse(BaseModel):
+    id: int
+    title: str
+    priority: int
+    waiting_period: int
+    type: str
+
+    @field_serializer("waiting_period")
+    def serialize_waiting_period(self, waiting_period: int) -> dict:
+        return WaitingPeriod.from_seconds(waiting_period).model_dump()
+
+    model_config = ConfigDict(from_attributes=True)

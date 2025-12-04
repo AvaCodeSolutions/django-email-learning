@@ -103,7 +103,7 @@ addopts = [
     "--cov-report=term-missing",    # Show missing lines in terminal
     "--cov-report=html:htmlcov",    # Generate HTML report
     "--cov-report=xml",             # Generate XML report (for CI)
-    "--cov-fail-under=75",          # Fail if coverage below 80%
+    "--cov-fail-under=80",          # Fail if coverage below 80%
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",

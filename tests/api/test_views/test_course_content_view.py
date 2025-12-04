@@ -263,3 +263,84 @@ def test_invalid_quiz_content_no_correct_answer(superadmin_client, create_course
     )
     assert response.status_code == 400
     assert "error" in response.json()
+
+
+@pytest.mark.parametrize(
+    "client", ["superadmin", "editor", "viewer"], indirect=["client"]
+)
+def test_list_course_content_access(client, create_course):
+    url = get_url()
+    response = client.get(url)
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data["course_contents"], list)
+    assert len(data["course_contents"]) == 0
+
+
+def test_anonymous_user_cannot_list_course_content(anonymous_client, create_course):
+    url = get_url()
+    response = anonymous_client.get(url)
+    assert response.status_code == 401
+
+
+def test_list_course_content_with_existing_contents(superadmin_client, create_course):
+    url = get_url()
+    # Create a lesson content
+    lesson_payload = {
+        "content": {
+            "title": LESSON_TITLE,
+            "content": LESSON_CONTENT,
+            "type": "lesson",
+        },
+        "priority": 1,
+        "waiting_period": {"period": 2, "type": "days"},
+    }
+    superadmin_client.post(
+        url, json.dumps(lesson_payload), content_type="application/json"
+    )
+
+    # Create a quiz content
+    quiz_payload = {
+        "content": {
+            "type": "quiz",
+            "title": "Quiz 1",
+            "required_score": 70,
+            "questions": [
+                {
+                    "text": "What is Python?",
+                    "priority": 1,
+                    "answers": [
+                        {"text": "A programming language", "is_correct": True},
+                        {"text": "A snake", "is_correct": False},
+                    ],
+                }
+            ],
+        },
+        "priority": 2,
+        "waiting_period": {"period": 1, "type": "hours"},
+    }
+    superadmin_client.post(
+        url, json.dumps(quiz_payload), content_type="application/json"
+    )
+
+    # Now list the course contents
+    response = superadmin_client.get(url)
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data["course_contents"], list)
+    assert len(data["course_contents"]) == 2
+    assert data["course_contents"][0]["type"] == "lesson"
+    assert data["course_contents"][1]["type"] == "quiz"
+    assert data["course_contents"][0]["priority"] == 1
+    assert data["course_contents"][1]["priority"] == 2
+    assert data["course_contents"][0]["id"] is not None
+    assert data["course_contents"][1]["id"] is not None
+    assert data["course_contents"][0]["title"] == LESSON_TITLE
+    assert data["course_contents"][1]["title"] == "Quiz 1"
+    assert data["course_contents"][0]["waiting_period"] == {"period": 2, "type": "days"}
+    assert data["course_contents"][1]["waiting_period"] == {
+        "period": 1,
+        "type": "hours",
+    }
+    assert "lesson" not in data["course_contents"][0]
+    assert "quiz" not in data["course_contents"][1]
