@@ -6,11 +6,44 @@ on:
     types: [opened, synchronize, reopened, updated]
 
 jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: 3.12
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            .venv
+          key: poetry-${{ runner.os }}-py3.12-${{ hashFiles('pyproject.toml', 'poetry.lock') }}
+          restore-keys: |
+            poetry-${{ runner.os }}-py3.12-
+      - name: Install dependencies
+        run: make dev-install
+      - name: Run pre-commit
+        run: make pre-commit
+
   test:
+    name: Test (Python ${{ matrix.python-version }}, Django ${{ matrix.django-versions }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.11, 3.12, 3.13, 3.14]
+        django-versions: [5.0, 6.0]
+        exclude:
+          - python-version: '3.11'
+            django-versions: 6.0
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -22,9 +55,18 @@ jobs:
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            .venv
+          key: poetry-${{ runner.os }}-py${{ matrix.python-version }}-${{ hashFiles('pyproject.toml', 'poetry.lock') }}
+          restore-keys: |
+            poetry-${{ runner.os }}-py${{ matrix.python-version }}-
       - name: Install dependencies
         run: make dev-install
-      - name: Run pre-commit
-        run: make pre-commit
+      - name: Set Django version
+        run: pip install "Django==${{ matrix.django-versions }}"
       - name: Run tests
         run: make test
