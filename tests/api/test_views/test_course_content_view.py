@@ -344,3 +344,82 @@ def test_list_course_content_with_existing_contents(superadmin_client, create_co
     }
     assert "lesson" not in data["course_contents"][0]
     assert "quiz" not in data["course_contents"][1]
+
+
+def test_delete_course_content(superadmin_client, create_course):
+    url = get_url()
+    # Create a lesson content
+    lesson_payload = {
+        "content": {
+            "title": LESSON_TITLE,
+            "content": LESSON_CONTENT,
+            "type": "lesson",
+        },
+        "priority": 1,
+        "waiting_period": {"period": 2, "type": "days"},
+    }
+    response = superadmin_client.post(
+        url, json.dumps(lesson_payload), content_type="application/json"
+    )
+    assert response.status_code == 201
+    data = response.json()
+    course_content_id = data["id"]
+
+    # Delete the created course content
+    delete_url = reverse(
+        "django_email_learning:api:single_course_content_view",
+        kwargs={
+            "organization_id": 1,
+            "course_id": 1,
+            "course_content_id": course_content_id,
+        },
+    )
+    contents_response = superadmin_client.get(url)
+    assert contents_response.status_code == 200
+    assert len(contents_response.json()["course_contents"]) == 1
+
+    delete_response = superadmin_client.delete(delete_url)
+    assert delete_response.status_code == 200
+
+    # Verify that the course content is deleted
+    contents_response_after_delete = superadmin_client.get(url)
+    assert contents_response_after_delete.status_code == 200
+    assert len(contents_response_after_delete.json()["course_contents"]) == 0
+    get_response = superadmin_client.delete(delete_url)
+    assert get_response.status_code == 404
+
+
+def test_viewer_cannot_delete_course_content(viewer_client, create_course):
+    url = get_url()
+    # Create a lesson content
+    lesson_payload = {
+        "content": {
+            "title": LESSON_TITLE,
+            "content": LESSON_CONTENT,
+            "type": "lesson",
+        },
+        "priority": 1,
+        "waiting_period": {"period": 2, "type": "days"},
+    }
+    response = viewer_client.post(
+        url, json.dumps(lesson_payload), content_type="application/json"
+    )
+    assert response.status_code == 403
+
+
+def test_anonymous_user_cannot_delete_course_content(anonymous_client, create_course):
+    url = get_url()
+    # Create a lesson content
+    lesson_payload = {
+        "content": {
+            "title": LESSON_TITLE,
+            "content": LESSON_CONTENT,
+            "type": "lesson",
+        },
+        "priority": 1,
+        "waiting_period": {"period": 2, "type": "days"},
+    }
+    response = anonymous_client.post(
+        url, json.dumps(lesson_payload), content_type="application/json"
+    )
+    assert response.status_code == 401

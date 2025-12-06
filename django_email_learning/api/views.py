@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from django_email_learning.api import serializers
 from django_email_learning.models import (
     Course,
+    CourseContent,
     ImapConnection,
     OrganizationUser,
     Organization,
@@ -96,6 +97,23 @@ class CourseContentView(View):
             return JsonResponse({"course_contents": response_list}, status=200)
         except Course.DoesNotExist:
             return JsonResponse({"error": "Course not found"}, status=404)
+
+
+@method_decorator(accessible_for(roles={"admin", "editor"}), name="delete")
+class SingleCourseContentView(View):
+    def delete(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
+        try:
+            course_content = CourseContent.objects.get(id=kwargs["course_content_id"])
+            course_content.delete()
+            return JsonResponse(
+                {"message": "Course content deleted successfully"}, status=200
+            )
+        except CourseContent.DoesNotExist:
+            return JsonResponse({"error": "Course content not found"}, status=404)
+        except ValidationError as e:
+            return JsonResponse({"error": e.errors()}, status=400)
+        except (IntegrityError, ValueError) as e:
+            return JsonResponse({"error": str(e)}, status=409)
 
 
 @method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
