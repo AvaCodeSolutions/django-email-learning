@@ -20,6 +20,7 @@ function Courses() {
   const [organizationId, setOrganizationId] = useState(null);
   const [queryParameters, setQueryParameters] = useState("");
   const apiBaseUrl = localStorage.getItem('apiBaseUrl');
+  const platformBaseUrl = localStorage.getItem('platformBaseUrl');
 
   const renderCourses = () => {
     if (!organizationId) {
@@ -130,7 +131,7 @@ function Courses() {
                   sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                 >
                   <TableCell component="th" scope="row">
-                    <Link href={`/courses/${course.id}`}>{course.title}</Link>
+                    <Link href={`${platformBaseUrl}/courses/${course.id}`}>{course.title}</Link>
                   </TableCell>
                   <TableCell>{course.slug}</TableCell>
                   <TableCell>

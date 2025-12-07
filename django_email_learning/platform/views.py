@@ -3,8 +3,11 @@ from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.urls import reverse
-from django_email_learning.models import Organization
-from django_email_learning.decorators import is_platform_admin
+from django_email_learning.models import Organization, OrganizationUser, Course
+from django_email_learning.decorators import (
+    is_platform_admin,
+    is_an_organization_member,
+)
 from typing import Dict, Any
 
 
@@ -19,10 +22,19 @@ class BasePlatformView(TemplateView):
 
     def get_shared_context(self) -> Dict[str, Any]:
         """Get shared context for all platform views"""
+        active_organization_id = self.get_or_set_active_organization()
+        if self.request.user.is_superuser:
+            role = "admin"
+        else:
+            role = OrganizationUser.objects.get(  # type: ignore[misc]
+                user=self.request.user,
+                organization_id=active_organization_id,
+            ).role
         return {
             "api_base_url": reverse("django_email_learning:api:root")[:-1],
             "platform_base_url": reverse("django_email_learning:platform:root")[:-1],
-            "active_organization_id": self.get_or_set_active_organization(),
+            "active_organization_id": active_organization_id,
+            "user_role": role,
             "is_platform_admin": (
                 self.request.user.is_superuser
                 or (
@@ -59,6 +71,18 @@ class Courses(BasePlatformView):
     def get_context_data(self, **kwargs) -> dict:  # type: ignore[no-untyped-def]
         context = super().get_context_data(**kwargs)
         context["page_title"] = "Courses"
+        return context
+
+
+@method_decorator(login_required, name="dispatch")
+@method_decorator(is_an_organization_member(), name="dispatch")
+class CourseView(BasePlatformView):
+    template_name = "platform/course.html"
+
+    def get_context_data(self, **kwargs) -> dict:  # type: ignore[no-untyped-def]
+        context = super().get_context_data(**kwargs)
+        course = Course.objects.get(pk=self.kwargs["course_id"])
+        context["page_title"] = course.title
         return context
 
 
