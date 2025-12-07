@@ -165,7 +165,7 @@ def enrollment(db, learner, course) -> Enrollment:
 @pytest.fixture
 def course_lesson_content(db, course, lesson) -> CourseContent:
     content = CourseContent.objects.create(
-        course=course, priority=1, type="lesson", lesson=lesson, waiting_period=10
+        course=course, priority=1, type="lesson", lesson=lesson, waiting_period=3600
     )
     return content
 
@@ -173,6 +173,6 @@ def course_lesson_content(db, course, lesson) -> CourseContent:
 @pytest.fixture
 def course_quiz_content(db, course, quiz) -> CourseContent:
     content = CourseContent.objects.create(
-        course=course, priority=2, type="quiz", quiz=quiz, waiting_period=5
+        course=course, priority=2, type="quiz", quiz=quiz, waiting_period=3600
     )
     return content
