@@ -14,6 +14,19 @@ def get_url() -> str:
     )
 
 
+def single_content_url(
+    course_content_id: int, course_id: int, organization_id: int = 1
+) -> str:
+    return reverse(
+        "django_email_learning:api:single_course_content_view",
+        kwargs={
+            "organization_id": organization_id,
+            "course_id": course_id,
+            "course_content_id": course_content_id,
+        },
+    )
+
+
 def valid_create_course_payload(
     title: str = "Python Course",
     slug: str = "python",
@@ -389,37 +402,40 @@ def test_delete_course_content(superadmin_client, create_course):
     assert get_response.status_code == 404
 
 
-def test_viewer_cannot_delete_course_content(viewer_client, create_course):
-    url = get_url()
-    # Create a lesson content
-    lesson_payload = {
-        "content": {
-            "title": LESSON_TITLE,
-            "content": LESSON_CONTENT,
-            "type": "lesson",
-        },
-        "priority": 1,
-        "waiting_period": {"period": 2, "type": "days"},
-    }
-    response = viewer_client.post(
-        url, json.dumps(lesson_payload), content_type="application/json"
+def test_viewer_cannot_delete_course_content(viewer_client, course_lesson_content):
+    url = single_content_url(
+        course_content_id=course_lesson_content.id,
+        course_id=course_lesson_content.course.id,
+        organization_id=course_lesson_content.course.organization.id,
     )
+    response = viewer_client.delete(url)
     assert response.status_code == 403
 
 
-def test_anonymous_user_cannot_delete_course_content(anonymous_client, create_course):
-    url = get_url()
-    # Create a lesson content
-    lesson_payload = {
-        "content": {
-            "title": LESSON_TITLE,
-            "content": LESSON_CONTENT,
-            "type": "lesson",
-        },
-        "priority": 1,
-        "waiting_period": {"period": 2, "type": "days"},
-    }
-    response = anonymous_client.post(
-        url, json.dumps(lesson_payload), content_type="application/json"
+def test_anonymous_user_cannot_delete_course_content(
+    anonymous_client, course_lesson_content
+):
+    url = single_content_url(
+        course_content_id=course_lesson_content.id,
+        course_id=course_lesson_content.course.id,
+        organization_id=course_lesson_content.course.organization.id,
     )
+    response = anonymous_client.delete(url)
     assert response.status_code == 401
+
+
+def test_get_course_content(viewer_client, course_lesson_content):
+    url = single_content_url(
+        course_content_id=course_lesson_content.id,
+        course_id=course_lesson_content.course.id,
+        organization_id=course_lesson_content.course.organization.id,
+    )
+    get_response = viewer_client.get(url)
+    assert get_response.status_code == 200
+    get_data = get_response.json()
+    assert get_data["id"] == course_lesson_content.id
+    assert get_data["type"] == "lesson"
+    assert get_data["priority"] == 1
+    assert get_data["waiting_period"] == {"period": 1, "type": "hours"}
+    assert get_data["lesson"]["title"] == course_lesson_content.lesson.title
+    assert get_data["lesson"]["content"] == course_lesson_content.lesson.content

@@ -99,8 +99,23 @@ class CourseContentView(View):
             return JsonResponse({"error": "Course not found"}, status=404)
 
 
+@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
 @method_decorator(accessible_for(roles={"admin", "editor"}), name="delete")
 class SingleCourseContentView(View):
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            course_content = CourseContent.objects.get(id=kwargs["course_content_id"])
+            return JsonResponse(
+                serializers.CourseContentResponse.model_validate(
+                    course_content
+                ).model_dump(),
+                status=200,
+            )
+        except CourseContent.DoesNotExist:
+            return JsonResponse({"error": "Course content not found"}, status=404)
+        except ValidationError as e:
+            return JsonResponse({"error": e.errors()}, status=400)
+
     def delete(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
         try:
             course_content = CourseContent.objects.get(id=kwargs["course_content_id"])
