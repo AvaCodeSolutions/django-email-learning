@@ -1,10 +1,10 @@
 import 'vite/modulepreload-polyfill'
-import { useState, useEffect, use } from 'react'
-import { Grid, Box, FormControlLabel, Link, Typography, Button, Dialog, Paper, RadioGroup, Radio, Switch, TableContainer, Table, TableHead, TableRow,TableBody, TableCell } from '@mui/material'
+import { useState, useEffect } from 'react'
+import { Grid, Box, Link, Button, Dialog, Paper, Switch, TableContainer, Table, TableHead, TableRow,TableBody, TableCell } from '@mui/material'
 import Base from '../src/components/Base.jsx'
 import CourseForm from './components/CourseForm.jsx';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import AddIcon from '@mui/icons-material/Add';
+import SchoolIcon from '@mui/icons-material/School';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import render from '../src/render.jsx';
 import { getCookie } from '../src/utils.js';
@@ -105,7 +105,7 @@ function Courses() {
     >
       <Grid size={{xs: 12, md: 9}} py={2} pl={2}>
         <Box p={2} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, minHeight: 300 }}>
-        <Button variant="outlined" startIcon={<AddIcon />} sx={{ marginBottom: 2 }} onClick={() => {
+        <Button variant="outlined" startIcon={<SchoolIcon />} sx={{ marginBottom: 2 }} onClick={() => {
           setDialogContent(<CourseForm
             successCallback={handleCourseCreated}
             failureCallback={handleCourseCreationFailed}
@@ -131,7 +131,7 @@ function Courses() {
                   sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                 >
                   <TableCell component="th" scope="row">
-                    <Link href={`${platformBaseUrl}/courses/${course.id}`}>{course.title}</Link>
+                    <Link href={`${platformBaseUrl}/courses/${course.id}`} color='primary.dark'>{course.title}</Link>
                   </TableCell>
                   <TableCell>{course.slug}</TableCell>
                   <TableCell>

@@ -1,3 +1,4 @@
+{% load static %}
 <!doctype html>
 <html lang="en">
   <head>
@@ -43,6 +44,11 @@
   </head>
   <body>
     <div class="container">
+      <p style="text-align: center;">
+        <img
+          src="{% static 'src/assets/logo2.png' %}" alt="Django Email Learning Logo"
+          width="200"
+        />
       <h1>Welcome to Django Email Learning Development Sample Service</h1>
       <p>
         This is a sample Django service demonstrating the Django Email Learning package,

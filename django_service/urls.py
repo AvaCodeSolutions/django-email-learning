@@ -18,6 +18,9 @@ from django.contrib import admin
 from django.views.generic import TemplateView
 from django.contrib.auth import views as auth_views
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+
 
 urlpatterns = [
     path(
@@ -34,3 +37,9 @@ urlpatterns = [
         include("django_email_learning.urls", namespace="django_email_learning"),
     ),
 ]
+
+# Serve static files during development
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    # Uncomment the line below if you have media files (user uploads)
+    # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

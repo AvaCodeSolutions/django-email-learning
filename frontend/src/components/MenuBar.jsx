@@ -89,7 +89,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
             <Typography variant="body1" component="span" sx={{ flexGrow: 1, ml: 2, color: 'primary.dark' }}>
             Email Learning
             {
-                showOrganizationSwitcher && <OrganizationsSelect organizations={organizations} activeOrganizationId={activeOrganizationId} changeOrganizationCallback={changeOrganizationCallback} sx={{ display: { xs: 'none', md: 'inline-grid' } }} />
+                showOrganizationSwitcher &&  organizations.length > 0 && <OrganizationsSelect organizations={organizations} activeOrganizationId={activeOrganizationId} changeOrganizationCallback={changeOrganizationCallback} sx={{ display: { xs: 'none', md: 'inline-grid' } }} />
             }
             </Typography>
             <Box sx={{display: { xs: 'flex', md: 'none'}, right: 0, position: "absolute" }}>
@@ -109,8 +109,9 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                 {pages.map((page) => (
                 <Button
                     key={page.name}
+
                     href={page.href}
-                    sx={{ color: 'black', display: 'block' }}
+                    sx={{ color: 'black', display: 'block', textTransform: 'none' }}
                 >
                     {page.name}
                 </Button>

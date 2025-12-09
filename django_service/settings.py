@@ -65,7 +65,7 @@ CSRF_TRUSTED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 CSRF_COOKIE_SECURE = False
-CSRF_COOKIE_SAMESITE = "None"
+# CSRF_COOKIE_SAMESITE = "None"
 
 
 ROOT_URLCONF = "django_service.urls"
@@ -148,7 +148,14 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 
-STATIC_ROOT = BASE_DIR / "static"
+# For development - where Django looks for static files
+STATICFILES_DIRS = [
+    BASE_DIR / "django_service" / "static",
+]
+
+# For production - where collectstatic puts files
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
