@@ -1,3 +1,7 @@
+<p align="center">
+<img src="https://github.com/AvaCodeSolutions/django-email-learning/blob/master/assets/Django2@2x.png" width="30%" alt="Django Email Learning Logo" />
+</p>
+
 # Django Email Learning
 
 A Django package for creating email-based learning platforms with IMAP integration and React frontend components.
