@@ -4,7 +4,7 @@ import json
 import re
 
 
-TEMPLATES = {"", "courses", "organizations", "users"}
+TEMPLATES = {"", "courses", "course", "organizations", "users"}
 
 
 def rewrite_backend_file(
