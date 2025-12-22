@@ -18,11 +18,15 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  esbuild: {
+    sourcemap: false,
+  },
   build: {
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
         courses: resolve(__dirname, 'courses/index.html'),
+        course: resolve(__dirname, 'course/index.html'),
         organizations: resolve(__dirname, 'organizations/index.html'),
         users: resolve(__dirname, 'users/index.html')
       }
@@ -31,5 +35,8 @@ export default defineConfig({
     outDir: resolve(__dirname, '../dist'),
     emptyOutDir: true,
     sourcemap: true,
-  }
+  },
+  optimizeDeps: {
+    include: ['esm-dep > cjs-dep'],
+  },
 })

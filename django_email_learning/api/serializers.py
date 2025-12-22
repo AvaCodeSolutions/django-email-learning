@@ -174,6 +174,13 @@ class LessonCreate(BaseModel):
     type: Literal["lesson"]
 
 
+class LessonUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class LessonResponse(BaseModel):
     id: int
     title: str
@@ -282,9 +289,16 @@ class WaitingPeriod(BaseModel):
 
 
 class CreateCourseContentRequest(BaseModel):
-    priority: int = Field(gt=0, examples=[1])
+    priority: int | None = Field(gt=0, examples=[1], default=None)
     waiting_period: WaitingPeriod
     content: LessonCreate | QuizCreate = Field(discriminator="type")
+
+    @property
+    def required_priority(self) -> int:
+        if self.priority is not None:
+            return self.priority
+        else:
+            raise ValueError("Priority must be set before converting to Django model.")
 
     def to_django_model(self, course: Course) -> CourseContent:
         lesson = None
@@ -319,7 +333,7 @@ class CreateCourseContentRequest(BaseModel):
             content_type = "quiz"
         course_content = CourseContent.objects.create(
             course=course,
-            priority=self.priority,
+            priority=self.required_priority,
             waiting_period=self.waiting_period.to_seconds(),
             lesson=lesson,
             quiz=quiz,

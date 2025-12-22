@@ -38,5 +38,5 @@ def test_context_values(superadmin_client, course):
     assert "platform_base_url" in response.context
     assert "active_organization_id" in response.context
     assert "user_role" in response.context
-    assert response.context["page_title"] == course.title
+    assert response.context["course"] == course
     assert response.context["is_platform_admin"] is True

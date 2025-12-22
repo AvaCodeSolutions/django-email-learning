@@ -4,6 +4,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db.utils import IntegrityError
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import models
 from pydantic import ValidationError
 
 from django_email_learning.api import serializers
@@ -11,6 +12,7 @@ from django_email_learning.models import (
     Course,
     CourseContent,
     ImapConnection,
+    Lesson,
     OrganizationUser,
     Organization,
 )
@@ -68,6 +70,14 @@ class CourseContentView(View):
         try:
             serializer = serializers.CreateCourseContentRequest.model_validate(payload)
             course = Course.objects.get(id=kwargs["course_id"])
+            if serializer.priority is None:
+                # Set priority to max existing priority + 1
+                max_priority = (
+                    CourseContent.objects.filter(course_id=course.id)
+                    .aggregate(max_priority=models.Max("priority"))
+                    .get("max_priority")
+                )
+                serializer.priority = (max_priority or 0) + 1
             course_content = serializer.to_django_model(course=course)
 
             return JsonResponse(
@@ -129,6 +139,8 @@ class SingleCourseContentView(View):
             return JsonResponse({"error": e.errors()}, status=400)
         except (IntegrityError, ValueError) as e:
             return JsonResponse({"error": str(e)}, status=409)
+
+        # TODO: Implement POST method for updating course content.
 
 
 @method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
@@ -253,6 +265,29 @@ class OrganizationsView(View):
             return JsonResponse({"error": e.errors()}, status=400)
         except IntegrityError as e:
             return JsonResponse({"error": str(e)}, status=409)
+
+
+@method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
+class LessonView(View):
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        payload = json.loads(request.body)
+        try:
+            serializer = serializers.LessonUpdate.model_validate(payload)
+            lesson = Lesson.objects.get(id=kwargs["lesson_id"])
+            if serializer.title is not None:
+                lesson.title = serializer.title
+            if serializer.content is not None:
+                lesson.content = serializer.content
+            lesson.save()
+
+            return JsonResponse(
+                {},
+                status=204,
+            )
+        except Lesson.DoesNotExist:
+            return JsonResponse({"error": "Lesson not found"}, status=404)
+        except ValidationError as e:
+            return JsonResponse({"error": e.errors()}, status=400)
 
 
 @method_decorator(is_an_organization_member(), name="post")

@@ -54,10 +54,10 @@ function AddImapConnectionForm({onChangeCallback, activeOrganizationId, initialI
     <div>
       { hasImapConnection && (
         <FormControl sx={{ marginBottom: '16px', minWidth: '100%' }}>
-          <InputLabel id="demo-simple-select-helper-label">IMAP Connection</InputLabel>
+          <InputLabel id="imap-connection-select-label">IMAP Connection</InputLabel>
           <Select
-            labelId="demo-simple-select-helper-label"
-            id="demo-simple-select-helper"
+            labelId="imap-connection-select-label"
+            id="imap-connection-select"
             label="IMAP Connection"
             value={imapConnectionId || ''}
             onChange={(event) => handleImapConnectionChange(event.target.value)}

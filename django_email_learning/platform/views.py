@@ -82,7 +82,8 @@ class CourseView(BasePlatformView):
     def get_context_data(self, **kwargs) -> dict:  # type: ignore[no-untyped-def]
         context = super().get_context_data(**kwargs)
         course = Course.objects.get(pk=self.kwargs["course_id"])
-        context["page_title"] = course.title
+        context["course"] = course
+        context["page_title"] = f"Course: {course.title}"
         return context
 
 
