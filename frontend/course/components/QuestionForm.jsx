@@ -65,7 +65,7 @@ const QuestionForm = ({question, index, deleteCallback}) => {
                     <Button variant="outlined" color="primary" sx={{ fontSize: '0.75rem', mt: 1 }} onClick={() => setAddingOption(true)} >
                         <RuleIcon /><Typography variant="button" sx={{ ml: 1, fontSize: '0.75rem' }}>Add Option</Typography>
                     </Button>
-                    <Button variant="outlined" color="secondary" onClick={deleteCallback} sx={{ ml: 1, mt: 1, fontSize: '0.75rem' }}>
+                    <Button variant="outlined" onClick={deleteCallback} sx={{ ml: 1, mt: 1, fontSize: '0.75rem' }}>
                         Delete
                     </Button>
                 </Grid>
@@ -85,7 +85,7 @@ const QuestionForm = ({question, index, deleteCallback}) => {
                         />
                     </Grid>
                     <Grid size={{ xs: 3 }} sx={{ textAlign: 'left' }} alignItems={"center"}>
-                        <Button variant="outlined" color="primary" sx={{ mt: 1, mr: 1 }} onClick={() => {
+                        <Button variant="outlined" sx={{ mt: 1, mr: 1 }} onClick={() => {
                             if (optionInputRef.current) {
                                 console.log(optionInputRef.current);
                                 addToOptions(optionInputRef.current.value);

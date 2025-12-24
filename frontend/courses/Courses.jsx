@@ -1,11 +1,12 @@
 import 'vite/modulepreload-polyfill'
 import { useState, useEffect } from 'react'
-import { Grid, Box, Link, Button, Dialog, Paper, Switch, TableContainer, Table, TableHead, TableRow,TableBody, TableCell } from '@mui/material'
+import { Grid, Box, Link, Button, IconButton, Dialog, Paper, Switch, TableContainer, Table, TableHead, TableRow,TableBody, TableCell } from '@mui/material'
 import Base from '../src/components/Base.jsx'
 import CourseForm from './components/CourseForm.jsx';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import SchoolIcon from '@mui/icons-material/School';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 import render from '../src/render.jsx';
 import { getCookie } from '../src/utils.js';
 import EnableCourseSwitchPopup from './components/EnableCourseSwitchPopup.jsx';
@@ -104,8 +105,8 @@ function Courses() {
       organizationIdRefreshCallback={setOrganizationId}
     >
       <Grid size={{xs: 12, md: 9}} py={2} pl={2}>
-        <Box p={2} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, minHeight: 300 }}>
-        <Button variant="outlined" startIcon={<SchoolIcon />} sx={{ marginBottom: 2 }} onClick={() => {
+        <Box p={2} sx={{ border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.main', borderRadius: 1, minHeight: 300 }}>
+        <Button variant="contained" startIcon={<SchoolIcon />} sx={{ marginBottom: 2 }} onClick={() => {
           setDialogContent(<CourseForm
             successCallback={handleCourseCreated}
             failureCallback={handleCourseCreationFailed}
@@ -142,15 +143,15 @@ function Courses() {
                     />
                   </TableCell>
                   <TableCell align="right">
-                    <Button size="small" sx={{ color: 'secondary.main', }} aria-label={`Edit ${course.title}`} onClick={() => {
-                      showEditCourseDialog(course);}}>Edit</Button>
-                    <Button size="small" sx={{ color: 'secondary.main', }} aria-label={`Delete ${course.title}`} onClick={() => {
+                    <IconButton onClick={() => {
+                      showEditCourseDialog(course);}}><EditIcon fontSize="small" /></IconButton>
+                    <IconButton aria-label={`Delete ${course.title}`} onClick={() => {
                       setDialogContent(<DeleteCoursePopup courseId={course.id} courseTitle={course.title} handleClose={() => setDialogOpen(false)} handleSuccess={() => {
                         const index = courses.findIndex(item => item.id === course.id);
                         setCourses(courses.filter((_, i) => i !== index));
                     }} />);
                     setDialogOpen(true);
-                  }}><DeleteOutlineIcon fontSize="small" /></Button>
+                  }}><DeleteIcon fontSize="small" /></IconButton>
                   </TableCell>
                 </TableRow>
               ))}
@@ -160,7 +161,7 @@ function Courses() {
         </Box>
       </Grid>
       <Grid display={{xs: "none", md: "block"}} size={{ md: 3 }} p={2}>
-        <Box p={2} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, minHeight: 300, position: 'sticky', top: 80 }}>
+        <Box p={2} sx={{ border: '1px solid', borderColor: 'border.main', borderRadius: 1, minHeight: 300, position: 'sticky', top: 80, backgroundColor: 'background.main' }}>
           <FilterForm onStatusChange={(params) => setQueryParameters(params)} />
         </Box>
       </Grid>

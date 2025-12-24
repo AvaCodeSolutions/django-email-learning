@@ -1,7 +1,7 @@
-import { TableContainer, Table, TableHead, TableRow, TableBody, TableCell, Paper, Typography } from '@mui/material';
+import { IconButton, TableContainer, Table, TableHead, TableRow, TableBody, TableCell, Paper, Typography } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { getCookie } from '../../src/utils.js';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
     const [contentList, setContentList] = useState([]);
@@ -80,7 +80,9 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                         <TableCell>{formatPeriod(content.waiting_period)}</TableCell>
                         <TableCell>{content.type}</TableCell>
                         <TableCell align='right'>
-                            <DeleteOutlineIcon sx={{ cursor: 'pointer', color: 'secondary.main' }} onClick={() => deleteContent(content.id)} />
+                            <IconButton aria-label="delete" onClick={() => deleteContent(content.id)}>
+                                <DeleteIcon />
+                            </IconButton>
                         </TableCell>
                     </TableRow>
                 ))}

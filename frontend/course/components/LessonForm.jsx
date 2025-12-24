@@ -149,10 +149,10 @@ function LessonForm({ header, initialTitle, initialContent, onContentChange, can
         </Select>
         </Tooltip>
         <Box mt={2} textAlign="right">
-        <Button variant="outlined" sx={{ mr: 1, boxShadow: 'none' }} onClick={cancel}>
+        <Button variant="outlined" sx={{ mr: 1 }} onClick={cancel}>
             Cancel
         </Button>
-        <Button type="submit" variant="contained" color="primary" sx={{ boxShadow: 'none' }} onClick={() => {if(!lessonId) { addLesson(); } else { updateLesson(); }}}>
+        <Button type="submit" variant="contained" onClick={() => {if(!lessonId) { addLesson(); } else { updateLesson(); }}}>
             Save Lesson
         </Button>
         </Box>

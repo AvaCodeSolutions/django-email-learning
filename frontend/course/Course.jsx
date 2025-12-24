@@ -89,7 +89,7 @@ function Course() {
         >
             <Grid size={{xs: 12, md: 9}} py={2} pl={2}>
                 <Box p={2} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, minHeight: 300 }}>
-                    <Button variant="outlined" startIcon={<DescriptionIcon />} sx={{ marginBottom: 2 }} onClick={() => {
+                    <Button variant="contained" startIcon={<DescriptionIcon />} sx={{ marginBottom: 2 }} onClick={() => {
                         setDialogContent(<LessonForm
                             header="New Lesson"
                             initialContent={lessonCache}
@@ -98,7 +98,7 @@ function Course() {
                             successCallback={resetDialog}
                             courseId={course_id} />);
                         setDialogOpen(true);}}>Add a Lesson</Button>
-                    <Button variant="outlined" startIcon={<BallotIcon />} sx={{ marginBottom: 2, marginLeft: 1 }} onClick={() => {
+                    <Button variant="contained" startIcon={<BallotIcon />} sx={{ marginBottom: 2, marginLeft: 1 }} onClick={() => {
                         setDialogContent(<QuizForm
                             cancelCallback={() => setDialogOpen(false)}
                             successCallback={resetDialog}

@@ -1,13 +1,14 @@
 import BottomDrawer from "./BottomDrawer";
 import MenuBar from "./MenuBar";
 import { useState, useEffect } from "react";
-import { Grid, Breadcrumbs, Typography, Link } from "@mui/material";
+import { Box, GlobalStyles, Grid, Breadcrumbs, Typography, Link } from "@mui/material";
 import { getCookie } from "../utils.js";
 
 
 function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefreshCallback, showOrganizationSwitcher=true}) {
   const [activeOrganizationId, setActiveOrganizationId] = useState(null);
   const baseApiUrl = localStorage.getItem('apiBaseUrl');
+  const drawerWidth = 250;
 
   useEffect(() => {
     const orgId = localStorage.getItem('activeOrganizationId');
@@ -57,7 +58,10 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
 
   return (
    <>
-    <MenuBar activeOrganizationId={activeOrganizationId} changeOrganizationCallback={setActiveOrganizationId} showOrganizationSwitcher={showOrganizationSwitcher} />
+    <GlobalStyles styles={(theme) => ({ body: { margin: 0, padding: 0, backgroundColor: theme.palette.background.dark, color: theme.palette.text.primary } })} />
+    <MenuBar activeOrganizationId={activeOrganizationId} changeOrganizationCallback={setActiveOrganizationId} showOrganizationSwitcher={showOrganizationSwitcher} drawerWidth={drawerWidth} />
+    <Box component="main"
+        sx={{ flexGrow: 1, padding: {sm: 3, xs: 1, md: 5}, width: { md: `calc(100% - ${drawerWidth + 100}px)` }, float: { md: 'right' } }}>
     <Grid container spacing={0} mt={10} px={4}>
       <Grid size={{xs: 12}}>
       <Breadcrumbs aria-label="breadcrumb">
@@ -66,7 +70,7 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
          <Link key={index} underline="hover" color="inherit" href={href}>
            {label}
          </Link> :
-         <Typography key={index} sx={{ color: 'text.primary', fontSize: { xs: 12, sm: 14 } }}>
+         <Typography key={index} sx={{ color: 'text.primary' }}>
            {label}
          </Typography>
        ))}
@@ -79,6 +83,7 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
         {bottomDrawerParams.children}
       </BottomDrawer>}
     </Grid>
+    </Box>
     </>
   );
 }
