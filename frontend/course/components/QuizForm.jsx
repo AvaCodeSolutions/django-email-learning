@@ -85,12 +85,12 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId }) => {
                             }}/>
                         </Grid>
                         <Grid size={{ xs: 12, md: 4 }} sx={{ textAlign: 'right' }}>
-                            <Button variant="outlined" color="primary" onClick={() => {
+                            <Button variant="outlined" onClick={() => {
                                 addToQuestions();
                             }}>
                                 Add Question
                             </Button>
-                            <Button variant="outlined" sx={{ ml: 1 }} color="secondary" onClick={() => { setShowQuestionField(false); setNewQuestion(""); }}>
+                            <Button variant="outlined" sx={{ ml: 1 }} onClick={() => { setShowQuestionField(false); setNewQuestion(""); }}>
                                 Cancel
                             </Button>
                         </Grid>

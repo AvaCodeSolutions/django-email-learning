@@ -55,7 +55,7 @@ function ContentEditor({ initialContent, contentUpdateCallback }) {
             <EditorContext.Provider value={{ editor }}>
                 {/* Material UI Toolbar */}
                 <Toolbar variant="dense" sx={{
-                    backgroundColor: 'grey.50',
+                    backgroundColor: 'background.nav',
                     borderBottom: '1px solid',
                     borderColor: 'divider'
                 }}>
