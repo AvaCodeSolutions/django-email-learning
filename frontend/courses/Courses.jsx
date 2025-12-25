@@ -20,6 +20,7 @@ function Courses() {
   const [courses, setCourses] = useState([])
   const [organizationId, setOrganizationId] = useState(null);
   const [queryParameters, setQueryParameters] = useState("");
+  const userRole = localStorage.getItem('userRole');
   const apiBaseUrl = localStorage.getItem('apiBaseUrl');
   const platformBaseUrl = localStorage.getItem('platformBaseUrl');
 
@@ -106,7 +107,7 @@ function Courses() {
     >
       <Grid size={{xs: 12, md: 9}} py={2} pl={2}>
         <Box p={2} sx={{ border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.main', borderRadius: 1, minHeight: 300 }}>
-        <Button variant="contained" startIcon={<SchoolIcon />} sx={{ marginBottom: 2 }} onClick={() => {
+        {userRole !== 'viewer' && <Button variant="contained" startIcon={<SchoolIcon />} sx={{ marginBottom: 2 }} onClick={() => {
           setDialogContent(<CourseForm
             successCallback={handleCourseCreated}
             failureCallback={handleCourseCreationFailed}
@@ -114,7 +115,7 @@ function Courses() {
             activeOrganizationId={organizationId}
             createMode={true}
           />);
-          setDialogOpen(true);}}>Add a Course</Button>
+          setDialogOpen(true);}}>Add a Course</Button>}
         <TableContainer component={Paper}>
           <Table sx={{ width: "100%" }} aria-label="Courses">
             <TableHead>
@@ -122,7 +123,7 @@ function Courses() {
                 <TableCell>Title</TableCell>
                 <TableCell>Slug</TableCell>
                 <TableCell>Enabled</TableCell>
-                <TableCell align='right'>Actions</TableCell>
+                {userRole !== 'viewer' && <TableCell align='right'>Actions</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -140,9 +141,10 @@ function Courses() {
                       checked={course.enabled}
                       onChange={showEnableCoursePopup(course.id, course.enabled ? 'disable' : 'enable', course.title)}
                       slotProps={{ input: { 'aria-label': course.enabled ? 'Disable Course' : 'Enable Course' } }}
+                      disabled={userRole === 'viewer'}
                     />
                   </TableCell>
-                  <TableCell align="right">
+                  {userRole !== 'viewer' && <TableCell align="right">
                     <IconButton onClick={() => {
                       showEditCourseDialog(course);}}><EditIcon fontSize="small" /></IconButton>
                     <IconButton aria-label={`Delete ${course.title}`} onClick={() => {
@@ -152,7 +154,7 @@ function Courses() {
                     }} />);
                     setDialogOpen(true);
                   }}><DeleteIcon fontSize="small" /></IconButton>
-                  </TableCell>
+                  </TableCell>}
                 </TableRow>
               ))}
             </TableBody>

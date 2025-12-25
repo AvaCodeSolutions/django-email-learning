@@ -19,7 +19,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     const dialogRef = useRef(null);
     const apiBaseUrl = localStorage.getItem('apiBaseUrl');
     const organizationId = localStorage.getItem('activeOrganizationId');
-
+    const userRole = localStorage.getItem('userRole');
 
     const addQuiz = () => {
         if (!validateQuiz()) {
@@ -201,9 +201,9 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
         }} tabIndex={0} focusable="true">
             <Typography variant="h2" sx={{ my: 2, fontSize: '1.5rem' }}>{ quizId ? "Update Quiz" : "New Quiz" }</Typography>
             {errorMessage && <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert>}
-            <RequiredTextField label="Quiz Title" value={title} onChange={(e) => setTitle(e.target.value)} sx={{ mb: 2, width: '100%' }} />
-            <Button variant="outlined" sx={{ mb: 2 }} onClick={() => setShowQuestionField(true)}>
-                <QuizIcon sx={{ mr: 1 }} /> Add Question</Button>
+            <RequiredTextField label="Quiz Title" value={title} onChange={(e) => setTitle(e.target.value)} sx={{ mb: 2, width: '100%' }} disabled={userRole === 'viewer'} />
+            {userRole !== 'viewer' && <Button variant="outlined" sx={{ mb: 2 }} onClick={() => setShowQuestionField(true)}>
+                <QuizIcon sx={{ mr: 1 }} /> Add Question</Button>}
             { showQuestionField && (
                 <Box sx={{ mb: 2, border: '1px solid', borderColor: 'grey.300', borderRadius: 1, p: 2 }}>
                     <Grid container spacing={2} alignItems="center">
@@ -240,6 +240,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                 onChange={(e) => setRequiredScore(e.target.value)}
                 sx={{ width: '200px', mr: 2 }}
                 inputProps={{ min: 0, max: 100 }}
+                disabled={userRole === 'viewer'}
                 >
             </RequiredTextField>
             </Box>
@@ -254,19 +255,20 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                     onChange={(e) => setWaitingPeriod(e.target.value)}
                     sx={{ width: '200px', mr: 2 }}
                     inputProps={{ min: 1 }}
+                    disabled={userRole === 'viewer'}
                 />
-                <Select size="small" value={waitingPeriodUnit} onChange={(e) => setWaitingPeriodUnit(e.target.value)} name="waiting_period_unit" sx={{ width: '150px' }}>
+                <Select size="small" value={waitingPeriodUnit} onChange={(e) => setWaitingPeriodUnit(e.target.value)} name="waiting_period_unit" sx={{ width: '150px' }} disabled={userRole === 'viewer'}>
                     <MenuItem value="days">Days</MenuItem>
                     <MenuItem value="hours">Hours</MenuItem>
                 </Select>
             </Tooltip>
             <Box mt={2} textAlign="right">
                 <Button variant="outlined" sx={{ mr: 1, boxShadow: 'none' }} onClick={cancel}>
-                    Cancel
+                    Back
                 </Button>
-                <Button type="submit" variant="contained" color="primary" sx={{ boxShadow: 'none' }} onClick={() => {if(!quizId) { addQuiz(); } else { updateQuiz(); }}}>
+                {userRole !== 'viewer' && <Button type="submit" variant="contained" color="primary" sx={{ boxShadow: 'none' }} onClick={() => {if(!quizId) { addQuiz(); } else { updateQuiz(); }}}>
                     Save Quiz
-                </Button>
+                </Button>}
             </Box>
         </Box>
     );

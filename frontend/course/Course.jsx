@@ -21,6 +21,7 @@ function Course() {
     const [lessonCache, setLessonCache] = useState("")
     const [contentLoaded, setContentLoaded] = useState(false)
 
+    const userRole = localStorage.getItem('userRole');
     const apiBaseUrl = localStorage.getItem('apiBaseUrl');
     const organizationId = localStorage.getItem('activeOrganizationId');
 
@@ -120,7 +121,7 @@ function Course() {
         >
             <Grid size={{xs: 12, md: 9}} py={2} pl={2}>
                 <Box p={2} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, minHeight: 300 }}>
-                    <Button variant="contained" startIcon={<DescriptionIcon />} sx={{ marginBottom: 2 }} onClick={() => {
+                    {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon />} sx={{ marginBottom: 2 }} onClick={() => {
                         setDialogContent(<LessonForm
                             header="New Lesson"
                             initialContent={lessonCache}
@@ -134,7 +135,7 @@ function Course() {
                             cancelCallback={() => setDialogOpen(false)}
                             successCallback={resetDialog}
                             courseId={course_id} />);
-                        setDialogOpen(true);}}>Add a Quiz</Button>
+                        setDialogOpen(true);}}>Add a Quiz</Button></> }
                     <ContentTable courseId={course_id} loaded={contentLoaded} eventHandler={(event) => tableEventHandler(event)} />
                 </Box>
             </Grid>
