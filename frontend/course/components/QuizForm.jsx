@@ -1,29 +1,162 @@
 import { useRef, useState, useEffect } from 'react';
-import { Box, Button,  Grid, Typography } from '@mui/material';
+import { Alert,Box, Button, Grid, MenuItem, Select, Tooltip, Typography } from '@mui/material';
 import QuizIcon from '@mui/icons-material/Quiz';
 import RequiredTextField from '../../src/components/RequiredTextField';
 import QuestionForm from './QuestionForm';
+import { getCookie } from '../../src/utils';
 
-const QuizForm = ({cancelCallback, successCallback, courseId, quizId }) => {
+const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod }) => {
 
     const [showQuestionField, setShowQuestionField] = useState(false);
     const [newQuestion, setNewQuestion] = useState("");
-    const [questions, setQuestions] = useState([]);
+    const [questions, setQuestions] = useState(initialQuestions || []);
+    const [errorMessage, setErrorMessage] = useState("");
+    const [title, setTitle] = useState(initialTitle || "");
+    const [requiredScore , setRequiredScore] = useState(initialRequiredScore || 70);
+    const [waitingPeriod, setWaitingPeriod] = useState(initialWaitingPeriod ? initialWaitingPeriod.period : 1);
+    const [waitingPeriodUnit, setWaitingPeriodUnit] = useState(initialWaitingPeriod ? initialWaitingPeriod.type : "days");
     const questionInputRef = useRef(null);
     const dialogRef = useRef(null);
+    const apiBaseUrl = localStorage.getItem('apiBaseUrl');
+    const organizationId = localStorage.getItem('activeOrganizationId');
+
 
     const addQuiz = () => {
-        // Implement add quiz logic here
-        console.log("Adding quiz to course ID:", courseId);
-        // After successful addition
-        successCallback();
+        if (!validateQuiz()) {
+            return;
+        }
+        console.log("Adding new quiz to course ID:", courseId);
+        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                content: {
+                    type: 'quiz',
+                    title: title,
+                    required_score: requiredScore,
+                    questions: questionsPayload(),
+                },
+                waiting_period: {
+                    period: waitingPeriod,
+                    type: waitingPeriodUnit
+                }
+            }),
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Quiz created successfully:', data);
+            successCallback();
+        })
+        .catch(error => {
+            setErrorMessage("Error creating quiz. Please try again.");
+            console.error('Error creating quiz:', error);
+        });
+
+    }
+
+    const validateQuiz = () => {
+        if (title.trim() === "") {
+            setErrorMessage("Quiz title cannot be empty.");
+            return false;
+        }
+        if (questions.length === 0) {
+            setErrorMessage("Quiz must contain at least one question.");
+            return false;
+        }
+        for (let i = 0; i < questions.length; i++) {
+            const question = questions[i];
+            if (question.text.trim() === "") {
+                setErrorMessage(`Question ${i + 1} cannot be empty.`);
+                return false;
+            }
+            const options = question.options || [];
+            if (options.length < 2) {
+                setErrorMessage(`Question ${i + 1} must have at least two answer options.`);
+                return false;
+            }
+            const hasCorrectOption = options.some(option => option.isCorrect);
+            if (!hasCorrectOption) {
+                setErrorMessage(`Question ${i + 1} must have at least one correct answer.`);
+                return false;
+            }
+        }
+        setErrorMessage("");
+        return true;
+    }
+
+    const questionsPayload = () => {
+        return questions.map((question, index) => ({
+            text: question.text,
+            answers: answersPayload(question.options || []),
+            priority: index + 1,
+        }));
+    }
+
+    const answersPayload = (options) => {
+        return options.map((option) => ({
+            text: option.optionText,
+            is_correct: option.isCorrect,
+        }));
+    }
+
+    const questionEventHandler = (event) => {
+        if (event.type === 'delete_question') {
+            const updatedQuestions = questions.filter((_, i) => i !== index);
+            setQuestions(updatedQuestions);
+        }
+        if (event.type === 'update_question') {
+            const updatedQuestions = questions.map((q, i) =>
+                i === event.question_index ? event.question_data : q
+            );
+            console.log('Updated Questions:', updatedQuestions);
+            setQuestions(updatedQuestions);
+        }
     }
 
     const updateQuiz = () => {
-        // Implement update quiz logic here
-        console.log("Updating quiz ID:", quizId);
-        // After successful update
-        successCallback();
+        if (!validateQuiz()) {
+            return;
+        }
+        console.log("Updating quiz ID:", quizId, "for course ID:", courseId);
+        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${contentId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                quiz: {
+                    title: title,
+                    required_score: requiredScore,
+                    questions: questionsPayload(),
+                },
+                waiting_period: {
+                    period: waitingPeriod,
+                    type: waitingPeriodUnit
+                }}),
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Quiz updated successfully:', data);
+            successCallback();
+        })
+        .catch(error => {
+            setErrorMessage("Error updating quiz. Please try again.");
+            console.error('Error updating quiz:', error);
+        });
     }
 
     const cancel = () => {
@@ -50,15 +183,10 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId }) => {
     const addToQuestions = () => {
 
         if (newQuestion.trim() !== "") {
-            setQuestions([...questions, {"question": newQuestion.trim()}]);
+            setQuestions([...questions, {"text": newQuestion.trim()}]);
         }
         setNewQuestion("");
         setShowQuestionField(false);
-    }
-
-    const handleQuestionDelete = (index) => {
-        const updatedQuestions = questions.filter((_, i) => i !== index);
-        setQuestions(updatedQuestions);
     }
 
     return (
@@ -72,6 +200,8 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId }) => {
             }
         }} tabIndex={0} focusable="true">
             <Typography variant="h2" sx={{ my: 2, fontSize: '1.5rem' }}>{ quizId ? "Update Quiz" : "New Quiz" }</Typography>
+            {errorMessage && <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert>}
+            <RequiredTextField label="Quiz Title" value={title} onChange={(e) => setTitle(e.target.value)} sx={{ mb: 2, width: '100%' }} />
             <Button variant="outlined" sx={{ mb: 2 }} onClick={() => setShowQuestionField(true)}>
                 <QuizIcon sx={{ mr: 1 }} /> Add Question</Button>
             { showQuestionField && (
@@ -99,9 +229,37 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId }) => {
             ) }
             <Box>
                 { questions.map((question, index) => (
-                    <QuestionForm key={index} index={index} question={question} deleteCallback={() => handleQuestionDelete(index)} />
+                    <QuestionForm key={index} index={index} question={question} eventHandler={questionEventHandler} />
                 )) }
             </Box>
+            <Box mt={3} mb={2}>
+            <RequiredTextField
+                label="Required score to pass (%)"
+                type="number"
+                value={requiredScore}
+                onChange={(e) => setRequiredScore(e.target.value)}
+                sx={{ width: '200px', mr: 2 }}
+                inputProps={{ min: 0, max: 100 }}
+                >
+            </RequiredTextField>
+            </Box>
+            <Tooltip
+                placement="right"
+                title="Set the amount of time that we should wait after the previous lesson or quiz submission before sending this lesson.">
+                <RequiredTextField
+                    label="Waiting Period"
+                    name="waiting_period"
+                    type="number"
+                    value={waitingPeriod}
+                    onChange={(e) => setWaitingPeriod(e.target.value)}
+                    sx={{ width: '200px', mr: 2 }}
+                    inputProps={{ min: 1 }}
+                />
+                <Select size="small" value={waitingPeriodUnit} onChange={(e) => setWaitingPeriodUnit(e.target.value)} name="waiting_period_unit" sx={{ width: '150px' }}>
+                    <MenuItem value="days">Days</MenuItem>
+                    <MenuItem value="hours">Hours</MenuItem>
+                </Select>
+            </Tooltip>
             <Box mt={2} textAlign="right">
                 <Button variant="outlined" sx={{ mr: 1, boxShadow: 'none' }} onClick={cancel}>
                     Cancel

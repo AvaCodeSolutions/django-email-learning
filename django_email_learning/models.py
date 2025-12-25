@@ -235,6 +235,14 @@ class CourseContent(models.Model):
             return self.quiz.title
         return "Untitled Content"
 
+    @property
+    def is_published(self) -> bool:
+        if self.type == "lesson" and self.lesson:
+            return self.lesson.is_published
+        elif self.type == "quiz" and self.quiz:
+            return self.quiz.is_published
+        return False
+
     def _validate_content(self) -> None:
         if self.type == "lesson" and not self.lesson:
             raise ValidationError("Lesson must be provided for lesson content.")

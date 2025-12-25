@@ -4,11 +4,11 @@ import RequiredTextField from '../../src/components/RequiredTextField.jsx';
 import ContentEditor from '../../src/components/ContentEditor';
 import { getCookie } from '../../src/utils.js';
 
-function LessonForm({ header, initialTitle, initialContent, onContentChange, cancelCallback, successCallback, courseId, lessonId }) {
+function LessonForm({ header, initialTitle, initialContent, onContentChange, cancelCallback, successCallback, courseId, lessonId, initialWaitingPeriod, contentId }) {
     const [title, setTitle] = useState(initialTitle || "");
     const [content, setContent] = useState(initialContent || "");
-    const [waitingPeriod, setWaitingPeriod] = useState(1);
-    const [waitingPeriodUnit, setWaitingPeriodUnit] = useState("days");
+    const [waitingPeriod, setWaitingPeriod] = useState(initialWaitingPeriod ? initialWaitingPeriod.period : 1);
+    const [waitingPeriodUnit, setWaitingPeriodUnit] = useState(initialWaitingPeriod ? initialWaitingPeriod.type : "days");
     const [titleHelperText, setTitleHelperText] = useState("");
     const [contentHelperText, setContentHelperText] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
@@ -58,7 +58,8 @@ function LessonForm({ header, initialTitle, initialContent, onContentChange, can
         }
 
         console.log("Updating lesson ID:", lessonId);
-        fetch(apiBaseUrl + '/organizations/' + orgId + '/lessons/' + lessonId + '/', {
+
+        fetch(apiBaseUrl + '/organizations/' + orgId + '/courses/' + courseId + '/contents/' + contentId + '/', {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -66,16 +67,17 @@ function LessonForm({ header, initialTitle, initialContent, onContentChange, can
                 'X-CSRFToken': getCookie('csrftoken')
             },
             body: JSON.stringify({
-                title: title,
-                content: content,
+                lesson: {
+                    title: title,
+                    content: content,
+                },
+                waiting_period: {"period": waitingPeriod, "type": waitingPeriodUnit},
             }),
         })
         .then((response) => {
             console.log(response)
-            if (response.status === 204) {
+            if (response.status === 200) {
                 console.log('Lesson updated successfully');
-                setContent("");
-                setTitle("");
                 successCallback();
             }
         })

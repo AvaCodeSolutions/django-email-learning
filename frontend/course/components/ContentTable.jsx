@@ -1,4 +1,4 @@
-import { IconButton, TableContainer, Table, TableHead, TableRow, TableBody, TableCell, Paper, Typography } from '@mui/material';
+import { IconButton, Switch, TableContainer, Table, TableHead, TableRow, TableBody, TableCell, Paper, Typography, Tab } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { getCookie } from '../../src/utils.js';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -41,6 +41,34 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
             .catch(error => console.error('Error deleting content:', error));
     }
 
+    const TogglePublishContent = (contentId, is_published) => {
+        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${contentId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                is_published: is_published
+            })
+        })
+            .then(response => {
+                if (response.ok) {
+                    console.log('Publish status toggled successfully');
+                    // Update the local state to reflect the change
+                    setContentList(contentList.map(content => {
+                        if (content.id === contentId) {
+                            return { ...content, is_published: !content.is_published };
+                        }
+                        return content;
+                    }));
+                } else {
+                    console.error('Error toggling publish status:', response.statusText);
+                }
+            })
+            .catch(error => console.error('Error toggling publish status:', error));
+    }
+
 
     const getContets = () => {
 
@@ -68,6 +96,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                 <TableCell>Title</TableCell>
                 <TableCell>Waiting time</TableCell>
                 <TableCell>type</TableCell>
+                <TableCell>Published</TableCell>
                 <TableCell align='right'>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -79,6 +108,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                             color='primary.dark' sx={{ cursor: 'pointer'}}>{content.title}</Typography></TableCell>
                         <TableCell>{formatPeriod(content.waiting_period)}</TableCell>
                         <TableCell>{content.type}</TableCell>
+                        <TableCell><Switch defaultChecked={content.is_published} onChange={() => TogglePublishContent(content.id, !content.is_published)} /></TableCell>
                         <TableCell align='right'>
                             <IconButton aria-label="delete" onClick={() => deleteContent(content.id)}>
                                 <DeleteIcon />

@@ -3,6 +3,7 @@ import pytest
 from django.urls import reverse
 import json
 
+
 LESSON_TITLE = "Introduction to Python"
 LESSON_CONTENT = "Welcome to the Python course!"
 
@@ -439,3 +440,187 @@ def test_get_course_content(viewer_client, course_lesson_content):
     assert get_data["waiting_period"] == {"period": 1, "type": "hours"}
     assert get_data["lesson"]["title"] == course_lesson_content.lesson.title
     assert get_data["lesson"]["content"] == course_lesson_content.lesson.content
+
+
+def test_update_course_content_waiting_period(superadmin_client, course_lesson_content):
+    url = single_content_url(
+        course_content_id=course_lesson_content.id,
+        course_id=course_lesson_content.course.id,
+        organization_id=course_lesson_content.course.organization.id,
+    )
+    payload = {"waiting_period": {"period": 3, "type": "days"}}
+    response = superadmin_client.post(
+        url, json.dumps(payload), content_type="application/json"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == course_lesson_content.id
+    assert data["waiting_period"] == {"period": 3, "type": "days"}
+
+
+def test_update_course_content_no_fields_provided(
+    superadmin_client, course_lesson_content
+):
+    url = single_content_url(
+        course_content_id=course_lesson_content.id,
+        course_id=course_lesson_content.course.id,
+        organization_id=course_lesson_content.course.organization.id,
+    )
+    payload = {
+        # No fields provided
+    }
+    response = superadmin_client.post(
+        url, json.dumps(payload), content_type="application/json"
+    )
+    assert response.status_code == 400
+    data = response.json()
+    assert "error" in data
+
+
+def test_viewer_cannot_update_course_content(viewer_client, course_lesson_content):
+    url = single_content_url(
+        course_content_id=course_lesson_content.id,
+        course_id=course_lesson_content.course.id,
+        organization_id=course_lesson_content.course.organization.id,
+    )
+    payload = {"waiting_period": {"period": 3, "type": "days"}}
+    response = viewer_client.post(
+        url, json.dumps(payload), content_type="application/json"
+    )
+    assert response.status_code == 403
+
+
+def test_anonymous_user_cannot_update_course_content(
+    anonymous_client, course_lesson_content
+):
+    url = single_content_url(
+        course_content_id=course_lesson_content.id,
+        course_id=course_lesson_content.course.id,
+        organization_id=course_lesson_content.course.organization.id,
+    )
+    payload = {"waiting_period": {"period": 3, "type": "days"}}
+    response = anonymous_client.post(
+        url, json.dumps(payload), content_type="application/json"
+    )
+    assert response.status_code == 401
+
+
+@pytest.mark.parametrize("client", ["superadmin", "editor"], indirect=["client"])
+def test_update_course_content_priority(client, course_lesson_content):
+    url = single_content_url(
+        course_content_id=course_lesson_content.id,
+        course_id=course_lesson_content.course.id,
+        organization_id=course_lesson_content.course.organization.id,
+    )
+    payload = {"priority": 5}
+    response = client.post(url, json.dumps(payload), content_type="application/json")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == course_lesson_content.id
+    assert data["priority"] == 5
+
+
+def test_update_course_content_invalid_priority(
+    superadmin_client, course_lesson_content
+):
+    url = single_content_url(
+        course_content_id=course_lesson_content.id,
+        course_id=course_lesson_content.course.id,
+        organization_id=course_lesson_content.course.organization.id,
+    )
+    payload = {
+        "priority": -1  # Invalid priority
+    }
+    response = superadmin_client.post(
+        url, json.dumps(payload), content_type="application/json"
+    )
+    assert response.status_code == 400
+    data = response.json()
+    assert "error" in data
+
+
+def test_update_course_content_waiting_period_and_priority(
+    superadmin_client, course_lesson_content
+):
+    url = single_content_url(
+        course_content_id=course_lesson_content.id,
+        course_id=course_lesson_content.course.id,
+        organization_id=course_lesson_content.course.organization.id,
+    )
+    payload = {"waiting_period": {"period": 4, "type": "hours"}, "priority": 3}
+    response = superadmin_client.post(
+        url, json.dumps(payload), content_type="application/json"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == course_lesson_content.id
+    assert data["waiting_period"] == {"period": 4, "type": "hours"}
+    assert data["priority"] == 3
+
+
+def test_update_course_content_with_valid_lesson_data(
+    superadmin_client, course_lesson_content
+):
+    url = single_content_url(
+        course_content_id=course_lesson_content.id,
+        course_id=course_lesson_content.course.id,
+        organization_id=course_lesson_content.course.organization.id,
+    )
+    payload = {
+        "lesson": {"title": "Updated Lesson Title", "content": "Updated lesson content"}
+    }
+    response = superadmin_client.post(
+        url, json.dumps(payload), content_type="application/json"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == course_lesson_content.id
+    assert data["lesson"]["title"] == "Updated Lesson Title"
+    assert data["lesson"]["content"] == "Updated lesson content"
+
+
+def test_update_course_content_with_invalid_lesson_data(
+    superadmin_client, course_lesson_content
+):
+    url = single_content_url(
+        course_content_id=course_lesson_content.id,
+        course_id=course_lesson_content.course.id,
+        organization_id=course_lesson_content.course.organization.id,
+    )
+    payload = {
+        "lesson": {
+            "title": 123,  # Invalid title type
+            "content": "Updated content",
+        }
+    }
+    response = superadmin_client.post(
+        url, json.dumps(payload), content_type="application/json"
+    )
+    assert response.status_code == 400
+    data = response.json()
+    assert "error" in data
+
+
+def test_update_content_is_published(superadmin_client, course_lesson_content):
+    url = single_content_url(
+        course_content_id=course_lesson_content.id,
+        course_id=course_lesson_content.course.id,
+        organization_id=course_lesson_content.course.organization.id,
+    )
+    payload = {"is_published": True}
+    response = superadmin_client.post(
+        url, json.dumps(payload), content_type="application/json"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == course_lesson_content.id
+    assert data["lesson"]["is_published"] is True
+
+    payload = {"is_published": False}
+    response = superadmin_client.post(
+        url, json.dumps(payload), content_type="application/json"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == course_lesson_content.id
+    assert data["lesson"]["is_published"] is False

@@ -4,7 +4,8 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db.utils import IntegrityError
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import models
+from django.db import models, transaction
+
 from pydantic import ValidationError
 
 from django_email_learning.api import serializers
@@ -12,7 +13,6 @@ from django_email_learning.models import (
     Course,
     CourseContent,
     ImapConnection,
-    Lesson,
     OrganizationUser,
     Organization,
 )
@@ -41,7 +41,7 @@ class CourseView(View):
                 status=201,
             )
         except ValidationError as e:
-            return JsonResponse({"error": e.errors()}, status=400)
+            return JsonResponse({"error": e.json()}, status=400)
         except (IntegrityError, ValueError) as e:
             return JsonResponse({"error": str(e)}, status=409)
 
@@ -89,7 +89,7 @@ class CourseContentView(View):
         except Course.DoesNotExist:
             return JsonResponse({"error": "Course not found"}, status=404)
         except ValidationError as e:
-            return JsonResponse({"error": e.errors()}, status=400)
+            return JsonResponse({"error": e.json()}, status=400)
         except DjangoValidationError as e:
             return JsonResponse({"error": e.messages}, status=400)
 
@@ -111,6 +111,7 @@ class CourseContentView(View):
 
 @method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
 @method_decorator(accessible_for(roles={"admin", "editor"}), name="delete")
+@method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
 class SingleCourseContentView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
@@ -124,7 +125,7 @@ class SingleCourseContentView(View):
         except CourseContent.DoesNotExist:
             return JsonResponse({"error": "Course content not found"}, status=404)
         except ValidationError as e:
-            return JsonResponse({"error": e.errors()}, status=400)
+            return JsonResponse({"error": e.json()}, status=400)
 
     def delete(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
         try:
@@ -136,11 +137,87 @@ class SingleCourseContentView(View):
         except CourseContent.DoesNotExist:
             return JsonResponse({"error": "Course content not found"}, status=404)
         except ValidationError as e:
-            return JsonResponse({"error": e.errors()}, status=400)
+            return JsonResponse({"error": e.json()}, status=400)
         except (IntegrityError, ValueError) as e:
             return JsonResponse({"error": str(e)}, status=409)
 
-        # TODO: Implement POST method for updating course content.
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        payload = json.loads(request.body)
+        try:
+            serializer = serializers.UpdateCourseContentRequest.model_validate(payload)
+        except ValidationError as e:
+            return JsonResponse({"error": e.json()}, status=400)
+        except ValueError as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+        try:
+            return self._update_course_content_atomic(
+                serializer, kwargs["course_content_id"]
+            )
+        except CourseContent.DoesNotExist:
+            return JsonResponse({"error": "Course content not found"}, status=404)
+        except ValidationError as e:
+            return JsonResponse({"error": e.json()}, status=400)
+        except (IntegrityError, ValueError) as e:
+            return JsonResponse({"error": str(e)}, status=409)
+
+    @transaction.atomic
+    def _update_course_content_atomic(
+        self, serializer: serializers.UpdateCourseContentRequest, course_content_id: int
+    ) -> JsonResponse:
+        course_content = CourseContent.objects.get(id=course_content_id)
+
+        if serializer.priority is not None:
+            course_content.priority = serializer.priority
+        if serializer.waiting_period is not None:
+            course_content.waiting_period = serializer.waiting_period.to_seconds()
+
+        if serializer.is_published is not None:
+            if course_content.type == "lesson" and course_content.lesson is not None:
+                lesson = course_content.lesson
+                lesson.is_published = serializer.is_published
+                lesson.save()
+            elif course_content.type == "quiz" and course_content.quiz is not None:
+                quiz = course_content.quiz
+                quiz.is_published = serializer.is_published
+                quiz.save()
+
+        if serializer.lesson is not None and course_content.lesson is not None:
+            lesson_serializer = serializer.lesson
+            lesson = course_content.lesson
+            if lesson_serializer.title is not None:
+                lesson.title = lesson_serializer.title
+            if lesson_serializer.content is not None:
+                lesson.content = lesson_serializer.content
+            lesson.save()
+
+        if serializer.quiz is not None and course_content.quiz is not None:
+            quiz_serializer = serializer.quiz
+            quiz = course_content.quiz
+            if quiz_serializer.title is not None:
+                quiz.title = quiz_serializer.title
+            if quiz_serializer.required_score is not None:
+                quiz.required_score = quiz_serializer.required_score
+            if quiz_serializer.questions is not None:
+                # Clear existing questions and answers
+                quiz.questions.all().delete()
+                for question_data in quiz_serializer.questions:
+                    question = quiz.questions.create(
+                        text=question_data.text, priority=question_data.priority
+                    )
+                    for answer_data in question_data.answers:
+                        question.answers.create(
+                            text=answer_data.text, is_correct=answer_data.is_correct
+                        )
+            quiz.save()
+
+        course_content.save()
+        return JsonResponse(
+            serializers.CourseContentResponse.model_validate(
+                course_content
+            ).model_dump(),
+            status=200,
+        )
 
 
 @method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
@@ -157,7 +234,7 @@ class SingleCourseView(View):
         except Course.DoesNotExist:
             return JsonResponse({"error": "Course not found"}, status=404)
         except ValidationError as e:
-            return JsonResponse({"error": e.errors()}, status=400)
+            return JsonResponse({"error": e.json()}, status=400)
         except (IntegrityError, ValueError) as e:
             return JsonResponse({"error": str(e)}, status=409)
 
@@ -172,7 +249,7 @@ class SingleCourseView(View):
                 status=200,
             )
         except ValidationError as e:
-            return JsonResponse({"error": e.errors()}, status=400)
+            return JsonResponse({"error": e.json()}, status=400)
         except (IntegrityError, ValueError) as e:
             return JsonResponse({"error": str(e)}, status=409)
 
@@ -184,7 +261,7 @@ class SingleCourseView(View):
         except Course.DoesNotExist:
             return JsonResponse({"error": "Course not found"}, status=404)
         except ValidationError as e:
-            return JsonResponse({"error": e.errors()}, status=400)
+            return JsonResponse({"error": e.json()}, status=400)
         except (IntegrityError, ValueError) as e:
             return JsonResponse({"error": str(e)}, status=409)
 
@@ -220,7 +297,7 @@ class ImapConnectionView(View):
                 status=201,
             )
         except ValidationError as e:
-            return JsonResponse({"error": e.errors()}, status=400)
+            return JsonResponse({"error": e.json()}, status=400)
         except IntegrityError as e:
             return JsonResponse({"error": str(e)}, status=409)
 
@@ -262,32 +339,9 @@ class OrganizationsView(View):
                 status=201,
             )
         except ValidationError as e:
-            return JsonResponse({"error": e.errors()}, status=400)
+            return JsonResponse({"error": e.json()}, status=400)
         except IntegrityError as e:
             return JsonResponse({"error": str(e)}, status=409)
-
-
-@method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
-class LessonView(View):
-    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
-        payload = json.loads(request.body)
-        try:
-            serializer = serializers.LessonUpdate.model_validate(payload)
-            lesson = Lesson.objects.get(id=kwargs["lesson_id"])
-            if serializer.title is not None:
-                lesson.title = serializer.title
-            if serializer.content is not None:
-                lesson.content = serializer.content
-            lesson.save()
-
-            return JsonResponse(
-                {},
-                status=204,
-            )
-        except Lesson.DoesNotExist:
-            return JsonResponse({"error": "Lesson not found"}, status=404)
-        except ValidationError as e:
-            return JsonResponse({"error": e.errors()}, status=400)
 
 
 @method_decorator(is_an_organization_member(), name="post")
@@ -298,7 +352,7 @@ class UpdateSessionView(View):
             serializer = serializers.UpdateSessionRequest.model_validate(payload)
             organization_id = serializer.active_organization_id
         except ValidationError as e:
-            return JsonResponse({"error": e.errors()}, status=400)
+            return JsonResponse({"error": e.json()}, status=400)
 
         if (
             not OrganizationUser.objects.filter(
