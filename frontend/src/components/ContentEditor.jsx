@@ -20,7 +20,7 @@ import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import ImageIcon from '@mui/icons-material/Image';
 
 
-function ContentEditor({ initialContent, contentUpdateCallback }) {
+function ContentEditor({ initialContent, contentUpdateCallback, disabled = false }) {
     const editor = useEditor({
         extensions: [
             Document,
@@ -40,6 +40,7 @@ function ContentEditor({ initialContent, contentUpdateCallback }) {
             }),
             Dropcursor,],
         content: initialContent,
+        editable: !disabled,
         autofocus: true,
         onUpdate: ({ editor }) => {
             contentUpdateCallback(editor.getHTML());
@@ -54,7 +55,7 @@ function ContentEditor({ initialContent, contentUpdateCallback }) {
         <Paper elevation={2} sx={{ width: '100%' }}>
             <EditorContext.Provider value={{ editor }}>
                 {/* Material UI Toolbar */}
-                <Toolbar variant="dense" sx={{
+                {!disabled && <Toolbar variant="dense" sx={{
                     backgroundColor: 'background.nav',
                     borderBottom: '1px solid',
                     borderColor: 'divider'
@@ -111,7 +112,7 @@ function ContentEditor({ initialContent, contentUpdateCallback }) {
                         <CodeIcon />
                     </IconButton>
                     </Tooltip>
-                </Toolbar>
+                </Toolbar>}
 
                 {/* TipTap Editor wrapped in Material UI Box */}
                 <Box

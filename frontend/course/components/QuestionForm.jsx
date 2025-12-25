@@ -14,8 +14,10 @@ const QuestionForm = ({question, index, eventHandler}) => {
     const [addingOption, setAddingOption] = useState(false);
     const optionInputRef = useRef(null);
 
+    const userRole = localStorage.getItem('userRole');
+
     const editQuestion = () => {
-        if (editMode && questionText.trim() === '') {
+        if (editMode && questionText.trim() === '' || userRole === 'viewer') {
             return;
         }
         triggerUpdateEvent();
@@ -61,7 +63,7 @@ const QuestionForm = ({question, index, eventHandler}) => {
        <Box key={index} sx={{ mb: 1, p: 2, border: '1px solid', borderColor: 'grey.300', borderRadius: 1 }}>
             <Grid container spacing={2} alignItems="center">
                 <Grid size={{ xs: 12, md: 9 }}>
-                    <EditIcon sx={{borderRadius: "50%", display: "inline-block", float: "left", mr: 1, fontSize: "0.9rem", border: 1, borderColor: "grey.200", color: "grey.400", padding: "4px", cursor: "pointer", ':hover': { backgroundColor: "primary.main", color: "white", borderColor: "primary.main" } }} onClick={editQuestion}/>
+                    {userRole !== 'viewer' && <EditIcon sx={{borderRadius: "50%", display: "inline-block", float: "left", mr: 1, fontSize: "0.9rem", border: 1, borderColor: "grey.200", color: "grey.400", padding: "4px", cursor: "pointer", ':hover': { backgroundColor: "primary.main", color: "white", borderColor: "primary.main" } }} onClick={editQuestion}/>}
                     {!editMode ? (
                         <Typography onClick={editQuestion}>{index + 1}. {questionText}</Typography>
                     ) : (
@@ -77,12 +79,12 @@ const QuestionForm = ({question, index, eventHandler}) => {
                     )}
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }} sx={{ textAlign: 'right' }}>
-                    <Button variant="outlined" color="primary" sx={{ fontSize: '0.75rem', mt: 1 }} onClick={() => setAddingOption(true)} >
+                    {userRole !== 'viewer' && <><Button variant="outlined" color="primary" sx={{ fontSize: '0.75rem', mt: 1 }} onClick={() => setAddingOption(true)} >
                         <RuleIcon /><Typography variant="button" sx={{ ml: 1, fontSize: '0.75rem' }}>Add Option</Typography>
                     </Button>
                     <Button variant="outlined" onClick={deleteCallback} sx={{ ml: 1, mt: 1, fontSize: '0.75rem' }}>
                         Delete
-                    </Button>
+                    </Button></>}
                 </Grid>
                 {addingOption && (<>
                     <Grid size={{ xs: 9 }} sx={{ display: 'flex', alignItems: 'center' }}>
@@ -125,7 +127,7 @@ const QuestionForm = ({question, index, eventHandler}) => {
                                 <TableRow>
                                     <TableCell>Options</TableCell>
                                     <TableCell>Correct Answer</TableCell>
-                                    <TableCell align='right'>Actions</TableCell>
+                                    {userRole !== 'viewer' && <TableCell align='right'>Actions</TableCell>}
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -146,8 +148,8 @@ const QuestionForm = ({question, index, eventHandler}) => {
                                                 }}
                                             />
                                         )}</TableCell>
-                                        <TableCell><Switch onChange={(e)=>updateOption(idx, e.target.checked)} checked={option.isCorrect} /></TableCell>
-                                        <TableCell align='right'>
+                                        <TableCell><Switch onChange={(e)=>updateOption(idx, e.target.checked)} checked={option.isCorrect} disabled={userRole === 'viewer'} /></TableCell>
+                                        {userRole !== 'viewer' && <TableCell align='right'>
                                             <EditIcon sx={{ cursor: 'pointer', mr: 1 }} onClick={() => {
                                                 setOptions(options.map((opt, i) => i === idx ? { ...opt, editMode: !opt.editMode } : opt));
                                             }} />
@@ -155,7 +157,7 @@ const QuestionForm = ({question, index, eventHandler}) => {
                                                 const updatedOptions = options.filter((_, i) => i !== idx);
                                                 setOptions(updatedOptions);
                                             }} />
-                                        </TableCell>
+                                        </TableCell>}
                                     </TableRow>
                                 ))}
                             </TableBody>

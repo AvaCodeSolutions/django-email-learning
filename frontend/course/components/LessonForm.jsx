@@ -13,6 +13,7 @@ function LessonForm({ header, initialTitle, initialContent, onContentChange, can
     const [contentHelperText, setContentHelperText] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
 
+    const userRole = localStorage.getItem('userRole');
     const apiBaseUrl = localStorage.getItem('apiBaseUrl');
     const orgId = localStorage.getItem('activeOrganizationId');
 
@@ -126,9 +127,9 @@ function LessonForm({ header, initialTitle, initialContent, onContentChange, can
                 {errorMessage}
             </Alert>
         )}
-        <RequiredTextField value={title} label="Lesson Title" name="lesson_title" sx={{ width: '100%' }} onChange={(e) => setTitle(e.target.value)} helperText={titleHelperText}/>
+        <RequiredTextField value={title} label="Lesson Title" name="lesson_title" sx={{ width: '100%' }} onChange={(e) => setTitle(e.target.value)} helperText={titleHelperText} disabled={userRole === 'viewer'} />
         <Box sx={{ my: 2 }}>
-        <ContentEditor initialContent={content} contentUpdateCallback={handleContentChange}/>
+        <ContentEditor initialContent={content} contentUpdateCallback={handleContentChange} disabled={userRole === 'viewer'} />
         <Typography color="errorText.main" sx={{ marginTop: 1, fontSize: '0.75rem' }}>
             {contentHelperText}
         </Typography>
@@ -144,19 +145,20 @@ function LessonForm({ header, initialTitle, initialContent, onContentChange, can
             onChange={(e) => setWaitingPeriod(e.target.value)}
             sx={{ width: '200px', mr: 2 }}
             inputProps={{ min: 1 }}
+            disabled={userRole === 'viewer'}
         />
-        <Select size="small" value={waitingPeriodUnit} onChange={(e) => setWaitingPeriodUnit(e.target.value)} name="waiting_period_unit" sx={{ width: '150px' }}>
+        <Select size="small" value={waitingPeriodUnit} onChange={(e) => setWaitingPeriodUnit(e.target.value)} name="waiting_period_unit" sx={{ width: '150px' }} disabled={userRole === 'viewer'}>
             <MenuItem value="days">Days</MenuItem>
             <MenuItem value="hours">Hours</MenuItem>
         </Select>
         </Tooltip>
         <Box mt={2} textAlign="right">
         <Button variant="outlined" sx={{ mr: 1 }} onClick={cancel}>
-            Cancel
+            Back
         </Button>
-        <Button type="submit" variant="contained" onClick={() => {if(!lessonId) { addLesson(); } else { updateLesson(); }}}>
+        {userRole !== 'viewer' && <Button type="submit" variant="contained" onClick={() => {if(!lessonId) { addLesson(); } else { updateLesson(); }}}>
             Save Lesson
-        </Button>
+        </Button>}
         </Box>
         </Box>
     );

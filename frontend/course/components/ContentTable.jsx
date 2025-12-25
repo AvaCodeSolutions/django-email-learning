@@ -9,6 +9,8 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
     const apiBaseUrl = localStorage.getItem('apiBaseUrl');
     const organizationId = localStorage.getItem('activeOrganizationId');
 
+    const userRole = localStorage.getItem('userRole');
+
     const formatPeriod = (period) => {
         if (!period) {
             return "";
@@ -97,7 +99,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                 <TableCell>Waiting time</TableCell>
                 <TableCell>type</TableCell>
                 <TableCell>Published</TableCell>
-                <TableCell align='right'>Actions</TableCell>
+                {userRole !== 'viewer' && <TableCell align='right'>Actions</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -108,12 +110,12 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                             color='primary.dark' sx={{ cursor: 'pointer'}}>{content.title}</Typography></TableCell>
                         <TableCell>{formatPeriod(content.waiting_period)}</TableCell>
                         <TableCell>{content.type}</TableCell>
-                        <TableCell><Switch defaultChecked={content.is_published} onChange={() => TogglePublishContent(content.id, !content.is_published)} /></TableCell>
-                        <TableCell align='right'>
+                        <TableCell><Switch defaultChecked={content.is_published} onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} /></TableCell>
+                        {userRole !== 'viewer' && <TableCell align='right'>
                             <IconButton aria-label="delete" onClick={() => deleteContent(content.id)}>
                                 <DeleteIcon />
                             </IconButton>
-                        </TableCell>
+                        </TableCell>}
                     </TableRow>
                 ))}
             </TableBody>
