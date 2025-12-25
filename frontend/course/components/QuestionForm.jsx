@@ -7,8 +7,8 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
 
 
-const QuestionForm = ({question, index, deleteCallback}) => {
-    const [questionText, setQuestionText] = useState(question.question);
+const QuestionForm = ({question, index, eventHandler}) => {
+    const [questionText, setQuestionText] = useState(question.text);
     const [options, setOptions] = useState(question.options || []);
     const [editMode, setEditMode] = useState(false);
     const [addingOption, setAddingOption] = useState(false);
@@ -18,7 +18,17 @@ const QuestionForm = ({question, index, deleteCallback}) => {
         if (editMode && questionText.trim() === '') {
             return;
         }
+        triggerUpdateEvent();
         setEditMode(!editMode);
+    }
+
+    const triggerUpdateEvent = () => {
+        console.log("Triggering update event for question index " + index + " with options" + JSON.stringify(options));
+        eventHandler({type: 'update_question', question_index: index, question_data: {'text': questionText, 'options': options}});
+    }
+
+    const deleteCallback = () => {
+        eventHandler({type: 'delete_question', question_index: index});
     }
 
     useEffect(() => {
@@ -27,18 +37,23 @@ const QuestionForm = ({question, index, deleteCallback}) => {
         }
     }, [addingOption]);
 
+    useEffect(() => {
+        triggerUpdateEvent();
+    }, [options, questionText]);
+
     const addToOptions = (optionText) => {
         if (optionText.trim() !== "") {
-            setOptions([...options, {"optionText": optionText.trim(), "isCorrect": false}]);
+            setOptions([...options, {"optionText": optionText.trim(), "isCorrect": false, "editMode": false}]);
         }
         setAddingOption(false);
     }
 
-    const updateOption = (optionIndex, isCorrect) => {
+    const updateOption = async (optionIndex, isCorrect) => {
         const updatedOptions = options.map((option, idx) =>
             idx === optionIndex ? { ...option, isCorrect: isCorrect } : option
         );
-        setOptions(updatedOptions);
+        await setOptions(updatedOptions);
+        console.log("Updated Options:", updatedOptions);
     }
 
 
@@ -81,6 +96,9 @@ const QuestionForm = ({question, index, deleteCallback}) => {
                                 if (e.key === 'Enter') {
                                     addToOptions(e.target.value);
                                 }
+                                if (e.key === 'Escape') {
+                                    setAddingOption(false);
+                                }
                             }}
                         />
                     </Grid>
@@ -93,6 +111,9 @@ const QuestionForm = ({question, index, deleteCallback}) => {
                         }}>
                             <AddCircleOutlineIcon sx={{ mr: 1 }} />
                             Add
+                        </Button>
+                        <Button variant="outlined" sx={{ mt: 1 }} onClick={() => setAddingOption(false)}>
+                            Cancel
                         </Button>
                     </Grid>
                     </>
@@ -110,15 +131,25 @@ const QuestionForm = ({question, index, deleteCallback}) => {
                             <TableBody>
                                 {options.map((option, idx) => (
                                     <TableRow key={idx}>
-                                        <TableCell>{option.optionText}</TableCell>
-                                        <TableCell><Switch onChange={(e)=>updateOption(idx, e.target.checked)} /></TableCell>
+                                        <TableCell>{!option.editMode ? <Typography onClick={() => {
+                                            setOptions(options.map((opt, i) => i === idx ? { ...opt, editMode: !opt.editMode } : opt));
+                                        }}>{option.optionText}</Typography> : (
+                                            <TextField
+                                                fullWidth
+                                                variant="outlined"
+                                                defaultValue={option.optionText}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        const updatedOptions = options.map((opt, i) => i === idx ? { ...opt, optionText: e.target.value, editMode: false } : opt);
+                                                        setOptions(updatedOptions);
+                                                    }
+                                                }}
+                                            />
+                                        )}</TableCell>
+                                        <TableCell><Switch onChange={(e)=>updateOption(idx, e.target.checked)} checked={option.isCorrect} /></TableCell>
                                         <TableCell align='right'>
                                             <EditIcon sx={{ cursor: 'pointer', mr: 1 }} onClick={() => {
-                                                const newOptionText = prompt("Edit option text:", option.optionText);
-                                                if (newOptionText !== null && newOptionText.trim() !== "") {
-                                                    const updatedOptions = options.map((opt, i) => i === idx ? { ...opt, optionText: newOptionText.trim() } : opt);
-                                                    setOptions(updatedOptions);
-                                                }
+                                                setOptions(options.map((opt, i) => i === idx ? { ...opt, editMode: !opt.editMode } : opt));
                                             }} />
                                             <ClearIcon sx={{ cursor: 'pointer' }} onClick={() => {
                                                 const updatedOptions = options.filter((_, i) => i !== idx);

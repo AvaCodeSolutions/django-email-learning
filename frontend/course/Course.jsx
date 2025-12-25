@@ -30,7 +30,7 @@ function Course() {
     }
 
     const handleClose = (event, reason) => {
-        if (reason !== "backdropClick") {
+        if (reason !== "backdropClick" && reason !== "escapeKeyDown") {
             setDialogOpen(false);
         }
     }
@@ -52,6 +52,21 @@ function Course() {
         }
     }
 
+    const translateOptions = (options) => {
+        return options.map((opt) => ({
+            optionText: opt.text,
+            isCorrect: opt.is_correct,
+            editMode: false
+        }));
+    }
+
+    const translateQuestions = (questions) => {
+        return questions.map((q) => ({
+            text: q.text,
+            options: translateOptions(q.answers),
+        }));
+    }
+
     const tableEventHandler = async (event) => {
         console.log("Event triggered from ContentTable", event);
         if (event.type === 'content_loaded') {
@@ -70,7 +85,23 @@ function Course() {
                             cancelCallback={() => {setLessonCache(""); setDialogOpen(false);}}
                             successCallback={resetDialog}
                             courseId={course_id}
-                            lessonId={content.lesson.id} />);
+                            lessonId={content.lesson.id}
+                            initialWaitingPeriod={content.waiting_period}
+                            contentId={content.id} />);
+            } else if (content.type == 'quiz') {
+                console.log("Opening quiz editor for content:", content);
+                setDialogOpen(true);
+                setDialogContent(<QuizForm
+                                cancelCallback={() => setDialogOpen(false)}
+                                successCallback={resetDialog}
+                                courseId={course_id}
+                                quizId={content.quiz.id}
+                                contentId={content.id}
+                                initialTitle={content.quiz.title}
+                                initialRequiredScore={content.quiz.required_score}
+                                initialQuestions={translateQuestions(content.quiz.questions)}
+                                initialWaitingPeriod={content.waiting_period}
+                                 />);
             }
         }
     }
@@ -108,7 +139,7 @@ function Course() {
                 </Box>
             </Grid>
 
-            <Dialog open={dialogOpen} onClose={handleClose} fullWidth maxWidth="lg" sx={{ md: { width: '80%' }, lg: { maxWidth: '70%' } }}>
+            <Dialog open={dialogOpen} onClose={handleClose} fullWidth maxWidth="lg" sx={{ xs: { width: '100%' }, md: { width: '80%' }, lg: { maxWidth: '70%' } }}>
                 {dialogContent}
             </Dialog>
         </Base>

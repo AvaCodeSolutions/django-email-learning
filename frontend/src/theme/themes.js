@@ -1,6 +1,7 @@
 import { createTheme } from '@mui/material/styles';
 import { blueGrey } from '@mui/material/colors';
 import { Margin, Padding } from '@mui/icons-material';
+import { Paper } from '@mui/material';
 
 const defaultOptions = {
   components: {

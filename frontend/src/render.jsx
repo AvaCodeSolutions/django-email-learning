@@ -6,7 +6,7 @@ import './index.css'
 
 
 function render({children}) {
-    const storedTheme = localStorage.getItem('theme');
+    let storedTheme = localStorage.getItem('theme');
     if (!storedTheme) {
         localStorage.setItem('theme', 'light');
         storedTheme = 'light';

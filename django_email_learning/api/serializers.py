@@ -1,6 +1,12 @@
-from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 from typing import Optional, Literal, Any
-from django.core.exceptions import ValidationError
 from django_email_learning.models import (
     Organization,
     ImapConnection,
@@ -195,7 +201,7 @@ class AnswerCreate(BaseModel):
     is_correct: bool = Field(examples=[True])
 
 
-class AnswerResponse(BaseModel):
+class AnswerObject(BaseModel):
     id: int
     text: str
     is_correct: bool
@@ -215,11 +221,11 @@ class QuestionCreate(BaseModel):
     ) -> list[AnswerCreate]:
         correct_answers = [answer for answer in answers if answer.is_correct]
         if not correct_answers:
-            raise ValidationError("At least one answer must be marked as correct.")
+            raise ValueError("At least one answer must be marked as correct.")
         return answers
 
 
-class QuestionResponse(BaseModel):
+class QuestionObject(BaseModel):
     id: int
     text: str
     priority: int
@@ -228,11 +234,18 @@ class QuestionResponse(BaseModel):
     @field_serializer("answers")
     def serialize_answers(self, answers: Any) -> list[dict]:
         return [
-            AnswerResponse.model_validate(answer).model_dump()
-            for answer in answers.all()
+            AnswerObject.model_validate(answer).model_dump() for answer in answers.all()
         ]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UpdateQuiz(BaseModel):
+    questions: Optional[list[QuestionCreate]] = Field(min_length=1)
+    title: Optional[str] = None
+    required_score: Optional[int] = Field(ge=0, examples=[80], default=None)
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class QuizCreate(BaseModel):
@@ -252,7 +265,7 @@ class QuizResponse(BaseModel):
     @field_serializer("questions")
     def serialize_questions(self, questions: Any) -> list[dict]:
         return [
-            QuestionResponse.model_validate(question).model_dump()
+            QuestionObject.model_validate(question).model_dump()
             for question in questions.all()
         ]
 
@@ -343,6 +356,32 @@ class CreateCourseContentRequest(BaseModel):
         return course_content
 
 
+class UpdateCourseContentRequest(BaseModel):
+    priority: Optional[int] = Field(gt=0, examples=[1], default=None)
+    waiting_period: Optional[WaitingPeriod] = None
+    lesson: Optional[LessonUpdate] = None
+    quiz: Optional[UpdateQuiz] = None
+    is_published: Optional[bool] = None
+
+    model_config = ConfigDict(extra="forbid")
+
+    @model_validator(mode="after")
+    def check_at_least_one(self) -> "UpdateCourseContentRequest":
+        # Check if all fields are None
+        fields = [
+            self.priority,
+            self.waiting_period,
+            self.lesson,
+            self.quiz,
+            self.is_published,
+        ]
+        if not any(f is not None for f in fields):
+            raise ValueError(
+                "At least one of 'priority', 'waiting_period', 'lesson', 'quiz', or 'is_published' must be provided."
+            )
+        return self
+
+
 class CourseContentResponse(BaseModel):
     id: int
     priority: int
@@ -363,6 +402,7 @@ class CourseContentSummaryResponse(BaseModel):
     title: str
     priority: int
     waiting_period: int
+    is_published: bool
     type: str
 
     @field_serializer("waiting_period")
