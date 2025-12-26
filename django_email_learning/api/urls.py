@@ -6,6 +6,7 @@ from django_email_learning.api.views import (
     OrganizationsView,
     SingleCourseView,
     CourseContentView,
+    ReorderCourseContentView,
     SingleCourseContentView,
     UpdateSessionView,
 )
@@ -32,6 +33,11 @@ urlpatterns = [
         "organizations/<int:organization_id>/courses/<int:course_id>/contents/",
         CourseContentView.as_view(),
         name="course_content_view",
+    ),
+    path(
+        "organizations/<int:organization_id>/courses/<int:course_id>/contents/reorder/",
+        ReorderCourseContentView.as_view(),
+        name="reorder_course_contents_view",
     ),
     path(
         "organizations/<int:organization_id>/courses/<int:course_id>/contents/<int:course_content_id>/",

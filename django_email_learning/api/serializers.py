@@ -410,3 +410,7 @@ class CourseContentSummaryResponse(BaseModel):
         return WaitingPeriod.from_seconds(waiting_period).model_dump()
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ReorderCourseContentsRequest(BaseModel):
+    ordered_content_ids: list[int] = Field(min_length=2, examples=[[3, 1, 2]])

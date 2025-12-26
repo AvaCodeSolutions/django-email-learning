@@ -109,6 +109,52 @@ class CourseContentView(View):
             return JsonResponse({"error": "Course not found"}, status=404)
 
 
+@method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
+class ReorderCourseContentView(View):
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        payload = json.loads(request.body)
+        try:
+            serializer = serializers.ReorderCourseContentsRequest.model_validate(
+                payload
+            )
+            course = Course.objects.get(id=kwargs["course_id"])
+            course_contents = {
+                content.id: content for content in course.coursecontent_set.all()
+            }
+
+            with transaction.atomic():
+                # Collect valid contents and set temporary negative priorities to avoid conflicts
+                contents_to_update = []
+                for index, content_id in enumerate(serializer.ordered_content_ids):
+                    if content_id in course_contents:
+                        content = course_contents[content_id]
+                        content.priority = -(
+                            index + 1
+                        )  # Negative priority to avoid unique constraint conflicts
+                        contents_to_update.append(content)
+
+                # Bulk update with negative priorities first
+                if contents_to_update:
+                    CourseContent.objects.bulk_update(contents_to_update, ["priority"])
+
+                    # Now set the final positive priorities
+                    for index, content in enumerate(contents_to_update):
+                        content.priority = index + 1
+
+                    # Final bulk update with correct priorities
+                    CourseContent.objects.bulk_update(contents_to_update, ["priority"])
+
+            return JsonResponse(
+                {"message": "Course contents reordered successfully"}, status=200
+            )
+        except Course.DoesNotExist:
+            return JsonResponse({"error": "Course not found"}, status=404)
+        except ValidationError as e:
+            return JsonResponse({"error": e.json()}, status=400)
+        except (IntegrityError, ValueError) as e:
+            return JsonResponse({"error": str(e)}, status=409)
+
+
 @method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
 @method_decorator(accessible_for(roles={"admin", "editor"}), name="delete")
 @method_decorator(accessible_for(roles={"admin", "editor"}), name="post")

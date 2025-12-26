@@ -105,6 +105,26 @@ function Course() {
                                  />);
             }
         }
+        if (event.type === 'content_reordered') {
+            console.log("Reordering contents with new order:", event.new_order);
+            fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${course_id}/contents/reorder/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    ordered_content_ids: event.new_order
+                })
+            }).then(response => {
+                if (response.ok) {
+                    console.log('Contents reordered successfully');
+                } else {
+                    console.error('Error reordering contents:', response.statusText);
+                }
+            })
+            .catch(error => console.error('Error reordering contents:', error));
+        }
     }
 
     return (

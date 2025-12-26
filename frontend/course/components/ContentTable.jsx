@@ -2,9 +2,18 @@ import { IconButton, Switch, TableContainer, Table, TableHead, TableRow, TableBo
 import { useState, useEffect } from 'react';
 import { getCookie } from '../../src/utils.js';
 import DeleteIcon from '@mui/icons-material/Delete';
+import DragHandleIcon from '@mui/icons-material/DragHandle';
+
 
 const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
     const [contentList, setContentList] = useState([]);
+    const [isDragging, setIsDragging] = useState(false);
+    const [draggedContentId, setDraggedContentId] = useState(null);
+
+    const startDrag = (contentId) => {
+        setIsDragging(true);
+        setDraggedContentId(contentId);
+    }
 
     const apiBaseUrl = localStorage.getItem('apiBaseUrl');
     const organizationId = localStorage.getItem('activeOrganizationId');
@@ -25,6 +34,17 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
     useEffect(() => {
         getContets();
     }, [loaded]);
+
+    useEffect(() => {
+        const onPointerUp = () => {
+            console.log('Pointer released anywhere');
+            setIsDragging(false);
+            setDraggedContentId(null);
+        };
+
+        window.addEventListener('pointerup', onPointerUp);
+        return () => window.removeEventListener('pointerup', onPointerUp);
+    }, []);
 
     const deleteContent = (contentId) => {
         fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${contentId}/`, {
@@ -95,6 +115,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
            <Table sx={{ width: "100%" }} aria-label="Contents">
             <TableHead>
               <TableRow>
+                { userRole !== 'viewer' && <TableCell sx={{ width: '40px', boxSizing: 'border-box' }}></TableCell>}
                 <TableCell>Title</TableCell>
                 <TableCell>Waiting time</TableCell>
                 <TableCell>type</TableCell>
@@ -104,7 +125,24 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
             </TableHead>
             <TableBody>
                 {contentList.map((content) => (
-                    <TableRow key={content.id}>
+                    <TableRow
+                        key={content.id} {...(isDragging && draggedContentId === content.id && { sx: { backgroundColor: 'background.main', boxShadow: 2 } })}
+                        onMouseOver={() => {
+                            if (isDragging && draggedContentId !== content.id) {
+                                const draggedIndex = contentList.findIndex(c => c.id === draggedContentId);
+                                const hoverIndex = contentList.findIndex(c => c.id === content.id);
+                                const newContentList = [...contentList];
+                                const [draggedItem] = newContentList.splice(draggedIndex, 1);
+                                newContentList.splice(hoverIndex, 0, draggedItem);
+                                setContentList(newContentList);
+                                let event = {type: 'content_reordered', new_order: newContentList.map(content => content.id)};
+                                console.log('Dispatching event:', event);
+                                eventHandler(event);
+                            }
+                        }}>
+                         { userRole !== 'viewer' && <TableCell sx={{ cursor: 'grab', width: '40px', padding: '8px 0', textAlign: 'center' }}><DragHandleIcon
+                        onMouseDown={() => startDrag(content.id)}
+                        /></TableCell>}
                         <TableCell><Typography
                             onClick={() => {let event = {type: 'content_clicked', content_id: content.id}; eventHandler(event);}}
                             color='primary.dark' sx={{ cursor: 'pointer'}}>{content.title}</Typography></TableCell>
