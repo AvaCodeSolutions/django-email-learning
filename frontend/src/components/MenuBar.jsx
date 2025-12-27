@@ -86,7 +86,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     }
 
     pages.push({ name: 'Course Management', icon: <SchoolIcon fontSize="small" />, href: platformBaseUrl + '/courses/' });
-    pages.push({ name: 'Users', icon: <PeopleIcon fontSize="small" />, href: platformBaseUrl + '/users/' });
+    pages.push({ name: 'Learners', icon: <PeopleIcon fontSize="small" />, href: platformBaseUrl + '/users/' });
     pages.push({ name: 'Analytics', icon: <BarChartIcon fontSize="small" />, href: platformBaseUrl + '/analytics/' });
 
 
@@ -95,48 +95,10 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     };
 
     return (
-
-    // return (<AppBar sx={{boxShadow: 0, backgroundColor: 'white', borderBottom: '1px solid', borderColor: 'primary.main'}}>
-    //     <Toolbar>
-    //         <Box ml={2}>
-    //         <img src={logoUrl} alt="Logo" style={{ height: 36 }} />
-    //         </Box>
-    //         <Typography variant="body1" component="span" sx={{ flexGrow: 1, ml: 2, color: 'primary.dark' }}>
-    //         Email Learning
-    //         {
-    //             showOrganizationSwitcher &&  organizations.length > 0 && <OrganizationsSelect organizations={organizations} activeOrganizationId={activeOrganizationId} changeOrganizationCallback={changeOrganizationCallback} sx={{ display: { xs: 'none', md: 'inline-grid' } }} />
-    //         }
-    //         </Typography>
-    //         <ThemeSwitcher />
-    //         <Box sx={{display: { xs: 'flex', md: 'none'}, right: 0, position: "absolute" }}>
-    //         <IconButton
-    //             size="large"
-    //             aria-label="account of current user"
-    //             aria-controls="menu-appbar"
-    //             aria-haspopup="true"
-    //             onClick={toggleMenuDrawer(true)}
-    //             color="primary"
-    //             >
-    //             <MenuIcon />
-    //         </IconButton>
-    //         </Box>
-
-    //         <Box sx={{ float: "right", display: { xs: 'none', md: 'flex' } }}>
-    //             {pages.map((page) => (
-    //             <Button
-    //                 key={page.name}
-    //                 href={page.href}
-    //                 sx={{ color: 'black', display: 'block', textTransform: 'none' }}
-    //             >
-    //                 {page.name}
-    //             </Button>
-    //             ))}
-    //         </Box>
-    //     </Toolbar>
         <Box component="nav"sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
         <AppBar sx={{boxShadow: 0, backgroundColor: 'background.nav', borderBottom: {xs: '1px solid', md: 'none'}, borderColor: {xs: 'primary.main', md: 'none'} }}>
-            <Box my={1} ml={5}>
-                <img src={logoHorizontalUrl} alt="Logo" style={{ height: 57 }} />
+            <Box my={1} ml={5} sx={{ height: {xs: "57px", md: "30px"}}}>
+                <img src={logoHorizontalUrl} alt="Logo" style={{maxHeight: "57px", height: "100%"}} />
             </Box>
             <Box sx={{display: { xs: 'flex'}, right: 0, position: "absolute" }}>
                 <ThemeSwitcher />

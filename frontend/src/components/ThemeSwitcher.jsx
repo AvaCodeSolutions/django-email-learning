@@ -72,7 +72,7 @@ const ThemeSwitcher = () => {
   };
 
   return (
-    <Box sx={{ pt: '19px' }}>
+    <Box sx={{ pt: {xs: '19px', md: '10px'} }}>
       <DayNightSwitch checked={!isLightTheme} onChange={toggleTheme}  />
     </Box>
   );
