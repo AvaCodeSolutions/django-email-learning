@@ -147,7 +147,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                             onClick={() => {let event = {type: 'content_clicked', content_id: content.id}; eventHandler(event);}}
                             color='primary.dark' sx={{ cursor: 'pointer'}}>{content.title}</Typography></TableCell>
                         <TableCell>{formatPeriod(content.waiting_period)}</TableCell>
-                        <TableCell>{content.type}</TableCell>
+                        <TableCell>{content.type.charAt(0).toUpperCase() + content.type.slice(1)}</TableCell>
                         <TableCell><Switch defaultChecked={content.is_published} onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} /></TableCell>
                         {userRole !== 'viewer' && <TableCell align='right'>
                             <IconButton aria-label="delete" onClick={() => deleteContent(content.id)}>
