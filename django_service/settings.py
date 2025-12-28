@@ -98,6 +98,10 @@ DATABASES = {
     }
 }
 
+DJANGO_EMAIL_LEARNING = {
+    "ENCRYPTION_SECRET_KEY": "your-very-secure-and-random-key",
+}
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
