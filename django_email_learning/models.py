@@ -5,6 +5,7 @@ from typing import Any
 from django.conf import settings
 from django.db import models
 from django.core.validators import MaxValueValidator
+from django.core.exceptions import ImproperlyConfigured
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
@@ -79,7 +80,13 @@ class ImapConnection(models.Model):
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(), length=32, salt=FIXED_SALT, iterations=100000
         )
-        key = base64.urlsafe_b64encode(kdf.derive(settings.SECRET_KEY.encode()))
+        try:
+            secret = settings.DJANGO_EMAIL_LEARNING["ENCRYPTION_SECRET_KEY"]
+        except (AttributeError, KeyError):
+            raise ImproperlyConfigured(
+                "DJANGO_EMAIL_LEARNING['ENCRYPTION_SECRET_KEY'] must be set in settings.py"
+            )
+        key = base64.urlsafe_b64encode(kdf.derive(secret.encode()))
         return Fernet(key)
 
     def _encrypt_password(self, password: str) -> str:

@@ -1,4 +1,5 @@
 from django_email_learning.models import ImapConnection
+from django.core.exceptions import ImproperlyConfigured
 import pytest
 
 
@@ -39,3 +40,29 @@ def test_imap_invalid_server_validation(invalid_server, imap_connection):
 def test_imap_valid_server_validation(valid_server, imap_connection):
     imap_connection.server = valid_server
     imap_connection.full_clean()  # Should not raise
+
+
+def test_raise_improperly_configured_if_django_email_learning_config_missing(
+    settings, db
+):
+    delattr(settings, "DJANGO_EMAIL_LEARNING")
+    with pytest.raises(ImproperlyConfigured):
+        ImapConnection.objects.create(
+            server="imap.example.com",
+            port=993,
+            email="user@example.com",
+            password="my_secret_password",
+            organization_id=1,
+        )
+
+
+def test_raise_improperly_configured_if_encryption_key_missing(settings, db):
+    settings.DJANGO_EMAIL_LEARNING = {}
+    with pytest.raises(ImproperlyConfigured):
+        ImapConnection.objects.create(
+            server="imap.example.com",
+            port=993,
+            email="user@example.com",
+            password="my_secret_password",
+            organization_id=1,
+        )
