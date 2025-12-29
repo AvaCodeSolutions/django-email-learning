@@ -4,7 +4,7 @@ import pytest
 
 
 def get_url() -> str:
-    return reverse("django_email_learning:api:organizations_view")
+    return reverse("django_email_learning:api_platform:organizations_view")
 
 
 @pytest.fixture(autouse=True)

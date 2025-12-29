@@ -1,6 +1,6 @@
 from django.urls import path
 from django.views.defaults import page_not_found
-from django_email_learning.api.views import (
+from django_email_learning.platform.api.views import (
     CourseView,
     ImapConnectionView,
     OrganizationsView,

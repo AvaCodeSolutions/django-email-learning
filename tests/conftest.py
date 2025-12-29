@@ -10,6 +10,11 @@ from django_email_learning.models import (
     Learner,
     Enrollment,
     CourseContent,
+    Question,
+    Answer,
+    EnrollmentStatus,
+    ContentDelivery,
+    DeliverySchedule,
 )
 import pytest
 
@@ -176,3 +181,45 @@ def course_quiz_content(db, course, quiz) -> CourseContent:
         course=course, priority=2, type="quiz", quiz=quiz, waiting_period=3600
     )
     return content
+
+
+@pytest.fixture
+def quiz_with_questions(db, quiz) -> Quiz:
+    questions = []
+    question = Question.objects.create(
+        quiz=quiz,
+        text="Question?",
+        priority=1,
+    )
+    for i in range(4):
+        Answer.objects.create(
+            question=question,
+            text=f"Answer {i+1}",
+            is_correct=(i == 0),  # First answer is correct
+        )
+    questions.append(question)
+    quiz.is_published = True
+    quiz.save()
+    return quiz
+
+
+@pytest.fixture
+def active_enrollment(db, learner, course):
+    enrollment = Enrollment.objects.create(
+        learner=learner, course=course, status=EnrollmentStatus.ACTIVE
+    )
+    return enrollment
+
+
+@pytest.fixture
+def content_delivery(db, active_enrollment, course_quiz_content, quiz_with_questions):
+    course_quiz_content.quiz = quiz_with_questions
+    course_quiz_content.save()
+
+    delivery = ContentDelivery.objects.create(
+        enrollment=active_enrollment,
+        course_content_id=course_quiz_content.id,
+        hash_value="testhash",
+    )
+    delivery.delivery_schedules.add(DeliverySchedule.objects.create(is_delivered=True))
+    return delivery

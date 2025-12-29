@@ -8,7 +8,7 @@ from django.db import models, transaction
 
 from pydantic import ValidationError
 
-from django_email_learning.api import serializers
+from django_email_learning.platform.api import serializers
 from django_email_learning.models import (
     Course,
     CourseContent,

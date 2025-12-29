@@ -10,7 +10,7 @@ LESSON_CONTENT = "Welcome to the Python course!"
 
 def get_url() -> str:
     return reverse(
-        "django_email_learning:api:course_content_view",
+        "django_email_learning:api_platform:course_content_view",
         kwargs={"organization_id": 1, "course_id": 1},
     )
 
@@ -19,7 +19,7 @@ def single_content_url(
     course_content_id: int, course_id: int, organization_id: int = 1
 ) -> str:
     return reverse(
-        "django_email_learning:api:single_course_content_view",
+        "django_email_learning:api_platform:single_course_content_view",
         kwargs={
             "organization_id": organization_id,
             "course_id": course_id,
@@ -44,7 +44,7 @@ def valid_create_course_payload(
 @pytest.fixture()
 def create_course(superadmin_client):
     url = reverse(
-        "django_email_learning:api:course_view",
+        "django_email_learning:api_platform:course_view",
         kwargs={"organization_id": 1},
     )
     payload = valid_create_course_payload()
@@ -381,7 +381,7 @@ def test_delete_course_content(superadmin_client, create_course):
 
     # Delete the created course content
     delete_url = reverse(
-        "django_email_learning:api:single_course_content_view",
+        "django_email_learning:api_platform:single_course_content_view",
         kwargs={
             "organization_id": 1,
             "course_id": 1,
