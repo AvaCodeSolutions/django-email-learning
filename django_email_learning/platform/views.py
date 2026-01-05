@@ -31,7 +31,7 @@ class BasePlatformView(TemplateView):
                 organization_id=active_organization_id,
             ).role
         return {
-            "api_base_url": reverse("django_email_learning:api:root")[:-1],
+            "api_base_url": reverse("django_email_learning:api_platform:root")[:-1],
             "platform_base_url": reverse("django_email_learning:platform:root")[:-1],
             "active_organization_id": active_organization_id,
             "user_role": role,

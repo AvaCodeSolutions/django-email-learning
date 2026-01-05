@@ -8,7 +8,7 @@ import pytest
 
 def get_url(organization_id: int) -> str:
     return reverse(
-        "django_email_learning:api:course_view",
+        "django_email_learning:api_platform:course_view",
         kwargs={"organization_id": organization_id},
     )
 
@@ -216,7 +216,7 @@ def test_update_course_success(superadmin_client):
     # Now, update the created course
     update_payload = valid_update_course_payload()
     update_url = reverse(
-        "django_email_learning:api:single_course_view",
+        "django_email_learning:api_platform:single_course_view",
         kwargs={"organization_id": 1, "course_id": course_id},
     )
     update_response = superadmin_client.post(
@@ -244,7 +244,7 @@ def test_slug_change_not_allowed(superadmin_client):
     )
     update_payload["slug"] = "new-slug"  # Attempt to change slug
     update_url = reverse(
-        "django_email_learning:api:single_course_view",
+        "django_email_learning:api_platform:single_course_view",
         kwargs={"organization_id": 1, "course_id": course_id},
     )
     update_response = superadmin_client.post(
@@ -257,7 +257,7 @@ def test_slug_change_not_allowed(superadmin_client):
 def test_update_course_not_found(superadmin_client):
     update_payload = valid_update_course_payload()
     update_url = reverse(
-        "django_email_learning:api:single_course_view",
+        "django_email_learning:api_platform:single_course_view",
         kwargs={"organization_id": 1, "course_id": 9999},
     )
     update_response = superadmin_client.post(
@@ -283,7 +283,7 @@ def test_update_course_reset_imap_connection_conflict(sample_course, superadmin_
         imap_connection_id=1, reset_imap_connection=True
     )
     update_url = reverse(
-        "django_email_learning:api:single_course_view",
+        "django_email_learning:api_platform:single_course_view",
         kwargs={"organization_id": 1, "course_id": course_id},
     )
     update_response = superadmin_client.post(
@@ -299,7 +299,7 @@ def test_update_course_reset_imap_connection_conflict(sample_course, superadmin_
 
 def test_viewer_not_allowed_to_delete_course(sample_course, viewer_client):
     url = reverse(
-        "django_email_learning:api:single_course_view",
+        "django_email_learning:api_platform:single_course_view",
         kwargs={"organization_id": 1, "course_id": sample_course["id"]},
     )
     delete_response = viewer_client.delete(url)
@@ -312,7 +312,7 @@ def test_editor_can_delete_course(sample_course, editor_client):
     assert len(courses.json().get("courses")) == 1
 
     url = reverse(
-        "django_email_learning:api:single_course_view",
+        "django_email_learning:api_platform:single_course_view",
         kwargs={"organization_id": 1, "course_id": sample_course["id"]},
     )
     delete_response = editor_client.delete(url)

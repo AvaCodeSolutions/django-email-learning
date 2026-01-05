@@ -10,7 +10,9 @@ urlpatterns = [
     path("organizations/", Organizations.as_view(), name="organizations_view"),
     path(
         "",
-        RedirectView.as_view(pattern_name="email_learning:platform:courses_view"),
+        RedirectView.as_view(
+            pattern_name="django_email_learning:platform:courses_view"
+        ),
         name="root",
     ),
 ]

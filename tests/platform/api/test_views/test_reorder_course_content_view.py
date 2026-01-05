@@ -10,7 +10,7 @@ def test_reorder_course_contents_view_success(
     course_quiz_content,
 ):
     url = reverse(
-        "django_email_learning:api:reorder_course_contents_view",
+        "django_email_learning:api_platform:reorder_course_contents_view",
         kwargs={"organization_id": course.organization_id, "course_id": course.id},
     )
 
@@ -43,7 +43,7 @@ def test_reorder_course_contents_view_invalid_request(
     course_quiz_content,
 ):
     url = reverse(
-        "django_email_learning:api:reorder_course_contents_view",
+        "django_email_learning:api_platform:reorder_course_contents_view",
         kwargs={"organization_id": course.organization_id, "course_id": course.id},
     )
 
@@ -65,7 +65,7 @@ def test_viewer_cannot_reorder_course_contents(
     course_quiz_content,
 ):
     url = reverse(
-        "django_email_learning:api:reorder_course_contents_view",
+        "django_email_learning:api_platform:reorder_course_contents_view",
         kwargs={"organization_id": course.organization_id, "course_id": course.id},
     )
 
@@ -84,7 +84,7 @@ def test_reorder_course_contents_view_nonexistent_course(
     superadmin_client,
 ):
     url = reverse(
-        "django_email_learning:api:reorder_course_contents_view",
+        "django_email_learning:api_platform:reorder_course_contents_view",
         kwargs={"organization_id": 1, "course_id": 9999},
     )
 
@@ -106,7 +106,7 @@ def test_anonymous_user_cannot_reorder_course_contents(
     course_quiz_content,
 ):
     url = reverse(
-        "django_email_learning:api:reorder_course_contents_view",
+        "django_email_learning:api_platform:reorder_course_contents_view",
         kwargs={"organization_id": course.organization_id, "course_id": course.id},
     )
 

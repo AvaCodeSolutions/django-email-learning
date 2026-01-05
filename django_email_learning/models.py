@@ -1,6 +1,8 @@
 import base64
 import ipaddress
 import re
+import uuid
+from enum import StrEnum
 from typing import Any
 from django.conf import settings
 from django.db import models
@@ -309,12 +311,25 @@ class Learner(models.Model):
         super().save(*args, **kwargs)
 
 
+class EnrollmentStatus(StrEnum):
+    UNVERIFIED = "unverified"
+    ACTIVE = "active"
+    COMPLETED = "completed"
+    DEACTIVATED = "deactivated"
+
+
 class Enrollment(models.Model):
     state_transitions = {
-        "unverified": ["active", "deactivated"],
-        "active": ["completed", "deactivated"],
-        "completed": [],
-        "deactivated": [],
+        EnrollmentStatus.UNVERIFIED: [
+            EnrollmentStatus.ACTIVE,
+            EnrollmentStatus.DEACTIVATED,
+        ],
+        EnrollmentStatus.ACTIVE: [
+            EnrollmentStatus.COMPLETED,
+            EnrollmentStatus.DEACTIVATED,
+        ],
+        EnrollmentStatus.COMPLETED: [],
+        EnrollmentStatus.DEACTIVATED: [],
     }
     learner = models.ForeignKey(Learner, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
@@ -323,12 +338,12 @@ class Enrollment(models.Model):
     status = models.CharField(
         max_length=50,
         choices=[
-            ("unverified", "Unverified"),
-            ("active", "Active"),
-            ("completed", "Completed"),
-            ("deactivated", "Deactivated"),
+            (EnrollmentStatus.UNVERIFIED, "Unverified"),
+            (EnrollmentStatus.ACTIVE, "Active"),
+            (EnrollmentStatus.COMPLETED, "Completed"),
+            (EnrollmentStatus.DEACTIVATED, "Deactivated"),
         ],
-        default="unverified",
+        default=EnrollmentStatus.UNVERIFIED,
     )
     deactivation_reason = models.CharField(
         null=True,
@@ -346,6 +361,7 @@ class Enrollment(models.Model):
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         if self.pk:
             old_status = Enrollment.objects.get(pk=self.pk).status
+            old_status = EnrollmentStatus(old_status)
             if old_status != self.status:
                 allowed_transitions = self.state_transitions.get(old_status, [])
                 if self.status not in allowed_transitions:
@@ -363,6 +379,9 @@ class Enrollment(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
+    def __str__(self) -> str:
+        return f"{self.learner.email} - {self.course.title} ({self.status})"
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -373,35 +392,60 @@ class Enrollment(models.Model):
         ]
 
 
-class EventTimestamp(models.Model):
+class DeliverySchedule(models.Model):
     time = models.DateTimeField(default=timezone.now, db_index=True)
+    is_delivered = models.BooleanField(default=False, db_index=True)
+
+    def __str__(self) -> str:
+        return f"Delivery at {self.time} - Delivered: {self.is_delivered}"
 
 
-class SentItem(models.Model):
+class ContentDelivery(models.Model):
     enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE)
     course_content = models.ForeignKey(CourseContent, on_delete=models.CASCADE)
-    send_events = models.ManyToManyField(EventTimestamp)
-    times_sent = models.IntegerField(default=1)
+    delivery_schedules = models.ManyToManyField(DeliverySchedule)
+    hash_value = models.CharField(max_length=64, null=True, blank=True)
 
     class Meta:
         unique_together = [["enrollment", "course_content"]]
 
+    @property
+    def times_delivered(self) -> int:
+        return self.delivery_schedules.filter(is_delivered=True).count()
+
+    def update_hash(self) -> None:
+        self.hash_value = (
+            base64.urlsafe_b64encode(uuid.uuid4().bytes).decode().rstrip("=")
+        )
+        self.save()
+
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self.full_clean()
+        if not self.hash_value:
+            self.hash_value = (
+                base64.urlsafe_b64encode(uuid.uuid4().bytes).decode().rstrip("=")
+            )
         super().save(*args, **kwargs)
-        if not self.send_events.exists():
-            timestamp = EventTimestamp.objects.create()
-            self.send_events.add(timestamp)
+
+    def __str__(self) -> str:
+        return f"Delivery of {self.course_content.title} to {self.enrollment.learner.email}"
 
 
 class QuizSubmission(models.Model):
-    sent_item = models.ForeignKey(SentItem, on_delete=models.CASCADE)
+    delivery = models.ForeignKey(ContentDelivery, on_delete=models.CASCADE)
     score = models.IntegerField()
     is_passed = models.BooleanField()
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
-        if self.sent_item.course_content.type != "quiz":
+        if self.delivery.course_content.type != "quiz":
             raise ValidationError("Sent item must be associated with a quiz content.")
+        already_submitted = QuizSubmission.objects.filter(
+            delivery=self.delivery
+        ).count()
+        if already_submitted >= self.delivery.times_delivered:
+            raise ValidationError(
+                "Quiz submission count exceeds the number of times the quiz was sent."
+            )
         self.full_clean()
         super().save(*args, **kwargs)
