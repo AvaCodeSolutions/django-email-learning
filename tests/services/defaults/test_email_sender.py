@@ -1,4 +1,4 @@
-from django_email_learning.services.deafults.email_sender import DjangoEmailSender
+from django_email_learning.services.defaults.email_sender import DjangoEmailSender
 from django.core.mail import EmailMultiAlternatives
 from unittest.mock import Mock
 import pytest

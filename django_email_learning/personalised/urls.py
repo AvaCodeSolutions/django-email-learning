@@ -5,4 +5,7 @@ app_name = "email_learning"
 
 urlpatterns = [
     path("quiz/", QuizPublicView.as_view(), name="quiz_public_view"),
+    path(
+        "verify-enrollment/", QuizPublicView.as_view(), name="verify_enrollment"
+    ),  # TODO: Replace with actual view
 ]

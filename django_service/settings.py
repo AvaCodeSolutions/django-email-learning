@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,6 +35,7 @@ ALLOWED_HOSTS: list[str] = []
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
+    "django.contrib.sites",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
@@ -65,7 +68,6 @@ CSRF_TRUSTED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 CSRF_COOKIE_SECURE = False
-# CSRF_COOKIE_SAMESITE = "None"
 
 
 ROOT_URLCONF = "django_service.urls"
@@ -99,8 +101,20 @@ DATABASES = {
 }
 
 DJANGO_EMAIL_LEARNING = {
+    "SITE_BASE_URL": "http://localhost:8000",
     "ENCRYPTION_SECRET_KEY": "your-very-secure-and-random-key",
+    "FROM_EMAIL": os.environ.get("FROM_EMAIL", "webmaster@localhost"),
 }
+
+
+# EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = os.environ.get("EMAIL_HOST")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 
 LOGGING = {
     "version": 1,

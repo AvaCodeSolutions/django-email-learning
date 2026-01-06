@@ -191,7 +191,6 @@ class LessonResponse(BaseModel):
     id: int
     title: str
     content: str
-    is_published: bool
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -260,7 +259,6 @@ class QuizResponse(BaseModel):
     title: str
     required_score: int
     questions: Any  # Will be converted to list in field_serializer
-    is_published: bool
 
     @field_serializer("questions")
     def serialize_questions(self, questions: Any) -> list[dict]:
@@ -389,6 +387,7 @@ class CourseContentResponse(BaseModel):
     type: str
     lesson: Optional[LessonResponse] = None
     quiz: Optional[QuizResponse] = None
+    is_published: bool
 
     @field_serializer("waiting_period")
     def serialize_waiting_period(self, waiting_period: int) -> dict:

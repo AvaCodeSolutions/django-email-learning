@@ -1,11 +1,12 @@
 import base64
 import ipaddress
 import re
+import random
 import uuid
 from enum import StrEnum
 from typing import Any
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 from django.core.validators import MaxValueValidator
 from django.core.exceptions import ImproperlyConfigured
 from cryptography.fernet import Fernet
@@ -14,6 +15,7 @@ from cryptography.hazmat.primitives import hashes
 from django.forms import ValidationError
 from django.contrib.auth.models import User
 from django.utils import timezone
+from datetime import timedelta
 
 
 FIXED_SALT = b"\x00" * 16
@@ -132,7 +134,6 @@ class Course(models.Model):
 class Lesson(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
-    is_published = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         return self.title
@@ -141,7 +142,6 @@ class Lesson(models.Model):
 class Quiz(models.Model):
     title = models.CharField(max_length=500)
     required_score = models.IntegerField(validators=[MaxValueValidator(100)])
-    is_published = models.BooleanField(default=False)
 
     class Meta:
         verbose_name_plural = "Quizzes"
@@ -158,24 +158,6 @@ class Quiz(models.Model):
                 question.validate_answers()
             except ValidationError as e:
                 raise ValidationError(f"For question '{question.text}', {e.message}")
-
-    def full_clean(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
-        if self.is_published:
-            try:
-                self.validate_questions()
-            except ValueError as e:
-                if not self.pk:
-                    raise ValidationError(
-                        "Quiz can not be saved as published the first time. "
-                        "please save unpublished and try to publish again."
-                    )
-                raise e
-
-        super().full_clean(*args, **kwargs)
-
-    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
-        self.full_clean()
-        super().save(*args, **kwargs)
 
 
 class Question(models.Model):
@@ -208,7 +190,7 @@ class Answer(models.Model):
         return self.text
 
     def delete(self, *args, **kwargs) -> tuple[int, dict[str, int]]:  # type: ignore[no-untyped-def]
-        if self.question.quiz.is_published:
+        if self.question.quiz.coursecontent_set.filter(is_published=True).exists():
             raise ValidationError("Cannot delete answers from a published quiz.")
         return super().delete(*args, **kwargs)
 
@@ -228,6 +210,7 @@ class CourseContent(models.Model):
     waiting_period = models.IntegerField(
         help_text="Waiting period in seconds after previous content is sent or submited."
     )
+    is_published = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         if self.type == "lesson" and self.lesson:
@@ -243,14 +226,6 @@ class CourseContent(models.Model):
         elif self.type == "quiz" and self.quiz:
             return self.quiz.title
         return "Untitled Content"
-
-    @property
-    def is_published(self) -> bool:
-        if self.type == "lesson" and self.lesson:
-            return self.lesson.is_published
-        elif self.type == "quiz" and self.quiz:
-            return self.quiz.is_published
-        return False
 
     def _validate_content(self) -> None:
         if self.type == "lesson" and not self.lesson:
@@ -334,7 +309,6 @@ class Enrollment(models.Model):
     learner = models.ForeignKey(Learner, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     enrolled_at = models.DateTimeField(auto_now_add=True)
-    next_send_timestamp = models.DateTimeField(null=True, blank=True)
     status = models.CharField(
         max_length=50,
         choices=[
@@ -368,6 +342,8 @@ class Enrollment(models.Model):
                     raise ValidationError(
                         f"Invalid status transition from {old_status} to {self.status}."
                     )
+        else:
+            self.activation_code = "".join(random.choices("0123456789", k=6))
         if self.status != "deactivated" and self.deactivation_reason is not None:
             raise ValidationError(
                 "Deactivation reason must be null unless status is 'deactivated'."
@@ -391,19 +367,29 @@ class Enrollment(models.Model):
             )
         ]
 
-
-class DeliverySchedule(models.Model):
-    time = models.DateTimeField(default=timezone.now, db_index=True)
-    is_delivered = models.BooleanField(default=False, db_index=True)
-
-    def __str__(self) -> str:
-        return f"Delivery at {self.time} - Delivered: {self.is_delivered}"
+    @transaction.atomic()
+    def schedule_first_content_delivery(self) -> None:
+        first_content = (
+            CourseContent.objects.filter(course=self.course, is_published=True)
+            .order_by("priority")
+            .first()
+        )
+        if first_content:
+            delivery = ContentDelivery.objects.create(
+                enrollment=self,
+                course_content=first_content,
+            )
+            DeliverySchedule.objects.create(
+                time=timezone.now() + timedelta(seconds=first_content.waiting_period),
+                delivery=delivery,
+            )
+        else:
+            raise ValidationError("No published content available to schedule.")
 
 
 class ContentDelivery(models.Model):
     enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE)
     course_content = models.ForeignKey(CourseContent, on_delete=models.CASCADE)
-    delivery_schedules = models.ManyToManyField(DeliverySchedule)
     hash_value = models.CharField(max_length=64, null=True, blank=True)
 
     class Meta:
@@ -429,6 +415,17 @@ class ContentDelivery(models.Model):
 
     def __str__(self) -> str:
         return f"Delivery of {self.course_content.title} to {self.enrollment.learner.email}"
+
+
+class DeliverySchedule(models.Model):
+    delivery = models.ForeignKey(
+        ContentDelivery, on_delete=models.CASCADE, related_name="delivery_schedules"
+    )
+    time = models.DateTimeField(default=timezone.now, db_index=True)
+    is_delivered = models.BooleanField(default=False, db_index=True)
+
+    def __str__(self) -> str:
+        return f"Delivery for {self.delivery.course_content.title} to {self.delivery.enrollment.learner.email} at {self.time} - Delivered: {self.is_delivered}"
 
 
 class QuizSubmission(models.Model):

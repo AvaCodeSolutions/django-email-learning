@@ -72,7 +72,7 @@ def test_create_course_lesson_content(superadmin_client, create_course):
     assert data["lesson"]["id"] is not None
     assert data["lesson"]["title"] == LESSON_TITLE
     assert data["lesson"]["content"] == LESSON_CONTENT
-    assert data["lesson"]["is_published"] is False
+    assert data["is_published"] is False
     assert data["type"] == "lesson"
     assert data["priority"] == 1
     assert data["waiting_period"] == {"period": 2, "type": "days"}
@@ -195,7 +195,7 @@ def test_create_quiz_content(superadmin_client, create_course):
     assert data["id"] is not None
     assert data["quiz"]["id"] is not None
     assert data["type"] == "quiz"
-    assert data["quiz"]["is_published"] is False
+    assert data["is_published"] is False
     assert data["priority"] == 2
     assert data["waiting_period"] == {"period": 1, "type": "hours"}
     assert data["quiz"]["title"] == "Quiz 1"
@@ -614,7 +614,7 @@ def test_update_content_is_published(superadmin_client, course_lesson_content):
     assert response.status_code == 200
     data = response.json()
     assert data["id"] == course_lesson_content.id
-    assert data["lesson"]["is_published"] is True
+    assert data["is_published"] is True
 
     payload = {"is_published": False}
     response = superadmin_client.post(
@@ -623,4 +623,4 @@ def test_update_content_is_published(superadmin_client, course_lesson_content):
     assert response.status_code == 200
     data = response.json()
     assert data["id"] == course_lesson_content.id
-    assert data["lesson"]["is_published"] is False
+    assert data["is_published"] is False

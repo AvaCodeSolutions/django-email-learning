@@ -1,0 +1,64 @@
+{% with brand_color="#7c86ff" %}
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            .color-brand {
+                color: {{ brand_color }};
+            }
+            .bg-brand {
+                background-color: {{ brand_color }};
+            }
+            .border-brand {
+                border-color: {{ brand_color }};
+            }
+            .background {
+                width: 100%;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.8;
+                color: #333;
+                background-color: #f9f9f9;
+            }
+
+
+            @media screen and (max-width: 480px) {
+                .mobile-content {
+                    width: 100% !important;
+                    padding: 10px !important;
+                }
+            }
+
+            @media screen and (min-width: 481px) and (max-width: 850px) {
+                .mobile-content {
+                    padding: 10px !important;
+                    width: 100% !important;
+                }
+            }
+            @media screen and (min-width: 851px) {
+                .background {
+                    padding: 10px !important;
+                }
+                .mobile-content {
+                    width: 800px !important;
+                    max-width: 800px !important;
+                    margin: 20px auto;
+                    padding: 20px !important;
+                    border-radius: 8px;
+                    border: 1px solid #e0e0e0;
+                }
+            }
+        </style>
+    </head>
+<body>
+    <div class="background">
+        <div class="mobile-content" style="background-color: #ffffff">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</body>
+</html>
+{% endwith %}
