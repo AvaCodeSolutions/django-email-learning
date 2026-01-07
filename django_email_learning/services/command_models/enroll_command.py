@@ -44,14 +44,16 @@ class EnrollCommand(AbstractCommand):
 
         try:
             course = Course.objects.get(
-                slug=self.course_slug, organization_id=self.organization_id
+                slug=self.course_slug,
+                organization_id=self.organization_id,
+                enabled=True,
             )
         except Course.DoesNotExist:
             self.logger.error(
                 f"Enrollment Failed: Invalid course slug '{self.course_slug}' for organization ID {self.organization_id}"
             )
             raise InvalidCourseSlugError(
-                f"Course with slug '{self.course_slug}' does not exist for organization ID {self.organization_id}"
+                f"Course with slug '{self.course_slug}' does not exist or is not enabled for organization ID {self.organization_id}"
             )
 
         # Check if an enrollment already exists

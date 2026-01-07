@@ -8,6 +8,8 @@ import pytest
 
 
 def test_enroll_command(db, course):
+    course.enabled = True
+    course.save()
     command = EnrollCommand(
         command_name="enroll",
         email="test@example.com",
@@ -49,6 +51,8 @@ def test_enroll_command_for_blocked_email(db, blocked_email, course):
 
 
 def test_existing_enrollment_skipped(db, learner, course):
+    course.enabled = True
+    course.save()
     # Create an existing enrollment
     Enrollment.objects.create(
         learner=learner, course=course, status=EnrollmentStatus.UNVERIFIED
