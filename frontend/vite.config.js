@@ -29,7 +29,8 @@ export default defineConfig({
         course: resolve(__dirname, 'course/index.html'),
         organizations: resolve(__dirname, 'organizations/index.html'),
         users: resolve(__dirname, 'users/index.html'),
-        quiz: resolve(__dirname, "my/index.html")
+        quiz: resolve(__dirname, "my/quiz/index.html"),
+        verification: resolve(__dirname, "my/verification/index.html"),
       }
     },
     manifest: 'manifest.json',

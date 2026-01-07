@@ -14,12 +14,6 @@ const Quiz = () => {
     const [isPassed, setIsPassed] = useState(null);
     const [score, setScore] = useState(null);
 
-    if (error_message) {
-        console.log("Error:", error_message, ref);
-    } else {
-        console.log("No error");
-    }
-
     const showSubmitDialog = () => {
         setDialogOpen(true);
         let answerCounter = 0;

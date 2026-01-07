@@ -29,6 +29,9 @@ class VerifyEnrollmentCommand(AbstractCommand):
             self.logger.error(
                 f"Verification Failed: No unverified enrollment found with ID {self.enrollment_id}"
             )
+            # Check if enrollment exists but is not unverified
+            if Enrollment.objects.filter(id=self.enrollment_id).exists():
+                return
             raise InvalidEnrollmentError(
                 f"No unverified enrollment found with ID {self.enrollment_id}"
             )

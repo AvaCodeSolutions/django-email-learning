@@ -1,10 +1,6 @@
+{% extends "personalised/base.html" %}
 {% load django_vite %}
-{% load static %}
-<!doctype html>
-<html lang="en">
-  <head>
-    {% vite_hmr_client %}
-    {% vite_react_refresh %}
+{% block head_script %}
     <script>
       let quiz = {{ quiz|default:"null"|safe }};
       let token = "{{ token }}";
@@ -14,13 +10,4 @@
       let ref = "{{ ref }}";
     </script>
     {% vite_asset 'my/quiz/Quiz.jsx' %}
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" href="{% static 'logo.png' %}" />
-    <title>{% block title %}{{ page_title }}{% endblock %}</title>
-  </head>
-  <body>
-    <div id="root">
-    </div>
-  </body>
-</html>
+{% endblock %}
