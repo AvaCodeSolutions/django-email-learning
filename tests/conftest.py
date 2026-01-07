@@ -130,7 +130,7 @@ def quiz(db) -> Quiz:
 
 @pytest.fixture()
 def lesson(db) -> Lesson:
-    lesson = Lesson(title="Sample Lesson", content="Lesson Content", is_published=True)
+    lesson = Lesson(title="Sample Lesson", content="Lesson Content")
     lesson.save()
     return lesson
 
@@ -170,7 +170,12 @@ def enrollment(db, learner, course) -> Enrollment:
 @pytest.fixture
 def course_lesson_content(db, course, lesson) -> CourseContent:
     content = CourseContent.objects.create(
-        course=course, priority=1, type="lesson", lesson=lesson, waiting_period=3600
+        course=course,
+        priority=1,
+        type="lesson",
+        lesson=lesson,
+        waiting_period=3600,
+        is_published=True,
     )
     return content
 
@@ -198,7 +203,6 @@ def quiz_with_questions(db, quiz) -> Quiz:
             is_correct=(i == 0),  # First answer is correct
         )
     questions.append(question)
-    quiz.is_published = True
     quiz.save()
     return quiz
 
@@ -214,6 +218,7 @@ def active_enrollment(db, learner, course):
 @pytest.fixture
 def content_delivery(db, active_enrollment, course_quiz_content, quiz_with_questions):
     course_quiz_content.quiz = quiz_with_questions
+    course_quiz_content.is_published = True
     course_quiz_content.save()
 
     delivery = ContentDelivery.objects.create(
@@ -221,5 +226,7 @@ def content_delivery(db, active_enrollment, course_quiz_content, quiz_with_quest
         course_content_id=course_quiz_content.id,
         hash_value="testhash",
     )
-    delivery.delivery_schedules.add(DeliverySchedule.objects.create(is_delivered=True))
+    delivery.delivery_schedules.add(
+        DeliverySchedule.objects.create(is_delivered=True, delivery=delivery)
+    )
     return delivery

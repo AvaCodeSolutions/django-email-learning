@@ -219,14 +219,8 @@ class SingleCourseContentView(View):
             course_content.waiting_period = serializer.waiting_period.to_seconds()
 
         if serializer.is_published is not None:
-            if course_content.type == "lesson" and course_content.lesson is not None:
-                lesson = course_content.lesson
-                lesson.is_published = serializer.is_published
-                lesson.save()
-            elif course_content.type == "quiz" and course_content.quiz is not None:
-                quiz = course_content.quiz
-                quiz.is_published = serializer.is_published
-                quiz.save()
+            course_content.is_published = serializer.is_published
+            course_content.save()
 
         if serializer.lesson is not None and course_content.lesson is not None:
             lesson_serializer = serializer.lesson

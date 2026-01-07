@@ -1,4 +1,23 @@
 from django.apps import AppConfig
+from django.core import checks
+
+
+def check_site_base_url_config(app_configs, **kwargs):  # type: ignore[no-untyped-def]
+    errors = []
+    from django.conf import settings
+
+    if (
+        not hasattr(settings, "DJANGO_EMAIL_LEARNING")
+        or "SITE_BASE_URL" not in settings.DJANGO_EMAIL_LEARNING
+    ):
+        errors.append(
+            checks.Error(
+                "DJANGO_EMAIL_LEARNING['SITE_BASE_URL'] is not set in settings.",
+                hint="Please set DJANGO_EMAIL_LEARNING['SITE_BASE_URL'] to the base URL of your site.",
+                id="django_email_learning.E001",
+            )
+        )
+    return errors
 
 
 class EmailLearningConfig(AppConfig):
@@ -8,3 +27,5 @@ class EmailLearningConfig(AppConfig):
 
     def ready(self) -> None:
         import django_email_learning.signals  # noqa
+
+        checks.register(check_site_base_url_config)

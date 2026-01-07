@@ -1,0 +1,16 @@
+Hello there,
+
+Congratulations on enrolling in {{ course_title }}!
+We're excited to have you join our learning community.
+
+To get started, please verify your email address by visiting the link below:
+{{ verification_link }}
+
+{% if support_imap_interface %}
+Alternatively, you can also verify your email by sending the verification code {{ verification_code }} via an email to {{ imap_email_address }}.
+{% endif %}
+
+If you didn't sign up for this course, you can safely ignore this email.
+
+Best Regards,
+{{ organization_name }}

@@ -12,7 +12,8 @@ def test_quiz_submission_creation(db, course_quiz_content, enrollment):
         enrollment=enrollment,
         course_content=course_quiz_content,
     )
-    delivery.delivery_schedules.add(DeliverySchedule.objects.create(is_delivered=True))
+
+    DeliverySchedule.objects.create(is_delivered=True, delivery=delivery)
     submission = QuizSubmission.objects.create(
         delivery=delivery,
         score=85,
@@ -29,7 +30,9 @@ def test_quiz_submission_for_lesson_content(db, course_lesson_content, enrollmen
         enrollment=enrollment,
         course_content=course_lesson_content,
     )
-    delivery.delivery_schedules.add(DeliverySchedule.objects.create(is_delivered=True))
+    delivery.delivery_schedules.add(
+        DeliverySchedule.objects.create(is_delivered=True, delivery=delivery)
+    )
     with pytest.raises(Exception) as exc_info:
         QuizSubmission.objects.create(
             delivery=delivery,
@@ -53,7 +56,9 @@ def test_invalid_quiz_submission_fields(
         enrollment=enrollment,
         course_content=course_quiz_content,
     )
-    delivery.delivery_schedules.add(DeliverySchedule.objects.create(is_delivered=True))
+    delivery.delivery_schedules.add(
+        DeliverySchedule.objects.create(is_delivered=True, delivery=delivery)
+    )
 
     with pytest.raises(ValidationError):
         QuizSubmission.objects.create(

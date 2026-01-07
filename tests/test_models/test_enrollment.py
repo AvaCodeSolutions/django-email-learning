@@ -1,5 +1,7 @@
 from django_email_learning.models import Enrollment
 from django.core.exceptions import ValidationError
+from freezegun import freeze_time
+from unittest.mock import patch
 import pytest
 
 
@@ -10,6 +12,8 @@ def test_enrollment_minimal_save(learner, course):
     assert fetched_enrollment.course == course
     assert fetched_enrollment.enrolled_at is not None
     assert fetched_enrollment.status == "unverified"
+    assert fetched_enrollment.activation_code is not None
+    assert len(fetched_enrollment.activation_code) == 6
 
 
 @pytest.mark.parametrize(
@@ -142,3 +146,42 @@ def test_deactivation_reason_null_when_not_deactivated(db, learner, course):
     assert "Deactivation reason must be null unless status is 'deactivated'." in str(
         exc_info.value
     )
+
+
+def test_schedule_first_content_delivery_creates_delivery_and_schedule(
+    db, enrollment, course_lesson_content
+):
+    course_lesson_content.waiting_period = 3600  # 1 hour
+    course_lesson_content.save()
+
+    with freeze_time("2024-01-01 10:00:00"):
+        enrollment.schedule_first_content_delivery()
+
+        deliveries = enrollment.contentdelivery_set.all()
+        assert deliveries.count() == 1
+        delivery = deliveries.first()
+        assert delivery.course_content == course_lesson_content
+
+        schedules = delivery.delivery_schedules.all()
+        assert schedules.count() == 1
+        schedule = schedules.first()
+        assert schedule.time.isoformat() == "2024-01-01T11:00:00+00:00"  # 1 hour later
+
+
+@patch("django_email_learning.models.DeliverySchedule.objects.create")
+def test_schedule_first_content_delivery_atomic_transaction(
+    mock_create_schedule, db, enrollment, course_lesson_content
+):
+    mock_create_schedule.side_effect = Exception("Failed to create schedule")
+    course_lesson_content.waiting_period = 3600  # 1 hour
+    course_lesson_content.save()
+
+    with freeze_time("2024-01-01 10:00:00"):
+        # Simulate failure to create schedule by not adding any schedule after delivery creation
+        with pytest.raises(Exception):
+            enrollment.schedule_first_content_delivery()
+
+        deliveries = enrollment.contentdelivery_set.all()
+        assert (
+            deliveries.count() == 0
+        )  # Delivery should be deleted if no schedule created

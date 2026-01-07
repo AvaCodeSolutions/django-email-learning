@@ -31,7 +31,7 @@ class QuizPublicView(View, TemplateResponseMixin):
                 return self.errr_response(
                     message="No quiz associated with this link", exception=None
                 )
-            if not quiz.is_published:
+            if not delivery.course_content.is_published:
                 return self.errr_response(
                     message="No valid quiz associated with this link",
                     exception=ValueError("Quiz is not published"),
