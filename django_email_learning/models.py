@@ -293,6 +293,13 @@ class EnrollmentStatus(StrEnum):
     DEACTIVATED = "deactivated"
 
 
+class DeactivationReason(StrEnum):
+    CANCELED = "canceled"
+    BLOCKED = "blocked"
+    FAILED = "failed"
+    INACTIVE = "inactive"
+
+
 class Enrollment(models.Model):
     state_transitions = {
         EnrollmentStatus.UNVERIFIED: [
@@ -323,14 +330,14 @@ class Enrollment(models.Model):
         null=True,
         blank=True,
         choices=[
-            ("canceled", "Canceled"),
-            ("blocked", "Blocked"),
-            ("failed", "Failed"),
-            ("inactive", "Inactive"),
+            (DeactivationReason.CANCELED, "Canceled"),
+            (DeactivationReason.BLOCKED, "Blocked"),
+            (DeactivationReason.FAILED, "Failed"),
+            (DeactivationReason.INACTIVE, "Inactive"),
         ],
         max_length=50,
     )
-    activation_code = models.CharField(max_length=100, null=True, blank=True)
+    activation_code = models.CharField(max_length=6, null=True, blank=True)
 
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         if self.pk:

@@ -26,6 +26,7 @@ def test_enroll_command(db, course):
     assert len(mail.outbox) == 1
     sent_email = mail.outbox[0]
     assert sent_email.to == ["test@example.com"]
+    assert sent_email.from_email  # check from_email is set
     assert "Verify your enrollment" in sent_email.subject
     assert enrollment.activation_code in sent_email.body
 

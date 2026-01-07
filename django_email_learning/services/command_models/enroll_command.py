@@ -1,6 +1,9 @@
 from django_email_learning.services.command_models.abstract_command import (
     AbstractCommand,
 )
+from django_email_learning.services.command_models.exceptions.invalid_course_slug_error import (
+    InvalidCourseSlugError,
+)
 from django_email_learning.models import (
     BlockedEmail,
     Learner,
@@ -16,10 +19,6 @@ from django.template.loader import render_to_string
 from django.conf import settings
 from django.urls import reverse
 from typing import Literal
-
-
-class InvalidCourseSlugError(Exception):
-    pass
 
 
 class EnrollCommand(AbstractCommand):
@@ -109,7 +108,6 @@ class EnrollCommand(AbstractCommand):
             template_context,
         )
 
-        from_email = settings.DJANGO_EMAIL_LEARNING["FROM_EMAIL"]
         to_emails = [self.email]
 
         html_content = render_to_string(
@@ -120,7 +118,10 @@ class EnrollCommand(AbstractCommand):
         # TODO: Add AMP content/type to activate directly in email clients that support it
 
         email = EmailMultiAlternatives(
-            subject=subject, body=body, from_email=from_email, to=to_emails
+            subject=subject,
+            body=body,
+            from_email=email_service.from_email,
+            to=to_emails,
         )
         email.attach_alternative(html_content, "text/html")
         email_service.send(email)

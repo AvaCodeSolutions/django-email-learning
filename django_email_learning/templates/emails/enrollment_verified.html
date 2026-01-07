@@ -1,0 +1,22 @@
+{% extends "emails/base.html" %}
+
+{% block content %}
+<P>Hello there,<br /></P>
+
+<p><strong>Congratulations!</strong> Your enrollment for "<strong style="color: {{ brand_color }};">{{ course_title }}</strong>" has been successfully verified and confirmed.</p>
+
+<p>We're excited to have you join our learning community. Here's what you can expect:</p>
+
+<ul>
+    <li>Course materials will be delivered directly to this email address</li>
+    <li>You'll receive structured lessons and assignments on a regular schedule</li>
+    <li>Interactive content and assessments will help track your progress</li>
+</ul>
+
+<p>Your learning adventure begins soon! Keep an eye on your inbox for the first lesson and welcome materials.</p>
+
+<h3>Welcome aboard!</h3>
+
+<p>Best regards,<br>
+The <strong>{{ organization_name }}</strong> Team</p>
+{% endblock %}
