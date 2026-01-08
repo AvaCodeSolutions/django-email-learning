@@ -6,6 +6,7 @@ import uuid
 from enum import StrEnum
 from typing import Any
 from django.conf import settings
+from django.urls import reverse
 from django.db import models, transaction
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.core.exceptions import ImproperlyConfigured
@@ -16,6 +17,7 @@ from django.forms import ValidationError
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
+from django_email_learning.services import jwt_service
 
 
 FIXED_SALT = b"\x00" * 16
@@ -174,6 +176,16 @@ class Quiz(models.Model):
                 question.validate_answers()
             except ValidationError as e:
                 raise ValidationError(f"For question '{question.text}', {e.message}")
+
+    def random_question_ids(self) -> list[int]:
+        question_ids = list(self.questions.values_list("id", flat=True))
+        if self.selection_strategy == QuizSelectionStrategy.ALL_QUESTIONS.value:
+            return question_ids
+        if len(question_ids) <= 5:
+            return question_ids
+        number_of_questions = int(max(5, len(question_ids) // 1.5))
+        selected_ids = random.sample(question_ids, k=number_of_questions)
+        return selected_ids
 
 
 class Question(models.Model):
@@ -402,9 +414,13 @@ class Enrollment(models.Model):
                 enrollment=self,
                 course_content=first_content,
             )
+            link = None
+            if first_content.quiz:
+                link = delivery.link()
             DeliverySchedule.objects.create(
                 time=timezone.now() + timedelta(seconds=first_content.waiting_period),
                 delivery=delivery,
+                link=link,  # type: ignore[misc]
             )
         else:
             raise ValidationError("No published content available to schedule.")
@@ -429,11 +445,42 @@ class ContentDelivery(models.Model):
         )
         self.save()
 
+    def link(self) -> str:
+        payload = {
+            "delivery_id": self.id,
+            "delivery_hash": self.hash_value,
+        }
+
+        if self.course_content.quiz:
+            if (
+                self.course_content.quiz.selection_strategy
+                == QuizSelectionStrategy.RANDOM_QUESTIONS.value
+            ):
+                payload["question_ids"] = self.course_content.quiz.random_question_ids()  # type: ignore[assignment]
+            token = jwt_service.generate_jwt(
+                payload=payload,
+                expiration_seconds=60
+                * 60
+                * 24
+                * self.course_content.quiz.deadline_days,
+            )
+            quiz_path = reverse("django_email_learning:personalised:quiz_public_view")
+            return f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{quiz_path}?token={token}"
+        else:
+            # TODO: Implement lesson link generation
+            raise NotImplementedError(
+                "Link generation is only implemented for quiz content."
+            )
+
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self.full_clean()
         if not self.hash_value:
             self.hash_value = (
                 base64.urlsafe_b64encode(uuid.uuid4().bytes).decode().rstrip("=")
+            )
+        if self.course_content.quiz and not self.valid_until:
+            self.valid_until = timezone.now() + timedelta(
+                days=self.course_content.quiz.deadline_days
             )
         super().save(*args, **kwargs)
 
@@ -447,6 +494,7 @@ class DeliverySchedule(models.Model):
     )
     time = models.DateTimeField(default=timezone.now, db_index=True)
     is_delivered = models.BooleanField(default=False, db_index=True)
+    link = models.URLField(null=True, blank=True)
 
     def __str__(self) -> str:
         return f"Delivery for {self.delivery.course_content.title} to {self.delivery.enrollment.learner.email} at {self.time} - Delivered: {self.is_delivered}"

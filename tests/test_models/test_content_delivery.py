@@ -24,3 +24,9 @@ def test_content_delivery_unique_constraint(db, course_lesson_content, enrollmen
         "content delivery with this enrollment and course content already exists"
         in str(exc_info.value).lower()
     )
+
+
+def test_content_delivery_link_generation(db, content_delivery: ContentDelivery):
+    link = content_delivery.link()
+    assert link.startswith("http")
+    assert "token=" in link
