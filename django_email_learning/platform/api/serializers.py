@@ -16,6 +16,7 @@ from django_email_learning.models import (
     Answer,
     CourseContent,
     Course,
+    QuizSelectionStrategy,
 )
 import enum
 
@@ -177,7 +178,7 @@ class SessionInfo(BaseModel):
 class LessonCreate(BaseModel):
     title: str
     content: str
-    type: Literal["lesson"]
+    type: Literal["lesson"] = "lesson"
 
 
 class LessonUpdate(BaseModel):
@@ -239,10 +240,18 @@ class QuestionObject(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+MIN_QUIZ_DEADLINE = 1
+MAX_QUIZ_DEADLINE = 30
+
+
 class UpdateQuiz(BaseModel):
     questions: Optional[list[QuestionCreate]] = Field(min_length=1)
     title: Optional[str] = None
     required_score: Optional[int] = Field(ge=0, examples=[80], default=None)
+    selection_strategy: QuizSelectionStrategy
+    deadline_days: int = Field(
+        ge=MIN_QUIZ_DEADLINE, le=MAX_QUIZ_DEADLINE, examples=[14]
+    )
 
     model_config = ConfigDict(extra="forbid")
 
@@ -250,14 +259,20 @@ class UpdateQuiz(BaseModel):
 class QuizCreate(BaseModel):
     title: str
     required_score: int = Field(ge=0, examples=[80])
+    selection_strategy: QuizSelectionStrategy
+    deadline_days: int = Field(
+        ge=MIN_QUIZ_DEADLINE, le=MAX_QUIZ_DEADLINE, examples=[14]
+    )
     questions: list[QuestionCreate] = Field(min_length=1)
-    type: Literal["quiz"]
+    type: Literal["quiz"] = "quiz"
 
 
 class QuizResponse(BaseModel):
     id: int
     title: str
     required_score: int
+    selection_strategy: str
+    deadline_days: int = Field(ge=MIN_QUIZ_DEADLINE, le=MAX_QUIZ_DEADLINE)
     questions: Any  # Will be converted to list in field_serializer
 
     @field_serializer("questions")
@@ -325,6 +340,8 @@ class CreateCourseContentRequest(BaseModel):
             quiz = Quiz(
                 title=self.content.title,
                 required_score=self.content.required_score,
+                selection_strategy=self.content.selection_strategy.value,  # type: ignore[misc]
+                deadline_days=self.content.deadline_days,  # type: ignore[misc]
             )
             quiz.save()
             for question_data in self.content.questions:

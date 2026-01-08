@@ -7,7 +7,7 @@ from enum import StrEnum
 from typing import Any
 from django.conf import settings
 from django.db import models, transaction
-from django.core.validators import MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.core.exceptions import ImproperlyConfigured
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -139,9 +139,25 @@ class Lesson(models.Model):
         return self.title
 
 
+class QuizSelectionStrategy(StrEnum):
+    ALL_QUESTIONS = "all"
+    RANDOM_QUESTIONS = "random"
+
+
 class Quiz(models.Model):
     title = models.CharField(max_length=500)
     required_score = models.IntegerField(validators=[MaxValueValidator(100)])
+    selection_strategy = models.CharField(
+        max_length=50,
+        choices=[
+            (QuizSelectionStrategy.ALL_QUESTIONS.value, "All Questions"),
+            (QuizSelectionStrategy.RANDOM_QUESTIONS.value, "Random Questions"),
+        ],
+    )
+    deadline_days = models.IntegerField(
+        help_text="Time limit to complete the quiz in days. Minimum is 1 day and maximum is 30 days.",
+        validators=[MinValueValidator(1), MaxValueValidator(30)],
+    )
 
     class Meta:
         verbose_name_plural = "Quizzes"
@@ -398,6 +414,7 @@ class ContentDelivery(models.Model):
     enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE)
     course_content = models.ForeignKey(CourseContent, on_delete=models.CASCADE)
     hash_value = models.CharField(max_length=64, null=True, blank=True)
+    valid_until = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = [["enrollment", "course_content"]]

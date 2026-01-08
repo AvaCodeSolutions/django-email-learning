@@ -164,6 +164,8 @@ def test_create_quiz_content(superadmin_client, create_course):
             "type": "quiz",
             "title": "Quiz 1",
             "required_score": 70,
+            "selection_strategy": "all",
+            "deadline_days": 14,
             "questions": [
                 {
                     "text": "What is Python?",
@@ -319,6 +321,8 @@ def test_list_course_content_with_existing_contents(superadmin_client, create_co
             "type": "quiz",
             "title": "Quiz 1",
             "required_score": 70,
+            "selection_strategy": "random",
+            "deadline_days": 14,
             "questions": [
                 {
                     "text": "What is Python?",
