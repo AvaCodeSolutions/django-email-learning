@@ -2,12 +2,10 @@
 {% load django_vite %}
 {% block head_script %}
     <script>
-      let quiz = {{ quiz|default:"null"|safe }};
-      let token = "{{ token }}";
-      let csrfToken = "{{ csrf_token }}";
-      let apiEndpoint = "{{ api_endpoint }}";
-      let error_message = "{{ error_message }}";
-      let ref = "{{ ref }}";
+      const quiz = {{ quiz|default:"null"|safe }};
+      const token = "{{ token }}";
+      const csrfToken = "{{ csrf_token }}";
+      const apiEndpoint = "{{ api_endpoint }}";
     </script>
-    {% vite_asset 'my/quiz/Quiz.jsx' %}
+    {% vite_asset 'personalised/quiz_public/Quiz.jsx' %}
 {% endblock %}

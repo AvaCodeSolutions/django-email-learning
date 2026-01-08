@@ -323,7 +323,9 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
 
                     <Grid size={{ xs: 12, md: 6 }}>
                         <Tooltip
-                            title="Choose how questions are selected for each quiz attempt"
+                            title="Choose how questions are selected for each quiz attempt,
+                            if total questions is less than 6, all questions will be used even
+                            if 'Random Questions' is selected"
                             placement="top-start"
                         >
                             <Box>
