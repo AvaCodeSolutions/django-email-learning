@@ -238,6 +238,10 @@ class SingleCourseContentView(View):
                 quiz.title = quiz_serializer.title
             if quiz_serializer.required_score is not None:
                 quiz.required_score = quiz_serializer.required_score
+            if quiz_serializer.selection_strategy is not None:
+                quiz.selection_strategy = quiz_serializer.selection_strategy.value
+            if quiz_serializer.deadline_days is not None:
+                quiz.deadline_days = quiz_serializer.deadline_days
             if quiz_serializer.questions is not None:
                 # Clear existing questions and answers
                 quiz.questions.all().delete()

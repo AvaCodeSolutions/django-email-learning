@@ -102,6 +102,8 @@ function Course() {
                                 initialRequiredScore={content.quiz.required_score}
                                 initialQuestions={translateQuestions(content.quiz.questions)}
                                 initialWaitingPeriod={content.waiting_period}
+                                initialStrategy={content.quiz.selection_strategy}
+                                initialDeadlineDays={content.quiz.deadline_days}
                                  />);
             }
         }

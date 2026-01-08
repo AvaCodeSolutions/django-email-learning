@@ -1,11 +1,11 @@
 import { useRef, useState, useEffect } from 'react';
-import { Alert,Box, Button, Grid, MenuItem, Select, Tooltip, Typography } from '@mui/material';
+import { Alert,Box, Button, Grid, InputLabel, MenuItem, Select, Tooltip, Typography } from '@mui/material';
 import QuizIcon from '@mui/icons-material/Quiz';
 import RequiredTextField from '../../../src/components/RequiredTextField';
 import QuestionForm from './QuestionForm';
 import { getCookie } from '../../../src/utils';
 
-const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod }) => {
+const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod, initialStrategy, initialDeadlineDays }) => {
 
     const [showQuestionField, setShowQuestionField] = useState(false);
     const [newQuestion, setNewQuestion] = useState("");
@@ -13,6 +13,8 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     const [errorMessage, setErrorMessage] = useState("");
     const [title, setTitle] = useState(initialTitle || "");
     const [requiredScore , setRequiredScore] = useState(initialRequiredScore || 70);
+    const [selectionStrategy, setSelectionStrategy] = useState(initialStrategy || "random");
+    const [deadlineDays, setDeadlineDays] = useState(initialDeadlineDays || 14);
     const [waitingPeriod, setWaitingPeriod] = useState(initialWaitingPeriod ? initialWaitingPeriod.period : 1);
     const [waitingPeriodUnit, setWaitingPeriodUnit] = useState(initialWaitingPeriod ? initialWaitingPeriod.type : "days");
     const questionInputRef = useRef(null);
@@ -37,6 +39,8 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                     type: 'quiz',
                     title: title,
                     required_score: requiredScore,
+                    selection_strategy: selectionStrategy,
+                    deadline_days: deadlineDays,
                     questions: questionsPayload(),
                 },
                 waiting_period: {
@@ -136,6 +140,8 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                 quiz: {
                     title: title,
                     required_score: requiredScore,
+                    selection_strategy: selectionStrategy,
+                    deadline_days: deadlineDays,
                     questions: questionsPayload(),
                 },
                 waiting_period: {
@@ -232,36 +238,114 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                     <QuestionForm key={index} index={index} question={question} eventHandler={questionEventHandler} />
                 )) }
             </Box>
-            <Box mt={3} mb={2}>
-            <RequiredTextField
-                label="Required score to pass (%)"
-                type="number"
-                value={requiredScore}
-                onChange={(e) => setRequiredScore(e.target.value)}
-                sx={{ width: '200px', mr: 2 }}
-                inputProps={{ min: 0, max: 100 }}
-                disabled={userRole === 'viewer'}
-                >
-            </RequiredTextField>
+            {/* Quiz Settings Section */}
+            <Box mt={3} mb={3}>
+                <Typography variant="h6" sx={{ mb: 2, fontSize: '1.1rem', color: 'primary.main' }}>
+                    Quiz Settings
+                </Typography>
+
+                <Grid container spacing={3}>
+                    {/* Row 1: Required Score and Waiting Period */}
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <InputLabel sx={{ mb: 1, fontSize: '0.9rem', color: 'text.secondary' }}>
+                            Required Score to Pass
+                        </InputLabel>
+                        <Tooltip
+                            title="Minimum percentage score required to pass this quiz"
+                            placement="top-start"
+                        >
+                            <RequiredTextField
+                                label="percentage"
+                                type="number"
+                                value={requiredScore}
+                                onChange={(e) => setRequiredScore(e.target.value)}
+                                sx={{ width: '100%' }}
+                                inputProps={{ min: 0, max: 100 }}
+                                disabled={userRole === 'viewer'}
+                            />
+                        </Tooltip>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <Tooltip
+                            title="Time to wait after the previous lesson before sending this quiz"
+                            placement="top-start"
+                        >
+                            <Box>
+                                <InputLabel sx={{ mb: 1, fontSize: '0.9rem', color: 'text.secondary' }}>
+                                    Waiting Period
+                                </InputLabel>
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                    <RequiredTextField
+                                        label="Period"
+                                        type="number"
+                                        value={waitingPeriod}
+                                        onChange={(e) => setWaitingPeriod(e.target.value)}
+                                        sx={{ flex: 1 }}
+                                        inputProps={{ min: 1 }}
+                                        disabled={userRole === 'viewer'}
+                                    />
+                                    <Select
+                                        size="small"
+                                        value={waitingPeriodUnit}
+                                        onChange={(e) => setWaitingPeriodUnit(e.target.value)}
+                                        sx={{ minWidth: '100px' }}
+                                        disabled={userRole === 'viewer'}
+                                    >
+                                        <MenuItem value="days">Days</MenuItem>
+                                        <MenuItem value="hours">Hours</MenuItem>
+                                    </Select>
+                                </Box>
+                            </Box>
+                        </Tooltip>
+                    </Grid>
+
+                    {/* Row 2: Deadline and Selection Strategy */}
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <InputLabel sx={{ mb: 1, fontSize: '0.9rem', color: 'text.secondary' }}>
+                            Deadline to Complete Quiz
+                        </InputLabel>
+                        <Tooltip
+                            title="Maximum time allowed to complete the quiz"
+                            placement="top-start"
+                        >
+                            <RequiredTextField
+                                label="Days"
+                                type="number"
+                                value={deadlineDays}
+                                onChange={(e) => setDeadlineDays(e.target.value)}
+                                sx={{ width: '100%' }}
+                                inputProps={{ min: 1 }}
+                                disabled={userRole === 'viewer'}
+                            />
+                        </Tooltip>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <Tooltip
+                            title="Choose how questions are selected for each quiz attempt"
+                            placement="top-start"
+                        >
+                            <Box>
+                                <InputLabel sx={{ mb: 1, fontSize: '0.9rem', color: 'text.secondary' }}>
+                                    Selection Strategy
+                                </InputLabel>
+                                <Select
+                                    size="small"
+                                    value={selectionStrategy}
+                                    onChange={(e) => setSelectionStrategy(e.target.value)}
+                                    sx={{ width: '100%' }}
+                                    disabled={userRole === 'viewer'}
+                                >
+                                    <MenuItem value="all">All Questions</MenuItem>
+                                    <MenuItem value="random">Random Questions</MenuItem>
+                                </Select>
+                            </Box>
+                        </Tooltip>
+                    </Grid>
+                </Grid>
             </Box>
-            <Tooltip
-                placement="right"
-                title="Set the amount of time that we should wait after the previous lesson or quiz submission before sending this lesson.">
-                <RequiredTextField
-                    label="Waiting Period"
-                    name="waiting_period"
-                    type="number"
-                    value={waitingPeriod}
-                    onChange={(e) => setWaitingPeriod(e.target.value)}
-                    sx={{ width: '200px', mr: 2 }}
-                    inputProps={{ min: 1 }}
-                    disabled={userRole === 'viewer'}
-                />
-                <Select size="small" value={waitingPeriodUnit} onChange={(e) => setWaitingPeriodUnit(e.target.value)} name="waiting_period_unit" sx={{ width: '150px' }} disabled={userRole === 'viewer'}>
-                    <MenuItem value="days">Days</MenuItem>
-                    <MenuItem value="hours">Hours</MenuItem>
-                </Select>
-            </Tooltip>
+
             <Box mt={2} textAlign="right">
                 <Button variant="outlined" sx={{ mr: 1, boxShadow: 'none' }} onClick={cancel}>
                     Back

@@ -123,7 +123,12 @@ def imap_connection(db) -> ImapConnection:
 
 @pytest.fixture()
 def quiz(db) -> Quiz:
-    quiz = Quiz(title="Sample Quiz", required_score=70)
+    quiz = Quiz(
+        title="Sample Quiz",
+        required_score=70,
+        selection_strategy="random",
+        deadline_days=14,
+    )
     quiz.save()
     return quiz
 
@@ -183,7 +188,11 @@ def course_lesson_content(db, course, lesson) -> CourseContent:
 @pytest.fixture
 def course_quiz_content(db, course, quiz) -> CourseContent:
     content = CourseContent.objects.create(
-        course=course, priority=2, type="quiz", quiz=quiz, waiting_period=3600
+        course=course,
+        priority=2,
+        type="quiz",
+        quiz=quiz,
+        waiting_period=3600,
     )
     return content
 
