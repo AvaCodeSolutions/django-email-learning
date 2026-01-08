@@ -20,20 +20,21 @@ import pytest
 def test_verify_enrollment_command_initialization():
     command = VerifyEnrollmentCommand(
         enrollment_id=123,
-        verification_code=321456,
+        verification_code="321456",
     )
 
+    assert command.command_name == "verify_enrollment"
     assert command.enrollment_id == 123
-    assert command.verification_code == 321456
+    assert command.verification_code == "321456"
 
 
 @pytest.mark.parametrize(
     "enrollment_id,verification_code",
     [
-        (0, 123456),  # Invalid enrollment_id (too low)
-        (-1, 123456),  # Invalid enrollment_id (negative)
-        (1, 99999),  # Invalid verification_code (too low)
-        (1, 1000000),  # Invalid verification_code (too high)
+        (0, "123456"),  # Invalid enrollment_id (too low)
+        (-1, "123456"),  # Invalid enrollment_id (negative)
+        (1, "99999"),  # Invalid verification_code (too low)
+        (1, "1000000"),  # Invalid verification_code (too high)
         (1, "abcdef"),  # Invalid verification_code (not an integer)
     ],
 )
@@ -74,7 +75,7 @@ def test_verify_enrollment_command_execute(db, enrollment, course_lesson_content
 def test_verify_enrollment_command_invalid_enrollment(db):
     command = VerifyEnrollmentCommand(
         enrollment_id=9999,  # Non-existent enrollment ID
-        verification_code=123456,
+        verification_code="123456",
     )
 
     with pytest.raises(InvalidEnrollmentError):
@@ -84,7 +85,7 @@ def test_verify_enrollment_command_invalid_enrollment(db):
 def test_verify_enrollment_command_invalid_verification_code(db, enrollment):
     command = VerifyEnrollmentCommand(
         enrollment_id=enrollment.id,
-        verification_code=999999,  # Incorrect code
+        verification_code="999999",  # Incorrect code
     )
 
     with pytest.raises(InvalidVerificationCodeError):

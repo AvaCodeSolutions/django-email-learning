@@ -22,7 +22,7 @@ from typing import Literal
 
 
 class EnrollCommand(AbstractCommand):
-    command_name: Literal["enroll"]
+    command_name: Literal["enroll"] = "enroll"
     email: str
     course_slug: str
     organization_id: int

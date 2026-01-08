@@ -15,7 +15,7 @@ from django_email_learning.services.command_models.exceptions.invalid_course_slu
 
 
 class UnsubscribeCommand(AbstractCommand):
-    command_name: Literal["unsubscribe"]
+    command_name: Literal["unsubscribe"] = "unsubscribe"
     email: str
     course_slug: str
     organization_id: int

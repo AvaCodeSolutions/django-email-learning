@@ -13,12 +13,13 @@ from django_email_learning.services.command_models.exceptions.invalid_verificati
 from django_email_learning.services.email_sender_service import EmailSenderService
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
+from typing import Literal
 
 
 class VerifyEnrollmentCommand(AbstractCommand):
-    command_name: str = "verify_enrollment"
+    command_name: Literal["verify_enrollment"] = "verify_enrollment"
     enrollment_id: int = Field(..., gt=0)
-    verification_code: int = Field(..., ge=100000, le=999999)
+    verification_code: str = Field(..., pattern=r"^\d{6}$")
 
     def execute(self) -> None:
         try:
