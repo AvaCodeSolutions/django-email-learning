@@ -1,6 +1,6 @@
-import Base from '../src/components/Base.jsx'
+import Base from '../../src/components/Base.jsx'
 import { Box, Grid } from '@mui/material'
-import render from '../src/render.jsx';
+import render from '../../src/render.jsx';
 
 
 function Users() {

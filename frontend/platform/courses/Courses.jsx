@@ -1,14 +1,14 @@
 import 'vite/modulepreload-polyfill'
 import { useState, useEffect } from 'react'
 import { Grid, Box, Link, Button, IconButton, Dialog, Paper, Switch, TableContainer, Table, TableHead, TableRow,TableBody, TableCell } from '@mui/material'
-import Base from '../src/components/Base.jsx'
+import Base from '../../src/components/Base.jsx'
 import CourseForm from './components/CourseForm.jsx';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import SchoolIcon from '@mui/icons-material/School';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import render from '../src/render.jsx';
-import { getCookie } from '../src/utils.js';
+import render from '../../src/render.jsx';
+import { getCookie } from '../../src/utils.js';
 import EnableCourseSwitchPopup from './components/EnableCourseSwitchPopup.jsx';
 import DeleteCoursePopup from './components/DeleteCoursePopup.jsx';
 import FilterForm from './components/FilterForm.jsx';

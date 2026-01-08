@@ -4,7 +4,14 @@ import json
 import re
 
 
-TEMPLATES = {"", "courses", "course", "organizations", "users"}
+TEMPLATES = [
+    ["platform", "courses"],
+    ["platform", "course"],
+    ["platform", "organizations"],
+    ["platform", "users"],
+    ["personalised", "quiz_public"],
+    ["personalised", "verify_enrollment"],
+]
 
 
 def rewrite_backend_file(
@@ -49,28 +56,29 @@ def run_prebuild() -> None:
     manifest_path = root_path / "dist" / "manifest.json"
     manifest = json.loads(manifest_path.read_text())
 
-    for template in TEMPLATES:
-        frontend_path_segment = [template, "index.html"]
-        frontend_path = "/".join(frontend_path_segment).lstrip("/")
-        if template == "":
-            template = "index"
+    for template_path in TEMPLATES:
+        template_path.append("index.html")
+        frontend_path = "/".join(template_path).lstrip("/")
         backend_file = (
             root_path
             / "django_email_learning"
             / "templates"
-            / "platform"
-            / f"{template}.html"
+            / template_path[0]
+            / f"{template_path[1]}.html"
         )
         rewrite_backend_file(backend_file, manifest, frontend_path)
 
-    base_html_path = (
-        root_path / "django_email_learning" / "templates" / "platform" / "base.html"
-    )
-    file_content = base_html_path.read_text()
-    file_content = file_content.replace("{% load django_vite %}", "")
-    file_content = file_content.replace("{% vite_react_refresh %}", "")
-    file_content = file_content.replace("{% vite_hmr_client %}", "")
-    base_html_path.write_text(file_content)
+    folders_with_base_html = {"platform", "personalised"}
+
+    for folder in folders_with_base_html:
+        base_html_path = (
+            root_path / "django_email_learning" / "templates" / folder / "base.html"
+        )
+        file_content = base_html_path.read_text()
+        file_content = file_content.replace("{% load django_vite %}", "")
+        file_content = file_content.replace("{% vite_react_refresh %}", "")
+        file_content = file_content.replace("{% vite_hmr_client %}", "")
+        base_html_path.write_text(file_content)
 
 
 if __name__ == "__main__":

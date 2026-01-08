@@ -24,13 +24,12 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        courses: resolve(__dirname, 'courses/index.html'),
-        course: resolve(__dirname, 'course/index.html'),
-        organizations: resolve(__dirname, 'organizations/index.html'),
-        users: resolve(__dirname, 'users/index.html'),
-        quiz: resolve(__dirname, "my/quiz/index.html"),
-        verification: resolve(__dirname, "my/verification/index.html"),
+        courses: resolve(__dirname, 'platform/courses/index.html'),
+        course: resolve(__dirname, 'platform/course/index.html'),
+        organizations: resolve(__dirname, 'platform/organizations/index.html'),
+        users: resolve(__dirname, 'platform/users/index.html'),
+        quiz_public: resolve(__dirname, "personalised/quiz_public/index.html"),
+        verify_enrollment: resolve(__dirname, "personalised/verify_enrollment/index.html"),
       }
     },
     manifest: 'manifest.json',

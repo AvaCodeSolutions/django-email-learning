@@ -1,8 +1,8 @@
 import { useState, useEffect, use } from 'react';
 import { Alert, Box, Button, Typography, Select, MenuItem, Tooltip } from '@mui/material';
-import RequiredTextField from '../../src/components/RequiredTextField.jsx';
-import ContentEditor from '../../src/components/ContentEditor';
-import { getCookie } from '../../src/utils.js';
+import RequiredTextField from '../../../src/components/RequiredTextField.jsx';
+import ContentEditor from '../../../src/components/ContentEditor.jsx';
+import { getCookie } from '../../../src/utils.js';
 
 function LessonForm({ header, initialTitle, initialContent, onContentChange, cancelCallback, successCallback, courseId, lessonId, initialWaitingPeriod, contentId }) {
     const [title, setTitle] = useState(initialTitle || "");

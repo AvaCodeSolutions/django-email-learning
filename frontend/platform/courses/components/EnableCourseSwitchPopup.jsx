@@ -1,5 +1,5 @@
 import { Button, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
-import { getCookie } from '../../src/utils';
+import { getCookie } from '../../../src/utils';
 
 const EnableCourseSwitchPopup = ({ courseId, action, courseTitle, handleClose, handleSuccess}) => {
 

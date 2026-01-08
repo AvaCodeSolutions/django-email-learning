@@ -1,7 +1,7 @@
-import RequiredTextField from "../../src/components/RequiredTextField"
+import RequiredTextField from "../../../src/components/RequiredTextField"
 import { Alert, Box, Button } from "@mui/material"
 import { useState } from "react"
-import { getCookie } from '../../src/utils';
+import { getCookie } from '../../../src/utils';
 
 
 const CreateImapForm = ({ onSuccess, activeOrganizationId }) => {

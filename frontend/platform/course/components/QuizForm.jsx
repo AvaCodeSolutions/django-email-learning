@@ -1,9 +1,9 @@
 import { useRef, useState, useEffect } from 'react';
 import { Alert,Box, Button, Grid, MenuItem, Select, Tooltip, Typography } from '@mui/material';
 import QuizIcon from '@mui/icons-material/Quiz';
-import RequiredTextField from '../../src/components/RequiredTextField';
+import RequiredTextField from '../../../src/components/RequiredTextField';
 import QuestionForm from './QuestionForm';
-import { getCookie } from '../../src/utils';
+import { getCookie } from '../../../src/utils';
 
 const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod }) => {
 

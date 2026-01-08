@@ -1,8 +1,8 @@
-import Base from "../src/components/Base";
+import Base from "../../src/components/Base";
 import { Box, Button, Dialog, Grid } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
 import { useState } from "react";
-import render from "../src/render";
+import render from "../../src/render";
 import OrganizationForm from "./components/OrganizationForm";
 
 function Organizations() {

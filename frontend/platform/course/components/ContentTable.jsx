@@ -1,6 +1,6 @@
 import { IconButton, Switch, TableContainer, Table, TableHead, TableRow, TableBody, TableCell, Paper, Typography, Tab } from '@mui/material';
 import { useState, useEffect } from 'react';
-import { getCookie } from '../../src/utils.js';
+import { getCookie } from '../../../src/utils.js';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragHandleIcon from '@mui/icons-material/DragHandle';
 

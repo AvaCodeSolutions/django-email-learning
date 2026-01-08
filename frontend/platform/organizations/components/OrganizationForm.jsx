@@ -1,5 +1,5 @@
 import { Box, Button, DialogActions, TextField } from "@mui/material";
-import RequiredTextField  from "../../src/components/RequiredTextField.jsx";
+import RequiredTextField  from "../../../src/components/RequiredTextField.jsx";
 import { useState } from "react";
 
 function OrganizationForm({ successCallback, failureCallback, cancelCallback, createMode }) {

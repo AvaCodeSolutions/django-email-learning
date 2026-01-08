@@ -1,10 +1,10 @@
 import { Alert, Box, Button, FormControlLabel, Switch, Tooltip, Typography } from '@mui/material';
-import RequiredTextField  from '../../src/components/RequiredTextField.jsx';
+import RequiredTextField  from '../../../src/components/RequiredTextField.jsx';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import IconButton from '@mui/material/IconButton';
 import AddImapConnectionForm from './AddImapConnectionForm.jsx';
 import { useEffect, useState } from 'react';
-import { getCookie } from '../../src/utils.js';
+import { getCookie } from '../../../src/utils.js';
 
 function CourseForm({successCallback, failureCallback, cancelCallback, activeOrganizationId, createMode, courseId}) {
 

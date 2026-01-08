@@ -1,8 +1,8 @@
 import './styles.scss'
 
 import 'vite/modulepreload-polyfill'
-import render from '../src/render.jsx';
-import Base from '../src/components/Base.jsx'
+import render from '../../src/render.jsx';
+import Base from '../../src/components/Base.jsx'
 import FilterListIcon from '@mui/icons-material/FilterList';
 import DescriptionIcon from '@mui/icons-material/Description';
 import BallotIcon from '@mui/icons-material/Ballot';
@@ -11,7 +11,7 @@ import { Box, Grid, Button, Dialog } from '@mui/material'
 import LessonForm from './components/LessonForm.jsx';
 import QuizForm from './components/QuizForm.jsx';
 import ContentTable from './components/ContentTable.jsx';
-import { getCookie } from '../src/utils.js';
+import { getCookie } from '../../src/utils.js';
 
 
 function Course() {

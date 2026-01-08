@@ -1,6 +1,6 @@
 import { Alert, Button, Box, DialogActions, DialogContent, DialogContentText, DialogTitle, Typography } from "@mui/material";
 import { useState } from "react"
-import { getCookie } from '../../src/utils';
+import { getCookie } from '../../../src/utils';
 import WarningIcon from '@mui/icons-material/Warning';
 
 const DeleteCoursePopup = ({ courseId, courseTitle, handleClose, handleSuccess}) => {
