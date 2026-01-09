@@ -3,6 +3,7 @@ import ipaddress
 import re
 import random
 import uuid
+import logging
 from enum import StrEnum
 from typing import Any
 from django.conf import settings
@@ -18,9 +19,11 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
 from django_email_learning.services import jwt_service
+from typing import Optional
 
 
 FIXED_SALT = b"\x00" * 16
+logger = logging.getLogger(__name__)
 
 
 def is_domain_or_ip(value: str) -> None:
@@ -328,6 +331,13 @@ class DeactivationReason(StrEnum):
     INACTIVE = "inactive"
 
 
+class DeliveryStatus(StrEnum):
+    SCHEDULED = "scheduled"
+    PROCESSING = "processing"
+    DELIVERED = "delivered"
+    CANCELED = "canceled"
+
+
 class Enrollment(models.Model):
     state_transitions = {
         EnrollmentStatus.UNVERIFIED: [
@@ -402,6 +412,27 @@ class Enrollment(models.Model):
             )
         ]
 
+    def graduate(self) -> None:
+        if self.status != EnrollmentStatus.ACTIVE:
+            raise ValidationError("Only active enrollments can be marked as completed.")
+        self.status = EnrollmentStatus.COMPLETED
+        logger.info(
+            f"Learner ID {self.learner.id} has completed the course {self.course.title}."
+        )
+
+        # TODO: send certificate email here
+        self.save()
+
+    def fail(self) -> None:
+        if self.status != EnrollmentStatus.ACTIVE:
+            raise ValidationError("Only active enrollments can be marked as failed.")
+        self.status = EnrollmentStatus.DEACTIVATED
+        self.deactivation_reason = DeactivationReason.FAILED
+        logger.info(
+            f"Learner ID {self.learner.id} has failed the course {self.course.title}."
+        )
+        self.save()
+
     @transaction.atomic()
     def schedule_first_content_delivery(self) -> None:
         first_content = (
@@ -414,14 +445,11 @@ class Enrollment(models.Model):
                 enrollment=self,
                 course_content=first_content,
             )
-            link = None
-            if first_content.quiz:
-                link = delivery.link()
-            DeliverySchedule.objects.create(
+            scheduled = DeliverySchedule.objects.create(
                 time=timezone.now() + timedelta(seconds=first_content.waiting_period),
                 delivery=delivery,
-                link=link,  # type: ignore[misc]
             )
+            scheduled.generate_link()
         else:
             raise ValidationError("No published content available to schedule.")
 
@@ -437,7 +465,7 @@ class ContentDelivery(models.Model):
 
     @property
     def times_delivered(self) -> int:
-        return self.delivery_schedules.filter(is_delivered=True).count()
+        return self.delivery_schedules.filter(status=DeliveryStatus.DELIVERED).count()  # type: ignore[misc]
 
     def update_hash(self) -> None:
         self.hash_value = (
@@ -445,32 +473,48 @@ class ContentDelivery(models.Model):
         )
         self.save()
 
-    def link(self) -> str:
-        payload = {
-            "delivery_id": self.id,
-            "delivery_hash": self.hash_value,
-        }
+    def schedule_next_delivery(self) -> Optional["ContentDelivery"]:
+        """
+        Schedules the next content delivery based on the current content's priority.
+        Returns the ID of the newly created ContentDelivery if successful, otherwise None.
+        """
 
-        if self.course_content.quiz:
-            if (
-                self.course_content.quiz.selection_strategy
-                == QuizSelectionStrategy.RANDOM_QUESTIONS.value
-            ):
-                payload["question_ids"] = self.course_content.quiz.random_question_ids()  # type: ignore[assignment]
-            token = jwt_service.generate_jwt(
-                payload=payload,
-                expiration_seconds=60
-                * 60
-                * 24
-                * self.course_content.quiz.deadline_days,
+        next_content = (
+            CourseContent.objects.filter(
+                course=self.course_content.course,
+                is_published=True,
+                priority__gt=self.course_content.priority,
             )
-            quiz_path = reverse("django_email_learning:personalised:quiz_public_view")
-            return f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{quiz_path}?token={token}"
-        else:
-            # TODO: Implement lesson link generation
-            raise NotImplementedError(
-                "Link generation is only implemented for quiz content."
+            .order_by("priority")
+            .first()
+        )
+        if next_content:
+            delivery, created = ContentDelivery.objects.get_or_create(
+                enrollment=self.enrollment,
+                course_content=next_content,
             )
+            schedule = DeliverySchedule.objects.create(
+                time=timezone.now() + timedelta(seconds=next_content.waiting_period),
+                delivery=delivery,
+            )
+            schedule.generate_link()
+            return delivery
+        return None
+
+    def repeat_delivery_in_days(self, days: int) -> bool:
+        """
+        Schedules a repeat delivery of the current content after a specified number of days.
+        Returns True if the repeat delivery was scheduled, otherwise False.
+        """
+        schedule = DeliverySchedule.objects.create(
+            time=timezone.now() + timedelta(days=days),
+            delivery=self,
+        )
+        schedule.generate_link()
+        logger.info(
+            f"Repeat delivery scheduled for ContentDelivery ID {self.id} in {days} days."
+        )
+        return True
 
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self.full_clean()
@@ -493,11 +537,47 @@ class DeliverySchedule(models.Model):
         ContentDelivery, on_delete=models.CASCADE, related_name="delivery_schedules"
     )
     time = models.DateTimeField(default=timezone.now, db_index=True)
-    is_delivered = models.BooleanField(default=False, db_index=True)
-    link = models.URLField(null=True, blank=True)
+    link = models.URLField(null=True, blank=True, max_length=500)
+    status = models.CharField(
+        max_length=50,
+        choices=[
+            (DeliveryStatus.SCHEDULED, "Scheduled"),
+            (DeliveryStatus.PROCESSING, "Processing"),
+            (DeliveryStatus.DELIVERED, "Delivered"),
+        ],
+        default=DeliveryStatus.SCHEDULED,
+        db_index=True,
+    )
+
+    def generate_link(self) -> str:
+        payload = {
+            "delivery_id": self.delivery.id,
+            "delivery_hash": self.delivery.hash_value,
+        }
+
+        if self.delivery.course_content.quiz:
+            if (
+                self.delivery.course_content.quiz.selection_strategy
+                == QuizSelectionStrategy.RANDOM_QUESTIONS.value
+            ):
+                payload[
+                    "question_ids"
+                ] = self.delivery.course_content.quiz.random_question_ids()  # type: ignore[assignment]
+            exp = self.time + timedelta(
+                days=self.delivery.course_content.quiz.deadline_days
+            )
+            token = jwt_service.generate_jwt(payload=payload, exp=exp)
+            quiz_path = reverse("django_email_learning:personalised:quiz_public_view")
+            link = f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{quiz_path}?token={token}"
+            self.link = link
+            self.save()
+            return link
+        else:
+            # TODO: Implement lesson link generation
+            return ""
 
     def __str__(self) -> str:
-        return f"Delivery for {self.delivery.course_content.title} to {self.delivery.enrollment.learner.email} at {self.time} - Delivered: {self.is_delivered}"
+        return f"Delivery for {self.delivery.course_content.title} to {self.delivery.enrollment.learner.email} at {self.time} - Status: {self.status}"
 
 
 class QuizSubmission(models.Model):

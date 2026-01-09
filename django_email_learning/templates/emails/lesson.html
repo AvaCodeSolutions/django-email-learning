@@ -1,0 +1,16 @@
+{% extends "emails/base.html" %}
+
+{% block extra_styles %}
+    pre {
+        background-color: #f4f4f4;
+        padding: 10px;
+        border-radius: 5px;
+        overflow-x: auto;
+    }
+{% endblock %}
+
+{% block content %}
+        <h2 style="color: #2c3e50; margin-top: 0; text-align: center; border-bottom: 2px solid {{ brand_color }}; padding-bottom: 15px;">{{ lesson.title }}</h2>
+
+        {{ lesson.content|safe }}
+{% endblock %}
