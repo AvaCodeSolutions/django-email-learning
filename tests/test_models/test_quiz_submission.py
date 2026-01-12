@@ -2,6 +2,7 @@ from django_email_learning.models import (
     QuizSubmission,
     ContentDelivery,
     DeliverySchedule,
+    DeliveryStatus,
 )
 from django.core.exceptions import ValidationError
 import pytest
@@ -13,7 +14,7 @@ def test_quiz_submission_creation(db, course_quiz_content, enrollment):
         course_content=course_quiz_content,
     )
 
-    DeliverySchedule.objects.create(is_delivered=True, delivery=delivery)
+    DeliverySchedule.objects.create(status=DeliveryStatus.DELIVERED, delivery=delivery)
     submission = QuizSubmission.objects.create(
         delivery=delivery,
         score=85,
@@ -31,7 +32,9 @@ def test_quiz_submission_for_lesson_content(db, course_lesson_content, enrollmen
         course_content=course_lesson_content,
     )
     delivery.delivery_schedules.add(
-        DeliverySchedule.objects.create(is_delivered=True, delivery=delivery)
+        DeliverySchedule.objects.create(
+            status=DeliveryStatus.DELIVERED, delivery=delivery
+        )
     )
     with pytest.raises(Exception) as exc_info:
         QuizSubmission.objects.create(
@@ -57,7 +60,9 @@ def test_invalid_quiz_submission_fields(
         course_content=course_quiz_content,
     )
     delivery.delivery_schedules.add(
-        DeliverySchedule.objects.create(is_delivered=True, delivery=delivery)
+        DeliverySchedule.objects.create(
+            status=DeliveryStatus.DELIVERED, delivery=delivery
+        )
     )
 
     with pytest.raises(ValidationError):

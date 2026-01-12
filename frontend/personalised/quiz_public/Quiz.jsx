@@ -12,6 +12,7 @@ const Quiz = () => {
     const [warning, setWarning] = useState("");
     const [showQuestions, setShowQuestions] = useState(true);
     const [isPassed, setIsPassed] = useState(null);
+    const [message, setMessage] = useState("");
     const [score, setScore] = useState(null);
 
     const showSubmitDialog = () => {
@@ -42,6 +43,7 @@ const Quiz = () => {
            setShowQuestions(false);
            setIsPassed(data.passed);
            setScore(data.score);
+           setMessage(data.message);
         })
         .catch(() => {
             console.error("Error submitting quiz");
@@ -86,8 +88,8 @@ const Quiz = () => {
             <Button variant="contained" onClick={showSubmitDialog}>Submit</Button>
         </Box>
         </Box> : <Box textAlign="center">
-            {isPassed !== null && (isPassed ? <Alert severity="success"><Typography variant="h6"><CelebrationIcon /> Congratulations! You have passed the quiz. Your score is {score}%.</Typography></Alert> :
-            <Alert severity="error"><Typography variant="h6"><SentimentVeryDissatisfiedIcon /> Unfortunately, you did not pass the quiz. Your score is {score}%.</Typography></Alert>)}
+            {isPassed !== null && (isPassed ? <Alert severity="success"><Typography variant="h6"><CelebrationIcon /> {message} Your score is {score}%.</Typography></Alert> :
+            <Alert severity="error"><Typography variant="h6"><SentimentVeryDissatisfiedIcon /> {message} Your score is {score}%.</Typography></Alert>)}
         </Box>}
         </Box> : <Alert severity="error"><Typography variant="h6">Error loading quiz: {error_message} {ref && `(Ref: ${ref})`}</Typography></Alert>}
         <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">

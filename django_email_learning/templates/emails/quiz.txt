@@ -1,0 +1,10 @@
+{{ quiz.title }}
+
+Dear Learner,
+
+Your quiz is now available for completion. You have {{ quiz.deadline_days }} days from today to submit your responses.
+
+To successfully pass this quiz, you must achieve a minimum score of {{ quiz.required_score }}.
+
+Please click the link below to access and submit your quiz:
+{{ link }}

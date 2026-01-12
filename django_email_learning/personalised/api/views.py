@@ -15,6 +15,8 @@ from pydantic import ValidationError
 import json
 import logging
 
+logger = logging.getLogger(__name__)
+
 
 class QuizSubmissionView(View):
     def post(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
@@ -62,6 +64,9 @@ class QuizSubmissionView(View):
             score, passed = self.calculate_score_and_passed(
                 quiz, answers, decoded.get("question_ids")
             )
+            logger.info(
+                f"Learner ID {enrolment.learner.id} submitted quiz for Course {enrolment.course.title} with score {score}. Passed: {passed}"
+            )
         except ValueError as ve:
             return JsonResponse({"error": str(ve)}, status=500)
 
@@ -74,17 +79,38 @@ class QuizSubmissionView(View):
         delivery.update_hash()
 
         if passed:
-            # TODO: Update the next content_delivery if the quiz is passed
-            pass
+            message = "Congratulations! You have passed the quiz."
+            delivery = delivery.schedule_next_delivery()
+            if not delivery:
+                enrolment.graduate()
         else:
-            # TODO: Schedule the second quiz attempt if the quiz is failed
-            pass
+            # Check if it's the second attempt failing
+            failed_submissions_count = QuizSubmission.objects.filter(
+                delivery=delivery,
+                is_passed=False,
+            ).count()
+
+            if failed_submissions_count > 1:
+                message = "You have failed the quiz twice. Unfortunatly you can not continue the course on this enrollment. But you can enroll again to retake the course."
+                logger.info(
+                    f"Learner ID {enrolment.learner.id} has failed the quiz twice for Course {enrolment.course.title}. "
+                    f"Marking enrollment as failed."
+                )
+                enrolment.fail()
+            else:
+                message = "You have failed the quiz. You will receive another chance to retake it tomorrow."
+                logger.info(
+                    f"Learner ID {enrolment.learner.id} has failed the quiz for Course {enrolment.course.title}. "
+                    f"Scheduling a retry for the next day."
+                )
+                delivery.repeat_delivery_in_days(1)
 
         return JsonResponse(
             {
                 "score": score,
                 "passed": passed,
                 "required_score": quiz.required_score,
+                "message": message,
             },
             status=200,
         )
@@ -139,10 +165,6 @@ class QuizSubmissionView(View):
                     base_score += 1 / correct_count  # Full point for correct answer
                 else:
                     base_score -= 0.5 / correct_count  # Penalty for incorrect answer
-
-            logging.info(
-                f"User submitted quiz with id {quiz.id} with base score {base_score}"
-            )
 
         score = round(base_score / len(question_ids) * 100)  # Score as percentage
         score = max(0, score)

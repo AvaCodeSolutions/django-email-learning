@@ -15,6 +15,7 @@ from django_email_learning.models import (
     EnrollmentStatus,
     ContentDelivery,
     DeliverySchedule,
+    DeliveryStatus,
 )
 import pytest
 
@@ -236,6 +237,8 @@ def content_delivery(db, active_enrollment, course_quiz_content, quiz_with_quest
         hash_value="testhash",
     )
     delivery.delivery_schedules.add(
-        DeliverySchedule.objects.create(is_delivered=True, delivery=delivery)
+        DeliverySchedule.objects.create(
+            status=DeliveryStatus.DELIVERED, delivery=delivery
+        )
     )
     return delivery

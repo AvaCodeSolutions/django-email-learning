@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.utils import timezone
 import datetime
 import jwt
 
@@ -14,11 +15,15 @@ class ExpiredTokenException(Exception):
     pass
 
 
-def generate_jwt(payload: dict, expiration_seconds: int = 3600) -> str:
+def generate_jwt(
+    payload: dict,
+    expiration_seconds: int = 3600,
+    exp: datetime.datetime | None = None,
+) -> str:
     payload_copy = payload.copy()
-    payload_copy["exp"] = datetime.datetime.now(datetime.UTC) + datetime.timedelta(
-        seconds=expiration_seconds
-    )
+    if not exp:
+        exp = timezone.now() + datetime.timedelta(seconds=expiration_seconds)
+    payload_copy["exp"] = exp
     token = jwt.encode(payload_copy, SECRET, algorithm=ALGORITHM)
     return token
 
