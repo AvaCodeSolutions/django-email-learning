@@ -1,0 +1,8 @@
+{% extends "public/base.html" %}
+{% load django_vite %}
+{% block head_script %}
+    <script>
+        const organization = {{ organization_json | safe }};
+    </script>
+    {% vite_asset 'public/organization/Organization.jsx' %}
+{% endblock %}

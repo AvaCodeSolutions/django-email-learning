@@ -146,6 +146,7 @@ def course(db, imap_connection) -> Course:
     course = Course(
         title="Sample Course",
         slug="sample-course",
+        description="This is a sample course description.",
         imap_connection=imap_connection,
         organization_id=1,
     )
