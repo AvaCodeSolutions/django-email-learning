@@ -28,6 +28,7 @@ export default defineConfig({
         course: resolve(__dirname, 'platform/course/index.html'),
         organizations: resolve(__dirname, 'platform/organizations/index.html'),
         users: resolve(__dirname, 'platform/users/index.html'),
+        organization: resolve(__dirname, 'public/organization/index.html'),
         quiz_public: resolve(__dirname, "personalised/quiz_public/index.html"),
         verify_enrollment: resolve(__dirname, "personalised/verify_enrollment/index.html"),
       }

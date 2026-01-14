@@ -3,6 +3,7 @@ from django_email_learning.platform.api import urls as api_urls
 from django_email_learning.platform import urls as platform_urls
 from django_email_learning.personalised.api import urls as personalised_api_urls
 from django_email_learning.personalised import urls as personalised_urls
+from django_email_learning.public import urls as public_urls
 
 app_name = "django_email_learning"
 
@@ -13,5 +14,6 @@ urlpatterns = [
         include(personalised_api_urls, namespace="api_personalised"),
     ),
     path("platform/", include(platform_urls, namespace="platform")),
+    path("public/", include(public_urls, namespace="public")),
     path("my/", include(personalised_urls, namespace="personalised")),
 ]

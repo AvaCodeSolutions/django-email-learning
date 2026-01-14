@@ -26,6 +26,28 @@ const defaultOptions = {
         size: 'small',
       },
     },
+    MuiTypography: {
+      styleOverrides: {
+        h1: {
+          fontSize: '2rem',
+          fontWeight: 600,
+          lineHeight: 1.2,
+          marginBottom: '1rem',
+        },
+        h2: {
+          fontSize: '1.5rem',
+          fontWeight: 600,
+          lineHeight: 1.3,
+          marginBottom: '0.875rem',
+        },
+        h3: {
+          fontSize: '1.25rem',
+          fontWeight: 600,
+          lineHeight: 1.4,
+          marginBottom: '0.75rem',
+        },
+      },
+    },
     MuiIconButton: {
       defaultProps: {
         size: 'small',
