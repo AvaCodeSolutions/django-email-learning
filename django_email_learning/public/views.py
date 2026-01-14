@@ -2,6 +2,8 @@ from django.views.generic import TemplateView
 from django.db.models import Prefetch
 from django_email_learning.models import Organization, Course
 from django.http import Http404
+from django.urls import reverse
+from django.conf import settings
 from django_email_learning.public.serializers import (
     OrganizationSerializer,
     PublicCourseSerializer,
@@ -47,6 +49,10 @@ class OrganizationView(TemplateView):
                 description=organization.description,
                 courses=courses,
             )
+            enroll_api_path = reverse("django_email_learning:api_public:enroll")
+            context[
+                "enroll_api_url"
+            ] = f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{enroll_api_path}"
             context["organization_json"] = organization_data.model_dump_json()
             context["organization"] = organization_data.model_dump()
             context["page_title"] = organization.name
