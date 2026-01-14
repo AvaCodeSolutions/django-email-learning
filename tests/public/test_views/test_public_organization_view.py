@@ -9,6 +9,7 @@ def test_organization_view_anonymous_client(db, anonymous_client):
     assert response.status_code == 200
     assert response.context["organization"]["id"] == 1
     assert response.context["page_title"] == response.context["organization"]["name"]
+    assert response.context["enroll_api_url"].startswith("http")
     assert "organization_json" in response.context
 
     # No course added yet, so courses list should be empty

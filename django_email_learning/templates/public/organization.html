@@ -3,6 +3,7 @@
 {% block head_script %}
     <script>
         const organization = {{ organization_json | safe }};
+        const enrollApiUrl = "{{ enroll_api_url }}";
     </script>
     {% vite_asset 'public/organization/Organization.jsx' %}
 {% endblock %}

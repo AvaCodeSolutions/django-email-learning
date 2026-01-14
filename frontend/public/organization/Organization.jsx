@@ -1,19 +1,40 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import render from '../../src/render.jsx';
 import Layout from '../components/Layout.jsx';
 import EnrollmentForm from '../components/EnrollmentForm.jsx';
-import { Box, Button, Dialog, Grid, Typography } from '@mui/material';
+import { Alert, Box, Button, Dialog, Grid, Typography } from '@mui/material';
 
 
 function Organization() {
 
     const [displayModal, setDisplayModal] = useState(false);
     const [modalContent, setModalContent] = useState(null);
+    const [courses, setCourses] = useState([]);
+
+    useEffect(() => {
+        for (let course of organization.courses) {
+            course.enrolled = false;
+        }
+        setCourses(organization.courses);
+    }, []);
 
     const showModalForCourse = (course) => {
         // Logic to show modal for specific course
-        setModalContent(<EnrollmentForm course_title={course.title} course_slug={course.slug} onCancel={() => {setDisplayModal(false); setModalContent(null);}} />);
+        setModalContent(<EnrollmentForm course_title={course.title} course_slug={course.slug} organization_id={organization.id} endpoint={enrollApiUrl} onCancle={() => {setDisplayModal(false); setModalContent(null);}} onComplete={() => completeEnrollment(course)} />);
         setDisplayModal(true);
+    }
+
+    const completeEnrollment = (course) => {
+        setDisplayModal(false);
+        setModalContent(null);
+        // Disable the enrolled course button
+        let updatedCourses = courses.map(c => {
+            if (c.id === course.id) {
+                return { ...c, enrolled: true };
+            }
+            return c;
+        });
+        setCourses(updatedCourses);
     }
 
 
@@ -27,14 +48,15 @@ function Organization() {
             <Typography variant="h2">Courses:</Typography>
             { organization.courses.length > 0 ? (
                 <Grid container spacing={2}>
-                { organization.courses.map((course) => (
+                { courses.map((course) => (
                     <Grid size={{ xs: 12, md: 6 }} key={course.id}>
                     <Box key={course.id} mb={2} p={2} border={1} borderRadius={2} sx={{ minHeight: '100%' }}>
                         <Typography variant="h3">{course.title}</Typography>
-                        <Button variant="contained" color="primary" rel="noopener noreferrer" sx={{ mt: 1, mb: 2 }} onClick={() => showModalForCourse(course)}>
+                        <Button variant="contained" color="primary" rel="noopener noreferrer" sx={{ mt: 1, mb: 2 }} onClick={() => showModalForCourse(course)} disabled={course.enrolled}>
                             Enroll Now
                         </Button>
                         <Typography variant="body2" dangerouslySetInnerHTML={{ __html: course.description }} />
+                        { course.enrolled && <Alert severity="success" sx={{ mt: 2 }}>You are enrolled in this course.</Alert> }
                     </Box>
                     </Grid>
                 ))}
