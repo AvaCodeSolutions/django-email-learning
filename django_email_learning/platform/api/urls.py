@@ -10,6 +10,7 @@ from django_email_learning.platform.api.views import (
     SingleCourseContentView,
     UpdateSessionView,
     LearnersView,
+    SingleLearnerView,
 )
 
 app_name = "django_email_learning"
@@ -49,6 +50,11 @@ urlpatterns = [
         "organizations/<int:organization_id>/learners/",
         LearnersView.as_view(),
         name="learners_view",
+    ),
+    path(
+        "organizations/<int:organization_id>/learners/<int:learner_id>/",
+        SingleLearnerView.as_view(),
+        name="single_learner_view",
     ),
     path("organizations/", OrganizationsView.as_view(), name="organizations_view"),
     path("session", UpdateSessionView.as_view(), name="update_session_view"),
