@@ -25,6 +25,10 @@ from django_email_learning.decorators import (
     is_platform_admin,
 )
 import json
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 @method_decorator(ensure_csrf_cookie, name="get")
@@ -460,6 +464,34 @@ class LearnersView(View):
             },
             status=200,
         )
+
+
+@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
+class SingleLearnerView(View):
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            learner = Learner.objects.get(id=kwargs["learner_id"])
+            enrollments = Enrollment.objects.filter(learner=learner)
+            enroolments_list = []
+            for enrollment in enrollments:
+                enroolments_list.append(
+                    serializers.EnrollmentSummaryResponse(
+                        id=enrollment.id,
+                        course_title=enrollment.course.title,
+                        status=EnrollmentStatus(enrollment.status),
+                    )
+                )
+            return JsonResponse(
+                serializers.LearnerDetailResponse(
+                    id=learner.id, email=learner.email, enrollments=enroolments_list
+                ).model_dump(),
+                status=200,
+            )
+        except Learner.DoesNotExist:
+            return JsonResponse({"error": "Learner not found"}, status=404)
+        except ValidationError as e:
+            logger.error(f"Error in SingleLearnerView: {e.json()}")
+            return JsonResponse({"error": "An internal error occurred."}, status=500)
 
 
 class RootView(View):

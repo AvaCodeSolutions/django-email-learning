@@ -17,6 +17,7 @@ from django_email_learning.models import (
     CourseContent,
     Course,
     QuizSelectionStrategy,
+    EnrollmentStatus,
 )
 import enum
 
@@ -314,9 +315,23 @@ class WaitingPeriod(BaseModel):
             )
 
 
+class EnrollmentSummaryResponse(BaseModel):
+    id: int
+    course_title: str
+    status: EnrollmentStatus
+
+
 class LearnerResponse(BaseModel):
     id: int
     email: str
+
+
+class LearnerDetailResponse(BaseModel):
+    id: int
+    email: str
+    enrollments: list[EnrollmentSummaryResponse]
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CreateCourseContentRequest(BaseModel):
