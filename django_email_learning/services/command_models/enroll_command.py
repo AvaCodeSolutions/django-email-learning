@@ -36,7 +36,9 @@ class EnrollCommand(AbstractCommand):
             return
 
         # Check if Learner with the email exists, if not create one
-        learner, created = Learner.objects.get_or_create(email=self.email)
+        learner, created = Learner.objects.get_or_create(
+            email=self.email, organization_id=self.organization_id
+        )
         if created:
             self.logger.info(
                 f"Created new Learner for email: {mask_email(self.email)}. Learner ID: {learner.id}"

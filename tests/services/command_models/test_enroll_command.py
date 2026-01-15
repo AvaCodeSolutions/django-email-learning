@@ -19,7 +19,9 @@ def test_enroll_command(db, course):
     command.execute()
 
     # check learner and enrollment created
-    learner = Learner.objects.get(email="test@example.com")
+    learner = Learner.objects.get(
+        email="test@example.com", organization_id=course.organization.id
+    )
     enrollment = Enrollment.objects.get(
         learner=learner, course=course, status=EnrollmentStatus.UNVERIFIED
     )
