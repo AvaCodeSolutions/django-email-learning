@@ -314,6 +314,11 @@ class WaitingPeriod(BaseModel):
             )
 
 
+class LearnerResponse(BaseModel):
+    id: int
+    email: str
+
+
 class CreateCourseContentRequest(BaseModel):
     priority: int | None = Field(gt=0, examples=[1], default=None)
     waiting_period: WaitingPeriod

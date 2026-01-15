@@ -308,6 +308,7 @@ class BlockedEmail(models.Model):
 
 
 class Learner(models.Model):
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     email = models.EmailField(unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

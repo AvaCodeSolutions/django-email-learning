@@ -163,7 +163,7 @@ def blocked_email(db) -> BlockedEmail:
 
 @pytest.fixture()
 def learner(db) -> Learner:
-    learner = Learner(email="user@example.com")
+    learner = Learner(email="user@example.com", organization_id=1)
     learner.save()
     return learner
 

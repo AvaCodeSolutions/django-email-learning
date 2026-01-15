@@ -34,7 +34,10 @@ class UnsubscribeCommand(AbstractCommand):
             )
 
         try:
-            learner = Learner.objects.get(email=self.email)
+            learner = Learner.objects.get(
+                email=self.email,
+                organization_id=self.organization_id,  # type: ignore[misc]
+            )
         except Learner.DoesNotExist:
             self.logger.warning(
                 f"Unsubscribe Skipped: No learner found with email {self.email}"
