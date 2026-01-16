@@ -6,8 +6,10 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from datetime import datetime
 from typing import Optional, Literal, Any
 from django_email_learning.models import (
+    DeliveryStatus,
     Organization,
     ImapConnection,
     Lesson,
@@ -17,6 +19,7 @@ from django_email_learning.models import (
     CourseContent,
     Course,
     QuizSelectionStrategy,
+    Enrollment,
     EnrollmentStatus,
 )
 import enum
@@ -108,6 +111,14 @@ class CourseResponse(BaseModel):
     organization_id: int
     imap_connection_id: Optional[int]
     enabled: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CourseSummaryResponse(BaseModel):
+    id: int
+    title: str
+    slug: str
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -326,6 +337,145 @@ class LearnerResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     email: str
+
+
+class EventType(enum.StrEnum):
+    REGISTERED = "registered"
+    VERIFIED = "verified"
+    DEACTIVATED = "deactivated"
+    QUIZ_SUBMITED = "quiz_submitted"
+    CONTENT_SENT = "content_sent"
+    COURSE_COMPLETED = "course_completed"
+
+
+class DeactivatedEvent(BaseModel):
+    type: Literal[EventType.DEACTIVATED] = Field(
+        default=EventType.DEACTIVATED, exclude=True
+    )
+    reason: str
+
+
+class QuizSubmitedEvent(BaseModel):
+    type: Literal[EventType.QUIZ_SUBMITED] = Field(
+        default=EventType.QUIZ_SUBMITED, exclude=True
+    )
+    quiz_id: int
+    quiz_title: str
+    score: int
+    is_passed: bool
+    attempt_number: int
+
+
+class ContentSentEvent(BaseModel):
+    type: Literal[EventType.CONTENT_SENT] = Field(
+        default=EventType.CONTENT_SENT, exclude=True
+    )
+    course_content_id: int
+    course_content_title: str
+    course_content_type: str
+
+
+class Event(BaseModel):
+    type: EventType
+    timestamp: datetime
+    event_data: DeactivatedEvent | QuizSubmitedEvent | ContentSentEvent | None = Field(
+        discriminator="type"
+    )  # REGISTERED, VERIFIED, COURSE_COMPLETED have no additional data
+
+
+class EnrollmentResponse(BaseModel):
+    id: int
+    learner: LearnerResponse
+    course: CourseSummaryResponse
+    status: EnrollmentStatus
+    events: list[Event]
+
+    @staticmethod
+    def from_django_model(enrollment: Enrollment) -> "EnrollmentResponse":
+        events = [
+            Event(
+                type=EventType.REGISTERED,
+                timestamp=enrollment.enrolled_at,
+                event_data=None,
+            )
+        ]
+        if enrollment.activated_at:
+            events.append(
+                Event(
+                    type=EventType.VERIFIED,
+                    timestamp=enrollment.activated_at,
+                    event_data=None,
+                )
+            )
+        for delivery in enrollment.content_deliveries.all():  # type: ignore[attr-defined]
+            for schedule in delivery.delivery_schedules.filter(
+                status=DeliveryStatus.DELIVERED
+            ):
+                events.append(
+                    Event(
+                        type=EventType.CONTENT_SENT,
+                        timestamp=schedule.time,
+                        event_data=ContentSentEvent(
+                            course_content_id=delivery.course_content.id,
+                            course_content_title=delivery.course_content.lesson.title
+                            if delivery.course_content.lesson
+                            else delivery.course_content.quiz.title,  # type: ignore[union-attr]
+                            course_content_type=delivery.course_content.type,
+                        ),
+                    )
+                )
+                if delivery.course_content.type == "quiz":
+                    attempt_number = 0
+                    quiz_attempts = delivery.quiz_submissions.all().order_by(
+                        "submitted_at"
+                    )
+                    for attempt in quiz_attempts:
+                        attempt_number += 1
+                        events.append(
+                            Event(
+                                type=EventType.QUIZ_SUBMITED,
+                                timestamp=attempt.submitted_at,
+                                event_data=QuizSubmitedEvent(
+                                    quiz_id=delivery.course_content.quiz.id,  # type: ignore[union-attr]
+                                    quiz_title=delivery.course_content.quiz.title,  # type: ignore[union-attr]
+                                    score=attempt.score,
+                                    is_passed=attempt.is_passed,
+                                    attempt_number=attempt_number,
+                                ),
+                            )
+                        )
+        if (
+            enrollment.status == EnrollmentStatus.COMPLETED
+            and enrollment.final_state_at
+        ):
+            events.append(
+                Event(
+                    type=EventType.COURSE_COMPLETED,
+                    timestamp=enrollment.final_state_at,
+                    event_data=None,
+                )
+            )
+        elif (
+            enrollment.status == EnrollmentStatus.DEACTIVATED
+            and enrollment.final_state_at
+        ):
+            events.append(
+                Event(
+                    type=EventType.DEACTIVATED,
+                    timestamp=enrollment.final_state_at,
+                    event_data=DeactivatedEvent(reason=enrollment.deactivation_reason),  # type: ignore[arg-type]
+                )
+            )
+
+        return EnrollmentResponse.model_validate(
+            {
+                "id": enrollment.id,
+                "learner": enrollment.learner,
+                "course": enrollment.course,
+                "status": enrollment.status,
+                "events": events,
+            }
+        )
 
 
 class LearnerDetailResponse(BaseModel):

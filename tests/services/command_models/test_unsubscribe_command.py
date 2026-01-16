@@ -21,6 +21,7 @@ def test_unsubscribe_command(db, enrollment):
     enrollment.refresh_from_db()
     assert enrollment.status == EnrollmentStatus.DEACTIVATED
     assert enrollment.deactivation_reason == "canceled"
+    assert enrollment.final_state_at is not None
 
 
 def test_unsubscribe_nonexistent_course(db, learner):
