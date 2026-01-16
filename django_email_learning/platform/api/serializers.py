@@ -316,12 +316,14 @@ class WaitingPeriod(BaseModel):
 
 
 class EnrollmentSummaryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     course_title: str
     status: EnrollmentStatus
 
 
 class LearnerResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: int
     email: str
 

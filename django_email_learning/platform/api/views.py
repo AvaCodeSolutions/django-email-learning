@@ -9,6 +9,7 @@ from django.db import models, transaction
 from pydantic import ValidationError
 
 from django_email_learning.platform.api import serializers
+from django_email_learning.platform.api.pagniated_api_mixin import PaginatedApiMixin
 from django_email_learning.models import (
     Course,
     CourseContent,
@@ -24,6 +25,7 @@ from django_email_learning.decorators import (
     is_an_organization_member,
     is_platform_admin,
 )
+from typing import Any
 import json
 import logging
 
@@ -422,13 +424,9 @@ class UpdateSessionView(View):
 
 
 @method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
-class LearnersView(View):
-    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
-        organization_id = kwargs["organization_id"]
-        page = int(request.GET.get("page", 1))
-        page_size = int(request.GET.get("page_size", 50))
-        offset = (page - 1) * page_size
-
+class LearnersView(PaginatedApiMixin, View):
+    def get_query_set(self, request: Any) -> models.QuerySet:
+        organization_id = self.kwargs["organization_id"]
         qs = Enrollment.objects.filter(course__organization_id=organization_id)
         if "course_id" in request.GET:
             course_id = request.GET["course_id"]
@@ -441,29 +439,10 @@ class LearnersView(View):
             search_term = request.GET["search"]
             qs = qs.filter(models.Q(learner__email__icontains=search_term))
         learner_ids = qs.values("learner_id").distinct()
-        count = learner_ids.count()
-        learners = Learner.objects.filter(id__in=learner_ids)[
-            offset : offset + page_size
-        ]
+        return Learner.objects.filter(id__in=learner_ids)
 
-        response_list = []
-        for learner in learners:
-            print(learner)
-            response_list.append(
-                serializers.LearnerResponse(
-                    id=learner.id, email=learner.email
-                ).model_dump()
-            )
-        return JsonResponse(
-            {
-                "learners": response_list,
-                "count": count,
-                "page": page,
-                "page_size": page_size,
-                "has_more": count > offset + page_size,
-            },
-            status=200,
-        )
+    def get_item_serializer_class(self) -> Any:
+        return serializers.LearnerResponse
 
 
 @method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")

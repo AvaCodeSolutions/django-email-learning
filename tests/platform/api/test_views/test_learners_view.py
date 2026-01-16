@@ -34,7 +34,7 @@ def test_learners_view_pagination(page, has_more, superadmin_client, learners_fa
     assert response.status_code == 200
     data = response.json()
     assert data["count"] == 25
-    assert len(data["learners"]) <= 10
+    assert len(data["items"]) <= 10
     assert data["page"] == page
     assert data["page_size"] == 10
     assert data["has_more"] is has_more
@@ -48,7 +48,7 @@ def test_learner_view_accesible_for_platform_viewer(viewer_client, learners_fact
     assert response.status_code == 200
     data = response.json()
     assert data["count"] == 5
-    assert len(data["learners"]) == 5
+    assert len(data["items"]) == 5
 
 
 def test_learner_view_not_accesible_for_no_role(anonymous_client, learners_factory):
@@ -70,8 +70,8 @@ def test_learners_view_search(superadmin_client, learners_factory):
     assert response.status_code == 200
     data = response.json()
     assert data["count"] == 1
-    assert len(data["learners"]) == 1
-    assert data["learners"][0]["email"] == "specific_learner@example.com"
+    assert len(data["items"]) == 1
+    assert data["items"][0]["email"] == "specific_learner@example.com"
 
 
 def test_learners_view_course_filter(superadmin_client, learners_factory, course):
@@ -89,8 +89,8 @@ def test_learners_view_course_filter(superadmin_client, learners_factory, course
     assert response.status_code == 200
     data = response.json()
     assert data["count"] == 1
-    assert len(data["learners"]) == 1
-    assert data["learners"][0]["email"] == "specific_learner@example.com"
+    assert len(data["items"]) == 1
+    assert data["items"][0]["email"] == "specific_learner@example.com"
 
 
 def test_learners_view_is_active_filter(superadmin_client, learners_factory, course):
