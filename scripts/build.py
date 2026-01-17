@@ -11,6 +11,7 @@ TEMPLATES = [
     ["platform", "users"],
     ["personalised", "quiz_public"],
     ["personalised", "verify_enrollment"],
+    ["public", "organization"],
 ]
 
 
@@ -68,7 +69,7 @@ def run_prebuild() -> None:
         )
         rewrite_backend_file(backend_file, manifest, frontend_path)
 
-    folders_with_base_html = {"platform", "personalised"}
+    folders_with_base_html = {"platform", "personalised", "public"}
 
     for folder in folders_with_base_html:
         base_html_path = (

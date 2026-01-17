@@ -8,6 +8,7 @@ from pydantic import (
 )
 from datetime import datetime
 from typing import Optional, Literal, Any
+from django.core.files.storage import default_storage
 from django_email_learning.models import (
     DeliveryStatus,
     Organization,
@@ -165,9 +166,13 @@ class CreateOrganizationRequest(BaseModel):
     description: Optional[str] = Field(
         None, examples=["A description of the organization."]
     )
+    logo_path: Optional[str] = Field(None, examples=["/path/to/logo.png"])
 
     def to_django_model(self) -> Organization:
         organization = Organization(name=self.name, description=self.description)
+        if self.logo_path and default_storage.exists(self.logo_path):
+            organization.logo = self.logo_path
+
         return organization
 
 
