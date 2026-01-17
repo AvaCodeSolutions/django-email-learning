@@ -473,6 +473,23 @@ class SingleLearnerView(View):
             return JsonResponse({"error": "An internal error occurred."}, status=500)
 
 
+@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
+class EnrollmentView(View):
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            enrollment = Enrollment.objects.get(id=kwargs["enrollment_id"])
+            return JsonResponse(
+                serializers.EnrollmentResponse.from_django_model(
+                    enrollment
+                ).model_dump(),
+                status=200,
+            )
+        except Enrollment.DoesNotExist:
+            return JsonResponse({"error": "Enrollment not found"}, status=404)
+        except ValidationError as e:
+            return JsonResponse({"error": e.json()}, status=400)
+
+
 class RootView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         return JsonResponse({"message": "Email Learning API is running."}, status=200)

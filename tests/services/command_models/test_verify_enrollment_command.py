@@ -59,6 +59,7 @@ def test_verify_enrollment_command_execute(db, enrollment, course_lesson_content
     enrollment.refresh_from_db()
     assert enrollment.status == EnrollmentStatus.ACTIVE
     assert enrollment.activation_code is None
+    assert enrollment.activated_at is not None
 
     delivery = ContentDelivery.objects.get(
         enrollment=enrollment, course_content=course_lesson_content

@@ -356,6 +356,8 @@ class Enrollment(models.Model):
     learner = models.ForeignKey(Learner, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     enrolled_at = models.DateTimeField(auto_now_add=True)
+    activated_at = models.DateTimeField(null=True, blank=True)
+    final_state_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(
         max_length=50,
         choices=[
@@ -400,6 +402,12 @@ class Enrollment(models.Model):
                 "Deactivation reason must be provided when status is 'deactivated'."
             )
         self.full_clean()
+        if self.status == EnrollmentStatus.ACTIVE and self.activated_at is None:
+            self.activated_at = timezone.now()
+        if self.status in [EnrollmentStatus.COMPLETED, EnrollmentStatus.DEACTIVATED]:
+            if self.final_state_at is None:
+                self.final_state_at = timezone.now()
+
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
@@ -418,6 +426,7 @@ class Enrollment(models.Model):
         if self.status != EnrollmentStatus.ACTIVE:
             raise ValidationError("Only active enrollments can be marked as completed.")
         self.status = EnrollmentStatus.COMPLETED
+        self.final_state_at = timezone.now()
         logger.info(
             f"Learner ID {self.learner.id} has completed the course {self.course.title}."
         )
@@ -430,6 +439,7 @@ class Enrollment(models.Model):
             raise ValidationError("Only active enrollments can be marked as failed.")
         self.status = EnrollmentStatus.DEACTIVATED
         self.deactivation_reason = DeactivationReason.FAILED
+        self.final_state_at = timezone.now()
         logger.info(
             f"Learner ID {self.learner.id} has failed the course {self.course.title}."
         )
@@ -457,7 +467,9 @@ class Enrollment(models.Model):
 
 
 class ContentDelivery(models.Model):
-    enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE)
+    enrollment = models.ForeignKey(
+        Enrollment, on_delete=models.CASCADE, related_name="content_deliveries"
+    )
     course_content = models.ForeignKey(CourseContent, on_delete=models.CASCADE)
     hash_value = models.CharField(max_length=64, null=True, blank=True)
     valid_until = models.DateTimeField(null=True, blank=True)
@@ -586,7 +598,9 @@ class DeliverySchedule(models.Model):
 
 
 class QuizSubmission(models.Model):
-    delivery = models.ForeignKey(ContentDelivery, on_delete=models.CASCADE)
+    delivery = models.ForeignKey(
+        ContentDelivery, on_delete=models.CASCADE, related_name="quiz_submissions"
+    )
     score = models.IntegerField()
     is_passed = models.BooleanField()
     submitted_at = models.DateTimeField(auto_now_add=True)

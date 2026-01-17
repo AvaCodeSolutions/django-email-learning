@@ -157,7 +157,7 @@ def test_schedule_first_content_delivery_creates_delivery_and_schedule(
     with freeze_time("2024-01-01 10:00:00"):
         enrollment.schedule_first_content_delivery()
 
-        deliveries = enrollment.contentdelivery_set.all()
+        deliveries = enrollment.content_deliveries.all()
         assert deliveries.count() == 1
         delivery = deliveries.first()
         assert delivery.course_content == course_lesson_content
@@ -181,7 +181,7 @@ def test_schedule_first_content_delivery_atomic_transaction(
         with pytest.raises(Exception):
             enrollment.schedule_first_content_delivery()
 
-        deliveries = enrollment.contentdelivery_set.all()
+        deliveries = enrollment.content_deliveries.all()
         assert (
             deliveries.count() == 0
         )  # Delivery should be deleted if no schedule created

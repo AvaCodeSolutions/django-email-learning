@@ -6,6 +6,7 @@ from django_email_learning.models import (
     EnrollmentStatus,
     DeactivationReason,
 )
+from django.utils import timezone
 from django_email_learning.services.command_models.abstract_command import (
     AbstractCommand,
 )
@@ -56,4 +57,5 @@ class UnsubscribeCommand(AbstractCommand):
         enrollments.update(
             status=EnrollmentStatus.DEACTIVATED,
             deactivation_reason=DeactivationReason.CANCELED,
+            final_state_at=timezone.now(),
         )
