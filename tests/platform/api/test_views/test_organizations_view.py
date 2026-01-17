@@ -1,4 +1,6 @@
 from django_email_learning.models import Organization
+from django.test import override_settings
+from django.core.files.storage import default_storage
 from django.urls import reverse
 import pytest
 
@@ -42,6 +44,42 @@ def test_post_organizations_view_as_superadmin(superadmin_client):
     )
     assert response.status_code == 201
     assert response.json().get("name") == "New Org"
+
+
+def test_create_organization_ignore_none_exisiting_logo_file(superadmin_client):
+    payload = {
+        "name": "Org with Logo",
+        "description": "Organization with non-existing logo file",
+        "logo": "non_existing_logo.png",
+    }
+    response = superadmin_client.post(
+        get_url(), data=payload, content_type="application/json"
+    )
+    assert response.status_code == 201
+    assert response.json().get("name") == "Org with Logo"
+    assert response.json().get("logo") is None
+
+
+@override_settings(
+    STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}}
+)
+def test_create_organization_for_existing_logo_file(superadmin_client):
+    # Create a dummy logo file in the default storage
+    logo_path = "existing_logo.png"
+    with default_storage.open(logo_path, "w") as f:
+        f.write("dummy image content")
+
+    payload = {
+        "name": "OrgName",
+        "description": "Organization with existing logo file",
+        "logo": logo_path,
+    }
+    response = superadmin_client.post(
+        get_url(), data=payload, content_type="application/json"
+    )
+    assert response.status_code == 201
+    assert response.json().get("name") == "OrgName"
+    assert response.json().get("logo").endswith(f"/{logo_path}")
 
 
 @pytest.mark.parametrize(

@@ -5,7 +5,8 @@ from django.db.utils import IntegrityError
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models, transaction
-
+from django.core.files.storage import default_storage
+from django.utils import timezone
 from pydantic import ValidationError
 
 from django_email_learning.platform.api import serializers
@@ -370,7 +371,9 @@ class OrganizationsView(View):
         response_list = []
         for org in organizations:
             response_list.append(
-                serializers.OrganizationResponse.model_validate(org).model_dump()
+                serializers.OrganizationResponse.from_django_model(
+                    org, request.build_absolute_uri
+                ).model_dump()
             )
         return JsonResponse({"organizations": response_list}, status=200)
 
@@ -386,8 +389,9 @@ class OrganizationsView(View):
             )
             org_user.save()
             return JsonResponse(
-                serializers.OrganizationResponse.model_validate(
-                    organization
+                serializers.OrganizationResponse.from_django_model(
+                    organization,
+                    request.build_absolute_uri,
                 ).model_dump(),
                 status=201,
             )
@@ -395,6 +399,29 @@ class OrganizationsView(View):
             return JsonResponse({"error": e.json()}, status=400)
         except IntegrityError as e:
             return JsonResponse({"error": str(e)}, status=409)
+
+
+@method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
+class FileUploadView(View):
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        uploaded_file = request.FILES.get("file")
+        if not uploaded_file:
+            return JsonResponse({"error": "No file uploaded"}, status=400)
+
+        # check file extension
+        allowed_extensions = ["png", "jpg", "jpeg", "gif", "bmp", "svg"]
+        file_extension = uploaded_file.name.split(".")[-1].lower()
+        if file_extension not in allowed_extensions:
+            return JsonResponse({"error": "Invalid file type"}, status=400)
+
+        date_prefix = timezone.now().strftime("%Y%m%d")
+
+        file_path = default_storage.save(
+            f"uploads/{date_prefix}/{kwargs['organization_id']}/{uploaded_file.name}",
+            uploaded_file,
+        )
+        file_url = default_storage.url(file_path)
+        return JsonResponse({"file_url": file_url, "file_path": file_path}, status=201)
 
 
 @method_decorator(is_an_organization_member(), name="post")
