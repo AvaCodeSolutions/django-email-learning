@@ -11,6 +11,8 @@ from django_email_learning.services.command_models.send_quiz_command import (
 from django.utils.module_loading import import_string
 from django.conf import settings
 import logging
+import datetime
+
 
 logger = logging.getLogger(__name__)
 
@@ -104,8 +106,7 @@ class DeliverContentsJob:
             logger.exception(
                 f"Failed to send lesson content for DeliverySchedule ID {delivery_schedule.id}: {str(e)}"
             )
-            delivery_schedule.status = DeliveryStatus.SCHEDULED
-            delivery_schedule.save()
+            self.handle_failed_delivery(delivery_schedule)
         return False
 
     def send_quiz_content(self, delivery_schedule: DeliverySchedule) -> bool:
@@ -143,6 +144,20 @@ class DeliverContentsJob:
             logger.exception(
                 f"Failed to send quiz content for DeliverySchedule ID {delivery_schedule.id}: {str(e)}"
             )
+            self.handle_failed_delivery(delivery_schedule)
+        return False
+
+    def handle_failed_delivery(self, delivery_schedule: DeliverySchedule) -> None:
+        # TODO: Implement custome metric logging for blocked deliveries and failed attempts.
+        """Handle a failed delivery by rescheduling or blocking it."""
+        if delivery_schedule.failed_attempts >= 3:
+            logger.error(
+                f"DeliverySchedule ID {delivery_schedule.id} has reached maximum retry attempts. Blocking the delivery."
+            )
+            delivery_schedule.status = DeliveryStatus.BLOCKED
+            delivery_schedule.save()
+        else:
+            delivery_schedule.time += datetime.timedelta(minutes=60)
+            delivery_schedule.failed_attempts += 1
             delivery_schedule.status = DeliveryStatus.SCHEDULED
             delivery_schedule.save()
-        return False

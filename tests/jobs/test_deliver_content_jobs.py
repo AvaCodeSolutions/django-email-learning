@@ -1,5 +1,5 @@
 from django_email_learning.jobs.deliver_contents_job import DeliverContentsJob
-
+from django_email_learning.jobs.deliver_contents_job import SendLessonCommand
 from django_email_learning.models import (
     DeliverySchedule,
     ContentDelivery,
@@ -108,3 +108,74 @@ def test_deliver_contents_job_runs_with_tasks(
     assert ContentDelivery.objects.filter(
         enrollment=enrollment2, course_content=course_content_3
     ).exists()
+
+
+def test_deliver_contents_job_blocks_after_3_failed_attempts(
+    db, delivery_queue_mock, enrollment, course_lesson_content
+):
+    # Create mock DeliverySchedule object
+    enrollment.status = EnrollmentStatus.ACTIVE
+    enrollment.save()
+
+    delivery = ContentDelivery.objects.create(
+        enrollment=enrollment, course_content=course_lesson_content
+    )
+
+    delivery_schedule = DeliverySchedule.objects.create(
+        delivery=delivery, failed_attempts=3
+    )
+
+    # Add task to the mock delivery queue
+    delivery_queue_mock.add_task(delivery_schedule)
+
+    job = DeliverContentsJob()
+
+    # Patch the send_lesson_content method to always raise an exception
+    with patch.object(
+        SendLessonCommand,
+        "execute",
+        side_effect=Exception("Simulated sending failure"),
+    ):
+        job.run()
+
+    # After running the job, the delivery schedule should be in BLOCKED status
+    delivery_schedule.refresh_from_db()
+    assert delivery_schedule.status == DeliveryStatus.BLOCKED
+    assert delivery_schedule.failed_attempts == 3
+
+
+def test_deliver_contents_job_reschedules_failed_delivery_and_increments_attempts(
+    db, delivery_queue_mock, enrollment, course_lesson_content
+):
+    # Create mock DeliverySchedule object
+    enrollment.status = EnrollmentStatus.ACTIVE
+    enrollment.save()
+
+    delivery = ContentDelivery.objects.create(
+        enrollment=enrollment, course_content=course_lesson_content
+    )
+
+    delivery_schedule = DeliverySchedule.objects.create(
+        delivery=delivery, failed_attempts=1
+    )
+
+    original_time = delivery_schedule.time
+
+    # Add task to the mock delivery queue
+    delivery_queue_mock.add_task(delivery_schedule)
+
+    job = DeliverContentsJob()
+
+    # Patch the send_lesson_content method to always raise an exception
+    with patch.object(
+        SendLessonCommand,
+        "execute",
+        side_effect=Exception("Simulated sending failure"),
+    ):
+        job.run()
+
+    # After running the job, the delivery schedule should be rescheduled and attempts incremented
+    delivery_schedule.refresh_from_db()
+    assert delivery_schedule.status == DeliveryStatus.SCHEDULED
+    assert delivery_schedule.failed_attempts == 2
+    assert delivery_schedule.time > original_time

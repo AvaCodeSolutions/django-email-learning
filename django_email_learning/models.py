@@ -337,6 +337,7 @@ class DeliveryStatus(StrEnum):
     PROCESSING = "processing"
     DELIVERED = "delivered"
     CANCELED = "canceled"
+    BLOCKED = "blocked"
 
 
 class Enrollment(models.Model):
@@ -545,10 +546,13 @@ class DeliverySchedule(models.Model):
             (DeliveryStatus.SCHEDULED, "Scheduled"),
             (DeliveryStatus.PROCESSING, "Processing"),
             (DeliveryStatus.DELIVERED, "Delivered"),
+            (DeliveryStatus.CANCELED, "Canceled"),
+            (DeliveryStatus.BLOCKED, "Blocked"),
         ],
         default=DeliveryStatus.SCHEDULED,
         db_index=True,
     )
+    failed_attempts = models.IntegerField(default=0)
 
     def generate_link(self) -> str:
         payload = {
