@@ -7,8 +7,9 @@ from pydantic import (
     model_validator,
 )
 from datetime import datetime
-from typing import Optional, Literal, Any
+from typing import Optional, Literal, Any, Callable
 from django.core.files.storage import default_storage
+from django.urls import reverse
 from django_email_learning.models import (
     DeliveryStatus,
     Organization,
@@ -157,8 +158,31 @@ class ImapConnectionResponse(BaseModel):
 class OrganizationResponse(BaseModel):
     id: int
     name: str
+    logo: Optional[str] = None
+    description: Optional[str] = None
+    public_url: str
 
     model_config = ConfigDict(from_attributes=True)
+
+    @staticmethod
+    def from_django_model(
+        organization: Organization, abs_url_builder: Callable
+    ) -> "OrganizationResponse":
+        url = reverse(
+            "django_email_learning:public:organization_view",
+            kwargs={"organization_id": organization.id},
+        )
+        return OrganizationResponse.model_validate(
+            {
+                "id": organization.id,
+                "name": organization.name,
+                "logo": abs_url_builder(organization.logo.url)
+                if organization.logo
+                else None,
+                "description": organization.description,
+                "public_url": abs_url_builder(url),
+            }
+        )
 
 
 class CreateOrganizationRequest(BaseModel):
@@ -166,12 +190,18 @@ class CreateOrganizationRequest(BaseModel):
     description: Optional[str] = Field(
         None, examples=["A description of the organization."]
     )
-    logo_path: Optional[str] = Field(None, examples=["/path/to/logo.png"])
+    logo: Optional[str] = Field(None, examples=["/path/to/logo.png"])
 
     def to_django_model(self) -> Organization:
         organization = Organization(name=self.name, description=self.description)
-        if self.logo_path and default_storage.exists(self.logo_path):
-            organization.logo = self.logo_path
+        organization.save()
+        organization.refresh_from_db()
+        if self.logo and default_storage.exists(self.logo):
+            final_path = (
+                f"organization_logos/{organization.id}/{self.logo.split('/')[-1]}"
+            )
+            default_storage.save(final_path, default_storage.open(self.logo))
+            organization.logo = final_path
 
         return organization
 

@@ -33,3 +33,6 @@ coverage.xml
 .DS_Store
 .idea/
 .vscode/
+
+# Media files
+media/
