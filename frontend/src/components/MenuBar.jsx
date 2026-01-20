@@ -60,6 +60,9 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     const logoVerticalUrl = theme.palette.mode === 'light' ? logoVerticalLightUrl : logoVerticalDarkUrl;
 
     useEffect(() => {
+        if (!showOrganizationSwitcher) {
+            return;
+        }
         fetch(apiBaseUrl + '/organizations/', {
             method: 'GET',
             credentials: 'include',

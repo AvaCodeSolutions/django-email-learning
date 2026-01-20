@@ -158,6 +158,7 @@ class OrganizationResponse(BaseModel):
     id: int
     name: str
     logo: Optional[str] = None
+    logo_path: Optional[str] = None
     description: Optional[str] = None
     public_url: str
 
@@ -178,6 +179,7 @@ class OrganizationResponse(BaseModel):
                 "logo": abs_url_builder(organization.logo.url)
                 if organization.logo
                 else None,
+                "logo_path": organization.logo.name if organization.logo else None,
                 "description": organization.description,
                 "public_url": abs_url_builder(url),
             }

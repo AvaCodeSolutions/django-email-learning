@@ -1,7 +1,9 @@
 import Base from "../../src/components/Base";
-import { Box, Button, Dialog, Grid, IconButton, TableContainer, Table, TableHead, TableRow,TableBody, TableCell } from "@mui/material";
+import { Alert, Box, Button, Dialog, Grid, IconButton, Paper, TableContainer, Table, TableHead, TableRow,TableBody, TableCell, Typography } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
 import PublicIcon from '@mui/icons-material/Public';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 import { useState, useEffect, use } from "react";
 import { getCookie } from "../../src/utils";
 import render from "../../src/render";
@@ -32,50 +34,108 @@ function Organizations() {
 
   const apiBaseUrl = localStorage.getItem('apiBaseUrl');
 
-  const handleOrganizationCreated = (data) => {
+  const handleSuccessFormSubmission = (data) => {
     console.log('Organization created successfully:', data);
     setDialogOpen(false);
     setTableUpdates(prev => [...prev, data]);
   };
 
-  const handleOrganizationCreationFailed = (error) => {
+  const handleFailedFormSubmission = (error) => {
     console.error('Error creating organization:', error);
   };
+
+  const goToUrl = (url) => {
+    window.open(url, '_blank');
+  }
+
+  const deleteOrganization = (organizationId) => {
+    fetch(`${apiBaseUrl}/organizations/${organizationId}/`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+    })
+    .then(response => {
+      if (response.ok) {
+        console.log('Organization deleted successfully');
+        setTableUpdates(prev => [...prev, { deletedOrganizationId: organizationId }]);
+      } else {
+        console.error('Error deleting organization');
+      }
+    })
+    .catch(error => {
+      console.error('Error deleting organization:', error);
+    });
+  }
+
+  const deleteConfirmationDialog = (organization) => {
+    setDialogContent(
+      <Box sx={{ p: 2 }}>
+        <Typography variant="h6">Confirm Deletion</Typography>
+        <Alert severity="warning" variant="outlined" sx={{ mt: 1 }}>Are you sure you want to delete the organization "{organization.name}"? All the courses contents and users under this organization will also be deleted.</Alert>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+          <Button onClick={() => setDialogOpen(false)} sx={{ mr: 1 }}>Cancel</Button>
+          <Button variant="contained" color="error" onClick={() => {
+            deleteOrganization(organization.id);
+            setDialogOpen(false);
+          }}>Delete</Button>
+        </Box>
+      </Box>
+    );
+    setDialogOpen(true);
+  }
 
   return (
     <Base breadCrumbList={[{label: 'Organizations', href: '#'}]} showOrganizationSwitcher={false}>
       <Grid size={12} py={2} pl={2}>
-        <Box p={2} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, minHeight: 300 }}>
+        <Box p={2} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, minHeight: 300, width: { lg: '80%' } }}>
         <Button variant="contained" startIcon={<AddIcon />} sx={{ marginBottom: 2 }} onClick={() => {
           setDialogContent(<OrganizationForm
-            successCallback={handleOrganizationCreated}
-            failureCallback={handleOrganizationCreationFailed}
+            successCallback={handleSuccessFormSubmission}
+            failureCallback={handleFailedFormSubmission}
             cancelCallback={() => setDialogOpen(false)}
             createMode={true}
           />);
           setDialogOpen(true);
         }}>Add an Organization</Button>
 
-        { organizations.length > 0 && (<TableContainer sx={{ maxHeight: 440, border: '1px solid', borderColor: 'grey.300', borderRadius: 1 }}>
+        { organizations.length > 0 && (<TableContainer component={Paper} sx={{ maxHeight: 440, border: '1px solid', borderColor: 'grey.300', borderRadius: 1 }}>
           <Table>
             <TableHead>
               <TableRow>
                 <TableCell>Name</TableCell>
-                <TableCell>Public URL</TableCell>
-                <TableCell>Actions</TableCell>
+                <TableCell sx={{ width: '100px' }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               { organizations.map((org) => (
                 <TableRow key={org.id}>
                   <TableCell>{org.name}</TableCell>
-                  <TableCell><a href={org.public_url}><IconButton><PublicIcon fontSize="small"/></IconButton></a></TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell>
+                    <IconButton onClick={() => goToUrl(org.public_url)}><PublicIcon fontSize="small"/></IconButton>
+                    <IconButton onClick={() => {
+                      setDialogContent(<OrganizationForm
+                        successCallback={handleSuccessFormSubmission}
+                        failureCallback={handleFailedFormSubmission}
+                        cancelCallback={() => setDialogOpen(false)}
+                        createMode={false}
+                        initialName={org.name}
+                        initialDescription={org.description}
+                        initialLogoUrl={org.logo}
+                        organizationId={org.id}
+                      />);
+                      setDialogOpen(true);
+                    }}><EditIcon fontSize="small"/></IconButton>
+                    <IconButton onClick={() => deleteConfirmationDialog(org)}><DeleteIcon fontSize="small" /></IconButton>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        </TableContainer>)}
+          </TableContainer>
+
+        )}
 
         </Box>
 

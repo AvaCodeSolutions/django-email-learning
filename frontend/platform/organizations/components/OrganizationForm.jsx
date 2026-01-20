@@ -5,13 +5,13 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useState, useEffect, use } from "react";
 import { getCookie } from '../../../src/utils.js';
 
-function OrganizationForm({ successCallback, failureCallback, cancelCallback, createMode }) {
-    const [name, setName] = useState("");
-    const [description, setDescription] = useState("");
+function OrganizationForm({ successCallback, failureCallback, cancelCallback, createMode, initialName, initialDescription, initialLogoUrl, organizationId }) {
+    const [name, setName] = useState(initialName || "");
+    const [description, setDescription] = useState(initialDescription || "");
     const [nameHelperText, setNameHelperText] = useState("");
     const [descriptionHelperText, setDescriptionHelperText] = useState("");
     const [logoFile, setLogoFile] = useState(null);
-    const [logoUrl, setLogoUrl] = useState(null);
+    const [logoUrl, setLogoUrl] = useState(initialLogoUrl || null);
     const [logoServerPath, setLogoServerPath] = useState(null);
 
     const apiBaseUrl = localStorage.getItem('apiBaseUrl');
@@ -20,6 +20,46 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
         setLogoUrl(null);
         setLogoServerPath(null);
         setLogoFile(null);
+    }
+
+    const handleUpdate = () => (event) => {
+        event.preventDefault();
+
+        let payload = {
+            name: name,
+            description: description,
+        };
+
+        if (logoServerPath) {
+            payload.logo = logoServerPath;
+        }
+
+        if (!logoServerPath && !logoUrl) {
+            payload.remove_logo = true;
+        }
+
+        fetch(`${apiBaseUrl}/organizations/${organizationId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify(payload),
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw data;
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            successCallback(data);
+        })
+        .catch(error => {
+            failureCallback(error);
+        });
     }
 
     const handleCreate = () => (event) => {
@@ -117,7 +157,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
             )}
             <DialogActions>
                 <Button onClick={cancelCallback}>Cancel</Button>
-                <Button type="submit" color="primary" onClick={handleCreate()}>
+                <Button variant='contained' type="submit" color="primary" onClick={createMode? handleCreate() : handleUpdate() }>
                     {createMode ? 'Create' : 'Update'} Organization
                 </Button>
             </DialogActions>
