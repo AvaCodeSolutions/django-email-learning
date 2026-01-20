@@ -402,6 +402,7 @@ class OrganizationsView(View):
 
 
 @method_decorator(is_platform_admin(), name="post")
+@method_decorator(is_platform_admin(), name="delete")
 class SingleOrganizationView(View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
@@ -423,6 +424,20 @@ class SingleOrganizationView(View):
                     request.build_absolute_uri,
                 ).model_dump(),
                 status=200,
+            )
+        except Organization.DoesNotExist:
+            return JsonResponse({"error": "Organization not found"}, status=404)
+        except ValidationError as e:
+            return JsonResponse({"error": e.json()}, status=400)
+        except IntegrityError as e:
+            return JsonResponse({"error": str(e)}, status=409)
+
+    def delete(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
+        try:
+            organization = Organization.objects.get(id=kwargs["organization_id"])
+            organization.delete()
+            return JsonResponse(
+                {"message": "Organization deleted successfully"}, status=200
             )
         except Organization.DoesNotExist:
             return JsonResponse({"error": "Organization not found"}, status=404)

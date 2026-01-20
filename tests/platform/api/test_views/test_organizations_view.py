@@ -126,3 +126,17 @@ def test_edit_organization_requires_platform_admin_or_superadmin(client):
     payload = {"name": "Updated Org", "description": "Updated description"}
     response = client.post(update_url(1), data=payload, content_type="application/json")
     assert response.status_code == 403
+
+
+def test_delete_organization(superadmin_client):
+    organization = Organization.objects.first()
+    response = superadmin_client.delete(update_url(organization.id))
+    assert response.status_code == 200
+    assert not Organization.objects.filter(id=organization.id).exists()
+
+
+@pytest.mark.parametrize("client", ["viewer", "editor"], indirect=True)
+def test_delete_organization_requires_platform_admin_or_superadmin(client):
+    organization = Organization.objects.first()
+    response = client.delete(update_url(organization.id))
+    assert response.status_code == 403
