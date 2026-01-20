@@ -401,15 +401,46 @@ class OrganizationsView(View):
             return JsonResponse({"error": str(e)}, status=409)
 
 
+@method_decorator(is_platform_admin(), name="post")
+class SingleOrganizationView(View):
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            payload = json.loads(request.body)
+            serializer = serializers.UpdateOrganizationRequest.model_validate(payload)
+            organization = Organization.objects.get(id=kwargs["organization_id"])
+            if serializer.name is not None:
+                organization.name = serializer.name
+            if serializer.description is not None:
+                organization.description = serializer.description
+            if serializer.logo is not None:
+                organization.logo = serializer.logo
+            if serializer.remove_logo:
+                organization.logo = None
+            organization.save()
+            return JsonResponse(
+                serializers.OrganizationResponse.from_django_model(
+                    organization,
+                    request.build_absolute_uri,
+                ).model_dump(),
+                status=200,
+            )
+        except Organization.DoesNotExist:
+            return JsonResponse({"error": "Organization not found"}, status=404)
+        except ValidationError as e:
+            return JsonResponse({"error": e.json()}, status=400)
+        except IntegrityError as e:
+            return JsonResponse({"error": str(e)}, status=409)
+
+
 @method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
-class FileUploadView(View):
+class FileView(View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         uploaded_file = request.FILES.get("file")
         if not uploaded_file:
             return JsonResponse({"error": "No file uploaded"}, status=400)
 
         # check file extension
-        allowed_extensions = ["png", "jpg", "jpeg", "gif", "bmp", "svg"]
+        allowed_extensions = ["png", "jpg", "jpeg", "svg"]
         file_extension = uploaded_file.name.split(".")[-1].lower()
         if file_extension not in allowed_extensions:
             return JsonResponse({"error": "Invalid file type"}, status=400)

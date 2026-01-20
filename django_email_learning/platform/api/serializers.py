@@ -8,7 +8,6 @@ from pydantic import (
 )
 from datetime import datetime
 from typing import Optional, Literal, Any, Callable
-from django.core.files.storage import default_storage
 from django.urls import reverse
 from django_email_learning.models import (
     DeliveryStatus,
@@ -196,14 +195,20 @@ class CreateOrganizationRequest(BaseModel):
         organization = Organization(name=self.name, description=self.description)
         organization.save()
         organization.refresh_from_db()
-        if self.logo and default_storage.exists(self.logo):
-            final_path = (
-                f"organization_logos/{organization.id}/{self.logo.split('/')[-1]}"
-            )
-            default_storage.save(final_path, default_storage.open(self.logo))
-            organization.logo = final_path
+        if self.logo:
+            organization.replace_logo(self.logo)
 
         return organization
+
+
+class UpdateOrganizationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: Optional[str] = Field(None, min_length=1, examples=["AvaCode"])
+    description: Optional[str] = Field(
+        None, examples=["A description of the organization."]
+    )
+    logo: Optional[str] = Field(None, examples=["/path/to/logo.png"])
+    remove_logo: Optional[bool] = Field(None, examples=[True])
 
 
 class UpdateSessionRequest(BaseModel):
