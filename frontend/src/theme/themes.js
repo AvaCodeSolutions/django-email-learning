@@ -181,14 +181,14 @@ const darkPalette = {
 };
 
 const lightTheme = createTheme({
-  palette: lightPalette,
+  palette: {...lightPalette},
   components: {
     ...defaultOptions.components
   },
 });
 
 const darkTheme = createTheme({
-  palette: darkPalette,
+  palette: {...darkPalette},
   components: {
     ...defaultOptions.components
   },

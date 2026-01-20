@@ -8,7 +8,7 @@ TEMPLATES = [
     ["platform", "courses"],
     ["platform", "course"],
     ["platform", "organizations"],
-    ["platform", "users"],
+    ["platform", "learners"],
     ["personalised", "quiz_public"],
     ["personalised", "verify_enrollment"],
     ["public", "organization"],

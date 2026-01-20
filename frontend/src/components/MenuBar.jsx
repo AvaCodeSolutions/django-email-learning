@@ -11,7 +11,6 @@ import logoHorizontalDarkUrl from '../assets/logo-h-dark.png'
 import logoVerticalLightUrl from '../assets/logo-v-light.png'
 import logoVerticalDarkUrl from '../assets/logo-v-dark.png'
 import { getCookie } from '../utils.js';
-import { useThemeContext } from '../theme/ThemeContext.jsx';
 import { useTheme, useMediaQuery } from "@mui/material";
 import ThemeSwitcher from './ThemeSwitcher.jsx';
 
@@ -89,7 +88,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     }
 
     pages.push({ name: 'Course Management', icon: <SchoolIcon fontSize="small" />, href: platformBaseUrl + '/courses/' });
-    pages.push({ name: 'Learners', icon: <PeopleIcon fontSize="small" />, href: platformBaseUrl + '/users/' });
+    pages.push({ name: 'Learners', icon: <PeopleIcon fontSize="small" />, href: platformBaseUrl + '/learners/' });
     pages.push({ name: 'Analytics', icon: <BarChartIcon fontSize="small" />, href: platformBaseUrl + '/analytics/' });
 
 
