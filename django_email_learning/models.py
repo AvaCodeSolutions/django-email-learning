@@ -7,6 +7,7 @@ import logging
 from enum import StrEnum
 from typing import Any
 from django.conf import settings
+from django.core.files.storage import default_storage
 from django.urls import reverse
 from django.db import models, transaction
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -48,6 +49,19 @@ class Organization(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    def replace_logo(self, file_path: str) -> str:
+        if default_storage.exists(file_path):
+            allowed_extensions = [".jpg", ".jpeg", ".png", ".svg"]
+            if not any(file_path.lower().endswith(ext) for ext in allowed_extensions):
+                raise ValueError("Logo must be an image file with a valid extension.")
+            final_path = f"organization_logos/{self.id}/{file_path.split('/')[-1]}"
+            default_storage.save(final_path, default_storage.open(file_path))
+            self.logo = final_path
+            self.save()
+            return final_path
+        else:
+            raise ValueError("Logo file does not exist.")
 
 
 class OrganizationUser(models.Model):

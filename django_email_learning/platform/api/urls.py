@@ -3,9 +3,10 @@ from django.views.defaults import page_not_found
 from django_email_learning.platform.api.views import (
     CourseView,
     EnrollmentView,
-    FileUploadView,
+    FileView,
     ImapConnectionView,
     OrganizationsView,
+    SingleOrganizationView,
     SingleCourseView,
     CourseContentView,
     ReorderCourseContentView,
@@ -64,11 +65,16 @@ urlpatterns = [
         name="enrollment_view",
     ),
     path(
-        "organizations/<int:organization_id>/file_upload/",
-        FileUploadView.as_view(),
-        name="file_upload_view",
+        "organizations/<int:organization_id>/file/",
+        FileView.as_view(),
+        name="file_view",
     ),
     path("organizations/", OrganizationsView.as_view(), name="organizations_view"),
+    path(
+        "organizations/<int:organization_id>/",
+        SingleOrganizationView.as_view(),
+        name="single_organization_view",
+    ),
     path("session", UpdateSessionView.as_view(), name="update_session_view"),
     path("", page_not_found, name="root"),
 ]

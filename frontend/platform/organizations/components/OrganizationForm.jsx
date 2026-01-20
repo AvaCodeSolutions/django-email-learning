@@ -54,7 +54,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
 
     useEffect(() => {
         if (logoFile) {
-            fetch(`${apiBaseUrl}/organizations/1/file_upload/`, {
+            fetch(`${apiBaseUrl}/organizations/1/file/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': getCookie('csrftoken'),
