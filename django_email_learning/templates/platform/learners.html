@@ -1,13 +1,5 @@
 {% extends "platform/base.html" %}
-
+{% load django_vite %}
 {% block extra_head %}
-    <link rel="modulepreload" crossorigin href="/static/assets/render-DvOwxGto.js">
-    <link rel="modulepreload" crossorigin href="/static/assets/Base-D_02QPF6.js">
-    <link rel="modulepreload" crossorigin href="/static/assets/ExpandMore-DB6moA_-.js">
-    <link rel="modulepreload" crossorigin href="/static/assets/Ballot-P0V9YDRJ.js">
-    <link rel="modulepreload" crossorigin href="/static/assets/utils-FdboDLx-.js">
-    <link rel="modulepreload" crossorigin href="/static/assets/Dialog-CJuh4k4s.js">
-    <link rel="modulepreload" crossorigin href="/static/assets/SwitchBase-wukbJpms.js">
-    <link rel="stylesheet" href="/static/assets/render-tn0RQdqM.css">
-    <script type="module" crossorigin src="/static/assets/learners-D3j5yT8x.js"></script>
+    {% vite_asset 'platform/learners/Learners.jsx' %}
 {% endblock %}
