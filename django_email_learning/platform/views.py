@@ -101,7 +101,7 @@ class Organizations(BasePlatformView):
 @method_decorator(login_required, name="dispatch")
 @method_decorator(is_platform_admin(), name="dispatch")
 class Learners(BasePlatformView):
-    template_name = "platform/learner.html"
+    template_name = "platform/learners.html"
 
     def get_context_data(self, **kwargs):  # type: ignore[no-untyped-def]
         context = super().get_context_data(**kwargs)

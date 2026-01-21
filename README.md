@@ -46,6 +46,68 @@ While modern e-learning platforms often rely heavily on video content and comple
 
 - **Simplicity:** Email is universal, familiar, and works on virtually any device.
 
+## Installation
+
+This is a Django app, so we assume you already have Django installed.
+
+### 1. Install the Package
+
+```bash
+pip install django-email-learning
+```
+
+### 2. Add to INSTALLED_APPS
+
+Add `django_email_learning` to your `INSTALLED_APPS` in the Django settings file:
+
+```python
+INSTALLED_APPS = [
+    ...
+    'django_email_learning',
+]
+```
+
+### 3. Configure Settings
+
+Add the required configuration for the site base URL in your Django settings:
+
+```python
+DJANGO_EMAIL_LEARNING = {
+    "SITE_BASE_URL": "<YOUR_SITE_BASE_URL_STARTING_WITH_HTTP>"
+}
+```
+
+### 4. Configure Media Files
+
+This app uses Django's MEDIA files to save organization logos. Ensure your media settings are configured correctly. See the [MEDIA_URL setting](https://docs.djangoproject.com/en/6.0/ref/settings/#media-url) for details.
+
+### 5. Run Migrations
+
+```bash
+python manage.py migrate
+```
+
+### 6. Add URLs
+
+Include the app URLs in your main Django URLs configuration:
+
+```python
+from django.urls import path, include
+from django_email_learning import urls as email_learning_urls
+
+urlpatterns = [
+    ...
+    path('your_preferred_path/', include(email_learning_urls, namespace='django_email_learning')),
+]
+```
+
+The platform will be accessible at `your_preferred_path/platform/`.
+
+### Access Control Notes
+
+- **Platform Access:** You need to be logged in to access the `/platform` sub-URL, which is used for managing courses and viewing learner progress.
+
+- **Current MVP Limitations:** In the current MVP version, you can use the superuser account. Other staff users can access the platform only if they are programmatically assigned to an organization. The UI to assign members with different roles to organizations is not yet implemented, however, the access control for those roles is in place.
 
 ## Contributing
 

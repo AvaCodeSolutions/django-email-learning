@@ -89,7 +89,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
 
     pages.push({ name: 'Course Management', icon: <SchoolIcon fontSize="small" />, href: platformBaseUrl + '/courses/' });
     pages.push({ name: 'Learners', icon: <PeopleIcon fontSize="small" />, href: platformBaseUrl + '/learners/' });
-    pages.push({ name: 'Analytics', icon: <BarChartIcon fontSize="small" />, href: platformBaseUrl + '/analytics/' });
+    // pages.push({ name: 'Analytics', icon: <BarChartIcon fontSize="small" />, href: platformBaseUrl + '/analytics/' });
 
 
     const toggleMenuDrawer = (newOpen) => () => {
