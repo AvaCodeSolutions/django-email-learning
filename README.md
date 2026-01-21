@@ -109,6 +109,18 @@ The platform will be accessible at `your_preferred_path/platform/`.
 
 - **Current MVP Limitations:** In the current MVP version, you can use the superuser account. Other staff users can access the platform only if they are programmatically assigned to an organization. The UI to assign members with different roles to organizations is not yet implemented, however, the access control for those roles is in place.
 
+## Usage
+
+### Content Delivery
+
+This app uses the email backend defined in Django settings to deliver course content. Assuming you have active courses and enrollments, you need to schedule a job that runs the content delivery management command periodically (e.g., using cron or a cloud scheduler).
+
+Execute the content delivery job using:
+
+```bash
+python manage.py deliver_contents
+```
+
 ## Contributing
 
 We welcome contributions! Please read our [Contributing Guide](https://github.com/AvaCodeSolutions/django-email-learning/blob/master/CONTRIBUTING.md) to learn about our development process, how to set up the development environment, and how to submit pull requests.
