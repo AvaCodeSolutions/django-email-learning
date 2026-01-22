@@ -84,6 +84,45 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
       </BottomDrawer>}
     </Grid>
     </Box>
+
+    {/* Footer Credit */}
+    <Box
+      component="footer"
+      sx={{
+        position: 'fixed',
+        bottom: 0,
+        right: 16,
+        padding: 1,
+        zIndex: 1000,
+        backgroundColor: 'transparent'
+      }}
+    >
+      <Typography
+        variant="caption"
+        sx={{
+          color: 'text.secondary',
+          fontSize: '0.7rem',
+          opacity: 0.8
+        }}
+      >
+        Powered by{' '}
+        <Link
+          href="https://www.avacodesolutions.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          sx={{
+            color: 'secondary.main',
+            textDecoration: 'none',
+            '&:hover': {
+              textDecoration: 'underline'
+            }
+          }}
+        >
+          AvaCode Solutions
+        </Link>
+        {' '}| BSD 3-Clause License
+      </Typography>
+    </Box>
     </>
   );
 }

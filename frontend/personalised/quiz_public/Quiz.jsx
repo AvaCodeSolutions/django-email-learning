@@ -1,5 +1,6 @@
 import render from '../../src/render.jsx';
 import { useState } from 'react';
+import Layout from '../../public/components/Layout.jsx';
 import { Alert, Box, Button, Checkbox, FormControlLabel, GlobalStyles, Typography, Dialog } from '@mui/material';
 import CelebrationIcon from '@mui/icons-material/Celebration';
 import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
@@ -51,8 +52,7 @@ const Quiz = () => {
     }
 
 
-    return <>
-    <GlobalStyles styles={(theme) => ({ body: { margin: 0, padding: 0, backgroundColor: theme.palette.background.dark, color: theme.palette.text.primary } })} />
+    return <Layout>
     <Box textAlign="left" sx={{ maxWidth: 800, margin: '0 auto', backgroundColor: "background.light", height: 80 }}></Box>
     <Box sx={{ maxWidth: 800, margin: '0 auto', padding: 4, border: '1px solid #ccc', borderRadius: 2, backgroundColor: "background.paper" }} component="form" method="POST" action="">
         { !error_message ? <Box>
@@ -104,7 +104,7 @@ const Quiz = () => {
             </Box>
         </Dialog>
     </Box>
-    </>
+    </Layout>
 }
 
 render({children: <Quiz />});
