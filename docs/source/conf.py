@@ -9,7 +9,6 @@
 project = "Django Email Learning"
 copyright = "2026, Payam Najafizadeh"
 author = "Payam Najafizadeh"
-release = "[v0.1.19]"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

@@ -46,6 +46,15 @@ While modern e-learning platforms often rely heavily on video content and comple
 
 - **Simplicity:** Email is universal, familiar, and works on virtually any device.
 
+## Documentation
+
+Comprehensive documentation is available at [django-email-learning.readthedocs.io](https://django-email-learning.readthedocs.io), including:
+
+- **Installation Guide**: Step-by-step setup instructions
+- **Platform Management**: Creating organizations, courses, and managing learners
+- **Technical Reference**: Management commands, API endpoints, and configuration
+- **Usage Examples**: Real-world implementation scenarios
+
 ## Installation
 
 This is a Django app, so we assume you already have Django installed.
