@@ -35,7 +35,7 @@ repos:
         language: system
         types: [python]
         args: [--config-file=pyproject.toml]
-        exclude: ^(tests/|migrations/)
+        exclude: ^(tests/|migrations/|docs/)
         require_serial: true
 
       - id: django-check

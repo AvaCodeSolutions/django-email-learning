@@ -72,6 +72,7 @@ disallow_incomplete_defs = true
 warn_unreachable = true
 exclude = [
     "tests/",
+    "docs/",
 ]
 plugins = [
     "mypy_django_plugin.main"
