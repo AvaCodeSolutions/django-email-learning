@@ -52,7 +52,7 @@ Comprehensive documentation is available at [django-email-learning.readthedocs.i
 
 - **Installation Guide**: Step-by-step setup instructions
 - **Platform Management**: Creating organizations, courses, and managing learners
-- **Technical Reference**: Management commands, API endpoints, and configuration
+- **Technical Reference**: Management commands and configuration
 - **Usage Examples**: Real-world implementation scenarios
 
 ## Installation
