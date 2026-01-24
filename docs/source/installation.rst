@@ -76,6 +76,11 @@ The course management platform (``/platform/``) requires authentication and is a
 - Django superusers
 - Users assigned as Organization users (managed via Django admin panel)
 
+.. note::
+   Since the platform views require authentication, ensure your Django project has authentication views configured.
+   You can use Django's built-in authentication views by including them in your URLconf.
+   See `Django's authentication views documentation <https://docs.djangoproject.com/en/6.0/topics/auth/default/#module-django.contrib.auth.views>`_ for setup instructions.
+
 **Public Access**
 
 Public course enrollment pages are accessible without authentication and are designed for learners to discover and enroll in courses.
