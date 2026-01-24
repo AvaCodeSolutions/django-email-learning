@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://github.com/AvaCodeSolutions/django-email-learning/blob/master/assets/Django2@2x.png" width="30%" alt="Django Email Learning Logo" />
+  <img src="https://raw.githubusercontent.com/AvaCodeSolutions/django-email-learning/master/assets/Django2@2x.png" alt="Django Email Learning Logo" width="300">
 </p>
 
 # Django Email Learning
@@ -9,6 +9,7 @@ A Django package for creating email-based learning platforms with IMAP integrati
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Django](https://img.shields.io/badge/django-5.0+-green.svg)](https://www.djangoproject.com/)
+![Tests](https://github.com/AvaCodeSolutions/django-email-learning/actions/workflows/pr-check.yml/badge.svg)
 
 
 ## ⚠️ Early Development Notice
