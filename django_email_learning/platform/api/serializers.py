@@ -471,8 +471,13 @@ class EnrollmentResponse(BaseModel):
                     quiz_attempts = delivery.quiz_submissions.all().order_by(
                         "submitted_at"
                     )
-                    for attempt in quiz_attempts:
-                        attempt_number += 1
+                    if not schedule.failed_attempts:
+                        attempt = quiz_attempts.first()
+                        attempt_number = 1
+                    else:
+                        attempt_number = schedule.failed_attempts + 1
+                        attempt = quiz_attempts[attempt_number - 1 : 1].first()
+                    if attempt:
                         events.append(
                             Event(
                                 type=EventType.QUIZ_SUBMITED,

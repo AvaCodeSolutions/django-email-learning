@@ -119,6 +119,9 @@ function Learners(initialQs="") {
                 { event.type === "content_sent" && <>
                   <Box><Typography>{event.event_data.course_content_title}</Typography></Box>
                 </>}
+                { event.type === "deactivated" && <>
+                  <Box><Typography>Reason: {event.event_data.reason}</Typography></Box>
+                </>}
               </TimelineContent>
             </TimelineItem>
             ))}
