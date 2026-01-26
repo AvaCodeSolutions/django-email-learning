@@ -45,7 +45,7 @@ function Organization() {
         <Typography variant="h1">{ organization.name }</Typography>
         <Typography variant="body1" dangerouslySetInnerHTML={{ __html: organization.description }} />
         <Box my={4}>
-            <Typography variant="h2">Courses:</Typography>
+            <Typography variant="h2">{localeMessages['courses']}:</Typography>
             { organization.courses.length > 0 ? (
                 <Grid container spacing={2}>
                 { courses.map((course) => (
@@ -53,16 +53,16 @@ function Organization() {
                     <Box key={course.id} mb={2} p={2} border={1} borderRadius={2} sx={{ minHeight: '100%' }}>
                         <Typography variant="h3">{course.title}</Typography>
                         <Button variant="contained" color="primary" rel="noopener noreferrer" sx={{ mt: 1, mb: 2 }} onClick={() => showModalForCourse(course)} disabled={course.enrolled}>
-                            Enroll Now
+                            {localeMessages['enroll_now']}
                         </Button>
                         <Typography variant="body2" dangerouslySetInnerHTML={{ __html: course.description }} />
-                        { course.enrolled && <Alert severity="success" sx={{ mt: 2 }}>You are enrolled in this course.</Alert> }
+                        { course.enrolled && <Alert severity="success" sx={{ mt: 2 }}>{localeMessages['enrollment_success']}</Alert> }
                     </Box>
                     </Grid>
                 ))}
                 </Grid>
             ) : (
-                <Typography variant="body2">No courses available.</Typography>
+                <Typography variant="body2">{localeMessages['no_courses_available']}</Typography>
             )}
         </Box>
 

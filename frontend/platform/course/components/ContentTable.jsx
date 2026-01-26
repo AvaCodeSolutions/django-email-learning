@@ -116,11 +116,11 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
             <TableHead>
               <TableRow>
                 { userRole !== 'viewer' && <TableCell sx={{ width: '40px', boxSizing: 'border-box' }}></TableCell>}
-                <TableCell>Title</TableCell>
-                <TableCell>Waiting time</TableCell>
-                <TableCell>type</TableCell>
-                <TableCell>Published</TableCell>
-                {userRole !== 'viewer' && <TableCell align='right'>Actions</TableCell>}
+                <TableCell sx={{ textAlign: direction == 'rtl' ? 'right' : 'left' }}>{localeMessages["title"]}</TableCell>
+                <TableCell sx={{ textAlign: direction == 'rtl' ? 'right' : 'left' }}>{localeMessages["waiting_time"]}</TableCell>
+                <TableCell sx={{ textAlign: direction == 'rtl' ? 'right' : 'left' }}>{localeMessages["type"]}</TableCell>
+                <TableCell sx={{ textAlign: direction == 'rtl' ? 'right' : 'left' }}>{localeMessages["published"]}</TableCell>
+                {userRole !== 'viewer' && <TableCell align={direction == 'rtl' ? 'right' : 'left'}>{localeMessages["actions"]}</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -140,17 +140,17 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                                 eventHandler(event);
                             }
                         }}>
-                         { userRole !== 'viewer' && <TableCell sx={{ cursor: 'grab', width: '40px', padding: '8px 0', textAlign: 'center' }}><DragHandleIcon
+                         { userRole !== 'viewer' && <TableCell align={direction == 'rtl' ? 'right' : 'left'} sx={{ cursor: 'grab', width: '40px', padding: '8px 0', textAlign: 'center' }}><DragHandleIcon
                         onMouseDown={() => startDrag(content.id)}
                         /></TableCell>}
-                        <TableCell><Typography
+                        <TableCell align={direction == 'rtl' ? 'right' : 'left'}><Typography
                             onClick={() => {let event = {type: 'content_clicked', content_id: content.id}; eventHandler(event);}}
                             color='primary.dark' sx={{ cursor: 'pointer'}}>{content.title}</Typography></TableCell>
-                        <TableCell>{formatPeriod(content.waiting_period)}</TableCell>
-                        <TableCell>{content.type.charAt(0).toUpperCase() + content.type.slice(1)}</TableCell>
-                        <TableCell><Switch defaultChecked={content.is_published} onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} /></TableCell>
-                        {userRole !== 'viewer' && <TableCell align='right'>
-                            <IconButton aria-label="delete" onClick={() => deleteContent(content.id)}>
+                        <TableCell align={direction == 'rtl' ? 'right' : 'left'}>{formatPeriod(content.waiting_period)}</TableCell>
+                        <TableCell align={direction == 'rtl' ? 'right' : 'left'}>{localeMessages[content.type]}</TableCell>
+                        <TableCell align={direction == 'rtl' ? 'right' : 'left'}><Switch defaultChecked={content.is_published} onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} /></TableCell>
+                        {userRole !== 'viewer' && <TableCell align={direction == 'rtl' ? 'right' : 'left'}>
+                            <IconButton aria-label={localeMessages["delete"]} onClick={() => deleteContent(content.id)}>
                                 <DeleteIcon />
                             </IconButton>
                         </TableCell>}

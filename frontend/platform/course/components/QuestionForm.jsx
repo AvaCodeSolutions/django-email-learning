@@ -6,7 +6,6 @@ import ClearIcon from '@mui/icons-material/Clear';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 
 
-
 const QuestionForm = ({question, index, eventHandler}) => {
     const [questionText, setQuestionText] = useState(question.text);
     const [options, setOptions] = useState(question.options || []);
@@ -80,10 +79,10 @@ const QuestionForm = ({question, index, eventHandler}) => {
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }} sx={{ textAlign: 'right' }}>
                     {userRole !== 'viewer' && <><Button variant="outlined" color="primary" sx={{ fontSize: '0.75rem', mt: 1 }} onClick={() => setAddingOption(true)} >
-                        <RuleIcon /><Typography variant="button" sx={{ ml: 1, fontSize: '0.75rem' }}>Add Option</Typography>
+                        <RuleIcon /><Typography variant="button" sx={{ ml: 1, fontSize: '0.75rem' }}>{localeMessages["add_option"]}</Typography>
                     </Button>
-                    <Button variant="outlined" onClick={deleteCallback} sx={{ ml: 1, mt: 1, fontSize: '0.75rem' }}>
-                        Delete
+                    <Button variant="outlined" onClick={deleteCallback} sx={{ mx: 1, mt: 1, fontSize: '0.75rem' }}>
+                        {localeMessages["delete"]}
                     </Button></>}
                 </Grid>
                 {addingOption && (<>
@@ -112,10 +111,10 @@ const QuestionForm = ({question, index, eventHandler}) => {
                             }
                         }}>
                             <AddCircleOutlineIcon sx={{ mr: 1 }} />
-                            Add
+                            { localeMessages["add"] }
                         </Button>
                         <Button variant="outlined" sx={{ mt: 1 }} onClick={() => setAddingOption(false)}>
-                            Cancel
+                            { localeMessages["cancel"] }
                         </Button>
                     </Grid>
                     </>
@@ -125,9 +124,9 @@ const QuestionForm = ({question, index, eventHandler}) => {
                         <Table>
                             <TableHead variant="head">
                                 <TableRow>
-                                    <TableCell>Options</TableCell>
-                                    <TableCell>Correct Answer</TableCell>
-                                    {userRole !== 'viewer' && <TableCell align='right'>Actions</TableCell>}
+                                    <TableCell>{localeMessages["options"]}</TableCell>
+                                    <TableCell>{localeMessages["correct_answer"]}</TableCell>
+                                    {userRole !== 'viewer' && <TableCell align='right'>{localeMessages["actions"]}</TableCell>}
                                 </TableRow>
                             </TableHead>
                             <TableBody>

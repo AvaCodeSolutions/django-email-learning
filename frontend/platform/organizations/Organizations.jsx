@@ -69,17 +69,19 @@ function Organizations() {
     });
   }
 
+  const htmlTag = document.getElementsByTagName("html")[0];
+
   const deleteConfirmationDialog = (organization) => {
     setDialogContent(
       <Box sx={{ p: 2 }}>
-        <Typography variant="h6">Confirm Deletion</Typography>
-        <Alert severity="warning" variant="outlined" sx={{ mt: 1 }}>Are you sure you want to delete the organization "{organization.name}"? All the courses contents and users under this organization will also be deleted.</Alert>
+        <Typography variant="h6">{localeMessages["confirm_deletion"]}</Typography>
+        <Alert severity="warning" variant="outlined" sx={{ mt: 1 }}>{localeMessages["are_you_sure_delete_org"].replace("ORGANIZATION_NAME", organization.name)}</Alert>
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-          <Button onClick={() => setDialogOpen(false)} sx={{ mr: 1 }}>Cancel</Button>
+          <Button onClick={() => setDialogOpen(false)} sx={{ mr: 1 }}>{localeMessages["cancel"]}</Button>
           <Button variant="contained" color="error" onClick={() => {
             deleteOrganization(organization.id);
             setDialogOpen(false);
-          }}>Delete</Button>
+          }}>{localeMessages["delete"]}</Button>
         </Box>
       </Box>
     );
@@ -87,10 +89,10 @@ function Organizations() {
   }
 
   return (
-    <Base breadCrumbList={[{label: 'Organizations', href: '#'}]} showOrganizationSwitcher={false}>
+    <Base breadCrumbList={[{label: localeMessages["organizations"], href: '#'}]} showOrganizationSwitcher={false}>
       <Grid size={12} py={2} pl={2}>
         <Box p={2} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, minHeight: 300, width: { lg: '80%' } }}>
-        <Button variant="contained" startIcon={<AddIcon />} sx={{ marginBottom: 2 }} onClick={() => {
+        <Button variant="contained" startIcon={<AddIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
           setDialogContent(<OrganizationForm
             successCallback={handleSuccessFormSubmission}
             failureCallback={handleFailedFormSubmission}
@@ -98,20 +100,20 @@ function Organizations() {
             createMode={true}
           />);
           setDialogOpen(true);
-        }}>Add an Organization</Button>
+        }}>{localeMessages["add_organization"]}</Button>
 
         { organizations.length > 0 && (<TableContainer component={Paper} sx={{ maxHeight: 440, border: '1px solid', borderColor: 'grey.300', borderRadius: 1 }}>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell sx={{ width: '100px' }}>Actions</TableCell>
+                <TableCell dir={htmlTag.dir} sx={{ textAlign: htmlTag.dir === 'rtl' ? 'right' : 'left' }}>{localeMessages["name"]}</TableCell>
+                <TableCell sx={{ width: '100px' }}>{localeMessages["actions"]}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               { organizations.map((org) => (
                 <TableRow key={org.id}>
-                  <TableCell>{org.name}</TableCell>
+                  <TableCell dir={htmlTag.dir} sx={{ textAlign: htmlTag.dir === 'rtl' ? 'right' : 'left' }}>{org.name}</TableCell>
                   <TableCell>
                     <IconButton onClick={() => goToUrl(org.public_url)}><PublicIcon fontSize="small"/></IconButton>
                     <IconButton onClick={() => {

@@ -27,17 +27,17 @@ const EnableCourseSwitchPopup = ({ courseId, action, courseTitle, handleClose, h
     }
 
     return <><DialogTitle id="alert-dialog-title">
-          {`${action.charAt(0).toUpperCase() + action.slice(1)} ${courseTitle} Course`}
+          {localeMessages[`${action}_course`].replace('COURSE_NAME', courseTitle)}
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-           { `Are you sure you want to ${action} the course "${courseTitle}"?` }
+           { localeMessages[`course_${action}_confirmation`].replace('COURSE_NAME', courseTitle) }
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
+          <Button onClick={handleClose}>{localeMessages["cancel"]}</Button>
           <Button onClick={updateCourseState} autoFocus variant="contained">
-            Continue
+            {localeMessages["continue"]}
           </Button>
         </DialogActions></>;
 }

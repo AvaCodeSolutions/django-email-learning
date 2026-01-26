@@ -83,12 +83,12 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
 
     if (localStorage.getItem('isPlatformAdmin') == 'true') {
         pages.push(
-            { name: 'Organizations', icon: <Diversity3Icon fontSize="small" />, href:  platformBaseUrl + '/organizations/'},
+            { name: localeMessages["organizations"], icon: <Diversity3Icon fontSize="small" />, href:  platformBaseUrl + '/organizations/'},
         );
     }
 
-    pages.push({ name: 'Course Management', icon: <SchoolIcon fontSize="small" />, href: platformBaseUrl + '/courses/' });
-    pages.push({ name: 'Learners', icon: <PeopleIcon fontSize="small" />, href: platformBaseUrl + '/learners/' });
+    pages.push({ name: localeMessages["course_management"], icon: <SchoolIcon fontSize="small" />, href: platformBaseUrl + '/courses/' });
+    pages.push({ name: localeMessages["learners"], icon: <PeopleIcon fontSize="small" />, href: platformBaseUrl + '/learners/' });
     // pages.push({ name: 'Analytics', icon: <BarChartIcon fontSize="small" />, href: platformBaseUrl + '/analytics/' });
 
 
@@ -102,7 +102,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
             <Box my={1} ml={5} sx={{ height: {xs: "57px", md: "30px"}}}>
                 <img src={logoHorizontalUrl} alt="Logo" style={{maxHeight: "57px", height: "100%"}} />
             </Box>
-            <Box sx={{display: { xs: 'flex'}, right: 0, position: "absolute" }}>
+            <Box sx={{display: { xs: 'flex'}, right: direction === 'rtl' ? 'auto' : '0', left: direction === 'rtl' ? '0' : 'auto', position: "absolute" }}>
                 <ThemeSwitcher />
                 <Box m={1} paddingTop="7px">
                 <IconButton aria-controls="menu-appbar" onClick={toggleMenuDrawer(true)} sx={{ display: { xs: 'inline-block', md: 'none' }}}>
@@ -111,7 +111,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                 </Box>
             </Box>
         </AppBar>
-        <Drawer variant={drawerVariant} onClose={toggleMenuDrawer(false)} display={{md: "none" }} open={menuOpen} sx={{ '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth } }}
+        <Drawer anchor={direction === 'rtl' ? 'right' : 'left'} variant={drawerVariant} onClose={toggleMenuDrawer(false)} display={{md: "none" }} open={menuOpen} sx={{ '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth } }}
             slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(251, 251, 255, 0.57)', backdropFilter: 'blur(5px)' }}, paper: { sx: { boxShadow: '2px 0px 8px rgba(0, 0, 0, 0.1)'}}}}>
             <Box my={2} textAlign="center">
                 <img src={logoVerticalUrl} alt="Logo" style={{ width: "50%" }} />

@@ -16,6 +16,7 @@ from django_email_learning.services.email_sender_service import EmailSenderServi
 from django_email_learning.services import jwt_service
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
+from django.utils.translation import gettext as _
 from django.conf import settings
 from django.urls import reverse
 from typing import Literal
@@ -106,7 +107,7 @@ class EnrollCommand(AbstractCommand):
             else None,
         }
         email_service = EmailSenderService()
-        subject = "Verify your enrollment"
+        subject = _("Verify your enrollment")
         body = render_to_string(
             "emails/enrolment_verification.txt",
             template_context,

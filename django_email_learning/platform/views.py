@@ -2,6 +2,7 @@ import logging
 from django.views.generic import TemplateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from django.utils.translation import gettext as _
 from django.urls import reverse
 from django_email_learning.models import Organization, OrganizationUser, Course
 from django_email_learning.decorators import (
@@ -70,7 +71,7 @@ class Courses(BasePlatformView):
 
     def get_context_data(self, **kwargs) -> dict:  # type: ignore[no-untyped-def]
         context = super().get_context_data(**kwargs)
-        context["page_title"] = "Courses"
+        context["page_title"] = _("Courses")
         return context
 
 
@@ -83,7 +84,7 @@ class CourseView(BasePlatformView):
         context = super().get_context_data(**kwargs)
         course = Course.objects.get(pk=self.kwargs["course_id"])
         context["course"] = course
-        context["page_title"] = f"Course: {course.title}"
+        context["page_title"] = _("Course: %(title)s") % {"title": course.title}
         return context
 
 
@@ -94,7 +95,7 @@ class Organizations(BasePlatformView):
 
     def get_context_data(self, **kwargs):  # type: ignore[no-untyped-def]
         context = super().get_context_data(**kwargs)
-        context["page_title"] = "Organizations"
+        context["page_title"] = _("Organizations")
         return context
 
 
@@ -105,5 +106,5 @@ class Learners(BasePlatformView):
 
     def get_context_data(self, **kwargs):  # type: ignore[no-untyped-def]
         context = super().get_context_data(**kwargs)
-        context["page_title"] = "Learners"
+        context["page_title"] = _("Learners")
         return context

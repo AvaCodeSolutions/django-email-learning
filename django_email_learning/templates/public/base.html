@@ -1,11 +1,14 @@
 {% load django_vite %}
+{% load i18n %}
 {% load static %}
+{% get_current_language_bidi as IS_RTL %}
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="{% block direction %}{% if IS_RTL %}rtl{% else %}ltr{% endif %}{% endblock %}">
   <head>
     <script>
       const error_message = "{{ error_message }}";
       const ref = "{{ ref }}";
+      const direction = "{% if IS_RTL %}rtl{% else %}ltr{% endif %}";
     </script>
     {% vite_hmr_client %}
     {% vite_react_refresh %}
@@ -15,7 +18,8 @@
     <link rel="icon" type="image/png" href="{% static 'logo.png' %}" />
     <title>{% block title %}{{ page_title }}{% endblock %}</title>
   </head>
-  <body>
+  {% get_current_language_bidi as IS_RTL %}
+  <body dir="{% block directionrtl %}{% if IS_RTL %}rtl{% else %}ltr{% endif %}{% endblock %}">
     <div id="root">
     </div>
   </body>

@@ -79,7 +79,7 @@ function Course() {
             console.log("Opening lesson editor for content:", content);
             setDialogOpen(true);
             setDialogContent(<LessonForm
-                            header="Update Lesson"
+                            header={localeMessages["update_lesson"]}
                             initialTitle={content.lesson.title}
                             initialContent={content.lesson.content}
                             onContentChange={setLessonCache}
@@ -132,7 +132,7 @@ function Course() {
     return (
         <Base
             breadCrumbList={[
-                {label: 'Course Management', href: platformBaseUrl + '/courses', index: 0},
+                {label: localeMessages["course_management"], href: platformBaseUrl + '/courses', index: 0},
                 {label: course_title, href: '#', index: 1}
             ]}
             bottomDrawerParams={{
@@ -143,21 +143,21 @@ function Course() {
         >
             <Grid size={{xs: 12, md: 9}} py={2} pl={2}>
                 <Box p={2} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, minHeight: 300 }}>
-                    {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon />} sx={{ marginBottom: 2 }} onClick={() => {
+                    {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
                         setDialogContent(<LessonForm
-                            header="New Lesson"
+                            header={localeMessages["new_lesson"]}
                             initialContent={lessonCache}
                             onContentChange={setLessonCache}
                             cancelCallback={() => setDialogOpen(false)}
                             successCallback={resetDialog}
                             courseId={course_id} />);
-                        setDialogOpen(true);}}>Add a Lesson</Button>
-                    <Button variant="contained" startIcon={<BallotIcon />} sx={{ marginBottom: 2, marginLeft: 1 }} onClick={() => {
+                        setDialogOpen(true);}}>{localeMessages["add_lesson"]}</Button>
+                    <Button variant="contained" startIcon={<BallotIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2, marginLeft: 1, marginRight: 1 }} onClick={() => {
                         setDialogContent(<QuizForm
                             cancelCallback={() => setDialogOpen(false)}
                             successCallback={resetDialog}
                             courseId={course_id} />);
-                        setDialogOpen(true);}}>Add a Quiz</Button></> }
+                        setDialogOpen(true);}}>{localeMessages["add_quiz"]}</Button></> }
                     <ContentTable courseId={course_id} loaded={contentLoaded} eventHandler={(event) => tableEventHandler(event)} />
                 </Box>
             </Grid>

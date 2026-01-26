@@ -13,6 +13,7 @@ from django_email_learning.services.command_models.exceptions.invalid_verificati
 from django_email_learning.services.email_sender_service import EmailSenderService
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
+from django.utils.translation import gettext as _
 from typing import Literal
 
 
@@ -59,7 +60,7 @@ class VerifyEnrollmentCommand(AbstractCommand):
 
         # Send confirmation email
         email_service = EmailSenderService()
-        subject = "Enrollment Verified"
+        subject = _("Enrollment Verified")
         body = render_to_string(
             "emails/enrollment_verified.txt",
             {

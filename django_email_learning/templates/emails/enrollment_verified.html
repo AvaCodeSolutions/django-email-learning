@@ -1,22 +1,23 @@
 {% extends "emails/base.html" %}
+{% load i18n %}
 
 {% block content %}
-<P>Hello there,<br /></P>
+<P>{% translate "Hello there," %}<br /></P>
 
-<p><strong>Congratulations!</strong> Your enrollment for "<strong style="color: {{ brand_color }};">{{ course_title }}</strong>" has been successfully verified and confirmed.</p>
+<p>{% blocktranslate %}Congratulations! Your enrollment for <strong style="color: {{ brand_color }}">{{ course_title }}</strong> has been successfully verified and confirmed.{% endblocktranslate %}</p>
 
-<p>We're excited to have you join our learning community. Here's what you can expect:</p>
+<p>{% translate "We're excited to have you join our learning community. Here's what you can expect:" %}</p>
 
 <ul>
-    <li>Course materials will be delivered directly to this email address</li>
-    <li>You'll receive structured lessons and assignments on a regular schedule</li>
-    <li>Interactive content and assessments will help track your progress</li>
+    <li>{% translate "Course materials will be delivered directly to this email address" %}</li>
+    <li>{% translate "You'll receive structured lessons and assignments on a regular schedule" %}</li>
+    <li>{% translate "Interactive content and assessments will help track your progress" %}</li>
 </ul>
 
-<p>Your learning adventure begins soon! Keep an eye on your inbox for the first lesson and welcome materials.</p>
+<p>{% translate "Your learning adventure begins soon! Keep an eye on your inbox for the first lesson and welcome materials." %}</p>
 
-<h3>Welcome aboard!</h3>
+<h3>{% translate "Welcome aboard!" %}</h3>
 
-<p>Best regards,<br>
-The <strong>{{ organization_name }}</strong> Team</p>
+<p>{% translate "Best regards," %}<br>
+{% blocktranslate %}The {{ organization_name }} Team{% endblocktranslate %}</p>
 {% endblock %}

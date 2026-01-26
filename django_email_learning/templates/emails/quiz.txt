@@ -1,10 +1,11 @@
+{% load i18n %}
 {{ quiz.title }}
 
-Dear Learner,
+{% translate "Dear Learner," %}
 
-Your quiz is now available for completion. You have {{ quiz.deadline_days }} days from today to submit your responses.
+{% blocktranslate with with deadline_days=quiz.deadline_days %}Your quiz is now available for completion. You have {{ deadline_days }} days from today to submit your responses.{% endblocktranslate %}
 
-To successfully pass this quiz, you must achieve a minimum score of {{ quiz.required_score }}.
+{% blocktranslate with score=quiz.required_score %}To successfully pass this quiz, you must achieve a minimum score of {{ score }}.{% endblocktranslate %}
 
-Please click the link below to access and submit your quiz:
+{% translate "Please click the link below to access and submit your quiz:" %}
 {{ link }}

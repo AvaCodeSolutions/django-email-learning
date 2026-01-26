@@ -1,5 +1,37 @@
 {% extends "platform/base.html" %}
 {% load django_vite %}
+{% load i18n %}
 {% block extra_head %}
+    <script>
+        localeMessages = {
+            ...localeMessages,
+            "search_learners": "{% translate 'Search learners...' %}",
+            "learners_list": "{% translate 'Learners List' %}",
+            "nor_enrollments_found": "{% translate 'No enrollments found.' %}",
+            "course": "{% translate 'Course' %}",
+            "status": "{% translate 'Status' %}",
+            "learner_registered": "{% translate 'Learner Registered' %}",
+            "learner_verified": "{% translate 'Learner Verified Email' %}",
+            "lesson_sent": "{% translate 'Lesson Sent' %}",
+            "quiz_sent": "{% translate 'Quiz Sent' %}",
+            "quiz_submitted": "{% translate 'Quiz Submitted' %}",
+            "course_completed": "{% translate 'Course Completed' %}",
+            "learner_deactivated": "{% translate 'Learner Deactivated' %}",
+            "score": "{% translate 'Score' %}",
+            "result": "{% translate 'Result' %}",
+            "reason": "{% translate 'Reason' %}",
+            "passed": "{% translate 'Passed' %}",
+            "failed": "{% translate 'Failed' %}",
+            "enrollment_details": "{% translate 'Enrollment Details' %}",
+            "enrollment_id": "{% translate 'Enrollment ID' %}",
+            "unvierfied": "{% translate 'Unverified' %}",
+            "active": "{% translate 'Active' %}",
+            "completed": "{% translate 'Completed' %}",
+            "deactivated": "{% translate 'Deactivated' %}",
+            "canceled": "{% translate 'Canceled' %}",
+            "blcoked": "{% translate 'Blocked' %}",
+            "inactive": "{% translate 'Inactive' %}",
+        };
+    </script>
     {% vite_asset 'platform/learners/Learners.jsx' %}
 {% endblock %}
