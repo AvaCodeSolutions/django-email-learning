@@ -450,9 +450,11 @@ class EnrollmentResponse(BaseModel):
                 )
             )
         for delivery in enrollment.content_deliveries.all():  # type: ignore[attr-defined]
+            schedule_no = 0
             for schedule in delivery.delivery_schedules.filter(
                 status=DeliveryStatus.DELIVERED
             ):
+                schedule_no += 1
                 events.append(
                     Event(
                         type=EventType.CONTENT_SENT,
@@ -471,12 +473,13 @@ class EnrollmentResponse(BaseModel):
                     quiz_attempts = delivery.quiz_submissions.all().order_by(
                         "submitted_at"
                     )
-                    if not schedule.failed_attempts:
+                    attempt = None
+                    if schedule_no == 1:
                         attempt = quiz_attempts.first()
                         attempt_number = 1
-                    else:
-                        attempt_number = schedule.failed_attempts + 1
-                        attempt = quiz_attempts[attempt_number - 1 : 1].first()
+                    elif schedule_no > 1:
+                        attempt_number = schedule_no
+                        attempt = quiz_attempts[attempt_number - 1 :].first()
                     if attempt:
                         events.append(
                             Event(
