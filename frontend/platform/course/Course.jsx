@@ -11,6 +11,7 @@ import { Box, Grid, Button, Dialog } from '@mui/material'
 import LessonForm from './components/LessonForm.jsx';
 import QuizForm from './components/QuizForm.jsx';
 import ContentTable from './components/ContentTable.jsx';
+import DeleteContentForm from './components/DeleteContentForm.jsx';
 import { getCookie } from '../../src/utils.js';
 
 
@@ -20,10 +21,12 @@ function Course() {
     const [dialogContent, setDialogContent] = useState(null)
     const [lessonCache, setLessonCache] = useState("")
     const [contentLoaded, setContentLoaded] = useState(false)
+    const [dialogMaxWidth, setDialogMaxWidth] = useState('lg');
 
     const userRole = localStorage.getItem('userRole');
     const apiBaseUrl = localStorage.getItem('apiBaseUrl');
     const organizationId = localStorage.getItem('activeOrganizationId');
+
 
     const resetDialog = () => {
         setDialogOpen(false);
@@ -66,6 +69,25 @@ function Course() {
             text: q.text,
             options: translateOptions(q.answers),
         }));
+    }
+
+    const deletContent = (contentId) => {
+        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${course_id}/contents/${contentId}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+        })
+            .then(response => {
+                if (response.ok) {
+                    setContentLoaded(false);
+                } else {
+                    console.error('Error deleting content:', response.statusText);
+                }
+            })
+            .catch(error => console.error('Error deleting content:', error));
+        setDialogMaxWidth('lg');
+        setDialogOpen(false);
     }
 
     const tableEventHandler = async (event) => {
@@ -127,6 +149,11 @@ function Course() {
             })
             .catch(error => console.error('Error reordering contents:', error));
         }
+        if (event.type === 'delete_content') {
+            setDialogContent(<DeleteContentForm content={event.content} onDelete={deletContent} onCancel={() => {setDialogOpen(false); setDialogMaxWidth('lg');}} />);
+            setDialogMaxWidth('sm');
+            setDialogOpen(true);
+        }
     }
 
     return (
@@ -162,7 +189,7 @@ function Course() {
                 </Box>
             </Grid>
 
-            <Dialog open={dialogOpen} onClose={handleClose} fullWidth maxWidth="lg" sx={{ xs: { width: '100%' }, md: { width: '80%' }, lg: { maxWidth: '70%' } }}>
+            <Dialog open={dialogOpen} onClose={handleClose} fullWidth maxWidth={dialogMaxWidth}>
                 {dialogContent}
             </Dialog>
         </Base>
