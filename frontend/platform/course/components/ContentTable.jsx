@@ -32,7 +32,10 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
     }
 
     useEffect(() => {
-        getContets();
+        if (!loaded) {
+            getContets();
+            loaded = true;
+        }
     }, [loaded]);
 
     useEffect(() => {
@@ -47,20 +50,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
     }, []);
 
     const deleteContent = (contentId) => {
-        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${contentId}/`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-        })
-            .then(response => {
-                if (response.ok) {
-                    setContentList(contentList.filter(content => content.id !== contentId));
-                } else {
-                    console.error('Error deleting content:', response.statusText);
-                }
-            })
-            .catch(error => console.error('Error deleting content:', error));
+        eventHandler({ type: 'delete_content', content: contentList.find(content => content.id === contentId)});
     }
 
     const TogglePublishContent = (contentId, is_published) => {
