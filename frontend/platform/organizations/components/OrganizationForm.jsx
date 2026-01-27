@@ -13,6 +13,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
     const [logoFile, setLogoFile] = useState(null);
     const [logoUrl, setLogoUrl] = useState(initialLogoUrl || null);
     const [logoServerPath, setLogoServerPath] = useState(null);
+    const [errorMessages, setErrorMessages] = useState({});
 
     const apiBaseUrl = localStorage.getItem('apiBaseUrl');
 
@@ -22,8 +23,30 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
         setLogoFile(null);
     }
 
+    const validateForm = () => {
+        let valid = true;
+        if (!name.trim()) {
+            setNameHelperText(localeMessages["name_required"]);
+            valid = false;
+        } else {
+            setNameHelperText("");
+        }
+
+        if (!description.trim()) {
+            setDescriptionHelperText(localeMessages["description_required"]);
+            valid = false;
+        } else {
+            setDescriptionHelperText("");
+        }
+
+        return valid;
+    }
+
     const handleUpdate = () => (event) => {
         event.preventDefault();
+        if (!validateForm()) {
+            return;
+        }
 
         let payload = {
             name: name,
@@ -58,12 +81,16 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
             successCallback(data);
         })
         .catch(error => {
-            failureCallback(error);
+            setErrorMessages(localeMessages["error_try_again"]);
         });
     }
 
     const handleCreate = () => (event) => {
         event.preventDefault();
+        if (!validateForm()) {
+            return;
+        }
+
         fetch(`${apiBaseUrl}/organizations/`, {
             method: 'POST',
             headers: {
@@ -88,7 +115,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
             successCallback(data);
         })
         .catch(error => {
-            failureCallback(error);
+            setErrorMessages(localeMessages["error_try_again"]);
         });
     }
 
