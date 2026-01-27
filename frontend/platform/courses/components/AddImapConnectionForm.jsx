@@ -54,11 +54,11 @@ function AddImapConnectionForm({onChangeCallback, activeOrganizationId, initialI
     <div>
       { hasImapConnection && (
         <FormControl sx={{ marginBottom: '16px', minWidth: '100%' }}>
-          <InputLabel id="imap-connection-select-label">IMAP Connection</InputLabel>
+          <InputLabel id="imap-connection-select-label">{localeMessages["imap_connection"]}</InputLabel>
           <Select
             labelId="imap-connection-select-label"
             id="imap-connection-select"
-            label="IMAP Connection"
+            label={localeMessages["imap_connection"]}
             value={imapConnectionId || ''}
             onChange={(event) => handleImapConnectionChange(event.target.value)}
           >
@@ -77,7 +77,7 @@ function AddImapConnectionForm({onChangeCallback, activeOrganizationId, initialI
           aria-controls="panel1-content"
           id="panel1-header"
         ><Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <PlusIcon /><Typography component="span">New IMAP connection</Typography>
+            <PlusIcon /><Typography component="span">{localeMessages["new_imap_connection"]}</Typography>
           </Box>
         </AccordionSummary>
         <AccordionDetails>

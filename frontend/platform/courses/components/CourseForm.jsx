@@ -64,19 +64,19 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     const validateForm = () => {
         let isValid = true
         if (!courseTitle) {
-            setTitleHelperText("Title is required");
+            setTitleHelperText(localeMessages["title_required_helper_text"]);
             isValid = false;
         } else {
             setTitleHelperText("");
         }
         if (!courseSlug) {
-            setSlugHelperText("Slug is required");
+            setSlugHelperText(localeMessages["slug_required_helper_text"]);
             isValid = false;
         } else {
             setSlugHelperText("");
         }
         if (!courseDescription) {
-            setDescriptionHelperText("Description is required");
+            setDescriptionHelperText(localeMessages["description_required_helper_text"]);
             isValid = false;
         } else {
             setDescriptionHelperText("");
@@ -173,18 +173,14 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
 
     return (<Box p={2}>
               { errorMessage && <Alert severity="error" sx={{ marginBottom: "10px" }}>{errorMessage}</Alert> }
-              <RequiredTextField label="Course Title" helperText={titleHelperText} fullWidth margin="normal" value={courseTitle} onChange={(e) => setCourseTitle(e.target.value)} />
-              <RequiredTextField label="Course Slug" helperText={slugHelperText} fullWidth margin="normal" value={courseSlug} onChange={(e) => setCourseSlug(e.target.value)} {...(!createMode ? { disabled: true } : {})} />
+              <RequiredTextField label={localeMessages["course_title"]} helperText={titleHelperText} fullWidth margin="normal" value={courseTitle} onChange={(e) => setCourseTitle(e.target.value)} />
+              <RequiredTextField label={localeMessages["course_slug"]} helperText={slugHelperText} fullWidth margin="normal" value={courseSlug} onChange={(e) => setCourseSlug(e.target.value)} {...(!createMode ? { disabled: true } : {})} />
 
-              <RequiredTextField label="Course Description" helperText={descriptionHelperText} fullWidth margin="normal" multiline rows={4} value={courseDescription} onChange={(e) => setCourseDescription(e.target.value)} />
+              <RequiredTextField label={localeMessages["course_description"]} helperText={descriptionHelperText} fullWidth margin="normal" multiline rows={4} value={courseDescription} onChange={(e) => setCourseDescription(e.target.value)} />
               <FormControlLabel
-                control={<Switch onChange={() => switchImapConnection()} checked={addImapConnection} />}
-                label="Add IMAP connection" sx={{ m: 0 }} />
-                <Tooltip title="IMAP connection is not required for creating a course,
-                but if you want to implement user interactions with email, you need to define an IMAP connection.
-                This are actions like registering in a course, or getting an overview of the course progress just by sending an email
-                instead of visiting the website. this can be very valuable for cases that the target audience might not have easy access
-                to your platform, or you do not intend to have a publicly accessible website for the your email learning">
+                control={<Switch onChange={() => switchImapConnection()} checked={addImapConnection} dir={direction} />}
+                label={localeMessages["add_imap_connection"]} sx={{ m: 0 }} />
+                <Tooltip title={localeMessages["imap_connection_tooltip"]}>
                     <IconButton size="small">
                         <InfoOutlinedIcon fontSize="small" />
                     </IconButton>
@@ -200,8 +196,8 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 </Box>}
               <Box mt={2} textAlign="right">
                 <Button onClick={cancelCallback} sx={{ mr: 1 }}>Cancel</Button>
-                { createMode && <Button variant="contained" onClick={() => handleCreateCourse()} sx={{ boxShadow: 'none' }}>Create Course</Button> }
-                { !createMode && <Button variant="contained" onClick={() => handleUpdateCourse()} sx={{ boxShadow: 'none' }}>Update Course</Button> }
+                { createMode && <Button variant="contained" onClick={() => handleCreateCourse()} sx={{ boxShadow: 'none' }}>{localeMessages["create"]}</Button> }
+                { !createMode && <Button variant="contained" onClick={() => handleUpdateCourse()} sx={{ boxShadow: 'none' }}>{localeMessages["update"]}</Button> }
               </Box>
             </Box>);
 }

@@ -5,6 +5,7 @@ from django_email_learning.personalised.api.serializers import (
     QuestionResponse,
 )
 from django_email_learning.services import jwt_service
+from django.utils.translation import gettext as _
 from django_email_learning.models import (
     ContentDelivery,
     QuizSubmission,
@@ -79,7 +80,7 @@ class QuizSubmissionView(View):
         delivery.update_hash()
 
         if passed:
-            message = "Congratulations! You have passed the quiz."
+            message = _("Congratulations! You have passed the quiz.")
             delivery = delivery.schedule_next_delivery()
             if not delivery:
                 enrolment.graduate()
@@ -91,14 +92,18 @@ class QuizSubmissionView(View):
             ).count()
 
             if failed_submissions_count > 1:
-                message = "You have failed the quiz twice. Unfortunatly you can not continue the course on this enrollment. But you can enroll again to retake the course."
+                message = _(
+                    "You have failed the quiz twice. Unfortunatly you can not continue the course on this enrollment. But you can enroll again to retake the course."
+                )
                 logger.info(
                     f"Learner ID {enrolment.learner.id} has failed the quiz twice for Course {enrolment.course.title}. "
                     f"Marking enrollment as failed."
                 )
                 enrolment.fail()
             else:
-                message = "You have failed the quiz. You will receive another chance to retake it tomorrow."
+                message = _(
+                    "You have failed the quiz. You will receive another chance to retake it tomorrow."
+                )
                 logger.info(
                     f"Learner ID {enrolment.learner.id} has failed the quiz for Course {enrolment.course.title}. "
                     f"Scheduling a retry for the next day."

@@ -55,13 +55,12 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
   }, [activeOrganizationId]);
 
 
-
   return (
    <>
     <GlobalStyles styles={(theme) => ({ body: { margin: 0, padding: 0, backgroundColor: theme.palette.background.dark, color: theme.palette.text.primary } })} />
     <MenuBar activeOrganizationId={activeOrganizationId} changeOrganizationCallback={setActiveOrganizationId} showOrganizationSwitcher={showOrganizationSwitcher} drawerWidth={drawerWidth} />
     <Box component="main"
-        sx={{ flexGrow: 1, padding: {sm: 3, xs: 1, md: 5}, width: { md: `calc(100% - ${drawerWidth + 100}px)` }, float: { md: 'right' } }}>
+        sx={{ flexGrow: 1, padding: {sm: 3, xs: 1, md: 5}, width: { md: `calc(100% - ${drawerWidth + 100}px)` }, float: { md: direction === 'rtl' ? 'left' : 'right' } }}>
     <Grid container spacing={0} mt={10} px={4}>
       <Grid size={{xs: 12}}>
       <Breadcrumbs aria-label="breadcrumb">
@@ -91,7 +90,8 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
       sx={{
         position: 'fixed',
         bottom: 0,
-        right: 16,
+        right: direction === 'rtl' ? 'auto' : 16,
+        left: direction === 'rtl' ? 16 : 'auto',
         padding: 1,
         zIndex: 1000,
         backgroundColor: 'transparent'

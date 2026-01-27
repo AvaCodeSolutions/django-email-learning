@@ -6,7 +6,7 @@ import Layout from '../../public/components/Layout.jsx';
 const Verification = () => {
     return <Layout>
     { !error_message ?<Alert severity='success' sx={{ maxWidth: 800, margin: '0 auto', backgroundColor: "background.light" }}>
-        You have successfully verified your enrollment.
+       { localeMessages['verify_enrollment_success'] }
     </Alert> : <Alert severity="error" sx={{ maxWidth: 800, margin: '20px auto' }}>
        {error_message} (ref: {ref})
     </Alert>}

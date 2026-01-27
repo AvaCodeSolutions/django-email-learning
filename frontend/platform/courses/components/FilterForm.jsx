@@ -4,10 +4,10 @@ const FilterForm = ({ onStatusChange }) => {
   return (
     <>
       <Typography variant="body2" component="div" sx={{ mb: 2, fontWeight: 'bold' }}>
-        Filter
+        {localeMessages["filter"]}
       </Typography>
       <Typography variant="subtitle2" component="div" sx={{ mb: 1, fontWeight: 'bold' }}>
-        Course Status:
+        {localeMessages["course_status"]}:
       </Typography>
       <RadioGroup defaultValue="all" name="course-status-radio-group" onChange={(event) => {
         const value = event.target.value;
@@ -19,9 +19,9 @@ const FilterForm = ({ onStatusChange }) => {
           onStatusChange("?enabled=false");
         }
       }}>
-        <FormControlLabel value="all" control={<Radio />} label="All" />
-        <FormControlLabel value="enabled" control={<Radio />} label="Enabled" />
-        <FormControlLabel value="disabled" control={<Radio />} label="Disabled" />
+        <FormControlLabel value="all" control={<Radio />} label={localeMessages["all"]} />
+        <FormControlLabel value="enabled" control={<Radio />} label={localeMessages["enabled"]} />
+        <FormControlLabel value="disabled" control={<Radio />} label={localeMessages["disabled"]} />
       </RadioGroup>
     </>
   );

@@ -1,6 +1,7 @@
 from django.views import View
 from django.views.generic.base import TemplateResponseMixin
 from django.http import HttpResponse
+from django.utils.translation import gettext as _
 from django.urls import reverse
 from django_email_learning.models import ContentDelivery, EnrollmentStatus
 from django_email_learning.services import jwt_service
@@ -14,7 +15,11 @@ import logging
 
 class ErrrorLoggingMixin(TemplateResponseMixin):
     def errr_response(
-        self, message: str, exception: Exception | None, status_code: int = 500
+        self,
+        message: str,
+        exception: Exception | None,
+        status_code: int = 500,
+        title: str = _("Error"),
     ) -> HttpResponse:
         error_ref = uuid.uuid4().hex
         if exception:
@@ -26,7 +31,8 @@ class ErrrorLoggingMixin(TemplateResponseMixin):
                 f"{message} - Ref: {error_ref}", extra={"error_ref": error_ref}
             )
         return self.render_to_response(
-            context={"ref": error_ref, "error_message": message}, status=status_code
+            context={"ref": error_ref, "error_message": message, "page_title": title},
+            status=status_code,
         )
 
 
@@ -44,18 +50,22 @@ class QuizPublicView(View, ErrrorLoggingMixin):
             enrolment = delivery.enrollment
             if enrolment.status != EnrollmentStatus.ACTIVE:
                 return self.errr_response(
-                    message="Quiz is not valid anymore",
+                    message=_("Quiz is not valid anymore"),
                     exception=ValueError("Enrolment is not active"),
+                    title=_("Invalid Quiz"),
                 )
             quiz = delivery.course_content.quiz
             if not quiz:
                 return self.errr_response(
-                    message="No quiz associated with this link", exception=None
+                    message=_("No quiz associated with this link"),
+                    exception=None,
+                    title=_("Invalid Quiz"),
                 )
             if not delivery.course_content.is_published:
                 return self.errr_response(
-                    message="No valid quiz associated with this link",
+                    message=_("No valid quiz associated with this link"),
                     exception=ValueError("Quiz is not published"),
+                    title=_("Invalid Quiz"),
                 )
             quiz_data = PublicQuizSerializer.model_validate(quiz).model_dump()
             if question_ids:
@@ -75,19 +85,30 @@ class QuizPublicView(View, ErrrorLoggingMixin):
 
         except ContentDelivery.DoesNotExist as e:
             return self.errr_response(
-                message="An error occurred while retrieving the quiz", exception=e
+                message=_("An error occurred while retrieving the quiz"),
+                exception=e,
+                title=_("Error"),
             )
         except KeyError as e:
             return self.errr_response(
-                message="The link is not valid", exception=e, status_code=400
+                message=_("The link is not valid"),
+                exception=e,
+                status_code=400,
+                title=_("Invalid Link"),
             )
         except jwt_service.InvalidTokenException as e:
             return self.errr_response(
-                message="The link is not valid", exception=e, status_code=400
+                message=_("The link is not valid"),
+                exception=e,
+                status_code=400,
+                title=_("Invalid Link"),
             )
         except jwt_service.ExpiredTokenException as e:
             return self.errr_response(
-                message="The link has expired", exception=e, status_code=410
+                message=_("The link has expired"),
+                exception=e,
+                status_code=410,
+                title=_("Expired Link"),
             )
 
 
@@ -99,23 +120,26 @@ class VerifyEnrollmentView(View, ErrrorLoggingMixin):
             token = request.GET["token"]
         except KeyError as e:
             return self.errr_response(
-                message="The verification link is not valid.",
+                message=_("The verification link is not valid."),
                 exception=e,
                 status_code=400,
+                title=_("Invalid Link"),
             )
         try:
             decoded = jwt_service.decode_jwt(token=token)
         except jwt_service.InvalidTokenException as e:
             return self.errr_response(
-                message="The verification link is not valid.",
+                message=_("The verification link is not valid."),
                 exception=e,
                 status_code=400,
+                title=_("Invalid Link"),
             )
         except jwt_service.ExpiredTokenException as e:
             return self.errr_response(
-                message="The verification link has expired.",
+                message=_("The verification link has expired."),
                 exception=e,
                 status_code=410,
+                title=_("Expired Link"),
             )
 
         enrollment_id = decoded["enrollment_id"]
@@ -130,7 +154,9 @@ class VerifyEnrollmentView(View, ErrrorLoggingMixin):
             command.execute()
         except Exception as e:
             return self.errr_response(
-                message="An error occurred during enrollment verification.", exception=e
+                message=_("An error occurred during enrollment verification."),
+                exception=e,
+                title=_("Verification Error"),
             )
 
-        return self.render_to_response(context={"page_title": "Enrollment Verified"})
+        return self.render_to_response(context={"page_title": _("Enrollment Verified")})

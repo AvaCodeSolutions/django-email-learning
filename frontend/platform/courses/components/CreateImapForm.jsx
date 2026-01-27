@@ -68,31 +68,31 @@ const CreateImapForm = ({ onSuccess, activeOrganizationId }) => {
     const validateForm = () => {
         let isValid = true;
         if (!email) {
-            setEmailHelperText("Email is required");
+            setEmailHelperText(localeMessages["email_required_helper_text"]);
             isValid = false;
         } else if (isValidEmail(email) === false) {
-            setEmailHelperText("Email is invalid");
+            setEmailHelperText(localeMessages["invalid_email_helper_text"]);
             isValid = false;
         } else {
             setEmailHelperText("");
         }
         if (!password) {
-            setPasswordHelperText("Password is required");
+            setPasswordHelperText(localeMessages["password_required_helper_text"]);
             isValid = false;
         } else {
             setPasswordHelperText("");
         }
         if (!server) {
-            setServerHelperText("Server is required");
+            setServerHelperText(localeMessages["server_required_helper_text"]);
             isValid = false;
         } else {
             setServerHelperText("");
         }
         if (!port) {
-            setPortHelperText("Port is required");
+            setPortHelperText(localeMessages["port_required_helper_text"]);
             isValid = false;
         } else if (isNaN(port) || parseInt(port) <= 0) {
-            setPortHelperText("Port must be a positive number");
+            setPortHelperText(localeMessages["invalid_port_helper_text"]);
             isValid = false;
         } else {
             setPortHelperText("");
@@ -102,13 +102,13 @@ const CreateImapForm = ({ onSuccess, activeOrganizationId }) => {
 
     return (<>
         { errorMessage && <Alert severity="error" sx={{ marginBottom: 2 }} >{errorMessage}</Alert> }
-        <RequiredTextField label="Email" helperText={emailHelperText} sx={{ width: "100%" }} value={email} onChange={(e) => setEmail(e.target.value)} />
-        <RequiredTextField label="Password" helperText={passwordHelperText} type="password" sx={{ width: "100%", marginTop: 2 }} value={password} onChange={(e) => setPassword(e.target.value)} />
-        <RequiredTextField label="Server" helperText={serverHelperText} sx={{ width: "100%", marginTop: 2 }} value={server} onChange={(e) => setServer(e.target.value)} />
-        <RequiredTextField label="Port" helperText={portHelperText} sx={{ width: "100%", marginTop: 2 }} value={port} onChange={(e) => setPort(e.target.value)} />
+        <RequiredTextField label={localeMessages["email"]} helperText={emailHelperText} fullWidth value={email} onChange={(e) => setEmail(e.target.value)} />
+        <RequiredTextField label={localeMessages["password"]} helperText={passwordHelperText} type="password" fullWidth sx={{ marginTop: 2 }} value={password} onChange={(e) => setPassword(e.target.value)} />
+        <RequiredTextField label={localeMessages["server"]} helperText={serverHelperText} fullWidth sx={{ marginTop: 2 }} value={server} onChange={(e) => setServer(e.target.value)} />
+        <RequiredTextField label={localeMessages["port"]} helperText={portHelperText} fullWidth sx={{ marginTop: 2 }} value={port} onChange={(e) => setPort(e.target.value)} />
         <Box mt={2} textAlign="right">
             <Button variant="contained" onClick={() => handleCreateImap()} sx={{ boxShadow: 'none' }}>
-                Add
+                {localeMessages["add"]}
             </Button>
         </Box>
     </>)

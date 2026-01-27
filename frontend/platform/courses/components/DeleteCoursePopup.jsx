@@ -47,19 +47,19 @@ const DeleteCoursePopup = ({ courseId, courseTitle, handleClose, handleSuccess})
             <WarningIcon color="warning" />
           </Box>
           <Box sx={{ display: 'inline-block'}}>
-          {`Delete ${courseTitle} Course`}
+          {localeMessages["delete_course"].replace("COURSE_NAME", courseTitle)}
           </Box>
         </Typography>
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-           { `Are you sure you want to delete the course "${courseTitle}"?` }
+           { localeMessages["course_delete_confirmation"].replace("COURSE_NAME", courseTitle) }
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
+          <Button onClick={handleClose}>{localeMessages["cancel"]}</Button>
           <Button onClick={deleteCourse} autoFocus variant="contained">
-            <Typography>Delete</Typography>
+            <Typography>{localeMessages["delete"]}</Typography>
           </Button>
         </DialogActions></>;
 }

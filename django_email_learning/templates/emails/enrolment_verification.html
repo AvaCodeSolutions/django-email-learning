@@ -1,48 +1,48 @@
 {% extends "emails/base.html" %}
+{% load i18n %}
 
 {% block content %}
-        <h2 style="color: #2c3e50; margin-top: 0; text-align: center; border-bottom: 2px solid {{ brand_color }}; padding-bottom: 15px;">Welcome!</h2>
+        <h2 style="color: #2c3e50; margin-top: 0; text-align: center; border-bottom: 2px solid {{ brand_color }}; padding-bottom: 15px;">{% translate "Welcome!" %}</h2>
 
-        <p style="font-size: 16px; margin-bottom: 20px;">Hello there,</p>
+        <p style="font-size: 16px; margin-bottom: 20px;">{% translate "Hello there," %}</p>
 
         <p style="font-size: 16px; margin-bottom: 25px;">
-            Congratulations on enrolling in <strong class="color-brand">{{ course_title }}</strong>!
-            We're excited to have you join our learning community.
+            {% blocktranslate %}Congratulations on enrolling in <strong class="color-brand">{{ course_title }}</strong>!{% endblocktranslate %}
+            {% translate "We're excited to have you join our learning community." %}
         </p>
 
         <p style="font-size: 16px; margin-bottom: 25px;">
-            To get started, please verify your email address by clicking the button below:
+            {% translate "To get started, please verify your email address by clicking the button below:" %}
         </p>
 
         <div style="text-align: center; margin: 30px 0;">
             <a href="{{ verification_link }}" class="bg-brand"
                style="display: inline-block; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px; transition: background-color 0.3s;">
-                Verify Your Email Address
+                {% translate "Verify Your Email Address" %}
             </a>
         </div>
 
         {% if support_imap_interface %}
         <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; border-left: 4px solid {{ brand_color }}; margin: 25px 0;">
-            <h4 class="color-brand" style="margin-top: 0;">Alternative Verification Method</h4>
+            <h4 class="color-brand" style="margin-top: 0;">{% translate "Alternative Verification Method" %}</h4>
             <p style="margin-bottom: 15px;">
-                You can also verify your email by sending a message to
-                <strong style="color: #495057;">{{ imap_email_address }}</strong>
-                with your verification code in the subject line or email body.
-                Simply forward this email to complete the verification process.
+                {% blocktranslate %}You can also verify your email by sending a message to <strong style="color: #495057;">{{ imap_email_address }}</strong>{% endblocktranslate %}
+                {% translate "with your verification code in the subject line or email body." %}
+                {% translate "Simply forward this email to complete the verification process." %}
             </p>
             <p style="background-color: #ffffff; padding: 15px; border-radius: 4px; border: 1px dashed #6c757d; text-align: center;">
-                Verification Code:
+                {% translate "Verification Code:" %}
                 <span style="font-family: 'Courier New', monospace; font-size: 18px; font-weight: bold;">{{ verification_code }}</span>
             </p>
         </div>
         {% endif %}
 
         <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef; font-size: 14px; color: #6c757d;">
-            <p>If you didn't sign up for this course, you can safely ignore this email.</p>
+            <p>{% translate "If you didn't sign up for this course, you can safely ignore this email." %}</p>
         </div>
 
         <div style="margin-top: 25px; text-align: center;">
-            <p style="margin-bottom: 5px; font-size: 16px;">Best regards,</p>
+            <p style="margin-bottom: 5px; font-size: 16px;">{% translate "Best regards," %}</p>
             <p style="font-weight: bold; color: #2c3e50; font-size: 18px;">{{ organization_name }}</p>
         </div>
 {% endblock %}

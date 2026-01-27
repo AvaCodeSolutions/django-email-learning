@@ -68,11 +68,11 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
 
     const validateQuiz = () => {
         if (title.trim() === "") {
-            setErrorMessage("Quiz title cannot be empty.");
+            setErrorMessage(localeMessages["quiz_title_empty"]);
             return false;
         }
         if (questions.length === 0) {
-            setErrorMessage("Quiz must contain at least one question.");
+            setErrorMessage(localeMessages["at_least_one_question"]);
             return false;
         }
         for (let i = 0; i < questions.length; i++) {
@@ -83,12 +83,12 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             }
             const options = question.options || [];
             if (options.length < 2) {
-                setErrorMessage(`Question ${i + 1} must have at least two answer options.`);
+                setErrorMessage(localeMessages["at_least_two_options"].replace("QUESTION_NUMBER", i + 1));
                 return false;
             }
             const hasCorrectOption = options.some(option => option.isCorrect);
             if (!hasCorrectOption) {
-                setErrorMessage(`Question ${i + 1} must have at least one correct answer.`);
+                setErrorMessage(localeMessages["at_least_one_correct"].replace("QUESTION_NUMBER", i + 1));
                 return false;
             }
         }
@@ -205,11 +205,11 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
 
             }
         }} tabIndex={0} focusable="true">
-            <Typography variant="h2" sx={{ my: 2, fontSize: '1.5rem' }}>{ quizId ? "Update Quiz" : "New Quiz" }</Typography>
+            <Typography variant="h2" sx={{ my: 2, fontSize: '1.5rem' }}>{ quizId ? localeMessages["update_quiz"] : localeMessages["new_quiz"] }</Typography>
             {errorMessage && <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert>}
-            <RequiredTextField label="Quiz Title" value={title} onChange={(e) => setTitle(e.target.value)} sx={{ mb: 2, width: '100%' }} disabled={userRole === 'viewer'} />
+            <RequiredTextField label={localeMessages["quiz_title"]} value={title} onChange={(e) => setTitle(e.target.value)} sx={{ mb: 2, width: '100%' }} disabled={userRole === 'viewer'} />
             {userRole !== 'viewer' && <Button variant="outlined" sx={{ mb: 2 }} onClick={() => setShowQuestionField(true)}>
-                <QuizIcon sx={{ mr: 1 }} /> Add Question</Button>}
+                <QuizIcon sx={{ mr: 1 }} /> {localeMessages["add_question"]}</Button>}
             { showQuestionField && (
                 <Box sx={{ mb: 2, border: '1px solid', borderColor: 'grey.300', borderRadius: 1, p: 2 }}>
                     <Grid container spacing={2} alignItems="center">
@@ -224,10 +224,10 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                             <Button variant="outlined" onClick={() => {
                                 addToQuestions();
                             }}>
-                                Add Question
+                                {localeMessages["add_question"]}
                             </Button>
                             <Button variant="outlined" sx={{ ml: 1 }} onClick={() => { setShowQuestionField(false); setNewQuestion(""); }}>
-                                Cancel
+                                {localeMessages["cancel"]}
                             </Button>
                         </Grid>
                     </Grid>
@@ -241,17 +241,17 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             {/* Quiz Settings Section */}
             <Box mt={3} mb={3}>
                 <Typography variant="h6" sx={{ mb: 2, fontSize: '1.1rem', color: 'primary.main' }}>
-                    Quiz Settings
+                    {localeMessages["quiz_settings"]}
                 </Typography>
 
                 <Grid container spacing={3}>
                     {/* Row 1: Required Score and Waiting Period */}
                     <Grid size={{ xs: 12, md: 6 }}>
                         <InputLabel sx={{ mb: 1, fontSize: '0.9rem', color: 'text.secondary' }}>
-                            Required Score to Pass
+                            {localeMessages["required_score"]}
                         </InputLabel>
                         <Tooltip
-                            title="Minimum percentage score required to pass this quiz"
+                            title={localeMessages["score_tooltip"]}
                             placement="top-start"
                         >
                             <RequiredTextField
@@ -268,12 +268,12 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
 
                     <Grid size={{ xs: 12, md: 6 }}>
                         <Tooltip
-                            title="Time to wait after the previous lesson before sending this quiz"
+                            title={localeMessages["period_tooltip"]}
                             placement="top-start"
                         >
                             <Box>
                                 <InputLabel sx={{ mb: 1, fontSize: '0.9rem', color: 'text.secondary' }}>
-                                    Waiting Period
+                                    {localeMessages["waiting_period"]}
                                 </InputLabel>
                                 <Box sx={{ display: 'flex', gap: 1 }}>
                                     <RequiredTextField
@@ -303,10 +303,10 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                     {/* Row 2: Deadline and Selection Strategy */}
                     <Grid size={{ xs: 12, md: 6 }}>
                         <InputLabel sx={{ mb: 1, fontSize: '0.9rem', color: 'text.secondary' }}>
-                            Deadline to Complete Quiz
+                            {localeMessages["quiz_deadline"]}
                         </InputLabel>
                         <Tooltip
-                            title="Maximum time allowed to complete the quiz"
+                            title={localeMessages["deadline_tooltip"]}
                             placement="top-start"
                         >
                             <RequiredTextField
@@ -323,14 +323,12 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
 
                     <Grid size={{ xs: 12, md: 6 }}>
                         <Tooltip
-                            title="Choose how questions are selected for each quiz attempt,
-                            if total questions is less than 6, all questions will be used even
-                            if 'Random Questions' is selected"
+                            title={localeMessages["question_selection_strategy_tooltip"]}
                             placement="top-start"
                         >
                             <Box>
                                 <InputLabel sx={{ mb: 1, fontSize: '0.9rem', color: 'text.secondary' }}>
-                                    Selection Strategy
+                                    {localeMessages["question_selection_strategy"]}
                                 </InputLabel>
                                 <Select
                                     size="small"
@@ -339,8 +337,8 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                                     sx={{ width: '100%' }}
                                     disabled={userRole === 'viewer'}
                                 >
-                                    <MenuItem value="all">All Questions</MenuItem>
-                                    <MenuItem value="random">Random Questions</MenuItem>
+                                    <MenuItem value="all">{localeMessages["all_questions"]}</MenuItem>
+                                    <MenuItem value="random">{localeMessages["random_questions"]}</MenuItem>
                                 </Select>
                             </Box>
                         </Tooltip>
@@ -350,10 +348,10 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
 
             <Box mt={2} textAlign="right">
                 <Button variant="outlined" sx={{ mr: 1, boxShadow: 'none' }} onClick={cancel}>
-                    Back
+                    {localeMessages["back"]}
                 </Button>
-                {userRole !== 'viewer' && <Button type="submit" variant="contained" color="primary" sx={{ boxShadow: 'none' }} onClick={() => {if(!quizId) { addQuiz(); } else { updateQuiz(); }}}>
-                    Save Quiz
+                {userRole !== 'viewer' && <Button type="submit" variant="contained" color="primary" sx={{ boxShadow: 'none', mr: 1}} onClick={() => {if(!quizId) { addQuiz(); } else { updateQuiz(); }}}>
+                    {localeMessages["save_quiz"]}
                 </Button>}
             </Box>
         </Box>

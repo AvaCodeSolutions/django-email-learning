@@ -23,7 +23,7 @@ const Quiz = () => {
             answerCounter += selectedAnswers[i].answers.length;
         }
         if (answerCounter === 0) {
-            setWarning("You have not selected any answers. Are you sure you want to submit an empty quiz?");
+            setWarning(localeMessages['no_answer_warning']);
         } else {
             setWarning("");
         }
@@ -61,8 +61,7 @@ const Quiz = () => {
         </Box>
         {showQuestions ? <Box>
         <Typography>
-        Please select all correct answers for each question. Note that some questions may have multiple correct answers.
-        This quiz uses negative marking for incorrect choices; if you are unsure, it is better to leave the question unanswered.
+        { localeMessages['quiz_intro'] }
         </Typography>
 
 
@@ -85,21 +84,21 @@ const Quiz = () => {
             </Box>
         ))}
         <Box mt={4} textAlign="center">
-            <Button variant="contained" onClick={showSubmitDialog}>Submit</Button>
+            <Button variant="contained" onClick={showSubmitDialog}>{localeMessages['submit']}</Button>
         </Box>
         </Box> : <Box textAlign="center">
-            {isPassed !== null && (isPassed ? <Alert severity="success"><Typography variant="h6"><CelebrationIcon /> {message} Your score is {score}%.</Typography></Alert> :
-            <Alert severity="error"><Typography variant="h6"><SentimentVeryDissatisfiedIcon /> {message} Your score is {score}%.</Typography></Alert>)}
+            {isPassed !== null && (isPassed ? <Alert severity="success"><Typography variant="h6"><CelebrationIcon /> {message} {localeMessages['your_score']}: {score}%.</Typography></Alert> :
+            <Alert severity="error"><Typography variant="h6"><SentimentVeryDissatisfiedIcon /> {message} {localeMessages['your_score']}: {score}%.</Typography></Alert>)}
         </Box>}
-        </Box> : <Alert severity="error"><Typography variant="h6">Error loading quiz: {error_message} {ref && `(Ref: ${ref})`}</Typography></Alert>}
+        </Box> : <Alert severity="error"><Typography variant="h6">{localeMessages['error_loading_quiz']}: {error_message} {ref && `(Ref: ${ref})`}</Typography></Alert>}
         <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
             <Box p={4}>
-                <Typography variant="h6" mb={2}>Ready to submit?</Typography>
+                <Typography variant="h6" mb={2}>{localeMessages['ready_to_submit']}</Typography>
                 {warning ? <Alert severity="warning" mb={2}><Typography>{warning}</Typography></Alert> :
-                <Typography>Please keep in mind that this quiz uses negative marking for incorrect answers. If you are unsure of an answer, it may be better to leave it blank.</Typography>}
+                <Typography>{localeMessages['submit_quiz_note']}</Typography>}
                 <Box mt={4} textAlign="right">
-                    <Button variant="text" onClick={() => setDialogOpen(false)} sx={{ mr: 2 }}>Cancel</Button>
-                    <Button variant="contained" onClick={submitQuiz}>Submit</Button>
+                    <Button variant="text" onClick={() => setDialogOpen(false)} sx={{ mr: 2 }}>{localeMessages['cancel']}</Button>
+                    <Button variant="contained" onClick={submitQuiz}>{localeMessages['submit']}</Button>
                 </Box>
             </Box>
         </Dialog>

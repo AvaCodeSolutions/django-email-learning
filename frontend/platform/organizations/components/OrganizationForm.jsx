@@ -137,28 +137,30 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
 
     return (
         <Box p={2}>
-            <RequiredTextField label="Name" helperText={nameHelperText} fullWidth margin="normal" value={name} onChange={(e) => setName(e.target.value)} />
-            <RequiredTextField label="Description" helperText={descriptionHelperText} fullWidth margin="normal" multiline rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <RequiredTextField label={localeMessages["name"]} helperText={nameHelperText} fullWidth margin="normal" value={name} onChange={(e) => setName(e.target.value)} />
+            <RequiredTextField label={localeMessages["description"]} helperText={descriptionHelperText} fullWidth margin="normal" multiline rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
             { !logoUrl ? <Button
             component="label"
             role={undefined}
             variant="contained"
             tabIndex={-1}
-            startIcon={<CloudUploadIcon />}
+            startIcon={<CloudUploadIcon sx={{ marginLeft: direction === 'rtl' ? 1 : 0 }} />}
+            sx={{ textAlign: direction === 'rtl' ? 'right' : 'left', mt: 2, mb: 2}}
+            dir={direction}
             >
-            Logo
+            {localeMessages["logo"]}
             <VisuallyHiddenInput
                 type="file"
                 onChange={(event) => setLogoFile(event.target.files[0])}
             />
             </Button>
-            : (<><img src={logoUrl} alt="Organization Logo" style={{ marginTop: '10px', maxHeight: '100px' }} /><br />
-                <Button variant="text" color="secondary" onClick={removeLogo}>Remove Logo</Button></>
+            : (<><img src={logoUrl} alt={localeMessages["organization_logo"]} style={{ marginTop: '10px', maxHeight: '100px' }} /><br />
+                <Button variant="text" color="secondary" onClick={removeLogo}>{localeMessages["remove_logo"]}</Button></>
             )}
             <DialogActions>
-                <Button onClick={cancelCallback}>Cancel</Button>
+                <Button onClick={cancelCallback}>{localeMessages["cancel"]}</Button>
                 <Button variant='contained' type="submit" color="primary" onClick={createMode? handleCreate() : handleUpdate() }>
-                    {createMode ? 'Create' : 'Update'} Organization
+                    {createMode ? localeMessages["create"] : localeMessages["update"]}
                 </Button>
             </DialogActions>
         </Box>

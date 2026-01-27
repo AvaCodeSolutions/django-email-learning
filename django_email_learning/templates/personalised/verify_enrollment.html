@@ -1,5 +1,11 @@
 {% extends "personalised/base.html" %}
+{% load i18n %}
 {% load django_vite %}
 {% block head_script %}
+    <script>
+        const localeMessages = {
+            "verify_enrollment_success": "{% translate 'Your enrollment has been successfully verified.' %}",
+        }
+    </script>
     {% vite_asset 'personalised/verify_enrollment/Verification.jsx' %}
 {% endblock %}

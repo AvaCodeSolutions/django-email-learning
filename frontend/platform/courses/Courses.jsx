@@ -98,7 +98,7 @@ function Courses() {
 
   return (
     <Base
-      breadCrumbList={[{label: 'Course Management', href: '#'}]}
+      breadCrumbList={[{label: localeMessages["course_management"], href: '#'}]}
       bottomDrawerParams={{
         icon: <FilterListIcon />,
         children: <FilterForm onStatusChange={(params) => setQueryParameters(params)} />
@@ -107,7 +107,7 @@ function Courses() {
     >
       <Grid size={{xs: 12, md: 9}} py={2} pl={2}>
         <Box p={2} sx={{ border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.main', borderRadius: 1, minHeight: 300 }}>
-        {userRole !== 'viewer' && <Button variant="contained" startIcon={<SchoolIcon />} sx={{ marginBottom: 2 }} onClick={() => {
+        {userRole !== 'viewer' && <Button variant="contained" startIcon={<SchoolIcon sx={{ marginLeft: direction === 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
           setDialogContent(<CourseForm
             successCallback={handleCourseCreated}
             failureCallback={handleCourseCreationFailed}
@@ -115,15 +115,15 @@ function Courses() {
             activeOrganizationId={organizationId}
             createMode={true}
           />);
-          setDialogOpen(true);}}>Add a Course</Button>}
+          setDialogOpen(true);}}>{localeMessages["add_course"]}</Button>}
         <TableContainer component={Paper}>
-          <Table sx={{ width: "100%" }} aria-label="Courses">
+          <Table sx={{ width: "100%" }} aria-label={localeMessages["courses"]}>
             <TableHead>
               <TableRow>
-                <TableCell>Title</TableCell>
-                <TableCell>Slug</TableCell>
-                <TableCell>Enabled</TableCell>
-                {userRole !== 'viewer' && <TableCell align='right'>Actions</TableCell>}
+                <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["title"]}</TableCell>
+                <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["slug"]}</TableCell>
+                <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["enabled"]}</TableCell>
+                {userRole !== 'viewer' && <TableCell align={direction === 'rtl' ? 'left' : 'right'}>{localeMessages["actions"]}</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -132,11 +132,11 @@ function Courses() {
                   key={course.id}
                   sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                 >
-                  <TableCell component="th" scope="row">
+                  <TableCell component="th" scope="row" sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>
                     <Link href={`${platformBaseUrl}/courses/${course.id}`} color='primary.dark'>{course.title}</Link>
                   </TableCell>
-                  <TableCell>{course.slug}</TableCell>
-                  <TableCell>
+                  <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{course.slug}</TableCell>
+                  <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>
                     <Switch
                       checked={course.enabled}
                       onChange={showEnableCoursePopup(course.id, course.enabled ? 'disable' : 'enable', course.title)}
@@ -144,7 +144,7 @@ function Courses() {
                       disabled={userRole === 'viewer'}
                     />
                   </TableCell>
-                  {userRole !== 'viewer' && <TableCell align="right">
+                  {userRole !== 'viewer' && <TableCell align={direction === 'rtl' ? 'left' : 'right'}>
                     <IconButton onClick={() => {
                       showEditCourseDialog(course);}}><EditIcon fontSize="small" /></IconButton>
                     <IconButton aria-label={`Delete ${course.title}`} onClick={() => {

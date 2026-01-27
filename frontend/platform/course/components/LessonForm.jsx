@@ -19,7 +19,7 @@ function LessonForm({ header, initialTitle, initialContent, onContentChange, can
 
     const addLesson = () =>{
         if (!validateForm()) {
-            setErrorMessage("Please fix the errors in the form before submitting.");
+            setErrorMessage(localeMessages["fix_errors"]);
             return;
         }
 
@@ -54,7 +54,7 @@ function LessonForm({ header, initialTitle, initialContent, onContentChange, can
 
     const updateLesson = () => {
         if (!validateForm()) {
-            setErrorMessage("Please fix the errors in the form before submitting.");
+            setErrorMessage(localeMessages["fix_errors"]);
             return;
         }
 
@@ -105,13 +105,13 @@ function LessonForm({ header, initialTitle, initialContent, onContentChange, can
     const validateForm = () => {
         let isValid = true;
         if (!title) {
-            setTitleHelperText("Lesson title is required.");
+            setTitleHelperText(localeMessages["lesson_title_required"]);
             isValid = false;
         } else {
             setTitleHelperText("");
         }
         if (!content) {
-            setContentHelperText("Lesson content is required.");
+            setContentHelperText(localeMessages["lesson_content_required"]);
             isValid = false;
         } else {
             setContentHelperText("");
@@ -127,7 +127,7 @@ function LessonForm({ header, initialTitle, initialContent, onContentChange, can
                 {errorMessage}
             </Alert>
         )}
-        <RequiredTextField value={title} label="Lesson Title" name="lesson_title" sx={{ width: '100%' }} onChange={(e) => setTitle(e.target.value)} helperText={titleHelperText} disabled={userRole === 'viewer'} />
+        <RequiredTextField value={title} label={localeMessages["lesson_title"]} name="lesson_title" sx={{ width: '100%' }} onChange={(e) => setTitle(e.target.value)} helperText={titleHelperText} disabled={userRole === 'viewer'} />
         <Box sx={{ my: 2 }}>
         <ContentEditor initialContent={content} contentUpdateCallback={handleContentChange} disabled={userRole === 'viewer'} />
         <Typography color="errorText.main" sx={{ marginTop: 1, fontSize: '0.75rem' }}>
@@ -136,9 +136,9 @@ function LessonForm({ header, initialTitle, initialContent, onContentChange, can
         </Box>
         <Tooltip
         placement="right"
-        title="Set the amount of time that we should wait after the previous lesson or quiz submission before sending this lesson.">
+        title={localeMessages["lesson_waiting_tooltip"]}>
         <RequiredTextField
-            label="Waiting Period"
+            label={localeMessages["waiting_period"]}
             name="waiting_period"
             type="number"
             value={waitingPeriod}
@@ -147,17 +147,17 @@ function LessonForm({ header, initialTitle, initialContent, onContentChange, can
             inputProps={{ min: 1 }}
             disabled={userRole === 'viewer'}
         />
-        <Select size="small" value={waitingPeriodUnit} onChange={(e) => setWaitingPeriodUnit(e.target.value)} name="waiting_period_unit" sx={{ width: '150px' }} disabled={userRole === 'viewer'}>
-            <MenuItem value="days">Days</MenuItem>
-            <MenuItem value="hours">Hours</MenuItem>
+        <Select size="small" value={waitingPeriodUnit} onChange={(e) => setWaitingPeriodUnit(e.target.value)} name="waiting_period_unit" sx={{ width: '150px', mr: 2 }} disabled={userRole === 'viewer'}>
+            <MenuItem value="days">{localeMessages["days"]}</MenuItem>
+            <MenuItem value="hours">{localeMessages["hours"]}</MenuItem>
         </Select>
         </Tooltip>
         <Box mt={2} textAlign="right">
         <Button variant="outlined" sx={{ mr: 1 }} onClick={cancel}>
-            Back
+            {localeMessages["back"]}
         </Button>
-        {userRole !== 'viewer' && <Button type="submit" variant="contained" onClick={() => {if(!lessonId) { addLesson(); } else { updateLesson(); }}}>
-            Save Lesson
+        {userRole !== 'viewer' && <Button type="submit" variant="contained" sx={{ mr: 1 }} onClick={() => {if(!lessonId) { addLesson(); } else { updateLesson(); }}}>
+            {localeMessages["save_lesson"]}
         </Button>}
         </Box>
         </Box>

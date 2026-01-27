@@ -1,9 +1,23 @@
 {% extends "public/base.html" %}
 {% load django_vite %}
+{% load i18n %}
 {% block head_script %}
     <script>
         const organization = {{ organization_json | safe }};
         const enrollApiUrl = "{{ enroll_api_url }}";
+        const localeMessages = {
+            "courses": "{% translate 'Courses' %}",
+            "enroll_now": "{% translate 'Enroll Now' %}",
+            "enrol_for_course": "{% translate 'Enroll for COURSE_NAME' %}",
+            "email": "{% translate 'email' %}",
+            "cancel": "{% translate 'Cancel' %}",
+            "submit": "{% translate 'Submit' %}",
+            "enrollment_success": "{% translate 'You are enrolled in this course.' %}",
+            "enrollment_failed": "{% translate 'Enrollment failed. Please try again.' %}",
+            "no_courses_available": "{% translate 'No courses available.' %}",
+            "email_required": "{% translate 'Email is required' %}",
+            "email_invalid": "{% translate 'Please enter a valid email address' %}",
+        }
     </script>
     {% vite_asset 'public/organization/Organization.jsx' %}
 {% endblock %}

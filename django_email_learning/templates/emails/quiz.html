@@ -1,21 +1,20 @@
 {% extends "emails/base.html" %}
-
+{% load i18n %}
 
 {% block content %}
     <h2>{{ quiz.title }}</h2>
 
-    <p>Dear Learner,</p>
+    <p>{% translate "Dear Learner," %}</p>
 
-    <p>Your quiz is now available for completion. You have <strong>{{ quiz.deadline_days }} days</strong> from today to submit your responses.</p>
+    <p>{% blocktranslate with deadline_days=quiz.deadline_days %}Your quiz is now available for completion. You have <strong>{{ deadline_days }} days</strong> from today to submit your responses.{% endblocktranslate %}</p>
 
-    <p>To successfully pass this quiz, you must achieve a minimum score of <strong>{{ quiz.required_score }}</strong>.</p>
-
-    <p>Please click the link below to access and submit your quiz:</p>
+    <p>{% blocktranslate with score=quiz.required_score %}To successfully pass this quiz, you must achieve a minimum score of <strong>{{ score }}</strong>.{% endblocktranslate %}</p>
+    <p>{% translate "Please click the link below to access and submit your quiz:" %}</p>
 
     <div style="text-align: center; margin: 20px 0;">
         <a href="{{ link }}" style="background-color: {{ brand_color }}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
-            Start Quiz
+            {% translate "Start Quiz" %}
         </a>
     </div>
-    <p>Best of luck!</p>
+    <p>{% translate "Best of luck!" %}</p>
 {% endblock %}

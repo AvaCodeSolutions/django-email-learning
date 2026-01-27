@@ -13,13 +13,13 @@ const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, o
     const validateForm = () => {
         const email = emailRef.current.value;
         if (!email) {
-            setErrorMessage('Email is required');
+            setErrorMessage(localeMessages["email_required"]);
             return false;
         }
         // Simple email regex for validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-            setErrorMessage('Please enter a valid email address');
+            setErrorMessage(localeMessages["email_invalid"]);
             return false;
         }
         setErrorMessage('');
@@ -54,27 +54,27 @@ const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, o
             })
             .catch(error => {
                 setIsProcessing(false);
-                setErrorMessage('Enrollment failed. Please try again.');
+                setErrorMessage(localeMessages['enrollment_failed']);
             });
         }
     }
 
     return (<Box sx={{padding: 4, minWidth: '400px'}}>
-        <Typography variant='h3'> Enroll for {course_title}</Typography>
+        <Typography variant='h3'> {localeMessages['enrol_for_course'].replace('COURSE_NAME', course_title)}</Typography>
         { isProcessing ? <Typography variant='body1' sx={{ mt: 2 }}><CircularProgress enableTrackSlot size="30px" /></Typography> : <>
         {errorMessage && <Alert severity="error" sx={{ mt: 2 }}>{errorMessage}</Alert>}
-        <RequiredTextField label="email" name="email" type="email" fullWidth margin="normal" inputRef={emailRef} onKeyDown={(e) => {
+        <RequiredTextField label={localeMessages['email']} name="email" type="email" fullWidth margin="normal" inputRef={emailRef} onKeyDown={(e) => {
             if (e.key === 'Enter') {
                 enroll();
             }
         }} />
         <input type="hidden" name="course_slug" value={course_slug} />
         <Box sx={{ mt: 2, textAlign: 'right' }}>
-        <Button variant="outlined" sx={{ mr: 1 }} onClick={onCancle}>
-            Cancel
+        <Button variant="outlined" sx={{ mx: 1 }} onClick={onCancle}>
+            {localeMessages['cancel']}
         </Button>
         <Button variant="contained" color="primary" type="submit" onClick={enroll}>
-            Submit
+            {localeMessages['submit']}
         </Button>
         </Box>
         </>}

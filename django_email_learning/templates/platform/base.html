@@ -1,23 +1,32 @@
 {% load django_vite %}
 {% load static %}
+{% load i18n %}
+{% get_current_language_bidi as IS_RTL %}
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="{% block direction %}{% if IS_RTL %}rtl{% else %}ltr{% endif %}{% endblock %}">
   <head>
     {% vite_hmr_client %}
     {% vite_react_refresh %}
-    {% block extra_head %}{% endblock %}
     <script>
         localStorage.setItem('activeOrganizationId', '{{ active_organization_id }}');
         localStorage.setItem('apiBaseUrl', '{{ api_base_url }}');
         localStorage.setItem('platformBaseUrl', '{{ platform_base_url }}');
         localStorage.setItem('userRole', '{{ user_role }}');
         localStorage.setItem('isPlatformAdmin', {{ is_platform_admin|yesno:"true,false" }});
+        const direction = "{% if IS_RTL %}rtl{% else %}ltr{% endif %}";
+        let localeMessages = {
+            "organizations": "{% translate 'Organizations' %}",
+            "course_management": "{% translate 'Course Management' %}",
+            "learners": "{% translate 'Learners' %}",
+        }
     </script>
+    {% block extra_head %}{% endblock %}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="{% static 'logo.png' %}" />
     <title>{% block title %}{{ page_title }}{% endblock %}</title>
   </head>
+
   <body>
     <div id="root"></div>
 

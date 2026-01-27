@@ -13,7 +13,6 @@ import SchoolIcon from '@mui/icons-material/School';
 import BackspaceIcon from '@mui/icons-material/Backspace';
 import render from '../../src/render.jsx';
 import { getCookie } from '../../src/utils.js';
-import { Title } from '@mui/icons-material';
 
 
 const apiBaseUrl = localStorage.getItem('apiBaseUrl');
@@ -21,7 +20,7 @@ const apiBaseUrl = localStorage.getItem('apiBaseUrl');
 
 function EnrolmentList({enrollments, selectHandler}) {
   if (enrollments.length === 0) {
-    return <Typography component="span">No enrollments found.</Typography>
+    return <Typography component="span">{localeMessages["nor_enrollments_found"]}</Typography>
   }
 
   return (
@@ -29,8 +28,8 @@ function EnrolmentList({enrollments, selectHandler}) {
       <Table>
         <TableHead>
           <TableRow>
-            <TableCell>Course</TableCell>
-            <TableCell>Status</TableCell>
+            <TableCell align={direction=="rtl" ? "right" : "left"}>{localeMessages["course"]}</TableCell>
+            <TableCell align={direction=="rtl" ? "right" : "left"}>{localeMessages["status"]}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -38,8 +37,8 @@ function EnrolmentList({enrollments, selectHandler}) {
             <TableRow
             key={enrollment.id} sx={(theme) => ({':hover': {backgroundColor: theme.palette.background.dark, cursor: 'pointer', borderBottomColor: 'secondary.light', borderBottomWidth: 2, borderBottomStyle: 'solid'}})}
             onClick={() => selectHandler(enrollment.id)}>
-              <TableCell>{enrollment.course_title}</TableCell>
-              <TableCell>{enrollment.status}</TableCell>
+              <TableCell align={direction=="rtl" ? "right" : "left"}>{enrollment.course_title}</TableCell>
+              <TableCell align={direction=="rtl" ? "right" : "left"}>{localeMessages[enrollment.status]}</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -62,13 +61,13 @@ function Learners(initialQs="") {
   const [currentPage, setCurrentPage] = useState(1);
 
   const eventMap = {
-    'registered': {icon: <AppRegistrationIcon sx={{ color: 'white' }} />, color: "#00bcd4", title: 'Learner Registered'},
-    'verified': {icon: <HowToRegIcon />, color: "#66bb6a", title: 'Learner Verified Email'},
-    'content_sent_lesson': {icon: <LibraryBooksIcon />, color: "#00acc1", title: 'Lesson Content Sent'},
-    'content_sent_quiz': {icon: <BallotIcon />, color: "#26a69a", title: 'Quiz Sent'},
-    'quiz_submitted': {icon: <AssignmentReturnedIcon />, color: "#26a69a", title: 'Quiz Submitted'},
-    'course_completed': {icon: <SchoolIcon />, color: "#0097a7", title: 'Course Completed'},
-    'deactivated': {icon: <BackspaceIcon />, color: "#b71c1c", title: 'Learner Deactivated'},
+    'registered': {icon: <AppRegistrationIcon sx={{ color: 'white' }} />, color: "#00bcd4", title: localeMessages["learner_registered"]},
+    'verified': {icon: <HowToRegIcon />, color: "#66bb6a", title: localeMessages["learner_verified"]},
+    'content_sent_lesson': {icon: <LibraryBooksIcon />, color: "#00acc1", title: localeMessages["lesson_sent"]},
+    'content_sent_quiz': {icon: <BallotIcon />, color: "#26a69a", title: localeMessages["quiz_sent"]},
+    'quiz_submitted': {icon: <AssignmentReturnedIcon />, color: "#26a69a", title: localeMessages["quiz_submitted"]},
+    'course_completed': {icon: <SchoolIcon />, color: "#0097a7", title: localeMessages["course_completed"]},
+    'deactivated': {icon: <BackspaceIcon />, color: "#b71c1c", title: localeMessages["learner_deactivated"]},
   };
 
 
@@ -86,10 +85,10 @@ function Learners(initialQs="") {
     .then(data => {
       setDialogContent(
         <Box p={2}>
-          <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>Enrollment Details</Typography>
+          <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>{localeMessages["enrollment_details"]}</Typography>
           <Typography>{data.learner.email}</Typography>
           <Typography variant="subtitle1">{data.course.title}</Typography>
-          <Typography>Enrollment id: {data.id}</Typography>
+          <Typography>{localeMessages["enrollment_id"]}: {data.id}</Typography>
           <Timeline>
             {data.events.map((event, index) => (
             <TimelineItem key={index}>
@@ -108,19 +107,19 @@ function Learners(initialQs="") {
                 </TimelineDot>
                 <TimelineConnector />
               </TimelineSeparator>
-              <TimelineContent sx={{ py: '12px', px: 2 }}>
+              <TimelineContent sx={{ py: '12px', px: 2, textAlign: direction === 'rtl' ? 'right' : 'left' }} dir={direction}>
                 <Typography variant="h6" component="span">
                   { event.type === "content_sent" ? eventMap["content_sent_"+event.event_data.course_content_type].title : eventMap[event.type].title }
                 </Typography>
                 { event.type === "quiz_submitted" && <>
-                  <Box><Typography>Score: {event.event_data.score}</Typography></Box>
-                  <Box><Typography>Result: {event.event_data.is_passed ? "Passed" : "Failed"}</Typography></Box>
+                  <Box><Typography>{localeMessages["score"]}: {event.event_data.score}</Typography></Box>
+                  <Box><Typography>{localeMessages["result"]}: {event.event_data.is_passed ? localeMessages["passed"] : localeMessages["failed"]}</Typography></Box>
                 </>}
                 { event.type === "content_sent" && <>
                   <Box><Typography>{event.event_data.course_content_title}</Typography></Box>
                 </>}
                 { event.type === "deactivated" && <>
-                  <Box><Typography>Reason: {event.event_data.reason}</Typography></Box>
+                  <Box><Typography>{localeMessages["reason"]}: {event.event_data.reason}</Typography></Box>
                 </>}
               </TimelineContent>
             </TimelineItem>
@@ -203,7 +202,7 @@ function Learners(initialQs="") {
 
   return (
     <Base
-          breadCrumbList={[{label: 'Learners', href: '#'}]}
+          breadCrumbList={[{label: localeMessages["learners"], href: '#'}]}
           organizationIdRefreshCallback={setOrganizationId}
         >
       <Grid size={{xs: 12, lg: 8}} py={2} pl={2}>
@@ -213,8 +212,8 @@ function Learners(initialQs="") {
             sx={{ mb: '10px', p: '2px 4px', display: 'flex', alignItems: 'center', width: 400 }}
           >
             <InputBase
-              sx={{ pl: 1, flex: 1 }}
-              placeholder="Search Learners"
+              sx={{ px: 1, flex: 1 }}
+              placeholder={localeMessages["search_learners"]}
               inputRef={searcchInputRef}
               onKeyDown={(e) => { if (e.key === 'Enter') { search(); } }}
             />
@@ -227,7 +226,7 @@ function Learners(initialQs="") {
             <Table stickyHeader>
               <TableHead>
                 <TableRow>
-                  <TableCell>Learners List</TableCell>
+                  <TableCell sx={{textAlign: direction=="rtl" ? "right" : "left"}}>{localeMessages["learners_list"]}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

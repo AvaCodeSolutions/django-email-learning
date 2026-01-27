@@ -1,9 +1,65 @@
 {% extends "platform/base.html" %}
 {% load django_vite %}
 {% block extra_head %}
+{% load i18n %}
     <script>
         let course_title = "{{ course.title|escapejs }}";
         let course_id = "{{ course.id }}";
+        localeMessages = {
+            ...localeMessages,
+            "actions": "{% translate 'Actions' %}",
+            "published": "{% translate 'Published' %}",
+            "type": "{% translate 'Type' %}",
+            "waiting_time": "{% translate 'Waiting Time' %}",
+            "title": "{% translate 'Title' %}",
+            "add_quiz": "{% translate 'Add Quiz' %}",
+            "add_lesson": "{% translate 'Add Lesson' %}",
+            "lesson": "{% translate 'Lesson' %}",
+            "quiz": "{% translate 'Quiz' %}",
+            "add": "{% translate 'Add' %}",
+            "new_lesson": "{% translate 'New Lesson' %}",
+            "update_lesson": "{% translate 'Update Lesson' %}",
+            "new_quiz": "{% translate 'New Quiz' %}",
+            "update_quiz": "{% translate 'Update Quiz' %}",
+            "lesson_title": "{% translate 'Lesson Title' %}",
+            "lesson_waiting_tooltip": "{% translate 'Set the amount of time that we should wait after the previous lesson or quiz submission before sending this lesson' %}",
+            "days": "{% translate 'Days' %}",
+            "hours": "{% translate 'Hours' %}",
+            "back": "{% translate 'Back' %}",
+            "cancel": "{% translate 'Cancel' %}",
+            "delete": "{% translate 'Delete' %}",
+            "save_lesson": "{% translate 'Save Lesson' %}",
+            "save_quiz": "{% translate 'Save Quiz' %}",
+            "quiz_title": "{% translate 'Quiz Title' %}",
+            "add_question": "{% translate 'Add Question' %}",
+            "quiz_settings": "{% translate 'Quiz Settings' %}",
+            "waiting_period": "{% translate 'Waiting Period' %}",
+            "quiz_waiting_tooltip": "{% translate 'Time to wait after the previous content delivery before sending this quiz' %}",
+            "required_score": "{% translate 'Required Score to Pass (%)' %}",
+            "score_tooltip": "{% translate 'Minimum percentage score required to pass this quiz' %}",
+            "period": "{% translate 'Period' %}",
+            "period_tooltip": "{% translate 'Time to wait after the previous content delivery before sending this quiz' %}",
+            "percentage": "{% translate 'Percentage' %}",
+            "quiz_deadline": "{% translate 'Deadline to Complete Quiz' %}",
+            "deadline_tooltip": "{% translate 'Maximum time allowed to complete the quiz' %}",
+            "question_selection_strategy": "{% translate 'Selection Strategy' %}",
+            "question_selection_strategy_tooltip": "{% translate 'Choose how questions are selected for each quiz attempt, if total questions is less than 6, all questions will be used even if \'Random Questions\' is selected' %}",
+            "all_questions": "{% translate 'All Questions' %}",
+            "random_questions": "{% translate 'Random Questions' %}",
+            "question": "{% translate 'Question' %}",
+            "add_option": "{% translate 'Add Option' %}",
+            "option_text": "{% translate 'Option Text' %}",
+            "options": "{% translate 'Options' %}",
+            "correct_answer": "{% translate 'Correct Answer' %}",
+            "actions": "{% translate 'Actions' %}",
+            "quiz_title_empty": "{% translate 'Quiz title cannot be empty.' %}",
+            "at_least_one_question": "{% translate 'Quiz must have at least one question' %}",
+            "at_least_two_options": "{% translate 'Question QUESTION_NUMBER must have at least two answer options' %}",
+            "at_least_one_correct": "{% translate 'Question QUESTION_NUMBER must have at least one correct answer' %}",
+            "fix_errors": "{% translate 'Please fix the errors in the form before submitting.' %}",
+            "lesson_title_required": "{% translate 'Lesson title is required.' %}",
+            "lesson_content_required": "{% translate 'Lesson content is required.' %}"
+        }
     </script>
     {% vite_asset 'platform/course/Course.jsx' %}
 {% endblock %}

@@ -1,5 +1,6 @@
 {% load django_vite %}
 {% load static %}
+{% load i18n %}
 <!doctype html>
 <html lang="en">
   <head>
@@ -15,7 +16,8 @@
     <link rel="icon" type="image/png" href="{% static 'logo.png' %}" />
     <title>{% block title %}{{ page_title }}{% endblock %}</title>
   </head>
-  <body>
+  {% get_current_language_bidi as IS_RTL %}
+  <body {% if IS_RTL %}dir="rtl"{% endif %}>
     <div id="root">
     </div>
   </body>

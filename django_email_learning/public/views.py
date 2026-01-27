@@ -3,6 +3,7 @@ from django.db.models import Prefetch
 from django_email_learning.models import Organization, Course
 from django.http import Http404
 from django.urls import reverse
+from django.utils.translation import gettext as _
 from django.conf import settings
 from django_email_learning.public.serializers import (
     OrganizationSerializer,
@@ -29,7 +30,7 @@ class OrganizationView(TemplateView):
         if organization_details.exists():
             organization = organization_details.first()
             if not organization:
-                raise Http404("Organization does not exist")
+                raise Http404(_("Organization does not exist"))
             courses = []
             for course in organization.courses:
                 course_data = PublicCourseSerializer(
@@ -59,4 +60,4 @@ class OrganizationView(TemplateView):
             return context
 
         # If organization not found, raise 404
-        raise Http404("Organization does not exist")
+        raise Http404(_("Organization does not exist"))
