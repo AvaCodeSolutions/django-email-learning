@@ -3,7 +3,7 @@
 
 {% translate "Dear Learner," %}
 
-{% blocktranslate with with deadline_days=quiz.deadline_days %}Your quiz is now available for completion. You have {{ deadline_days }} days from today to submit your responses.{% endblocktranslate %}
+{% blocktranslate with deadline_days=quiz.deadline_days %}Your quiz is now available for completion. You have {{ deadline_days }} days from today to submit your responses.{% endblocktranslate %}
 
 {% blocktranslate with score=quiz.required_score %}To successfully pass this quiz, you must achieve a minimum score of {{ score }}.{% endblocktranslate %}
 
