@@ -108,3 +108,14 @@ class Learners(BasePlatformView):
         context = super().get_context_data(**kwargs)
         context["page_title"] = _("Learners")
         return context
+
+
+@method_decorator(login_required, name="dispatch")
+@method_decorator(is_platform_admin(), name="dispatch")
+class ApiKeys(BasePlatformView):
+    template_name = "platform/settings_api_keys.html"
+
+    def get_context_data(self, **kwargs):  # type: ignore[no-untyped-def]
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = _("API Keys")
+        return context

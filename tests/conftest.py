@@ -1,5 +1,6 @@
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django_email_learning.models import OrganizationUser
+from django_email_learning.apps import PLATFORM_ADMIN_GROUP_NAME
 from django.test import Client
 from django_email_learning.models import (
     ImapConnection,
@@ -43,6 +44,8 @@ def users(db):
         id=4, username="viewer", email="viewer@example.com", password="viewerpass"
     )
     User.objects.bulk_create([superadmin, editor_user, platform_admin, viewer_user])
+    group = Group.objects.get(name=PLATFORM_ADMIN_GROUP_NAME)
+    platform_admin.groups.add(group)
     editor = OrganizationUser(user=editor_user, organization_id=1, role="editor")
     admin = OrganizationUser(user=platform_admin, organization_id=1, role="admin")
     viewer = OrganizationUser(user=viewer_user, organization_id=1, role="viewer")

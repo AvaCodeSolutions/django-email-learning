@@ -81,9 +81,7 @@ def test_create_organization_for_existing_logo_file(
     assert response.json().get("logo").endswith(f"/{existing_logo_path}")
 
 
-@pytest.mark.parametrize(
-    "client", ["viewer", "editor", "platform_admin"], indirect=True
-)
+@pytest.mark.parametrize("client", ["viewer", "editor"], indirect=True)
 def test_post_organizations_view_as_organization_user(client):
     payload = {"name": "Another Org", "description": "Should not be created"}
     response = client.post(get_url(), data=payload, content_type="application/json")

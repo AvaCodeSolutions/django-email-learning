@@ -2,6 +2,9 @@ from django.apps import AppConfig
 from django.core import checks
 
 
+PLATFORM_ADMIN_GROUP_NAME = "Platform Admin"
+
+
 def check_site_base_url_config(app_configs, **kwargs):  # type: ignore[no-untyped-def]
     errors = []
     from django.conf import settings

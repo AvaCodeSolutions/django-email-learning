@@ -1,6 +1,8 @@
 from django.urls import path
 from django.views.defaults import page_not_found
 from django_email_learning.platform.api.views import (
+    ApiKeyView,
+    SingleApiKeyView,
     CourseView,
     EnrollmentView,
     EnrollmentsStatisticsView,
@@ -80,6 +82,12 @@ urlpatterns = [
         "organizations/<int:organization_id>/",
         SingleOrganizationView.as_view(),
         name="single_organization_view",
+    ),
+    path("api_keys/", ApiKeyView.as_view(), name="api_key_view"),
+    path(
+        "api_keys/<int:api_key_id>/",
+        SingleApiKeyView.as_view(),
+        name="single_api_key_view",
     ),
     path("session", UpdateSessionView.as_view(), name="update_session_view"),
     path("", page_not_found, name="root"),

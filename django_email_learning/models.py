@@ -10,9 +10,13 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from django.urls import reverse
 from django.db import models, transaction
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import (
+    MaxValueValidator,
+    MinValueValidator,
+    MinLengthValidator,
+)
 from django.core.exceptions import ImproperlyConfigured
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from django.forms import ValidationError
@@ -103,24 +107,7 @@ class OrganizationUser(models.Model):
         return f"{self.user.username} - {self.organization.name}"
 
 
-class ImapConnection(models.Model):
-    server = models.CharField(max_length=200, validators=[is_domain_or_ip])
-    port = models.IntegerField(db_default=993)
-    email = models.EmailField(max_length=200, unique=True)
-    password = models.CharField(max_length=200)
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
-
-    def __str__(self) -> str:
-        return f"{self.email}|{self.server}:{self.port}"
-
-    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
-        if self.password:
-            self.password = self._encrypt_password(self.password)
-        if self.server:
-            self.server = self.server.lower()
-        self.full_clean()
-        super().save(*args, **kwargs)
-
+class EncryptionMixin:
     def _fernet(self) -> Fernet:
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(), length=32, salt=FIXED_SALT, iterations=100000
@@ -141,6 +128,29 @@ class ImapConnection(models.Model):
     def decrypt_password(self, encrypted_password: str) -> str:
         f = self._fernet()
         return f.decrypt(encrypted_password.encode()).decode()
+
+
+class ImapConnection(EncryptionMixin, models.Model):
+    server = models.CharField(max_length=200, validators=[is_domain_or_ip])
+    port = models.IntegerField(db_default=993)
+    email = models.EmailField(max_length=200, unique=True)
+    password = models.CharField(max_length=200)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+
+    def __str__(self) -> str:
+        return f"{self.email}|{self.server}:{self.port}"
+
+    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        if self.password:
+            try:
+                self.decrypt_password(self.password)
+                # Password is already encrypted
+            except InvalidToken:
+                self.password = self._encrypt_password(self.password)
+        if self.server:
+            self.server = self.server.lower()
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 class Course(models.Model):
@@ -652,5 +662,32 @@ class QuizSubmission(models.Model):
             raise ValidationError(
                 "Quiz submission count exceeds the number of times the quiz was sent."
             )
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+
+class ApiKey(EncryptionMixin, models.Model):
+    key = models.CharField(
+        max_length=256, unique=True, validators=[MinLengthValidator(50)]
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
+    @classmethod
+    def generate_key(cls) -> str:
+        return (
+            base64.urlsafe_b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes)
+            .decode()
+            .rstrip("=")
+        )
+
+    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        try:
+            self.decrypt_password(self.key)
+            # Key is already encrypted
+        except InvalidToken:
+            self.key = self._encrypt_password(self.key)
         self.full_clean()
         super().save(*args, **kwargs)

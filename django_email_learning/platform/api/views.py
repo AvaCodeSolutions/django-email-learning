@@ -15,6 +15,7 @@ from pydantic import ValidationError
 from django_email_learning.platform.api import serializers
 from django_email_learning.platform.api.pagniated_api_mixin import PaginatedApiMixin
 from django_email_learning.models import (
+    ApiKey,
     Course,
     CourseContent,
     Enrollment,
@@ -590,6 +591,48 @@ class EnrollmentsStatisticsView(View):
             for date in dates
         ]
         return JsonResponse({"statistics": stats}, status=200)
+
+
+@method_decorator(is_platform_admin(), name="post")
+@method_decorator(is_platform_admin(), name="get")
+class ApiKeyView(View):
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            key = ApiKey.generate_key()
+            api_key = ApiKey(key=key, created_by=request.user)
+            api_key.save()
+            return JsonResponse(
+                serializers.ApiKeyResponse.from_django_model(api_key).model_dump(),
+                status=201,
+            )
+        except ValidationError as e:
+            return JsonResponse({"error": e.json()}, status=400)
+        except IntegrityError as e:
+            return JsonResponse({"error": str(e)}, status=409)
+
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        api_keys = ApiKey.objects.all()  # type: ignore[attr-defined]
+        response_list = []
+        for api_key in api_keys:
+            response_list.append(
+                serializers.ApiKeyResponse.from_django_model(api_key).model_dump()
+            )
+        return JsonResponse({"api_keys": response_list}, status=200)
+
+
+@method_decorator(is_platform_admin(), name="delete")
+class SingleApiKeyView(View):
+    def delete(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
+        try:
+            api_key = ApiKey.objects.get(id=kwargs["api_key_id"])
+            api_key.delete()
+            return JsonResponse({"message": "API Key deleted successfully"}, status=200)
+        except ApiKey.DoesNotExist:
+            return JsonResponse({"error": "API Key not found"}, status=404)
+        except ValidationError as e:
+            return JsonResponse({"error": e.json()}, status=400)
+        except IntegrityError as e:
+            return JsonResponse({"error": str(e)}, status=409)
 
 
 class RootView(View):

@@ -1,6 +1,7 @@
 from functools import wraps
 from django.http import JsonResponse
 from django_email_learning.models import OrganizationUser
+from django_email_learning.apps import PLATFORM_ADMIN_GROUP_NAME
 import typing
 
 
@@ -13,7 +14,9 @@ def is_platform_admin() -> typing.Callable:
 
             if (
                 not request.user.is_superuser
-                and not request.user.groups.filter(name="Platform Admins").exists()
+                and not request.user.groups.filter(
+                    name=PLATFORM_ADMIN_GROUP_NAME
+                ).exists()
             ):
                 return JsonResponse({"error": "Forbidden"}, status=403)
             return view_func(request, *view_args, **view_kwargs)
