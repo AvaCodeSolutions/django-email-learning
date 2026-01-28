@@ -16,6 +16,7 @@
     "@mui/icons-material": "^7.3.2",
     "@mui/lab": "^7.0.1-beta.21",
     "@mui/material": "^7.3.2",
+    "@mui/x-charts": "^8.26.0",
     "@tiptap/core": "^3.13.0",
     "@tiptap/extension-bold": "^3.13.0",
     "@tiptap/extension-code-block": "^3.13.0",

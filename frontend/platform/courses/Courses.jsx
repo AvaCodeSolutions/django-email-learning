@@ -121,7 +121,7 @@ function Courses() {
             <TableHead>
               <TableRow>
                 <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["title"]}</TableCell>
-                <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["slug"]}</TableCell>
+                <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["total_enrollments"]}</TableCell>
                 <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["enabled"]}</TableCell>
                 {userRole !== 'viewer' && <TableCell align={direction === 'rtl' ? 'left' : 'right'}>{localeMessages["actions"]}</TableCell>}
               </TableRow>
@@ -135,7 +135,7 @@ function Courses() {
                   <TableCell component="th" scope="row" sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>
                     <Link href={`${platformBaseUrl}/courses/${course.id}`} color='primary.dark'>{course.title}</Link>
                   </TableCell>
-                  <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{course.slug}</TableCell>
+                  <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{course.enrollments_count.total}</TableCell>
                   <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>
                     <Switch
                       checked={course.enabled}

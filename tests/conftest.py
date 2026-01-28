@@ -17,6 +17,7 @@ from django_email_learning.models import (
     DeliverySchedule,
     DeliveryStatus,
 )
+import uuid
 import pytest
 
 
@@ -243,3 +244,24 @@ def content_delivery(db, active_enrollment, course_quiz_content, quiz_with_quest
         )
     )
     return delivery
+
+
+@pytest.fixture
+def enrollments_factory(db):
+    def _factory(course, status, count):
+        enrollments = []
+        for i in range(count):
+            random_uid = uuid.uuid4().hex
+            learner = Learner.objects.create(
+                email=f"{random_uid}@example.com",
+                organization_id=course.organization_id,
+            )
+            enrollment = Enrollment(
+                learner=learner,
+                course=course,
+                status=status,
+            )
+            enrollments.append(enrollment)
+        Enrollment.objects.bulk_create(enrollments)
+
+    return _factory

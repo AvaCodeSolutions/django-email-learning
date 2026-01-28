@@ -112,6 +112,7 @@ class CourseResponse(BaseModel):
     organization_id: int
     imap_connection_id: Optional[int]
     enabled: bool
+    enrollments_count: dict[str, int]
 
     model_config = ConfigDict(from_attributes=True)
 

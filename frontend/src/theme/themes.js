@@ -1,5 +1,5 @@
 import { createTheme } from '@mui/material/styles';
-import { blueGrey } from '@mui/material/colors';
+import { blueGrey, indigo, teal } from '@mui/material/colors';
 import { Margin, Padding } from '@mui/icons-material';
 import { Paper } from '@mui/material';
 
@@ -140,17 +140,9 @@ const lightPalette = {
     border: {
       main: '#ccccccff',
     },
-    primary: {
-      main: '#00d5be',
-    },
-    secondary: {
-      main: '#7c86ff',
-      text: '#313ba9ff',
-    },
     errorText: {
       main: '#a93e6bff',
     },
-    grey: blueGrey,
 };
 
 const darkPalette = {
@@ -167,28 +159,33 @@ const darkPalette = {
     border: {
       main: '#555555ff',
     },
-    primary: {
+    errorText: {
+      main: '#ff6b9d',
+    },
+};
+
+const commonPalette = {
+   primary: {
       main: '#00d5be',
     },
     secondary: {
       main: '#7c86ff',
       text: '#b8bdfaff',
     },
-    errorText: {
-      main: '#ff6b9d',
-    },
     grey: blueGrey,
-};
+    teal: teal,
+    indigo: indigo,
+}
 
 const lightTheme = createTheme({
-  palette: {...lightPalette},
+  palette: {...lightPalette, ...commonPalette},
   components: {
     ...defaultOptions.components
   },
 });
 
 const darkTheme = createTheme({
-  palette: {...darkPalette},
+  palette: {...darkPalette, ...commonPalette},
   components: {
     ...defaultOptions.components
   },

@@ -147,6 +147,8 @@ def test_get_courses_return_only_courses_of_organization(
     assert response.json()["courses"][0]["organization_id"] == 1
     assert response.json()["courses"][1]["title"] == "org_1:course_2"
     assert response.json()["courses"][1]["organization_id"] == 1
+    assert "enrollments_count" in response.json()["courses"][0]
+    assert "enrollments_count" in response.json()["courses"][1]
 
     # Chek get courses for second organization
     response = superadmin_client.get(org_2_url)
@@ -158,6 +160,7 @@ def test_get_courses_return_only_courses_of_organization(
     assert response.json()["courses"][0]["title"] == "org_2:course_1"
     assert response.json()["courses"][0]["slug"] == "slug_1"
     assert response.json()["courses"][0]["organization_id"] == 2
+    assert "enrollments_count" in response.json()["courses"][0]
 
 
 def test_get_courses_user_access(

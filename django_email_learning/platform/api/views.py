@@ -2,11 +2,14 @@ from django.views import View
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db.utils import IntegrityError
+from django.db.models.functions import TruncDate
+from django.db.models import Count
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models, transaction
 from django.core.files.storage import default_storage
 from django.utils import timezone
+from datetime import timedelta
 from pydantic import ValidationError
 
 from django_email_learning.platform.api import serializers
@@ -561,6 +564,32 @@ class EnrollmentView(View):
             return JsonResponse({"error": "Enrollment not found"}, status=404)
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
+
+
+@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
+class EnrollmentsStatisticsView(View):
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        course_id = kwargs["course_id"]
+        a_week_ago = timezone.now() - timedelta(days=7)
+        enrollments = (
+            Enrollment.objects.filter(course_id=course_id, enrolled_at__gte=a_week_ago)
+            .annotate(created_date=TruncDate("enrolled_at"))
+            .values(
+                "created_date",
+            )
+            .annotate(count=Count("id"))
+            .order_by("created_date")
+        )
+        dates = [a_week_ago.date() + timedelta(days=i) for i in range(8)]
+        enrollments_dict = {
+            enrollment["created_date"]: enrollment["count"]
+            for enrollment in enrollments
+        }
+        stats = [
+            {"date": date.isoformat(), "count": enrollments_dict.get(date, 0)}
+            for date in dates
+        ]
+        return JsonResponse({"statistics": stats}, status=200)
 
 
 class RootView(View):
