@@ -9,6 +9,13 @@ def test_encrypt_decrypt_password(imap_connection):
     assert decrypted_password == "my_secret_password"
 
 
+def test_saving_encrypted_password(imap_connection, db):
+    imap_connection.save()
+    retrieved = ImapConnection.objects.get(id=imap_connection.id)
+    assert retrieved.password == imap_connection.password
+    assert retrieved.decrypt_password(retrieved.password) == "my_secret_password"
+
+
 def test_str_representation(imap_connection):
     assert str(imap_connection) == "user@example.com|imap.example.com:993"
 

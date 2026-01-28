@@ -2,6 +2,7 @@ from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_migrate
 from django.dispatch import receiver
+from django_email_learning.apps import PLATFORM_ADMIN_GROUP_NAME
 
 
 @receiver(post_migrate)
@@ -79,10 +80,10 @@ def create_platform_admin_group(sender, **kwargs) -> None:  # type: ignore[no-un
     )
 
     platform_admin_group, created = Group.objects.get_or_create(
-        name="Email Learning Platform Admins"
+        name=PLATFORM_ADMIN_GROUP_NAME
     )
     platform_admin_group.permissions.set(perms)
-    print("Platform Admin group created.")
+    print(f"{PLATFORM_ADMIN_GROUP_NAME} group created.")
 
 
 @receiver(post_migrate)

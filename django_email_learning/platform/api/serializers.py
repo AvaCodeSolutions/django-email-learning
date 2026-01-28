@@ -10,6 +10,7 @@ from datetime import datetime
 from typing import Optional, Literal, Any, Callable
 from django.urls import reverse
 from django_email_learning.models import (
+    ApiKey,
     DeliveryStatus,
     Organization,
     ImapConnection,
@@ -24,6 +25,26 @@ from django_email_learning.models import (
     EnrollmentStatus,
 )
 import enum
+
+
+class ApiKeyResponse(BaseModel):
+    id: int
+    key: str
+    created_at: datetime
+    created_by: Optional[str] = None
+
+    @staticmethod
+    def from_django_model(api_key: ApiKey) -> "ApiKeyResponse":
+        return ApiKeyResponse.model_validate(
+            {
+                "id": api_key.id,  # type: ignore[attr-defined]
+                "key": api_key.decrypt_password(api_key.key),
+                "created_at": api_key.created_at,
+                "created_by": api_key.created_by.username
+                if api_key.created_by
+                else None,
+            }
+        )
 
 
 class CreateCourseRequest(BaseModel):

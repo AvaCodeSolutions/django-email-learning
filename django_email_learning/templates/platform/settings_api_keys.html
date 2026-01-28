@@ -1,0 +1,26 @@
+{% extends "platform/base.html" %}
+{% load django_vite %}
+{% load i18n %}
+{% block extra_head %}
+    <script>
+        localeMessages = {
+            ...localeMessages,
+            "settings": "{% translate 'Settings' %}",
+            "api_keys": "{% translate 'API Keys' %}",
+            "add_api_key": "{% translate 'Add API Key' %}",
+            "display_key": "{% translate 'Display Key' %}",
+            "hide_key": "{% translate 'Hide Key' %}",
+            "actions": "{% translate 'Actions' %}",
+            "key": "{% translate 'Key' %}",
+            "created_at": "{% translate 'Created At' %}",
+            "delete": "{% translate 'Delete' %}",
+            "are_you_sure_delete_key": "{% translate 'Are you sure you want to delete this API key?' %}",
+            "created_by": "{% translate 'Created By' %}",
+            "created_at": "{% translate 'Created At' %}",
+            "cancel": "{% translate 'Cancel' %}",
+            "confirm_deletion": "{% translate 'Confirm Deletion' %}",
+            "api_key_intro": "{% translate 'API keys allow external applications to interact with the platform and execute jobs. This is ideal for using cloud scheduling or third-party integrations instead of managing local cron jobs. You can create, view, and manage your keys below.' %}",
+        }
+    </script>
+    {% vite_asset 'platform/settings_api_keys/ApiKeys.jsx' %}
+{% endblock %}

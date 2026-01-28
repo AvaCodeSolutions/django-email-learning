@@ -4,6 +4,7 @@ import IconButton from '@mui/material/IconButton';
 import SchoolIcon from '@mui/icons-material/School';
 import PeopleIcon from '@mui/icons-material/People';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import Diversity3Icon from '@mui/icons-material/Diversity3';
 import MenuIcon from '@mui/icons-material/Menu';
 import logoHorizontalLightUrl from '../assets/logo-h-light.png'
@@ -90,6 +91,9 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     pages.push({ name: localeMessages["course_management"], icon: <SchoolIcon fontSize="small" />, href: platformBaseUrl + '/courses/' });
     pages.push({ name: localeMessages["learners"], icon: <PeopleIcon fontSize="small" />, href: platformBaseUrl + '/learners/' });
     // pages.push({ name: 'Analytics', icon: <BarChartIcon fontSize="small" />, href: platformBaseUrl + '/analytics/' });
+    if (localStorage.getItem('isPlatformAdmin') == 'true') {
+        pages.push({ name: localeMessages["api_keys"], icon: <VpnKeyIcon fontSize="small" />, href: platformBaseUrl + '/settings/api_keys' });
+    }
 
 
     const toggleMenuDrawer = (newOpen) => () => {
