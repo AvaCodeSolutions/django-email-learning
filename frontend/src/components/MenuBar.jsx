@@ -121,7 +121,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
             }
             <MenuList>
                 { pages.map((page) => (
-                    <MenuItem key={page.name}>
+                    <MenuItem key={page.name} sx={{'&:hover .MuiListItemIcon-root': { color: 'secondary.dark' }}}>
                         <Link href={page.href} underline="none" color="inherit" sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                         <ListItemIcon>
                             {page.icon}

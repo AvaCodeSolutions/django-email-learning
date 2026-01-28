@@ -6,12 +6,15 @@ import Base from '../../src/components/Base.jsx'
 import FilterListIcon from '@mui/icons-material/FilterList';
 import DescriptionIcon from '@mui/icons-material/Description';
 import BallotIcon from '@mui/icons-material/Ballot';
-import { useState } from 'react';
-import { Box, Grid, Button, Dialog } from '@mui/material'
+import { useState, useEffect } from 'react';
+import { Box, Grid, Button, Dialog, Typography } from '@mui/material'
+import { useTheme } from '@mui/material/styles';
 import LessonForm from './components/LessonForm.jsx';
 import QuizForm from './components/QuizForm.jsx';
 import ContentTable from './components/ContentTable.jsx';
 import DeleteContentForm from './components/DeleteContentForm.jsx';
+import { PieChart } from '@mui/x-charts/PieChart'
+import { BarChart } from '@mui/x-charts/BarChart';
 import { getCookie } from '../../src/utils.js';
 
 
@@ -22,16 +25,53 @@ function Course() {
     const [lessonCache, setLessonCache] = useState("")
     const [contentLoaded, setContentLoaded] = useState(false)
     const [dialogMaxWidth, setDialogMaxWidth] = useState('lg');
+    const [enrollmentsCount, setEnrollmentsCount] = useState(null);
+    const [weeklyStats, setWeeklyStats] = useState(null);
 
     const userRole = localStorage.getItem('userRole');
     const apiBaseUrl = localStorage.getItem('apiBaseUrl');
     const organizationId = localStorage.getItem('activeOrganizationId');
+
+    const theme = useTheme();
 
 
     const resetDialog = () => {
         setDialogOpen(false);
         setContentLoaded(false);
     }
+
+    useEffect(() => {
+        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${course_id}/`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+        })
+            .then(response => response.json())
+            .then(data => {
+                setEnrollmentsCount([
+                    { label: localeMessages["unverified"], value: data.enrollments_count.unverified, color: theme.palette.indigo[200] },
+                    { label: localeMessages["active"], value: data.enrollments_count.active, color: theme.palette.secondary.main },
+                    { label: localeMessages["deactivated"], value: data.enrollments_count.deactivated, color: theme.palette.grey[300] },
+                    { label: localeMessages["completed"], value: data.enrollments_count.completed, color: theme.palette.primary.main },
+                ]);
+            })
+            .catch(error => console.error('Error fetching course data:', error));
+
+        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${course_id}/enrollments/statistics/`, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+        })
+            .then(response => response.json())
+            .then(data => {
+                // Handle the statistics data here
+                console.log("Enrollment statistics:", data.statistics);
+                setWeeklyStats(data.statistics);
+            })
+            .catch(error => console.error('Error fetching enrollment statistics:', error));
+    }, []);
 
     const handleClose = (event, reason) => {
         if (reason !== "backdropClick" && reason !== "escapeKeyDown") {
@@ -187,6 +227,51 @@ function Course() {
                         setDialogOpen(true);}}>{localeMessages["add_quiz"]}</Button></> }
                     <ContentTable courseId={course_id} loaded={contentLoaded} eventHandler={(event) => tableEventHandler(event)} />
                 </Box>
+                <Grid container spacing={2}>
+                { enrollmentsCount && <Grid size={{xs: 12, lg: 6}} mt={2} mb={2} >
+                <Box py={2} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, backgroundColor: 'background.main', height: '100%' }}>
+                    <Typography variant="h6" align='center'>{localeMessages["enrollments_distribution"]}</Typography>
+                    <PieChart
+                        height={300}
+                        series={[
+                        {
+                            data: enrollmentsCount,
+                            innerRadius: '50%',
+                            arcLabelMinAngle: 20,
+                            highlightScope: { fade: 'global', highlight: 'item' },
+                        },
+                        ]}
+                        skipAnimation={false}
+                        margin={{
+                            bottom: 20,
+                            top: 20,
+                            left: 5,
+                            right: 5,
+                        }}
+                        slotProps={{
+                            legend: {
+                            direction: 'row', // 'row' or 'column'
+                            position: { vertical: 'bottom', horizontal: 'middle' }, // vertical: 'top'|'middle'|'bottom'
+                            padding: 0,
+                            },
+                        }}
+                    />
+                </Box>
+                </Grid> }
+                { weeklyStats && <Grid size={{xs: 12, lg: 6}} mt={2} mb={2} >
+                    <Box py={2} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, backgroundColor: 'background.main', height: '100%' }}>
+                    <Typography variant="h6" align='center'>{localeMessages["weekly_enrollments"]}</Typography>
+                    <BarChart
+                        margin={{
+                            top: 60,
+                        }}
+                        xAxis={[{data: weeklyStats.map((stat) => stat.date)}]}
+                        series={[{ data: weeklyStats.map((stat) => stat.count), color: theme.palette.primary.main }]}
+                        height={300}
+                    />
+                    </Box>
+                </Grid>}
+                </Grid>
             </Grid>
 
             <Dialog open={dialogOpen} onClose={handleClose} fullWidth maxWidth={dialogMaxWidth}>

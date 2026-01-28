@@ -111,7 +111,7 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
           target="_blank"
           rel="noopener noreferrer"
           sx={{
-            color: 'secondary.main',
+            color: 'secondary.dark',
             textDecoration: 'none',
             '&:hover': {
               textDecoration: 'underline'

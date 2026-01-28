@@ -27,6 +27,28 @@ FIXED_SALT = b"\x00" * 16
 logger = logging.getLogger(__name__)
 
 
+class EnrollmentStatus(StrEnum):
+    UNVERIFIED = "unverified"
+    ACTIVE = "active"
+    COMPLETED = "completed"
+    DEACTIVATED = "deactivated"
+
+
+class DeactivationReason(StrEnum):
+    CANCELED = "canceled"
+    BLOCKED = "blocked"
+    FAILED = "failed"
+    INACTIVE = "inactive"
+
+
+class DeliveryStatus(StrEnum):
+    SCHEDULED = "scheduled"
+    PROCESSING = "processing"
+    DELIVERED = "delivered"
+    CANCELED = "canceled"
+    BLOCKED = "blocked"
+
+
 def is_domain_or_ip(value: str) -> None:
     """
     Validate if the given value is a valid domain name or IP address.
@@ -148,6 +170,29 @@ class Course(models.Model):
                 "Course can not be deleted when enabled, please disable the course first!"
             )
         return super().delete(using, keep_parents)
+
+    @property
+    def enrollments_count(self) -> dict[str, int]:
+        unverified_count = self.enrollment_set.filter(
+            status=EnrollmentStatus.UNVERIFIED
+        ).count()
+        active_count = self.enrollment_set.filter(
+            status=EnrollmentStatus.ACTIVE
+        ).count()
+        completed_count = self.enrollment_set.filter(
+            status=EnrollmentStatus.COMPLETED
+        ).count()
+        deactivated_count = self.enrollment_set.filter(
+            status=EnrollmentStatus.DEACTIVATED
+        ).count()
+        total_count = self.enrollment_set.count()
+        return {
+            EnrollmentStatus.UNVERIFIED: unverified_count,
+            EnrollmentStatus.ACTIVE: active_count,
+            EnrollmentStatus.COMPLETED: completed_count,
+            EnrollmentStatus.DEACTIVATED: deactivated_count,
+            "total": total_count,
+        }
 
 
 class Lesson(models.Model):
@@ -330,28 +375,6 @@ class Learner(models.Model):
         self.email = self.email.lower()
         self.full_clean()
         super().save(*args, **kwargs)
-
-
-class EnrollmentStatus(StrEnum):
-    UNVERIFIED = "unverified"
-    ACTIVE = "active"
-    COMPLETED = "completed"
-    DEACTIVATED = "deactivated"
-
-
-class DeactivationReason(StrEnum):
-    CANCELED = "canceled"
-    BLOCKED = "blocked"
-    FAILED = "failed"
-    INACTIVE = "inactive"
-
-
-class DeliveryStatus(StrEnum):
-    SCHEDULED = "scheduled"
-    PROCESSING = "processing"
-    DELIVERED = "delivered"
-    CANCELED = "canceled"
-    BLOCKED = "blocked"
 
 
 class Enrollment(models.Model):
