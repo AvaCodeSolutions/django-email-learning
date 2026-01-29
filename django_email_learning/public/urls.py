@@ -1,7 +1,7 @@
 from django.urls import path
 from django_email_learning.public.views import OrganizationView
 
-app_name = "email_learning"
+app_name = "django_email_learning"
 
 urlpatterns = [
     path(

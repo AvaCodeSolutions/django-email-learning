@@ -24,6 +24,7 @@ from django_email_learning.models import (
     Enrollment,
     EnrollmentStatus,
 )
+from django_email_learning.services.jwt_service import generate_jwt
 import enum
 
 
@@ -35,10 +36,14 @@ class ApiKeyResponse(BaseModel):
 
     @staticmethod
     def from_django_model(api_key: ApiKey) -> "ApiKeyResponse":
+        decrypted_key = api_key.decrypt_password(api_key.key)
+        salt = api_key.salt
+        jwt_key = generate_jwt({"key": decrypted_key, "salt": salt}, exp=datetime.max)
+
         return ApiKeyResponse.model_validate(
             {
                 "id": api_key.id,  # type: ignore[attr-defined]
-                "key": api_key.decrypt_password(api_key.key),
+                "key": jwt_key,
                 "created_at": api_key.created_at,
                 "created_by": api_key.created_by.username
                 if api_key.created_by

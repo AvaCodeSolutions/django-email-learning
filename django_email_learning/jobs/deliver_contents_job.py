@@ -8,8 +8,10 @@ from django_email_learning.services.command_models.send_quiz_command import (
     SendQuizCommand,
     QuizNotFoundError,
 )
+from django_email_learning.models import JobExecution, JobName, JobStatus
 from django.utils.module_loading import import_string
 from django.conf import settings
+from django.utils import timezone
 import logging
 import datetime
 
@@ -22,11 +24,27 @@ class DeliverContentsJob:
         self.delivery_queue: DeliveryQueueProtocol = self.get_delivery_queue()
 
     def run(self) -> None:
+        if JobExecution.objects.filter(
+            job_name=JobName.DELIVER_CONTENTS.value,
+            status=JobStatus.RUNNING.value,
+        ).exists():
+            logger.warning(
+                "Another instance of DeliverContentsJob is already running. Exiting this run."
+            )
+            return
+        job_execution = JobExecution.objects.create(
+            job_name=JobName.DELIVER_CONTENTS.value,
+            status=JobStatus.RUNNING.value,
+            started_at=timezone.now(),
+        )
         should_check_next = True
         while should_check_next:
             delivery_schedule = self.delivery_queue.next_task()
             if delivery_schedule is None:
                 should_check_next = False
+                job_execution.status = JobStatus.COMPLETED.value
+                job_execution.finished_at = timezone.now()
+                job_execution.save()
             else:
                 self.process_delivery(delivery_schedule)
 

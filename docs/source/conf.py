@@ -23,4 +23,12 @@ exclude_patterns = []
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "alabaster"
+
+html_theme_options = {
+    "description": "A Django app for email-based learning management systems.",
+    "logo": "logo.png",
+    "github_user": "AvaCodeSolutions",
+    "github_repo": "django-email-learning",
+    "github_banner": True,
+}
 html_static_path = ["_static"]
