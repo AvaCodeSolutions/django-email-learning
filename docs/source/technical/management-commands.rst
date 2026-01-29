@@ -15,6 +15,13 @@ Usage
 
     python manage.py deliver_contents
 
+
+
+If you don't have the option to set a cron job or similar scheduling mechanism on the server, or you prefer to use a third-party service,
+you can trigger the command via the provided HTTP endpoint. ``/api/jobs/deliver-contents/``
+Ensure that you have the necessary authentication and permissions set up to access this endpoint securely. See :doc:`../platform/api_keys` for more details.
+
+
 Function
 ~~~~~~~~
 
@@ -28,10 +35,6 @@ Scheduling Requirement
 ----------------------
 
 The ``deliver_contents`` command must be executed regularly to ensure timely content delivery. It should be scheduled to run automatically using a task scheduler.
-
-.. note::
-    The current version does not have an endpoint to trigger this command, so for this MVP version, you will need to set up a cron job or similar scheduling mechanism manually.
-    For future versions, we plan to introduce an HTTP endpoint to trigger this command. which can be used by webhooks or other services to initiate content delivery without relying solely on cron jobs.
 
 Execution Frequency
 -------------------

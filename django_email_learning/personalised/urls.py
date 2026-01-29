@@ -4,7 +4,7 @@ from django_email_learning.personalised.views import (
     VerifyEnrollmentView,
 )
 
-app_name = "email_learning"
+app_name = "django_email_learning"
 
 urlpatterns = [
     path("quiz/", QuizPublicView.as_view(), name="quiz_public_view"),

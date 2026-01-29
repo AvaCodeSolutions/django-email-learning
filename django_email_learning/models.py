@@ -109,11 +109,12 @@ class OrganizationUser(models.Model):
 class EncryptionMixin(models.Model):
     salt = models.CharField(max_length=32, editable=False, default=uuid.uuid4().hex)
 
-    def _fernet(self) -> Fernet:
+    @classmethod
+    def _fernet(cls, salt: str) -> Fernet:
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
-            salt=self.salt.encode(),
+            salt=salt.encode(),
             iterations=100000,
         )
         try:
@@ -125,12 +126,17 @@ class EncryptionMixin(models.Model):
         key = base64.urlsafe_b64encode(kdf.derive(secret.encode()))
         return Fernet(key)
 
+    @classmethod
+    def encrypted_value(cls, value: str, salt: str) -> str:
+        f = cls._fernet(salt)
+        return f.encrypt(value.encode()).decode()
+
     def _encrypt_password(self, password: str) -> str:
-        f = self._fernet()
+        f = self._fernet(self.salt)
         return f.encrypt(password.encode()).decode()
 
     def decrypt_password(self, encrypted_password: str) -> str:
-        f = self._fernet()
+        f = self._fernet(self.salt)
         return f.decrypt(encrypted_password.encode()).decode()
 
     class Meta:
@@ -698,3 +704,29 @@ class ApiKey(EncryptionMixin, models.Model):
             self.key = self._encrypt_password(self.key)
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class JobName(StrEnum):
+    DELIVER_CONTENTS = "deliver_contents"
+
+
+class JobStatus(StrEnum):
+    RUNNING = "running"
+    COMPLETED = "completed"
+
+
+class JobExecution(models.Model):
+    job_name = models.CharField(
+        max_length=200, choices=[(job.name, job.value) for job in JobName]
+    )
+    started_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(
+        max_length=50,
+        choices=[(status.name, status.value) for status in JobStatus],
+    )
+
+    def __str__(self) -> str:
+        return (
+            f"Job: {self.job_name} started at {self.started_at} - Status: {self.status}"
+        )
