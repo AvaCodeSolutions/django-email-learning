@@ -217,6 +217,17 @@ class Course(models.Model):
             "total": total_count,
         }
 
+    def generate_unsubscribe_link(self, email: str) -> str:
+        payload = {
+            "email": email,
+            "course_slug": self.slug,
+            "organization_id": self.organization.id,
+        }
+        token = jwt_service.generate_jwt(payload=payload)
+        unsubscribe_path = reverse("django_email_learning:personalised:unsubscribe")
+        link = f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{unsubscribe_path}?token={token}"
+        return link
+
 
 class Lesson(models.Model):
     title = models.CharField(max_length=200)

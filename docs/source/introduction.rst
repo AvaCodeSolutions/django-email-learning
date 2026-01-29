@@ -1,13 +1,6 @@
 Introduction
 ============
 
-.. image::
-   https://github.com/AvaCodeSolutions/django-email-learning/raw/master/assets/Django2@2x.png
-   :alt: Django Email Learning
-   :align: center
-   :width: 200 px
-
-
 Django Email Learning is an open-source Django application by `AvaCode Solutions`_  designed to help educators,
 mentors, and developers create and manage automated learning paths.
 

@@ -106,7 +106,7 @@ class DeliverContentsJob:
 
         try:
             command = SendLessonCommand(
-                lesson_id=delivery_schedule.delivery.course_content.lesson.id,
+                content_id=delivery_schedule.delivery.course_content.id,
                 email=delivery_schedule.delivery.enrollment.learner.email,
             )
             command.execute()
@@ -143,7 +143,7 @@ class DeliverContentsJob:
                 delivery_schedule.save()
 
             command = SendQuizCommand(
-                quiz_id=delivery_schedule.delivery.course_content.quiz.id,
+                content_id=delivery_schedule.delivery.course_content.id,
                 email=delivery_schedule.delivery.enrollment.learner.email,
                 link=delivery_schedule.link,
             )
