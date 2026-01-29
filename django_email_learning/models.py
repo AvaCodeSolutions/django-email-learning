@@ -27,7 +27,6 @@ from django_email_learning.services import jwt_service
 from typing import Optional
 
 
-FIXED_SALT = b"\x00" * 16
 logger = logging.getLogger(__name__)
 
 
@@ -107,10 +106,15 @@ class OrganizationUser(models.Model):
         return f"{self.user.username} - {self.organization.name}"
 
 
-class EncryptionMixin:
+class EncryptionMixin(models.Model):
+    salt = models.CharField(max_length=32, editable=False, default=uuid.uuid4().hex)
+
     def _fernet(self) -> Fernet:
         kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(), length=32, salt=FIXED_SALT, iterations=100000
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=self.salt.encode(),
+            iterations=100000,
         )
         try:
             secret = settings.DJANGO_EMAIL_LEARNING["ENCRYPTION_SECRET_KEY"]
@@ -128,6 +132,9 @@ class EncryptionMixin:
     def decrypt_password(self, encrypted_password: str) -> str:
         f = self._fernet()
         return f.decrypt(encrypted_password.encode()).decode()
+
+    class Meta:
+        abstract = True
 
 
 class ImapConnection(EncryptionMixin, models.Model):

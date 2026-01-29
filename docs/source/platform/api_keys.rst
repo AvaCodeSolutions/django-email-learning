@@ -2,6 +2,7 @@ API Keys
 ========
 
 API Keys provide a secure way to authenticate programmatic access to the Django Email Learning platform. They are designed to enable automated job execution without the need to set up cron jobs directly on the server.
+API keys are encrypted in the database using the `ENCRYPTION_SECRET_KEY` defined in your settings. If this key is changed, all existing API keys will become invalid.
 
 .. image:: ../../images/api-keys.png
    :alt: API Keys Management Interface

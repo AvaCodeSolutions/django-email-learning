@@ -97,11 +97,25 @@ Required Settings
 
 The base URL of your site, used to generate absolute URLs in emails and course links.
 
+
+**ENCRYPTION_SECRET_KEY**
+
+A secret key used for encrypting sensitive data. It should be a long, random string.
+This will be used for encrypting API keys and IMAP passwords. This key will be used for bidirectional encryption/decryption, so keep it secure.
+
+Same as all other sensitive configurations, it's a good practice to load this from an environment variable or a secure vault.
+
+.. important::
+   Changing this key after data has been created will prevent access to previously encrypted data. Chaning requires re-encrypting all existing data with the new key.
+
+
 .. code-block:: python
 
     DJANGO_EMAIL_LEARNING = {
         'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
     }
+
 
 Optional Settings
 ~~~~~~~~~~~~~~~~~
@@ -114,6 +128,7 @@ The default email address for outgoing course emails. If not specified, falls ba
 
     DJANGO_EMAIL_LEARNING = {
         'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
         'FROM_EMAIL': 'courses@yourdomain.com',
     }
 

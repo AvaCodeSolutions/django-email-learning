@@ -20,6 +20,17 @@ def check_site_base_url_config(app_configs, **kwargs):  # type: ignore[no-untype
                 id="django_email_learning.E001",
             )
         )
+    if (
+        not hasattr(settings, "DJANGO_EMAIL_LEARNING")
+        or "ENCRYPTION_SECRET_KEY" not in settings.DJANGO_EMAIL_LEARNING
+    ):
+        errors.append(
+            checks.Error(
+                "DJANGO_EMAIL_LEARNING['ENCRYPTION_SECRET_KEY'] is not set in settings.",
+                hint="Please set DJANGO_EMAIL_LEARNING['ENCRYPTION_SECRET_KEY'] to a long, random string.",
+                id="django_email_learning.E002",
+            )
+        )
     return errors
 
 
