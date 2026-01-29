@@ -26,7 +26,7 @@ def test_verification_valid_token(command, enrollment, anonymous_client):
 def test_verification_invalid_token(anonymous_client):
     response = anonymous_client.get(f"{URL}?token=invalidtoken")
     assert response.status_code == 400
-    assert "The verification link is not valid." in response.content.decode()
+    assert "The link is not valid." in response.content.decode()
 
 
 # # TODO: Add more tests for various scenarios

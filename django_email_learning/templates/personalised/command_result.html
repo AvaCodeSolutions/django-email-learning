@@ -1,0 +1,9 @@
+{% extends "personalised/base.html" %}
+{% load i18n %}
+{% load django_vite %}
+{% block head_script %}
+    <script>
+        const success_message = "{{ success_message|escapejs }}";
+    </script>
+    {% vite_asset 'personalised/command_result/CommandResult.jsx' %}
+{% endblock %}

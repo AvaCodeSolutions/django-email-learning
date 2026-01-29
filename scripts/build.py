@@ -11,7 +11,7 @@ TEMPLATES = [
     ["platform", "learners"],
     ["platform", "settings_api_keys"],
     ["personalised", "quiz_public"],
-    ["personalised", "verify_enrollment"],
+    ["personalised", "command_result"],
     ["public", "organization"],
 ]
 

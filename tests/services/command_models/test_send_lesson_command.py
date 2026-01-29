@@ -4,16 +4,16 @@ from django_email_learning.services.command_models.send_lesson_command import (
 from django.core import mail
 
 
-def test_send_lesson_command(db, lesson):
+def test_send_lesson_command(db, course_lesson_content):
     command = SendLessonCommand(
         command_name="send_lesson",
-        lesson_id=lesson.id,
+        content_id=course_lesson_content.id,
         email="test@example.com",
     )
     command.execute()
 
     assert len(mail.outbox) == 1
     email = mail.outbox[0]
-    assert email.subject == lesson.title
+    assert email.subject == course_lesson_content.lesson.title
     assert "test@example.com" in email.to
-    assert lesson.content in email.body
+    assert course_lesson_content.lesson.content in email.body

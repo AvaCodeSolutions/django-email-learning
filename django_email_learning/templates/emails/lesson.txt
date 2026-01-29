@@ -1,3 +1,6 @@
+{% load i18n %}
 {{ lesson.title }}
 
 {{ lesson.content|striptags }}
+
+{% translate "Unsubscribe link:" %} {{ unsubscribe_link }}

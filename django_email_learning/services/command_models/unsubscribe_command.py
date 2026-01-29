@@ -2,6 +2,7 @@ from typing import Literal
 from django_email_learning.models import (
     Course,
     Enrollment,
+    DeliveryStatus,
     Learner,
     EnrollmentStatus,
     DeactivationReason,
@@ -53,6 +54,12 @@ class UnsubscribeCommand(AbstractCommand):
                 f"Unsubscribe Skipped: No active enrollment found for learner {learner.id} in course {course.slug}"
             )
             return
+
+        for enrollment in enrollments:
+            for delivery in enrollment.content_deliveries.all():
+                delivery.delivery_schedules.filter(
+                    status=DeliveryStatus.SCHEDULED
+                ).update(status=DeliveryStatus.CANCELED)
 
         enrollments.update(
             status=EnrollmentStatus.DEACTIVATED,
