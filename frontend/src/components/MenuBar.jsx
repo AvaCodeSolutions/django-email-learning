@@ -1,9 +1,11 @@
 import { useState, useEffect, use } from 'react'
-import { AppBar, Toolbar, Drawer, Box, Typography, MenuList, MenuItem, ListItemIcon, ListItemText, Button, Link, Select } from '@mui/material'
+import { AppBar, Chip, Drawer, Box, Typography, MenuList, MenuItem, ListItemIcon, ListItemText, Button, Link, Select } from '@mui/material'
 import IconButton from '@mui/material/IconButton';
 import SchoolIcon from '@mui/icons-material/School';
 import PeopleIcon from '@mui/icons-material/People';
-import BarChartIcon from '@mui/icons-material/BarChart';
+import DoneIcon from '@mui/icons-material/Done';
+import WarningIcon from '@mui/icons-material/Warning';
+import ErrorIcon from '@mui/icons-material/Error';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import Diversity3Icon from '@mui/icons-material/Diversity3';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -51,6 +53,8 @@ function OrganizationsSelect({organizations, activeOrganizationId, changeOrganiz
 function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganizationSwitcher, drawerWidth}) {
     const [menuOpen, setMenuOpen] = useState(false)
     const [organizations, setOrganizations] = useState([])
+    const [deliverContentsJobStatus, setDeliverContentsJobStatus] = useState(null)
+    const [chip, setChip] = useState(null)
 
     const theme = useTheme();
     const isMdUpScreen = useMediaQuery(theme.breakpoints.up('md'));
@@ -59,7 +63,47 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     const logoHorizontalUrl = theme.palette.mode === 'light' ? logoHorizontalLightUrl : logoHorizontalDarkUrl;
     const logoVerticalUrl = theme.palette.mode === 'light' ? logoVerticalLightUrl : logoVerticalDarkUrl;
 
+    const jobsStatusMap = {
+        "healthy": {
+            icon: <DoneIcon fontSize="small" color='black' />,
+            backgroundColor: "successChipBg",
+        },
+        "warning": {
+            icon: <WarningIcon fontSize="small" color='black' />,
+            backgroundColor: "warningChipBg",
+        },
+        "critical": {
+            icon: <ErrorIcon fontSize="small" color="black" />,
+            backgroundColor: "criticalChipBg"
+        },
+    };
+
     useEffect(() => {
+        fetch(apiBaseUrl + '/status/jobs/', {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            const executionTime = data.jobs.deliver_contents.last_execution_started_at ? new Date(data.jobs.deliver_contents.last_execution_started_at).toLocaleString() : null;
+            setDeliverContentsJobStatus(data.jobs.deliver_contents);
+            setChip(
+                <><Chip
+                    sx={(theme) => ({backgroundColor: theme.palette[jobsStatusMap[data.jobs.deliver_contents.job_health_status].backgroundColor], px: 1})}
+                    size="small"
+                    icon={jobsStatusMap[data.jobs.deliver_contents.job_health_status].icon}
+                    label="Content Delivery Job"
+                /> { executionTime ?  <Typography variant="caption" pt="2px" mx={1}>Last run: {executionTime}</Typography> : '' }</>
+            );
+        })
+        .catch(error => {
+            console.error('Error fetching job status:', error);
+        });
+
         if (!showOrganizationSwitcher) {
             return;
         }
@@ -100,11 +144,15 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
         setMenuOpen(newOpen);
     };
 
+
     return (
         <Box component="nav"sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
         <AppBar sx={{boxShadow: 0, backgroundColor: 'background.nav', borderBottom: {xs: '1px solid', md: 'none'}, borderColor: {xs: 'primary.main', md: 'none'} }}>
             <Box my={1} ml={5} sx={{ height: {xs: "57px", md: "30px"}}}>
                 <img src={logoHorizontalUrl} alt="Logo" style={{maxHeight: "57px", height: "100%"}} />
+            </Box>
+            <Box sx={{ position: "absolute", left: direction === 'rtl' ? 'auto' : '270px', right: direction === 'rtl' ? '270px' : 'auto', top: '10px', display: {xs: 'none', md: 'flex' }}}>
+                { chip }
             </Box>
             <Box sx={{display: { xs: 'flex'}, right: direction === 'rtl' ? 'auto' : '0', left: direction === 'rtl' ? '0' : 'auto', position: "absolute" }}>
                 <ThemeSwitcher />

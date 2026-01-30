@@ -103,6 +103,8 @@ DJANGO_EMAIL_LEARNING = {
     "SITE_BASE_URL": "http://localhost:8000",
     "ENCRYPTION_SECRET_KEY": "your-very-secure-and-random-key",
     "FROM_EMAIL": os.environ.get("FROM_EMAIL", "webmaster@localhost"),
+    "JOB_HEALTH_WARNING_THRESHOLD_MINUTES": 10,
+    "JOB_HEALTH_SUCCESS_THRESHOLD_MINUTES": 5,
 }
 
 
