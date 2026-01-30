@@ -17,6 +17,8 @@ from django_email_learning.models import (
     ContentDelivery,
     DeliverySchedule,
     DeliveryStatus,
+    JobExecution,
+    JobName,
 )
 import uuid
 import pytest
@@ -266,5 +268,13 @@ def enrollments_factory(db):
             )
             enrollments.append(enrollment)
         Enrollment.objects.bulk_create(enrollments)
+
+    return _factory
+
+
+@pytest.fixture
+def job_factory(db):
+    def _factory(name: JobName):
+        return JobExecution.objects.create(job_name=name)
 
     return _factory

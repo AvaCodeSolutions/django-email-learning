@@ -7,11 +7,12 @@ from django.db.models import Count
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models, transaction
+from django.conf import settings
 from django.core.files.storage import default_storage
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, datetime
 from pydantic import ValidationError
-
+from enum import StrEnum
 from django_email_learning.platform.api import serializers
 from django_email_learning.platform.api.pagniated_api_mixin import PaginatedApiMixin
 from django_email_learning.models import (
@@ -21,6 +22,8 @@ from django_email_learning.models import (
     Enrollment,
     EnrollmentStatus,
     ImapConnection,
+    JobExecution,
+    JobName,
     Learner,
     OrganizationUser,
     Organization,
@@ -633,6 +636,73 @@ class SingleApiKeyView(View):
             return JsonResponse({"error": e.json()}, status=400)
         except IntegrityError as e:
             return JsonResponse({"error": str(e)}, status=409)
+
+
+class JobHealthStatus(StrEnum):
+    SUCCESS = "healthy"
+    WARNING = "warning"
+    CRITICAL = "critical"
+
+
+DEFAULT_SUCCESS_THRESHOLD_MINUTES = 15
+DEFAULT_WARNING_THRESHOLD_MINUTES = 45
+
+
+@method_decorator(is_an_organization_member(), name="get")
+class JobsStatus(View):
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        jobs_status = {}
+        for job in JobName:
+            last_execution = (
+                JobExecution.objects.filter(job_name=job.value)
+                .order_by("-started_at")
+                .first()
+            )
+            jobs_status[job.value] = {
+                "job_name": job.value,
+                "last_execution_status": last_execution.status
+                if last_execution
+                else None,
+                "last_execution_started_at": last_execution.started_at.isoformat()
+                if last_execution
+                else None,
+                "last_execution_finished_at": last_execution.finished_at.isoformat()
+                if last_execution and last_execution.finished_at
+                else None,
+                "job_health_status": self.calculate_job_health_status(
+                    last_execution.started_at
+                )
+                if last_execution
+                else JobHealthStatus.CRITICAL.value,
+            }
+
+        return JsonResponse({"jobs": jobs_status}, status=200)
+
+    @staticmethod
+    def calculate_job_health_status(last_execution_started_at: datetime) -> str:
+        success_threshold = settings.DJANGO_EMAIL_LEARNING.get(
+            "JOB_HEALTH_SUCCESS_THRESHOLD_MINUTES", DEFAULT_SUCCESS_THRESHOLD_MINUTES
+        )
+        warning_threshold = settings.DJANGO_EMAIL_LEARNING.get(
+            "JOB_HEALTH_WARNING_THRESHOLD_MINUTES", DEFAULT_WARNING_THRESHOLD_MINUTES
+        )
+        if not isinstance(success_threshold, int) or success_threshold <= 0:
+            success_threshold = DEFAULT_SUCCESS_THRESHOLD_MINUTES
+        if not isinstance(warning_threshold, int) or warning_threshold <= 0:
+            warning_threshold = DEFAULT_WARNING_THRESHOLD_MINUTES
+        if warning_threshold <= success_threshold:
+            warning_threshold = (
+                success_threshold + 30
+            )  # Ensure warning threshold is greater than success threshold
+        now = timezone.now()
+        time_diff = now - last_execution_started_at
+        minutes_diff = time_diff.total_seconds() / 60
+        if minutes_diff <= success_threshold:
+            return JobHealthStatus.SUCCESS.value
+        elif minutes_diff <= warning_threshold:
+            return JobHealthStatus.WARNING.value
+        else:
+            return JobHealthStatus.CRITICAL.value
 
 
 class RootView(View):

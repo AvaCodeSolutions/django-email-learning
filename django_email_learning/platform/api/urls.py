@@ -17,6 +17,7 @@ from django_email_learning.platform.api.views import (
     UpdateSessionView,
     LearnersView,
     SingleLearnerView,
+    JobsStatus,
 )
 
 app_name = "django_email_learning"
@@ -83,6 +84,7 @@ urlpatterns = [
         SingleOrganizationView.as_view(),
         name="single_organization_view",
     ),
+    path("status/jobs/", JobsStatus.as_view(), name="jobs_status_view"),
     path("api_keys/", ApiKeyView.as_view(), name="api_key_view"),
     path(
         "api_keys/<int:api_key_id>/",
