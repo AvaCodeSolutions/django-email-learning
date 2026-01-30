@@ -3,6 +3,7 @@ import RequiredTextField  from '../../../src/components/RequiredTextField.jsx';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import IconButton from '@mui/material/IconButton';
 import AddImapConnectionForm from './AddImapConnectionForm.jsx';
+import ImageUpload from '../../../src/components/ImageUpload.jsx';
 import { useEffect, useState } from 'react';
 import { getCookie } from '../../../src/utils.js';
 
@@ -17,6 +18,8 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     const [slugHelperText, setSlugHelperText] = useState("")
     const [descriptionHelperText, setDescriptionHelperText] = useState("")
     const [errorMessage, setErrorMessage] = useState("")
+    const [imageUrl, setImageUrl] = useState(null)
+    const [imageServerPath, setImageServerPath] = useState(null)
 
     const apiBaseUrl = localStorage.getItem('apiBaseUrl');
 
@@ -48,6 +51,8 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setCourseTitle(data.title);
                 setCourseSlug(data.slug);
                 setCourseDescription(data.description);
+                setImageUrl(data.image);
+                setImageServerPath(data.image_path);
                 if (data.imap_connection_id) {
                     setImapConnectionId(data.imap_connection_id);
                     setAddImapConnection(true);
@@ -102,11 +107,12 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             // slug is not updatable
             description: courseDescription,
             imap_connection_id: imapConnectionId && addImapConnection? parseInt(imapConnectionId) : null,
-            reset_imap_connection: !addImapConnection || imapConnectionId == null
+            reset_imap_connection: !addImapConnection || imapConnectionId == null,
+            image: imageServerPath ? imageServerPath : null
         }),
         })
         .then(response => {
-            if (!response.ok) {
+            if (!response.ok && response.status != 409) {
                 if (response.status >= 500) {
                     setErrorMessage("Server error occurred. Please try again later.");
                 }
@@ -115,12 +121,16 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             return response.json();
         })
         .then(data => {
-            console.log('Success:', data);
-            successCallback(data);
+            if (data.error) {
+                setErrorMessage(data.error);
+                failureCallback(data);
+            } else {
+                console.log('Success:', data);
+                successCallback(data);
+            }
         })
         .catch((error) => {
             console.error('Error:', error);
-            if (error)
             failureCallback(error);
         });
     };
@@ -141,15 +151,13 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             title: courseTitle,
             slug: courseSlug,
             description: courseDescription,
-            imap_connection_id: imapConnectionId ? parseInt(imapConnectionId) : null
+            imap_connection_id: imapConnectionId ? parseInt(imapConnectionId) : null,
+            image: imageServerPath ? imageServerPath : null
         }),
         })
         .then(response => {
-            if (!response.ok) {
-                if (response.status === 409) {
-                    setErrorMessage("A course with this title or slug already exists.");
-                }
-                else if (response.status >= 500) {
+            if (!response.ok && response.status != 409) {
+                if (response.status >= 500) {
                     setErrorMessage("Server error occurred. Please try again later.");
                 }
                 throw new Error('Network response was not ok');
@@ -157,16 +165,20 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             return response.json();
         })
         .then(data => {
-            console.log('Success:', data);
-            // Optionally reset form fields here
-            setCourseTitle("");
-            setCourseSlug("");
-            setCourseDescription("");
-            successCallback(data);
+            if (data.error) {
+                setErrorMessage(data.error);
+                failureCallback(data);
+            } else {
+                console.log('Success:', data);
+                // Optionally reset form fields here
+                setCourseTitle("");
+                setCourseSlug("");
+                setCourseDescription("");
+                successCallback(data);
+            }
         })
         .catch((error) => {
             console.error('Error:', error);
-            if (error)
             failureCallback(error);
         });
     };
@@ -193,7 +205,13 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                         activeOrganizationId={activeOrganizationId}
                         initialImapConnectionId={imapConnectionId}
                     />
-                </Box>}
+              </Box>}
+              <Box>
+                <ImageUpload initialUrl={imageUrl} onUploadSuccess={(data) => {
+                    setImageUrl(data.file_url);
+                    setImageServerPath(data.file_path);
+                }} />
+              </Box>
               <Box mt={2} textAlign="right">
                 <Button onClick={cancelCallback} sx={{ mr: 1 }}>Cancel</Button>
                 { createMode && <Button variant="contained" onClick={() => handleCreateCourse()} sx={{ boxShadow: 'none' }}>{localeMessages["create"]}</Button> }

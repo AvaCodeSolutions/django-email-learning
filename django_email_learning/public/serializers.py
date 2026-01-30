@@ -7,6 +7,7 @@ class PublicCourseSerializer(BaseModel):
     slug: str
     description: str | None = None
     imap_email: str | None = None
+    image: str | None = None
 
     @field_serializer("description")
     def serialize_description_with_br(self, description: str | None) -> str | None:
