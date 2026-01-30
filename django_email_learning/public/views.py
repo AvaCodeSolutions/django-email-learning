@@ -38,6 +38,9 @@ class OrganizationView(TemplateView):
                     title=course.title,
                     slug=course.slug,
                     description=course.description,
+                    image=self.request.build_absolute_uri(course.image.url)
+                    if course.image
+                    else None,
                     imap_email=course.imap_connection.email
                     if course.imap_connection
                     else None,

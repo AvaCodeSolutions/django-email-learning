@@ -24,6 +24,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
 from django_email_learning.services import jwt_service
+from PIL import Image
 from typing import Optional
 
 
@@ -178,6 +179,7 @@ class Course(models.Model):
         ImapConnection, on_delete=models.SET_NULL, null=True, blank=True
     )
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    image = models.ImageField(upload_to="course_images/", null=True, blank=True)
 
     def __str__(self) -> str:
         return self.title
@@ -227,6 +229,26 @@ class Course(models.Model):
         unsubscribe_path = reverse("django_email_learning:personalised:unsubscribe")
         link = f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{unsubscribe_path}?token={token}"
         return link
+
+    def replace_image(self, file_path: str) -> str:
+        if default_storage.exists(file_path):
+            with default_storage.open(file_path) as f:
+                img = Image.open(f)
+                width, height = img.size
+                if width < 580 or height < 360:
+                    raise ValueError(
+                        "Image dimensions must be at least 580x360 pixels."
+                    )
+            allowed_extensions = [".jpg", ".jpeg", ".png", ".svg"]
+            if not any(file_path.lower().endswith(ext) for ext in allowed_extensions):
+                raise ValueError("Image must be an image file with a valid extension.")
+            final_path = f"organization/{self.organization.id}/course_images/{self.id}_{file_path.split('/')[-1]}"
+            default_storage.save(final_path, default_storage.open(file_path))
+            self.image = final_path
+            self.save()
+            return final_path
+        else:
+            raise ValueError("Image file does not exist.")
 
 
 class Lesson(models.Model):

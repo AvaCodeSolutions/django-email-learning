@@ -54,7 +54,9 @@ class CourseView(View):
             )
             course.save()
             return JsonResponse(
-                serializers.CourseResponse.model_validate(course).model_dump(),
+                serializers.CourseResponse.from_django_model(
+                    course, abs_url_builder=request.build_absolute_uri
+                ).model_dump(),
                 status=201,
             )
         except ValidationError as e:
@@ -74,7 +76,9 @@ class CourseView(View):
         response_list = []
         for course in courses:
             response_list.append(
-                serializers.CourseResponse.model_validate(course).model_dump()
+                serializers.CourseResponse.from_django_model(
+                    course, abs_url_builder=request.build_absolute_uri
+                ).model_dump()
             )
         return JsonResponse({"courses": response_list}, status=200)
 
@@ -289,7 +293,9 @@ class SingleCourseView(View):
         try:
             course = Course.objects.get(id=kwargs["course_id"])
             return JsonResponse(
-                serializers.CourseResponse.model_validate(course).model_dump(),
+                serializers.CourseResponse.from_django_model(
+                    course, abs_url_builder=request.build_absolute_uri
+                ).model_dump(),
                 status=200,
             )
         except Course.DoesNotExist:
@@ -306,7 +312,9 @@ class SingleCourseView(View):
             course = serializer.to_django_model(course_id=kwargs["course_id"])
             course.save()
             return JsonResponse(
-                serializers.CourseResponse.model_validate(course).model_dump(),
+                serializers.CourseResponse.from_django_model(
+                    course, abs_url_builder=request.build_absolute_uri
+                ).model_dump(),
                 status=200,
             )
         except ValidationError as e:

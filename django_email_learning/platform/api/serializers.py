@@ -64,6 +64,7 @@ class CreateCourseRequest(BaseModel):
         None, examples=["A beginner's course on Python programming."]
     )
     imap_connection_id: Optional[int] = Field(None, examples=[1])
+    image: Optional[str] = Field(None, examples=["/path/to/course_image.png"])
 
     def to_django_model(self, organization_id: int) -> Course:
         organization = Organization.objects.get(id=organization_id)
@@ -90,6 +91,8 @@ class CreateCourseRequest(BaseModel):
         )
         if imap_connection:
             course.imap_connection = imap_connection
+        if self.image:
+            course.replace_image(self.image)
         return course
 
 
@@ -104,6 +107,7 @@ class UpdateCourseRequest(BaseModel):
     imap_connection_id: Optional[int] = Field(None, examples=[1])
     enabled: Optional[bool] = Field(None, examples=[True])
     reset_imap_connection: Optional[bool] = Field(None, examples=[False])
+    image: Optional[str] = Field(None, examples=["/path/to/course_image.png"])
 
     def to_django_model(self, course_id: int) -> Course:
         try:
@@ -126,6 +130,10 @@ class UpdateCourseRequest(BaseModel):
             course.enabled = self.enabled
         if self.reset_imap_connection:
             course.imap_connection = None
+        if self.image is not None:
+            course.replace_image(self.image)
+        if not self.image:
+            course.image = None
 
         return course
 
@@ -139,8 +147,31 @@ class CourseResponse(BaseModel):
     imap_connection_id: Optional[int]
     enabled: bool
     enrollments_count: dict[str, int]
+    image: Optional[str] = None
+    image_path: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+    @staticmethod
+    def from_django_model(
+        course: Course, abs_url_builder: Callable
+    ) -> "CourseResponse":
+        return CourseResponse.model_validate(
+            {
+                "id": course.id,
+                "title": course.title,
+                "slug": course.slug,
+                "description": course.description,
+                "organization_id": course.organization.id,
+                "imap_connection_id": course.imap_connection.id
+                if course.imap_connection
+                else None,
+                "enabled": course.enabled,
+                "enrollments_count": course.enrollments_count,
+                "image": abs_url_builder(course.image.url) if course.image else None,
+                "image_path": course.image.name if course.image else None,
+            }
+        )
 
 
 class CourseSummaryResponse(BaseModel):
