@@ -1,5 +1,5 @@
 import { useState, useEffect, use } from 'react'
-import { AppBar, Chip, Drawer, Box, Typography, MenuList, MenuItem, ListItemIcon, ListItemText, Button, Link, Select } from '@mui/material'
+import { AppBar, Chip, Drawer, Box, Typography, MenuList, MenuItem, ListItemIcon, ListItemText, Tooltip, Link, Select } from '@mui/material'
 import IconButton from '@mui/material/IconButton';
 import SchoolIcon from '@mui/icons-material/School';
 import PeopleIcon from '@mui/icons-material/People';
@@ -92,12 +92,12 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
             const executionTime = data.jobs.deliver_contents.last_execution_started_at ? new Date(data.jobs.deliver_contents.last_execution_started_at).toLocaleString() : null;
             setDeliverContentsJobStatus(data.jobs.deliver_contents);
             setChip(
-                <><Chip
+                <Tooltip title={localeMessages["content_delivery_tooltip"]}><Chip
                     sx={(theme) => ({backgroundColor: theme.palette[jobsStatusMap[data.jobs.deliver_contents.job_health_status].backgroundColor], px: 1})}
                     size="small"
                     icon={jobsStatusMap[data.jobs.deliver_contents.job_health_status].icon}
-                    label="Content Delivery Job"
-                /> { executionTime ?  <Typography variant="caption" pt="2px" mx={1}>Last run: {executionTime}</Typography> : '' }</>
+                    label={localeMessages["content_delivery_job"]}
+                /> { executionTime ?  <Typography variant="caption" pt="2px" mx={1}>{localeMessages["last_run"]} {executionTime}</Typography> : '' }</Tooltip>
             );
         })
         .catch(error => {

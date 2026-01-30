@@ -143,6 +143,10 @@ const lightPalette = {
     errorText: {
       main: '#a93e6bff',
     },
+    secondary: {
+      main: '#7c86ff',
+      text: 'rgb(91, 103, 243)',
+    },
     successChipBg: teal[50],
     warningChipBg: amber[50],
     criticalChipBg: red[50],
@@ -165,6 +169,10 @@ const darkPalette = {
     errorText: {
       main: '#ff6b9d',
     },
+    secondary: {
+      main: '#7c86ff',
+      text: 'rgb(184, 190, 255)',
+    },
     successChipBg: teal[700],
     warningChipBg: amber[700],
     criticalChipBg: red[700],
@@ -173,10 +181,6 @@ const darkPalette = {
 const commonPalette = {
    primary: {
       main: '#00d5be',
-    },
-    secondary: {
-      main: '#7c86ff',
-      text: '#b8bdfaff',
     },
     grey: blueGrey,
     teal: teal,

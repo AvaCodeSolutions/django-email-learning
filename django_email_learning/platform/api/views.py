@@ -644,6 +644,10 @@ class JobHealthStatus(StrEnum):
     CRITICAL = "critical"
 
 
+DEFAULT_SUCCESS_THRESHOLD_MINUTES = 15
+DEFAULT_WARNING_THRESHOLD_MINUTES = 45
+
+
 @method_decorator(is_an_organization_member(), name="get")
 class JobsStatus(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
@@ -677,15 +681,15 @@ class JobsStatus(View):
     @staticmethod
     def calculate_job_health_status(last_execution_started_at: datetime) -> str:
         success_threshold = settings.DJANGO_EMAIL_LEARNING.get(
-            "JOB_HEALTH_SUCCESS_THRESHOLD_MINUTES", 15
+            "JOB_HEALTH_SUCCESS_THRESHOLD_MINUTES", DEFAULT_SUCCESS_THRESHOLD_MINUTES
         )
         warning_threshold = settings.DJANGO_EMAIL_LEARNING.get(
-            "JOB_HEALTH_WARNING_THRESHOLD_MINUTES", 45
+            "JOB_HEALTH_WARNING_THRESHOLD_MINUTES", DEFAULT_WARNING_THRESHOLD_MINUTES
         )
         if not isinstance(success_threshold, int) or success_threshold <= 0:
-            success_threshold = 15
+            success_threshold = DEFAULT_SUCCESS_THRESHOLD_MINUTES
         if not isinstance(warning_threshold, int) or warning_threshold <= 0:
-            warning_threshold = 45
+            warning_threshold = DEFAULT_WARNING_THRESHOLD_MINUTES
         if warning_threshold <= success_threshold:
             warning_threshold = (
                 success_threshold + 30
