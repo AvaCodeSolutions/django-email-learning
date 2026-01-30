@@ -189,7 +189,8 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
               <RequiredTextField label={localeMessages["course_slug"]} helperText={slugHelperText} fullWidth margin="normal" value={courseSlug} onChange={(e) => setCourseSlug(e.target.value)} {...(!createMode ? { disabled: true } : {})} />
 
               <RequiredTextField label={localeMessages["course_description"]} helperText={descriptionHelperText} fullWidth margin="normal" multiline rows={4} value={courseDescription} onChange={(e) => setCourseDescription(e.target.value)} />
-              <FormControlLabel
+              {/* Imap Form is commented for now since it's backend command still not implemented but the API and UI works as expected */}
+              {/* <FormControlLabel
                 control={<Switch onChange={() => switchImapConnection()} checked={addImapConnection} dir={direction} />}
                 label={localeMessages["add_imap_connection"]} sx={{ m: 0 }} />
                 <Tooltip title={localeMessages["imap_connection_tooltip"]}>
@@ -205,7 +206,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                         activeOrganizationId={activeOrganizationId}
                         initialImapConnectionId={imapConnectionId}
                     />
-              </Box>}
+              </Box>} */}
               <Box>
                 <ImageUpload initialUrl={imageUrl} onUploadSuccess={(data) => {
                     setImageUrl(data.file_url);
