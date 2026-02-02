@@ -22,11 +22,13 @@ def test_learner_email_case_insensitivity(db):
     assert learner.email == "user@example.com"
 
 
-def test_learner_unique_email_constraint(db):
+def test_learner_unique_together_email_constraint(db):
     Learner.objects.create(email="user@example.com", organization_id=1)
     with pytest.raises(ValidationError) as exc_info:
         Learner.objects.create(email="USER@EXAMPLE.COM", organization_id=1)
-    assert "Learner with this Email already exists." in str(exc_info.value)
+    assert "Learner with this Organization and Email already exists." in str(
+        exc_info.value
+    )
     learner_count = Learner.objects.filter(
         email__iexact="user@example.com", organization_id=1
     ).count()
