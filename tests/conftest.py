@@ -273,6 +273,15 @@ def enrollments_factory(db):
 
 
 @pytest.fixture
+def second_user(db):
+    user = User(
+        username="seconduser", email="seconduser@example.com", password="secondpass"
+    )
+    user.save()
+    return user
+
+
+@pytest.fixture
 def job_factory(db):
     def _factory(name: JobName):
         return JobExecution.objects.create(job_name=name)

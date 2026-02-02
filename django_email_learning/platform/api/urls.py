@@ -9,6 +9,7 @@ from django_email_learning.platform.api.views import (
     FileView,
     ImapConnectionView,
     OrganizationsView,
+    OrganizationUsersView,
     SingleOrganizationView,
     SingleCourseView,
     CourseContentView,
@@ -27,6 +28,11 @@ urlpatterns = [
         "organizations/<int:organization_id>/courses/",
         CourseView.as_view(),
         name="course_view",
+    ),
+    path(
+        "organizations/<int:organization_id>/users/",
+        OrganizationUsersView.as_view(),
+        name="organization_users_view",
     ),
     path(
         "organizations/<int:organization_id>/imap-connections/",
