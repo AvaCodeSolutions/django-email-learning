@@ -271,6 +271,24 @@ class UpdateOrganizationRequest(BaseModel):
     remove_logo: Optional[bool] = Field(None, examples=[True])
 
 
+class UserRole(enum.StrEnum):
+    ADMIN = "admin"
+    Editor = "editor"
+    Viewer = "viewer"
+
+
+class AddOrganizationUserRequest(BaseModel):
+    user_id: int = Field(gt=0, examples=[1])
+    role: UserRole = Field(min_length=1, examples=[UserRole.ADMIN])
+
+
+class OrganizationUserResponse(BaseModel):
+    user_id: int
+    role: UserRole
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class UpdateSessionRequest(BaseModel):
     active_organization_id: int = Field(examples=[1])
 
