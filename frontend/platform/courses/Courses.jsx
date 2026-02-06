@@ -1,17 +1,34 @@
 import 'vite/modulepreload-polyfill'
 import { useState, useEffect } from 'react'
-import { Grid, Box, Link, Button, IconButton, Dialog, Paper, Switch, TableContainer, Table, TableHead, TableRow,TableBody, TableCell } from '@mui/material'
+import Grid from '@mui/material/Grid';
+import Box from '@mui/material/Box';
+import Link from '@mui/material/Link';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Dialog from '@mui/material/Dialog';
+import LinearProgress from '@mui/material/LinearProgress';
+import Paper from '@mui/material/Paper';
+import Switch from '@mui/material/Switch';
+import TableContainer from '@mui/material/TableContainer';
+import Table from '@mui/material/Table';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
 import Base from '../../src/components/Base.jsx'
-import CourseForm from './components/CourseForm.jsx';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import SchoolIcon from '@mui/icons-material/School';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import render from '../../src/render.jsx';
 import { getCookie } from '../../src/utils.js';
-import EnableCourseSwitchPopup from './components/EnableCourseSwitchPopup.jsx';
-import DeleteCoursePopup from './components/DeleteCoursePopup.jsx';
 import FilterForm from './components/FilterForm.jsx';
+import { lazy, Suspense } from "react";
+
+const CourseForm = lazy(() => import("./components/CourseForm.jsx"));
+const EnableCourseSwitchPopup = lazy(() => import("./components/EnableCourseSwitchPopup.jsx"));
+const DeleteCoursePopup = lazy(() => import("./components/DeleteCoursePopup.jsx"));
+
 
 
 function Courses() {
@@ -62,7 +79,7 @@ function Courses() {
     console.log(`${action} course with ID:`, courseId);
     console.log('Event:', event.target.checked);
     setDialogContent(<Grid sx={{ p: 2 }}>
-      <EnableCourseSwitchPopup courseId={courseId} action={action} courseTitle={courseTitle} handleClose={() => setDialogOpen(false)} handleSuccess={updateCourseState}/>
+      <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><EnableCourseSwitchPopup courseId={courseId} action={action} courseTitle={courseTitle} handleClose={() => setDialogOpen(false)} handleSuccess={updateCourseState}/></Suspense>
     </Grid>);
     setDialogOpen(true);
   }
@@ -78,7 +95,7 @@ function Courses() {
   };
 
   const showEditCourseDialog = (course) => {
-    setDialogContent(<CourseForm
+    setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><CourseForm
       successCallback={(data) => {
         const index = courses.findIndex(item => item.id === course.id);
         courses[index] = data;
@@ -92,7 +109,7 @@ function Courses() {
       activeOrganizationId={organizationId}
       createMode={false}
       courseId={course.id}
-    />);
+    /></Suspense>);
     setDialogOpen(true);
   }
 
@@ -108,13 +125,13 @@ function Courses() {
       <Grid size={{xs: 12, md: 9}} py={2} pl={2}>
         <Box p={2} sx={{ border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.main', borderRadius: 1, minHeight: 300 }}>
         {userRole !== 'viewer' && <Button variant="contained" startIcon={<SchoolIcon sx={{ marginLeft: direction === 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
-          setDialogContent(<CourseForm
+          setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><CourseForm
             successCallback={handleCourseCreated}
             failureCallback={handleCourseCreationFailed}
             cancelCallback={() => setDialogOpen(false)}
             activeOrganizationId={organizationId}
             createMode={true}
-          />);
+          /></Suspense>);
           setDialogOpen(true);}}>{localeMessages["add_course"]}</Button>}
         <TableContainer component={Paper}>
           <Table sx={{ width: "100%" }} aria-label={localeMessages["courses"]}>
@@ -148,10 +165,10 @@ function Courses() {
                     <IconButton onClick={() => {
                       showEditCourseDialog(course);}}><EditIcon fontSize="small" /></IconButton>
                     <IconButton aria-label={`Delete ${course.title}`} onClick={() => {
-                      setDialogContent(<DeleteCoursePopup courseId={course.id} courseTitle={course.title} handleClose={() => setDialogOpen(false)} handleSuccess={() => {
+                      setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><DeleteCoursePopup courseId={course.id} courseTitle={course.title} handleClose={() => setDialogOpen(false)} handleSuccess={() => {
                         const index = courses.findIndex(item => item.id === course.id);
                         setCourses(courses.filter((_, i) => i !== index));
-                    }} />);
+                    }} /></Suspense>);
                     setDialogOpen(true);
                   }}><DeleteIcon fontSize="small" /></IconButton>
                   </TableCell>}
@@ -163,7 +180,7 @@ function Courses() {
         </Box>
       </Grid>
       <Grid display={{xs: "none", md: "block"}} size={{ md: 3 }} p={2}>
-        <Box p={2} sx={{ border: '1px solid', borderColor: 'border.main', borderRadius: 1, minHeight: 300, position: 'sticky', top: 80, backgroundColor: 'background.main' }}>
+        <Box p={2} sx={{ border: '1px solid', borderColor: 'border.main', borderRadius: 1, minHeight: 300, position: 'sticky', top: 85, backgroundColor: 'background.main' }}>
           <FilterForm onStatusChange={(params) => setQueryParameters(params)} />
         </Box>
       </Grid>

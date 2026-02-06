@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 
 
-import react from '@vitejs/plugin-react'
+import react from '@vitejs/plugin-react-swc';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -13,6 +13,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  css: { transformer: 'lightningcss' },
   appType: 'mpa',
   base: "/static/",
   server: {
@@ -38,8 +39,18 @@ export default defineConfig({
     outDir: resolve(__dirname, '../dist'),
     emptyOutDir: true,
     sourcemap: true,
+    optimizeDeps: {
+      include: [
+      'react',
+      'react-dom',
+      '@mui/material',
+      '@mui/icons-material',
+      '@mui/lab',
+      '@mui/x-charts',
+      '@emotion/react',
+      '@emotion/styled',
+    ], // Force pre-bundling
+      entries: ['./platform/courses/Courses.jsx', './platform/course/Course.jsx', './platform/organizations/Organizations.jsx', './platform/learners/Learners.jsx', './platform/settings_api_keys/SettingsApiKeys.jsx', './public/organization/Organization.jsx', './personalised/quiz_public/QuizPublic.jsx', './personalised/command_result/CommandResult.jsx'],
   },
-  optimizeDeps: {
-    include: ['esm-dep > cjs-dep'],
-  },
+  }
 })
