@@ -7,15 +7,17 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import DescriptionIcon from '@mui/icons-material/Description';
 import BallotIcon from '@mui/icons-material/Ballot';
 import { useState, useEffect } from 'react';
-import { Box, Grid, Button, Dialog, Typography } from '@mui/material'
+import { Box, Grid, Button, Dialog, LinearProgress, Typography } from '@mui/material'
 import { useTheme } from '@mui/material/styles';
-import LessonForm from './components/LessonForm.jsx';
-import QuizForm from './components/QuizForm.jsx';
 import ContentTable from './components/ContentTable.jsx';
-import DeleteContentForm from './components/DeleteContentForm.jsx';
 import { PieChart } from '@mui/x-charts/PieChart'
 import { BarChart } from '@mui/x-charts/BarChart';
 import { getCookie } from '../../src/utils.js';
+import { lazy, Suspense } from "react";
+
+const QuizForm = lazy(() => import("./components/QuizForm.jsx"));
+const LessonForm = lazy(() => import("./components/LessonForm.jsx"));
+const DeleteContentForm = lazy(() => import("./components/DeleteContentForm.jsx"));
 
 
 function Course() {
@@ -140,7 +142,7 @@ function Course() {
             if (content.type == 'lesson') {
             console.log("Opening lesson editor for content:", content);
             setDialogOpen(true);
-            setDialogContent(<LessonForm
+            setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><LessonForm
                             header={localeMessages["update_lesson"]}
                             initialTitle={content.lesson.title}
                             initialContent={content.lesson.content}
@@ -150,11 +152,11 @@ function Course() {
                             courseId={course_id}
                             lessonId={content.lesson.id}
                             initialWaitingPeriod={content.waiting_period}
-                            contentId={content.id} />);
+                            contentId={content.id} /></Suspense>);
             } else if (content.type == 'quiz') {
                 console.log("Opening quiz editor for content:", content);
                 setDialogOpen(true);
-                setDialogContent(<QuizForm
+                setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><QuizForm
                                 cancelCallback={() => setDialogOpen(false)}
                                 successCallback={resetDialog}
                                 courseId={course_id}
@@ -166,7 +168,7 @@ function Course() {
                                 initialWaitingPeriod={content.waiting_period}
                                 initialStrategy={content.quiz.selection_strategy}
                                 initialDeadlineDays={content.quiz.deadline_days}
-                                 />);
+                                 /></Suspense>);
             }
         }
         if (event.type === 'content_reordered') {
@@ -190,7 +192,7 @@ function Course() {
             .catch(error => console.error('Error reordering contents:', error));
         }
         if (event.type === 'delete_content') {
-            setDialogContent(<DeleteContentForm content={event.content} onDelete={deletContent} onCancel={() => {setDialogOpen(false); setDialogMaxWidth('lg');}} />);
+            setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><DeleteContentForm content={event.content} onDelete={deletContent} onCancel={() => {setDialogOpen(false); setDialogMaxWidth('lg');}} /></Suspense>);
             setDialogMaxWidth('sm');
             setDialogOpen(true);
         }
@@ -211,19 +213,19 @@ function Course() {
             <Grid size={{xs: 12, md: 9}} py={2} pl={2}>
                 <Box p={2} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, minHeight: 300 }}>
                     {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
-                        setDialogContent(<LessonForm
+                        setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><LessonForm
                             header={localeMessages["new_lesson"]}
                             initialContent={lessonCache}
                             onContentChange={setLessonCache}
                             cancelCallback={() => setDialogOpen(false)}
                             successCallback={resetDialog}
-                            courseId={course_id} />);
+                            courseId={course_id} /></Suspense>);
                         setDialogOpen(true);}}>{localeMessages["add_lesson"]}</Button>
                     <Button variant="contained" startIcon={<BallotIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2, marginLeft: 1, marginRight: 1 }} onClick={() => {
-                        setDialogContent(<QuizForm
+                        setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><QuizForm
                             cancelCallback={() => setDialogOpen(false)}
                             successCallback={resetDialog}
-                            courseId={course_id} />);
+                            courseId={course_id} /></Suspense>);
                         setDialogOpen(true);}}>{localeMessages["add_quiz"]}</Button></> }
                     <ContentTable courseId={course_id} loaded={contentLoaded} eventHandler={(event) => tableEventHandler(event)} />
                 </Box>

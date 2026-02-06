@@ -1,5 +1,19 @@
 import Base from "../../src/components/Base";
-import { Alert, Box, Button, Dialog, Grid, IconButton, Paper, TableContainer, Table, TableHead, TableRow,TableBody, TableCell, Typography } from "@mui/material";
+import Alert from "@mui/material/Alert"
+import Box from "@mui/material/Box"
+import Button from "@mui/material/Button"
+import Dialog from "@mui/material/Dialog"
+import Grid from "@mui/material/Grid"
+import IconButton from "@mui/material/IconButton"
+import LinearProgress from "@mui/material/LinearProgress"
+import Paper from "@mui/material/Paper"
+import TableContainer from "@mui/material/TableContainer"
+import Table from "@mui/material/Table"
+import TableHead from "@mui/material/TableHead"
+import TableRow from "@mui/material/TableRow"
+import TableBody from "@mui/material/TableBody"
+import TableCell from "@mui/material/TableCell"
+import Typography from "@mui/material/Typography"
 import AddIcon from '@mui/icons-material/Add';
 import PublicIcon from '@mui/icons-material/Public';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -7,7 +21,9 @@ import EditIcon from '@mui/icons-material/Edit';
 import { useState, useEffect, use } from "react";
 import { getCookie } from "../../src/utils";
 import render from "../../src/render";
-import OrganizationForm from "./components/OrganizationForm";
+import { lazy, Suspense } from "react";
+
+const OrganizationForm = lazy(() => import("./components/OrganizationForm.jsx"));
 
 function Organizations() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -93,12 +109,12 @@ function Organizations() {
       <Grid size={12} py={2} pl={2}>
         <Box p={2} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, minHeight: 300, width: { lg: '80%' } }}>
         <Button variant="contained" startIcon={<AddIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
-          setDialogContent(<OrganizationForm
+          setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><OrganizationForm
             successCallback={handleSuccessFormSubmission}
             failureCallback={handleFailedFormSubmission}
             cancelCallback={() => setDialogOpen(false)}
             createMode={true}
-          />);
+          /></Suspense>);
           setDialogOpen(true);
         }}>{localeMessages["add_organization"]}</Button>
 
@@ -117,7 +133,7 @@ function Organizations() {
                   <TableCell>
                     <IconButton onClick={() => goToUrl(org.public_url)}><PublicIcon fontSize="small"/></IconButton>
                     <IconButton onClick={() => {
-                      setDialogContent(<OrganizationForm
+                      setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><OrganizationForm
                         successCallback={handleSuccessFormSubmission}
                         failureCallback={handleFailedFormSubmission}
                         cancelCallback={() => setDialogOpen(false)}
@@ -126,7 +142,7 @@ function Organizations() {
                         initialDescription={org.description}
                         initialLogoUrl={org.logo}
                         organizationId={org.id}
-                      />);
+                      /></Suspense>);
                       setDialogOpen(true);
                     }}><EditIcon fontSize="small"/></IconButton>
                     <IconButton onClick={() => deleteConfirmationDialog(org)}><DeleteIcon fontSize="small" /></IconButton>
