@@ -36,7 +36,7 @@ dev = [
     "django (>=5.0); python_version < '3.12'",
     "django (>=6.0,<7.0); python_version >= '3.12'",
     "django-vite (>=3.1.0,<4.0.0)",
-    "ruff (>=0.14.4,<0.15.0)",
+    "ruff (>=0.15.0,<0.16.0)",
     "mypy (>=1.18.2,<2.0.0)",
     "pytest (>=9.0.1,<10.0.0)",
     "pytest-django (>=4.11.1,<5.0.0)",
