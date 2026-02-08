@@ -33,6 +33,32 @@ urlpatterns = [
         name="login",
     ),
     path(
+        "accounts/logout/",
+        auth_views.LogoutView.as_view(next_page="home"),
+        name="logout",
+    ),
+    path(
+        "accounts/password_reset/",
+        auth_views.PasswordResetView.as_view(
+            template_name="registration/password_reset_form.html",
+            email_template_name="registration/password_reset_email.html",
+            subject_template_name="registration/password_reset_subject.txt",
+        ),
+        name="password_reset",
+    ),
+    path(
+        "reset/<uidb64>/<token>/",
+        auth_views.PasswordResetConfirmView.as_view(),
+        name="password_reset_confirm",
+    ),
+    path(
+        "reset/done/",
+        auth_views.PasswordResetCompleteView.as_view(
+            template_name="registration/password_reset_complete.html"
+        ),
+        name="password_reset_complete",
+    ),
+    path(
         "email_learning/",
         include("django_email_learning.urls", namespace="django_email_learning"),
     ),

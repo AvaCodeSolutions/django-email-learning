@@ -4,7 +4,7 @@
 {% load i18n %}
     <script>
         let course_title = "{{ course.title|escapejs }}";
-        let course_id = "{{ course.id }}";
+        const course_id = "{{ course.id }}";
         localeMessages = {
             ...localeMessages,
             "actions": "{% translate 'Actions' %}",

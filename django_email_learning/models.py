@@ -106,6 +106,9 @@ class OrganizationUser(models.Model):
     def __str__(self) -> str:
         return f"{self.user.username} - {self.organization.name}"
 
+    class Meta:
+        unique_together = [["user", "organization"]]
+
 
 class EncryptionMixin(models.Model):
     salt = models.CharField(max_length=32, editable=False, default=uuid.uuid4().hex)

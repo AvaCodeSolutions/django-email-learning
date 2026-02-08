@@ -118,18 +118,22 @@ Organizations support role-based access control with three permission levels:
   - Cannot create or modify any content
   - Cannot access organization settings
 
-Assigning User Roles
-~~~~~~~~~~~~~~~~~~~~
-
-Organization users are currently managed through the Django admin panel:
-
-1. Access Django Admin at ``/admin/``
-2. Navigate to **Django Email Learning > Organization Users**
-3. Create a new Organization User entry
-4. Select the user, organization, and assign appropriate role
+Creating Organization Users
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To add a user to an organization:
+1. Open the organization details page by clicking its name in the organizations list.
+2. You will see the "Organization Users" list, and also a button to add new users.
+3. Click the "Add User" button to open the user creation form.
+4. Enter the user's email address and select their role (Admin, Editor, Viewer).
+5. Click "Add User" to create the user and send them an invitation email with the instruction to set their password.
 
 .. note::
-   Future versions will include a user-friendly interface for managing organization users directly from the platform.
+   If the email address already exists in the system, the existing user will be added to the organization with the specified role.
+
+.. important::
+   Django email learning uses Django Auth built-in URLs and views for password resets. Ensure that you have configured those URLs and views correctly in your Django project settings.
+   please check the official Django documentation for more details: https://docs.djangoproject.com/en/6.0/topics/auth/default/#module-django.contrib.auth.views
+
 
 Public Organization Pages
 -------------------------

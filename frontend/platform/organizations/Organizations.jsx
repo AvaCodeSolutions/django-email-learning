@@ -6,6 +6,7 @@ import Dialog from "@mui/material/Dialog"
 import Grid from "@mui/material/Grid"
 import IconButton from "@mui/material/IconButton"
 import LinearProgress from "@mui/material/LinearProgress"
+import Link from "@mui/material/Link"
 import Paper from "@mui/material/Paper"
 import TableContainer from "@mui/material/TableContainer"
 import Table from "@mui/material/Table"
@@ -24,6 +25,7 @@ import render from "../../src/render";
 import { lazy, Suspense } from "react";
 
 const OrganizationForm = lazy(() => import("./components/OrganizationForm.jsx"));
+const platformBaseUrl = localStorage.getItem('platformBaseUrl');
 
 function Organizations() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -129,7 +131,7 @@ function Organizations() {
             <TableBody>
               { organizations.map((org) => (
                 <TableRow key={org.id}>
-                  <TableCell dir={htmlTag.dir} sx={{ textAlign: htmlTag.dir === 'rtl' ? 'right' : 'left' }}>{org.name}</TableCell>
+                  <TableCell dir={htmlTag.dir} sx={{ textAlign: htmlTag.dir === 'rtl' ? 'right' : 'left' }}><Link color='primary.dark' href={`${platformBaseUrl}/organizations/${org.id}/`}>{org.name}</Link></TableCell>
                   <TableCell>
                     <IconButton onClick={() => goToUrl(org.public_url)}><PublicIcon fontSize="small"/></IconButton>
                     <IconButton onClick={() => {

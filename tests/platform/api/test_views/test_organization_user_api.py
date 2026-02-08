@@ -8,6 +8,13 @@ URL = reverse(
 )
 
 
+def get_single_user_url(organization_id, user_id):
+    return reverse(
+        "django_email_learning:api_platform:single_organization_user_view",
+        kwargs={"organization_id": organization_id, "user_id": user_id},
+    )
+
+
 def test_create_organization_user_as_superadmin(superadmin_client, second_user):
     response = superadmin_client.post(
         URL,
@@ -118,3 +125,46 @@ def test_create_organization_user_in_nonexistent_organization(
     )
     assert response.status_code == 404
     assert "error" in response.json()
+
+
+def test_delete_organization_user(superadmin_client, second_user):
+    # Create a new user and add them to the organization
+    response = superadmin_client.post(
+        URL,
+        data={
+            "user_id": second_user.id,
+            "role": "editor",
+        },
+        content_type="application/json",
+    )
+    assert response.status_code == 201
+
+    # Get list of all users in the organization to find the ID of the newly added user
+    response = superadmin_client.get(URL)
+    assert response.status_code == 200
+    data = response.json()
+    assert any(user["user_id"] == second_user.id for user in data["organization_users"])
+    organization_user = next(
+        user for user in data["organization_users"] if user["user_id"] == second_user.id
+    )
+
+    # Now delete the user from the organization
+    delete_url = get_single_user_url(1, organization_user["id"])
+    response = superadmin_client.delete(delete_url)
+    assert response.status_code == 200
+
+    # Verify the user is no longer in the organization
+    response = superadmin_client.get(URL)
+    assert response.status_code == 200
+    data = response.json()
+    assert not any(
+        user["user_id"] == second_user.id for user in data["organization_users"]
+    )
+
+
+@pytest.mark.parametrize("client", ["viewer", "editor"], indirect=["client"])
+def test_other_roles_cannot_delete_organization_user(superadmin_client, client):
+    org_users = superadmin_client.get(URL).json()["organization_users"]
+
+    delete_response = client.delete(get_single_user_url(1, org_users[0]["id"]))
+    assert delete_response.status_code == 403

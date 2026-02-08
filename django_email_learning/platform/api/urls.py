@@ -2,6 +2,7 @@ from django.urls import path
 from django.views.defaults import page_not_found
 from django_email_learning.platform.api.views import (
     ApiKeyView,
+    GetOrCreateUserByEmail,
     SingleApiKeyView,
     CourseView,
     EnrollmentView,
@@ -10,6 +11,7 @@ from django_email_learning.platform.api.views import (
     ImapConnectionView,
     OrganizationsView,
     OrganizationUsersView,
+    SingleOrganizationUserView,
     SingleOrganizationView,
     SingleCourseView,
     CourseContentView,
@@ -33,6 +35,11 @@ urlpatterns = [
         "organizations/<int:organization_id>/users/",
         OrganizationUsersView.as_view(),
         name="organization_users_view",
+    ),
+    path(
+        "organizations/<int:organization_id>/users/<int:user_id>/",
+        SingleOrganizationUserView.as_view(),
+        name="single_organization_user_view",
     ),
     path(
         "organizations/<int:organization_id>/imap-connections/",
@@ -96,6 +103,11 @@ urlpatterns = [
         "api_keys/<int:api_key_id>/",
         SingleApiKeyView.as_view(),
         name="single_api_key_view",
+    ),
+    path(
+        "users/get-or-create-by-email/",
+        GetOrCreateUserByEmail.as_view(),
+        name="get_or_create_user_by_email_view",
     ),
     path("session", UpdateSessionView.as_view(), name="update_session_view"),
     path("", page_not_found, name="root"),

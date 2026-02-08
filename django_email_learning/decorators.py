@@ -51,7 +51,7 @@ def accessible_for(roles: set[str]) -> typing.Callable:
     return decorator
 
 
-def is_an_organization_member() -> typing.Callable:
+def is_an_organization_member(only_admin: bool = False) -> typing.Callable:
     def decorator(view_func: typing.Callable) -> typing.Callable:
         @wraps(view_func)
         def _wrapped_view(request, *view_args, **view_kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
@@ -60,9 +60,12 @@ def is_an_organization_member() -> typing.Callable:
                 return JsonResponse({"error": "Unauthorized"}, status=401)
 
             if not user.is_superuser:
-                has_access = OrganizationUser.objects.filter(  # type: ignore[misc]
+                qs = OrganizationUser.objects.filter(  # type: ignore[misc]
                     user=user
-                ).exists()
+                )
+                if only_admin:
+                    qs = qs.filter(role="admin")
+                has_access = qs.exists()
                 if not has_access:
                     return JsonResponse({"error": "Forbidden"}, status=403)
             return view_func(request, *view_args, **view_kwargs)

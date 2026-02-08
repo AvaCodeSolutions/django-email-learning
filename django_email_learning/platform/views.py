@@ -43,6 +43,14 @@ class BasePlatformView(TemplateView):
                     and getattr(self.request.user, "has_platform_admin_role", False)
                 )
             ),
+            "is_organization_admin": (
+                self.request.user.is_superuser
+                or (
+                    OrganizationUser.objects.filter(
+                        user=self.request.user, role="admin"
+                    ).exists()  # type: ignore[misc]
+                )
+            ),
         }
 
     def get_or_set_active_organization(self) -> str:
@@ -89,13 +97,28 @@ class CourseView(BasePlatformView):
 
 
 @method_decorator(login_required, name="dispatch")
-@method_decorator(is_platform_admin(), name="dispatch")
+@method_decorator(is_an_organization_member(only_admin=True), name="dispatch")
 class Organizations(BasePlatformView):
     template_name = "platform/organizations.html"
 
     def get_context_data(self, **kwargs):  # type: ignore[no-untyped-def]
         context = super().get_context_data(**kwargs)
         context["page_title"] = _("Organizations")
+        return context
+
+
+@method_decorator(login_required, name="dispatch")
+@method_decorator(is_an_organization_member(only_admin=True), name="dispatch")
+class SingleOrganization(BasePlatformView):
+    template_name = "platform/organization.html"
+
+    def get_context_data(self, **kwargs):  # type: ignore[no-untyped-def]
+        context = super().get_context_data(**kwargs)
+        organization = Organization.objects.get(pk=self.kwargs["organization_id"])
+        context["organization"] = organization
+        context["page_title"] = _("Organization: %(name)s") % {
+            "name": organization.name
+        }
         return context
 
 

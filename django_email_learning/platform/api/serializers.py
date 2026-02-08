@@ -1,3 +1,4 @@
+import re
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -23,6 +24,7 @@ from django_email_learning.models import (
     QuizSelectionStrategy,
     Enrollment,
     EnrollmentStatus,
+    OrganizationUser,
 )
 from django_email_learning.services.jwt_service import generate_jwt
 import enum
@@ -50,6 +52,25 @@ class ApiKeyResponse(BaseModel):
                 else None,
             }
         )
+
+
+class GetOrCreateUserRequest(BaseModel):
+    email: str = Field(min_length=1, examples=["user@example.com"])
+    organization_id: int = Field(gt=0, examples=[1])
+
+    @field_validator("email")
+    def validate_email(cls, email: str) -> str:
+        email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+        if not re.match(email_regex, email):
+            raise ValueError("Invalid email format")
+        return email
+
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CreateCourseRequest(BaseModel):
@@ -273,8 +294,8 @@ class UpdateOrganizationRequest(BaseModel):
 
 class UserRole(enum.StrEnum):
     ADMIN = "admin"
-    Editor = "editor"
-    Viewer = "viewer"
+    EDITOR = "editor"
+    VIEWER = "viewer"
 
 
 class AddOrganizationUserRequest(BaseModel):
@@ -282,11 +303,26 @@ class AddOrganizationUserRequest(BaseModel):
     role: UserRole = Field(min_length=1, examples=[UserRole.ADMIN])
 
 
+class UpdateOrganizationUserRoleRequest(BaseModel):
+    role: UserRole = Field(min_length=1, examples=[UserRole.ADMIN])
+
+
 class OrganizationUserResponse(BaseModel):
+    id: int
     user_id: int
+    organization_id: int
+    email: str
     role: UserRole
 
-    model_config = ConfigDict(from_attributes=True)
+    @staticmethod
+    def from_django_model(org_user: OrganizationUser) -> "OrganizationUserResponse":
+        return OrganizationUserResponse(
+            id=org_user.id,
+            user_id=org_user.user.id,
+            organization_id=org_user.organization.id,
+            email=org_user.user.email,
+            role=UserRole(org_user.role),
+        )
 
 
 class UpdateSessionRequest(BaseModel):
