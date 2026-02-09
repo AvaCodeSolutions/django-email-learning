@@ -580,8 +580,10 @@ class GetOrCreateUserByEmail(View):
                 if form.is_valid():
                     form.save(
                         request=request,
-                        use_https=True,
-                        from_email=settings.DJANGO_EMAIL_LEARNING["FROM_EMAIL"],
+                        use_https=request.is_secure(),
+                        from_email=settings.DJANGO_EMAIL_LEARNING.get(
+                            "FROM_EMAIL", settings.DEFAULT_FROM_EMAIL
+                        ),
                         email_template_name="emails/password_reset.txt",
                         html_email_template_name="emails/password_reset.html",
                         extra_email_context={

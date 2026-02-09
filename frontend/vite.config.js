@@ -28,6 +28,7 @@ export default defineConfig({
         courses: resolve(__dirname, 'platform/courses/index.html'),
         course: resolve(__dirname, 'platform/course/index.html'),
         organizations: resolve(__dirname, 'platform/organizations/index.html'),
+        platform_organization: resolve(__dirname, 'platform/organization/index.html'),
         learners: resolve(__dirname, 'platform/learners/index.html'),
         settings_api_keys: resolve(__dirname, 'platform/settings_api_keys/index.html'),
         organization: resolve(__dirname, 'public/organization/index.html'),
