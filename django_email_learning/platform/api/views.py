@@ -10,6 +10,8 @@ from django.db import models, transaction
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.utils import timezone
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import PasswordResetForm
 from datetime import timedelta, datetime
 from pydantic import ValidationError
 from enum import StrEnum
@@ -34,6 +36,7 @@ from django_email_learning.decorators import (
     is_platform_admin,
 )
 from typing import Any
+import uuid
 import json
 import logging
 
@@ -417,6 +420,7 @@ class OrganizationsView(View):
 
 
 @method_decorator(accessible_for(roles={"admin"}), name="post")
+@method_decorator(accessible_for(roles={"admin"}), name="get")
 class OrganizationUsersView(View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
@@ -430,7 +434,7 @@ class OrganizationUsersView(View):
             )
             org_user.save()
             return JsonResponse(
-                serializers.OrganizationUserResponse.model_validate(
+                serializers.OrganizationUserResponse.from_django_model(
                     org_user
                 ).model_dump(),
                 status=201,
@@ -442,9 +446,64 @@ class OrganizationUsersView(View):
         except IntegrityError as e:
             return JsonResponse({"error": str(e)}, status=409)
 
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        organization_users = OrganizationUser.objects.filter(
+            organization_id=kwargs["organization_id"]
+        )
+        response_list = []
+        for org_user in organization_users:
+            response_list.append(
+                serializers.OrganizationUserResponse.from_django_model(
+                    org_user
+                ).model_dump()
+            )
+        return JsonResponse({"organization_users": response_list}, status=200)
+
+
+@method_decorator(accessible_for(roles={"admin"}), name="delete")
+class SingleOrganizationUserView(View):
+    def delete(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
+        try:
+            org_user = OrganizationUser.objects.get(id=kwargs["user_id"])
+            org_user.delete()
+            return JsonResponse(
+                {"message": "Organization user removed successfully"}, status=200
+            )
+        except OrganizationUser.DoesNotExist:
+            return JsonResponse({"error": "Organization user not found"}, status=404)
+        except ValidationError as e:
+            return JsonResponse({"error": e.json()}, status=400)
+        except IntegrityError as e:
+            return JsonResponse({"error": str(e)}, status=409)
+
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            payload = json.loads(request.body)
+            serializer = serializers.UpdateOrganizationUserRoleRequest.model_validate(
+                payload
+            )
+            org_user = OrganizationUser.objects.get(
+                organization_id=kwargs["organization_id"], user_id=kwargs["user_id"]
+            )
+            org_user.role = serializer.role
+            org_user.save()
+            return JsonResponse(
+                serializers.OrganizationUserResponse.from_django_model(
+                    org_user
+                ).model_dump(),
+                status=200,
+            )
+        except OrganizationUser.DoesNotExist:
+            return JsonResponse({"error": "Organization user not found"}, status=404)
+        except ValidationError as e:
+            return JsonResponse({"error": e.json()}, status=400)
+        except IntegrityError as e:
+            return JsonResponse({"error": str(e)}, status=409)
+
 
 @method_decorator(is_platform_admin(), name="post")
 @method_decorator(is_platform_admin(), name="delete")
+@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
 class SingleOrganizationView(View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
@@ -483,6 +542,61 @@ class SingleOrganizationView(View):
             )
         except Organization.DoesNotExist:
             return JsonResponse({"error": "Organization not found"}, status=404)
+        except ValidationError as e:
+            return JsonResponse({"error": e.json()}, status=400)
+        except IntegrityError as e:
+            return JsonResponse({"error": str(e)}, status=409)
+
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            organization = Organization.objects.get(id=kwargs["organization_id"])
+            return JsonResponse(
+                serializers.OrganizationResponse.from_django_model(
+                    organization,
+                    request.build_absolute_uri,
+                ).model_dump(),
+                status=200,
+            )
+        except Organization.DoesNotExist:
+            return JsonResponse({"error": "Organization not found"}, status=404)
+        except ValidationError as e:
+            return JsonResponse({"error": e.json()}, status=400)
+
+
+@method_decorator((is_an_organization_member(only_admin=True)), name="post")
+class GetOrCreateUserByEmail(View):
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        payload = json.loads(request.body)
+        serializer = serializers.GetOrCreateUserRequest.model_validate(payload)
+        try:
+            email = serializer.email
+            organization_id = serializer.organization_id
+            user = User.objects.filter(email=email).first()
+            if not user:
+                user = User.objects.create_user(
+                    username=email, email=email, password=uuid.uuid4().hex
+                )
+                form = PasswordResetForm(data={"email": email})
+                if form.is_valid():
+                    form.save(
+                        request=request,
+                        use_https=True,
+                        from_email=settings.DJANGO_EMAIL_LEARNING["FROM_EMAIL"],
+                        email_template_name="emails/password_reset.txt",
+                        html_email_template_name="emails/password_reset.html",
+                        extra_email_context={
+                            "organization": Organization.objects.get(
+                                id=organization_id
+                            ).name
+                        },
+                    )
+                else:
+                    raise ValueError(
+                        "Failed to send password reset email to the new user."
+                    )
+            return JsonResponse(
+                serializers.UserResponse.model_validate(user).model_dump(), status=200
+            )
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
         except IntegrityError as e:

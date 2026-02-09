@@ -13,6 +13,7 @@
         localStorage.setItem('platformBaseUrl', '{{ platform_base_url }}');
         localStorage.setItem('userRole', '{{ user_role }}');
         localStorage.setItem('isPlatformAdmin', {{ is_platform_admin|yesno:"true,false" }});
+        localStorage.setItem('isOrganizationAdmin', {{ is_organization_admin|yesno:"true,false" }});
         const direction = "{% if IS_RTL %}rtl{% else %}ltr{% endif %}";
         let localeMessages = {
             "organizations": "{% translate 'Organizations' %}",

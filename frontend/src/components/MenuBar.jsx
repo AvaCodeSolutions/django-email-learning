@@ -126,7 +126,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
 
     let pages = []
 
-    if (localStorage.getItem('isPlatformAdmin') == 'true') {
+    if (localStorage.getItem('isOrganizationAdmin') == 'true') {
         pages.push(
             { name: localeMessages["organizations"], icon: <Diversity3Icon fontSize="small" />, href:  platformBaseUrl + '/organizations/'},
         );
