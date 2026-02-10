@@ -2,7 +2,6 @@
 
 import django.core.validators
 import django.db.models.deletion
-import django_email_learning.models
 from django.conf import settings
 from django.db import migrations, models
 
@@ -45,6 +44,5 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            bases=(django_email_learning.models.EncryptionMixin, models.Model),
         ),
     ]
