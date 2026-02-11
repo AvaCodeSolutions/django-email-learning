@@ -4,7 +4,7 @@ import RequiredTextField from '../../../src/components/RequiredTextField.jsx';
 import ContentEditor from '../../../src/components/ContentEditor.jsx';
 import { getCookie } from '../../../src/utils.js';
 
-function LessonForm({ header, initialTitle, initialContent, onContentChange, cancelCallback, successCallback, courseId, lessonId, initialWaitingPeriod, contentId }) {
+function LessonForm({ header, initialTitle, initialContent, cancelCallback, successCallback, courseId, lessonId, initialWaitingPeriod, contentId }) {
     const [title, setTitle] = useState(initialTitle || "");
     const [content, setContent] = useState(initialContent || "");
     const [waitingPeriod, setWaitingPeriod] = useState(initialWaitingPeriod ? initialWaitingPeriod.period : 1);
@@ -86,11 +86,6 @@ function LessonForm({ header, initialTitle, initialContent, onContentChange, can
             console.error('Error updating lesson:', error);
         });
     }
-
-
-    useEffect(() => {
-        onContentChange(content);
-    }, [content]);
 
     const handleContentChange = (newContent) => {
         setContent(newContent);
