@@ -62,6 +62,17 @@
                     border: 1px solid #e0e0e0;
                 }
             }
+            blockquote {
+                {% if IS_RTL %}
+                    border-right: 4px solid #e0e0e0;
+                    border-left: none;
+                {% else %}
+                    border-left: 4px solid #e0e0e0;
+                    border-right: none;
+                {% endif %}
+                margin: 0px !important;
+                padding: 0 16px;
+            }
             {% block extra_styles %}{% endblock %}
         </style>
     </head>
