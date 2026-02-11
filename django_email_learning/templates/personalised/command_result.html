@@ -4,6 +4,11 @@
 {% block head_script %}
     <script>
         const success_message = "{{ success_message|escapejs }}";
+        const confirmation_message = "{{ confirmation_message|escapejs }}";
+        const confirm_url = "{{ confirm_url|escapejs }}";
+        const localeMessages = {
+            "Confirm": "{% translate 'Confirm' %}",
+        }
     </script>
     {% vite_asset 'personalised/command_result/CommandResult.jsx' %}
 {% endblock %}

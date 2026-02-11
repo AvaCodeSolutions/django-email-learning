@@ -46,7 +46,16 @@ class DeliverContentsJob:
                 job_execution.finished_at = timezone.now()
                 job_execution.save()
             else:
-                self.process_delivery(delivery_schedule)
+                try:
+                    self.process_delivery(delivery_schedule)
+                except Exception as e:
+                    # Unhandled exception during delivery processing should not crash the job.
+                    # We log the error and mark the delivery as blocked to prevent further attempts until manual intervention.
+                    delivery_schedule.status = DeliveryStatus.BLOCKED
+                    delivery_schedule.save()
+                    logger.exception(
+                        f"Error processing delivery schedule: {str(e)}. Continuing with next task."
+                    )
 
     def get_delivery_queue(self) -> DeliveryQueueProtocol:
         try:

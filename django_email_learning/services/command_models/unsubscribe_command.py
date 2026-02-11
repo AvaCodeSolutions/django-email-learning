@@ -47,7 +47,7 @@ class UnsubscribeCommand(AbstractCommand):
             return
 
         enrollments = Enrollment.objects.filter(learner=learner, course=course).exclude(
-            status=EnrollmentStatus.DEACTIVATED
+            status__in=[EnrollmentStatus.DEACTIVATED, EnrollmentStatus.COMPLETED]
         )
         if not enrollments.exists():
             self.logger.warning(
