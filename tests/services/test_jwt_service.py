@@ -36,7 +36,9 @@ def test_jwt_service_invalid_token():
     )
     # Create an invalid token by altering the signature
     invalid_token = jwt.encode(
-        payload_copy, "INVALID_SECRET", algorithm=jwt_service.ALGORITHM
+        payload_copy,
+        "INVALID_LONG_SECRET_KEY_FOR_TESTING_PURPOSES_ONLY",
+        algorithm=jwt_service.ALGORITHM,
     )
 
     with pytest.raises(jwt_service.InvalidTokenException):

@@ -184,6 +184,16 @@ class UnsubscribeView(View, ErrrorLoggingMixin):
         decoded_token = self.get_decoded_token(request)
         if isinstance(decoded_token, HttpResponse):
             return decoded_token  # Return error response if token is invalid
+        if request.GET.get("confirm") != "true":
+            return self.render_to_response(
+                context={
+                    "page_title": _("Confirm Unsubscription"),
+                    "confirmation_message": _(
+                        "Are you sure you want to unsubscribe from our mailing list?"
+                    ),
+                    "confirm_url": f"{request.path}?token={request.GET.get('token')}&confirm=true",
+                }
+            )
         command = UnsubscribeCommand(
             email=decoded_token["email"],
             course_slug=decoded_token["course_slug"],

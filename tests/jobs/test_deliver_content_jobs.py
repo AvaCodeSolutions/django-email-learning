@@ -179,3 +179,34 @@ def test_deliver_contents_job_reschedules_failed_delivery_and_increments_attempt
     assert delivery_schedule.status == DeliveryStatus.SCHEDULED
     assert delivery_schedule.failed_attempts == 2
     assert delivery_schedule.time > original_time
+
+
+def test_unhandled_exception_during_delivery_processing(
+    db, delivery_queue_mock, enrollment, course_lesson_content
+):
+    # Create mock DeliverySchedule object
+    enrollment.status = EnrollmentStatus.ACTIVE
+    enrollment.save()
+
+    delivery = ContentDelivery.objects.create(
+        enrollment=enrollment, course_content=course_lesson_content
+    )
+
+    delivery_schedule = DeliverySchedule.objects.create(delivery=delivery)
+
+    # Add task to the mock delivery queue
+    delivery_queue_mock.add_task(delivery_schedule)
+
+    job = DeliverContentsJob()
+
+    # Patch the process_delivery method to always raise an exception
+    with patch.object(
+        DeliverContentsJob,
+        "process_delivery",
+        side_effect=Exception("Simulated processing failure"),
+    ):
+        job.run()
+
+    # After running the job, the delivery schedule should be in BLOCKED status due to unhandled exception
+    delivery_schedule.refresh_from_db()
+    assert delivery_schedule.status == DeliveryStatus.BLOCKED
