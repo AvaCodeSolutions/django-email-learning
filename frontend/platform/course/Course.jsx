@@ -24,7 +24,6 @@ function Course() {
     const platformBaseUrl = localStorage.getItem('platformBaseUrl');
     const [dialogOpen, setDialogOpen] = useState(false)
     const [dialogContent, setDialogContent] = useState(null)
-    const [lessonCache, setLessonCache] = useState("")
     const [contentLoaded, setContentLoaded] = useState(false)
     const [dialogMaxWidth, setDialogMaxWidth] = useState('lg');
     const [enrollmentsCount, setEnrollmentsCount] = useState(null);
@@ -146,8 +145,7 @@ function Course() {
                             header={localeMessages["update_lesson"]}
                             initialTitle={content.lesson.title}
                             initialContent={content.lesson.content}
-                            onContentChange={setLessonCache}
-                            cancelCallback={() => {setLessonCache(""); setDialogOpen(false);}}
+                            cancelCallback={() => {setDialogOpen(false);}}
                             successCallback={resetDialog}
                             courseId={course_id}
                             lessonId={content.lesson.id}
@@ -215,8 +213,6 @@ function Course() {
                     {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
                         setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><LessonForm
                             header={localeMessages["new_lesson"]}
-                            initialContent={lessonCache}
-                            onContentChange={setLessonCache}
                             cancelCallback={() => setDialogOpen(false)}
                             successCallback={resetDialog}
                             courseId={course_id} /></Suspense>);
