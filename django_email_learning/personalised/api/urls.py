@@ -1,8 +1,16 @@
 from django.urls import path
-from django_email_learning.personalised.api.views import QuizSubmissionView
+from django_email_learning.personalised.api.views import (
+    QuizSubmissionView,
+    SubmitCertificateFormView,
+)
 
 app_name = "django_email_learning"
 
 urlpatterns = [
     path("quiz/", QuizSubmissionView.as_view(), name="quiz_submission"),
+    path(
+        "certificate-form/",
+        SubmitCertificateFormView.as_view(),
+        name="submit_certificate_form",
+    ),
 ]

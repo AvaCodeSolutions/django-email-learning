@@ -8,6 +8,8 @@ from django_email_learning.services import jwt_service
 from django.utils.translation import gettext as _
 from django_email_learning.models import (
     ContentDelivery,
+    Enrollment,
+    Certificate,
     QuizSubmission,
     Quiz,
     EnrollmentStatus,
@@ -175,3 +177,45 @@ class QuizSubmissionView(View):
         score = max(0, score)
         passed = score >= quiz.required_score
         return score, passed
+
+
+class SubmitCertificateFormView(View):
+    def post(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
+        payload = json.loads(request.body)
+        token = payload.get("token")
+        name = payload.get("name")
+
+        if not name:
+            return JsonResponse({"error": _("Name is required")}, status=400)
+
+        try:
+            decoded = jwt_service.decode_jwt(token=token)
+        except jwt_service.InvalidTokenException as jde:
+            return JsonResponse({"error": str(jde)}, status=400)
+        except jwt_service.ExpiredTokenException as ete:
+            return JsonResponse({"error": str(ete)}, status=410)
+
+        enrollment_id = decoded["enrollment_id"]
+
+        try:
+            enrollment = Enrollment.objects.get(id=enrollment_id)
+        except Enrollment.DoesNotExist:
+            return JsonResponse(
+                {"error": "The enrollment associated with this token does not exist."},
+                status=500,
+            )
+
+        if enrollment.status != EnrollmentStatus.COMPLETED:
+            return JsonResponse(
+                {
+                    "error": "The enrollment is not completed. Certificate cannot be issued."
+                },
+                status=400,
+            )
+        Certificate.objects.update_or_create(
+            enrollment=enrollment, defaults={"name_on_certificate": name}
+        )
+
+        return JsonResponse(
+            {"message": _("Certificate name submitted successfully.")}, status=200
+        )

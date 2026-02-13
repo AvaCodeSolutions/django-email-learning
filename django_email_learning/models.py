@@ -15,6 +15,9 @@ from django.core.validators import (
     MinValueValidator,
     MinLengthValidator,
 )
+from django_email_learning.services.email_sender_service import EmailSenderService
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 from django.core.exceptions import ImproperlyConfigured
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -22,10 +25,13 @@ from cryptography.hazmat.primitives import hashes
 from django.forms import ValidationError
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from datetime import timedelta
 from django_email_learning.services import jwt_service
+
 from PIL import Image
 from typing import Optional
+from datetime import datetime
 
 
 logger = logging.getLogger(__name__)
@@ -522,16 +528,58 @@ class Enrollment(models.Model):
         ]
 
     def graduate(self) -> None:
-        if self.status != EnrollmentStatus.ACTIVE:
-            raise ValidationError("Only active enrollments can be marked as completed.")
-        self.status = EnrollmentStatus.COMPLETED
-        self.final_state_at = timezone.now()
-        logger.info(
-            f"Learner ID {self.learner.id} has completed the course {self.course.title}."
+        with transaction.atomic():
+            if self.status != EnrollmentStatus.ACTIVE:
+                raise ValidationError(
+                    "Only active enrollments can be marked as completed."
+                )
+            self.status = EnrollmentStatus.COMPLETED
+            self.final_state_at = timezone.now()
+            logger.info(
+                f"Learner ID {self.learner.id} has completed the course {self.course.title}."
+            )
+            self.save()
+            self.send_certificate_form()
+
+    def send_certificate_form(self) -> None:
+        if self.status != EnrollmentStatus.COMPLETED:
+            raise ValidationError(
+                "Certificate form can only be sent for completed enrollments."
+            )
+        token_payload = {
+            "enrollment_id": self.id,
+        }
+        logging.info(
+            f"Executing SendCertificateFormCommand for enrollment ID {self.id}"
+        )
+        token = jwt_service.generate_jwt(token_payload, exp=datetime.max)
+        certificate_path = reverse(
+            "django_email_learning:personalised:certificate_form"
+        )
+        link = f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{certificate_path}?token={token}"
+
+        subject = _("Finalize your Certificate")
+
+        context = {
+            "course_title": self.course.title,
+            "organization_name": self.course.organization.name,
+            "link": link,
+        }
+        payload = render_to_string("emails/certificate_form.txt", context)
+
+        email_service = EmailSenderService()
+        email_message = EmailMultiAlternatives(
+            subject=subject,
+            body=payload,
+            from_email=email_service.from_email,
+            to=[self.learner.email],
+        )
+        email_message.attach_alternative(
+            render_to_string("emails/certificate_form.html", context), "text/html"
         )
 
-        # TODO: send certificate email here
-        self.save()
+        email_service.send(email_message)
+        logging.info(f"Certificate form email sent for enrollment ID {self.id}")
 
     def fail(self) -> None:
         if self.status != EnrollmentStatus.ACTIVE:
@@ -563,6 +611,31 @@ class Enrollment(models.Model):
             scheduled.generate_link()
         else:
             raise ValidationError("No published content available to schedule.")
+
+
+class Certificate(models.Model):
+    enrollment = models.OneToOneField(
+        Enrollment, on_delete=models.CASCADE, related_name="certificate"
+    )
+    issued_at = models.DateTimeField(auto_now_add=True)
+    name_on_certificate = models.CharField(max_length=200)
+    random_suffix = models.IntegerField()
+
+    @property
+    def certificate_number(self) -> str:
+        return f"{self.enrollment.course.id}-{self.enrollment.id}-{self.id}-{self.random_suffix}"
+
+    def save(  # type: ignore[no-untyped-def]
+        self, *, force_insert=False, force_update=False, using=None, update_fields=None
+    ):
+        if not self.random_suffix:
+            self.random_suffix = random.randint(100000, 999999)
+        return super().save(
+            force_insert=force_insert,
+            force_update=force_update,
+            using=using,
+            update_fields=update_fields,
+        )
 
 
 class ContentDelivery(models.Model):
@@ -664,6 +737,7 @@ class DeliverySchedule(models.Model):
         db_index=True,
     )
     failed_attempts = models.IntegerField(default=0)
+    delivered_at = models.DateTimeField(null=True, blank=True)
 
     def generate_link(self) -> str:
         payload = {
@@ -694,6 +768,11 @@ class DeliverySchedule(models.Model):
 
     def __str__(self) -> str:
         return f"Delivery for {self.delivery.course_content.title} to {self.delivery.enrollment.learner.email} at {self.time} - Status: {self.status}"
+
+    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        if self.status == DeliveryStatus.DELIVERED and not self.delivered_at:
+            self.delivered_at = timezone.now()
+        super().save(*args, **kwargs)
 
 
 class QuizSubmission(models.Model):

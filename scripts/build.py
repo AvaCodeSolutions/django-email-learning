@@ -13,6 +13,8 @@ TEMPLATES = [
     ["platform", "settings_api_keys"],
     ["personalised", "quiz_public"],
     ["personalised", "command_result"],
+    ["personalised", "certificate"],
+    ["personalised", "certificate_form"],
     ["public", "organization"],
 ]
 

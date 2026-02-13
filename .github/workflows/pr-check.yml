@@ -39,11 +39,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.11, 3.12, 3.13, 3.14]
+        python-version: [3.12, 3.13, 3.14]
         django-versions: [5.0, 6.0]
-        exclude:
-          - python-version: '3.11'
-            django-versions: 6.0
     steps:
       - name: Checkout code
         uses: actions/checkout@v6

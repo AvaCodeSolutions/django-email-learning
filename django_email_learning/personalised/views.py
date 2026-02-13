@@ -3,7 +3,7 @@ from django.views.generic.base import TemplateResponseMixin
 from django.http import HttpResponse
 from django.utils.translation import gettext as _
 from django.urls import reverse
-from django_email_learning.models import ContentDelivery, EnrollmentStatus
+from django_email_learning.models import ContentDelivery, EnrollmentStatus, Certificate
 from django_email_learning.services import jwt_service
 from django_email_learning.personalised.serializers import PublicQuizSerializer
 from django_email_learning.services.command_models.verify_enrollment_command import (
@@ -12,8 +12,11 @@ from django_email_learning.services.command_models.verify_enrollment_command imp
 from django_email_learning.services.command_models.unsubscribe_command import (
     UnsubscribeCommand,
 )
+from django.core.files.storage import default_storage
+import qrcode
 import uuid
 import logging
+import io
 
 
 class ErrrorLoggingMixin(TemplateResponseMixin):
@@ -145,6 +148,26 @@ class QuizPublicView(View, ErrrorLoggingMixin):
             )
 
 
+class CertificateFormView(View, ErrrorLoggingMixin):
+    template_name = "personalised/certificate_form.html"
+
+    def get(self, request, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
+        decoded_token = self.get_decoded_token(request)
+        if isinstance(decoded_token, HttpResponse):
+            return decoded_token  # Return error response if token is invalid
+
+        return self.render_to_response(
+            context={
+                "enrollment_id": decoded_token["enrollment_id"],
+                "csrf_token": request.META.get("CSRF_COOKIE", ""),
+                "token": request.GET.get("token", ""),
+                "api_endpoint": reverse(
+                    "django_email_learning:api_personalised:submit_certificate_form"
+                ),
+            }
+        )
+
+
 class VerifyEnrollmentView(View, ErrrorLoggingMixin):
     template_name = "personalised/command_result.html"
 
@@ -213,5 +236,76 @@ class UnsubscribeView(View, ErrrorLoggingMixin):
                 "success_message": _(
                     "You have been successfully unsubscribed from our mailing list."
                 ),
+            }
+        )
+
+
+class CertificateView(View, ErrrorLoggingMixin):
+    template_name = "personalised/certificate.html"
+
+    def get(self, request, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
+        certificate_number = kwargs.get("certificate_number")
+        if not certificate_number:
+            return self.errr_response(
+                message=_("Certificate number is required."),
+                exception=ValueError("Certificate number is required"),
+                status_code=400,
+                title=_("Invalid Certificate"),
+            )
+        id_parts = certificate_number.split("-")
+        if len(id_parts) != 4:
+            return self.errr_response(
+                message=_("Invalid certificate number format."),
+                exception=ValueError("Invalid certificate number format"),
+                status_code=400,
+                title=_("Invalid Certificate"),
+            )
+        certificate_id = id_parts[2]
+        random_suffix = id_parts[3]
+        try:
+            certificate = Certificate.objects.get(
+                id=certificate_id, random_suffix=random_suffix
+            )
+        except Certificate.DoesNotExist:
+            return self.errr_response(
+                message=_("Certificate not found."),
+                exception=ValueError("Certificate not found"),
+                status_code=404,
+                title=_("Certificate Not Found"),
+            )
+
+        path = reverse(
+            "django_email_learning:personalised:certificate",
+            kwargs={"certificate_number": certificate_number},
+        )
+        full_url = request.build_absolute_uri(path)
+
+        qr = qrcode.QRCode(version=1, box_size=10, border=4)
+        qr.add_data(full_url)
+        qr.make(fit=True)
+
+        qrcode_img = qr.make_image(
+            fill_color="black", back_color="transparent"
+        ).convert("RGBA")  # type: ignore[union-attr]
+
+        img_byte_arr = io.BytesIO()
+        qrcode_img.save(img_byte_arr, format="PNG")
+
+        media_path = f"certificates/{certificate.enrollment.course.organization.id}/{certificate_number}.png"
+        default_storage.save(media_path, img_byte_arr)
+        absolute_media_url = default_storage.url(media_path)
+
+        return self.render_to_response(
+            context={
+                "page_title": f"{_("Certificate of Completion")} | {certificate.enrollment.course.title} | {certificate.name_on_certificate}",
+                "name": certificate.name_on_certificate.upper(),
+                "course_title": certificate.enrollment.course.title,
+                "issue_date": certificate.issued_at.strftime("%B %d, %Y"),
+                "certificate_number": certificate_number,
+                "organization_name": certificate.enrollment.course.organization.name,
+                "logo_url": certificate.enrollment.course.organization.logo.url
+                if certificate.enrollment.course.organization.logo
+                else "",
+                "qrcode_url": absolute_media_url,
             }
         )

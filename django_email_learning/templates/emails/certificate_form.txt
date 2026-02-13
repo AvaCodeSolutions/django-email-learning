@@ -1,0 +1,13 @@
+{% load i18n %}
+{{ quiz.title }}
+
+{% translate "Dear Learner," %}
+
+{% blocktranslate with course_title=course_title %}Congratulations on successfully completing {{ course_title}}!{% endblocktranslate %}
+
+{% translate "To finalize your official Certificate of Completion, we need to verify how you would like your name to appear. Please follow the link below to submit your preferred name:" %}
+
+{{ link }}
+
+{% translate "Best regards," %}
+{% blocktranslate with organization_name=organization_name %}{{ organization_name }} Team {% endblocktranslate %}
