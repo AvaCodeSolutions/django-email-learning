@@ -30,9 +30,11 @@ import { Code as CodeIcon } from '@mui/icons-material';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import ImageIcon from '@mui/icons-material/Image';
+import { useAppContext } from '../render'
 
 
 function ContentEditor({ initialContent, contentUpdateCallback, disabled = false }) {
+    const { direction } = useAppContext();
     const editor = useEditor({
         extensions: [
             Document,

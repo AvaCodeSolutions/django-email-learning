@@ -5,20 +5,25 @@
 <!doctype html>
 <html lang="en" dir="{% block direction %}{% if IS_RTL %}rtl{% else %}ltr{% endif %}{% endblock %}">
   <head>
-    <script>
-      const error_message = "{{ error_message }}";
-      const ref = "{{ ref }}";
-      const direction = "{% if IS_RTL %}rtl{% else %}ltr{% endif %}";
-    </script>
     {% vite_hmr_client %}
     {% vite_react_refresh %}
+    {% get_current_language_bidi as IS_RTL %}
+    <script id="app-context" type="application/json">
+      {
+        "direction": "{% if IS_RTL %}rtl{% else %}ltr{% endif %}",
+        "ref": "{{ ref }}",
+        "errorMessage": "{{ error_message }}", {% block extra_context %}{% endblock %}
+        "localeMessages": {
+          {% block extra_locale_messages %}{% endblock %}
+        }
+      }
+    </script>
     {% block head_script %}{% endblock %}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="{% static 'logo.png' %}" />
     <title>{% block title %}{{ page_title }}{% endblock %}</title>
   </head>
-  {% get_current_language_bidi as IS_RTL %}
   <body dir="{% block directionrtl %}{% if IS_RTL %}rtl{% else %}ltr{% endif %}{% endblock %}">
     <div id="root">
     </div>

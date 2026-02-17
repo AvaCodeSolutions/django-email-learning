@@ -5,15 +5,16 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import render from "../../src/render";
+import render, {useAppContext} from "../../src/render";
 import { useState, useEffect } from "react";
 import { getCookie } from "../../src/utils.js";
 
 
-const apiBaseUrl = localStorage.getItem('apiBaseUrl');
-
 
 const DeleteConfirmationDialog = ({apiKey, onCancel, onSuccess}) => {
+
+    const { localeMessages, apiBaseUrl } = useAppContext();
+
     return (
         <Box p={2}>
             <Typography variant="h6" gutterBottom>
@@ -56,8 +57,7 @@ const ApiKeys = () => {
     const [apiKeyList, setApiKeyList] = useState([]);
     const [loaded, setLoaded] = useState(false);
 
-
-
+    const { localeMessages, apiBaseUrl, direction } = useAppContext();
 
     useEffect(() => {
         // Fetch API keys from the backend

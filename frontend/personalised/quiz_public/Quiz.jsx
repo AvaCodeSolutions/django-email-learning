@@ -1,4 +1,4 @@
-import render from '../../src/render.jsx';
+import render, { useAppContext } from '../../src/render.jsx';
 import { useState } from 'react';
 import Layout from '../../public/components/Layout.jsx';
 import { Alert, Box, Button, Checkbox, FormControlLabel, GlobalStyles, Typography, Dialog } from '@mui/material';
@@ -7,7 +7,7 @@ import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDiss
 
 
 const Quiz = () => {
-
+    const { localeMessages, token, csrfToken, apiEndpoint, errorMessage, quiz } = useAppContext();
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedAnswers, setSelectedAnswers] = useState(quiz? quiz.questions.map(q => ({"id": q.id, "answers": []})) : []);
     const [warning, setWarning] = useState("");
@@ -15,6 +15,7 @@ const Quiz = () => {
     const [isPassed, setIsPassed] = useState(null);
     const [message, setMessage] = useState("");
     const [score, setScore] = useState(null);
+
 
     const showSubmitDialog = () => {
         setDialogOpen(true);
@@ -55,7 +56,7 @@ const Quiz = () => {
     return <Layout>
     <Box textAlign="left" sx={{ maxWidth: 800, margin: '0 auto', backgroundColor: "background.light", height: 80 }}></Box>
     <Box sx={{ maxWidth: 800, margin: '0 auto', padding: 4, border: '1px solid #ccc', borderRadius: 2, backgroundColor: "background.paper" }} component="form" method="POST" action="">
-        { !error_message ? <Box>
+        { !errorMessage ? <Box>
         <Box mb={4}>
         <Typography variant="h4" mb={1}>{quiz.title}</Typography>
         </Box>
@@ -90,7 +91,7 @@ const Quiz = () => {
             {isPassed !== null && (isPassed ? <Alert severity="success"><Typography variant="h6"><CelebrationIcon /> {message} {localeMessages['your_score']}: {score}%.</Typography></Alert> :
             <Alert severity="error"><Typography variant="h6"><SentimentVeryDissatisfiedIcon /> {message} {localeMessages['your_score']}: {score}%.</Typography></Alert>)}
         </Box>}
-        </Box> : <Alert severity="error"><Typography variant="h6">{localeMessages['error_loading_quiz']}: {error_message} {ref && `(Ref: ${ref})`}</Typography></Alert>}
+        </Box> : <Alert severity="error"><Typography variant="h6">{localeMessages['error_loading_quiz']}: {errorMessage} {ref && `(Ref: ${ref})`}</Typography></Alert>}
         <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
             <Box p={4}>
                 <Typography variant="h6" mb={2}>{localeMessages['ready_to_submit']}</Typography>

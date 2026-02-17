@@ -3,15 +3,15 @@ import { styled } from '@mui/material/styles';
 import Button from '@mui/material/Button';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { getCookie } from '../utils.js';
+import { useAppContext } from '../render.jsx';
 
 
 const ImageUpload = ({ onUploadSuccess, onUploadError, initialUrl }) => {
     console.log("Rendering ImageUpload component with initialUrl:", initialUrl);
     const [imageFile, setImageFile] = useState(null);
     const [imageUrl, setImageUrl] = useState(initialUrl);
+    const { localeMessages, direction, apiBaseUrl } = useAppContext();
 
-
-    const apiBaseUrl = localStorage.getItem('apiBaseUrl');
 
     useEffect(() => {
         setImageUrl(initialUrl);

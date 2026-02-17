@@ -3,6 +3,7 @@ import render from '../../src/render.jsx';
 import Layout from '../components/Layout.jsx';
 import EnrollmentForm from '../components/EnrollmentForm.jsx';
 import { Alert, Box, Button, CardMedia, Dialog, Grid, Typography } from '@mui/material';
+import { useAppContext } from '../../src/render.jsx';
 
 
 function Organization() {
@@ -10,6 +11,8 @@ function Organization() {
     const [displayModal, setDisplayModal] = useState(false);
     const [modalContent, setModalContent] = useState(null);
     const [courses, setCourses] = useState([]);
+
+    const { organization, enrollApiUrl, localeMessages } = useAppContext();
 
     useEffect(() => {
         for (let course of organization.courses) {

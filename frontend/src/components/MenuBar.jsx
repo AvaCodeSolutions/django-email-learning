@@ -16,9 +16,8 @@ import logoVerticalDarkUrl from '../assets/logo-v-dark.png'
 import { getCookie } from '../utils.js';
 import { useTheme, useMediaQuery } from "@mui/material";
 import ThemeSwitcher from './ThemeSwitcher.jsx';
+import { useAppContext } from '../render.jsx';
 
-const apiBaseUrl = localStorage.getItem('apiBaseUrl');
-const platformBaseUrl = localStorage.getItem('platformBaseUrl');
 
 function OrganizationsSelect({organizations, activeOrganizationId, changeOrganizationCallback, sx}) {
 
@@ -55,6 +54,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     const [organizations, setOrganizations] = useState([])
     const [deliverContentsJobStatus, setDeliverContentsJobStatus] = useState(null)
     const [chip, setChip] = useState(null)
+    const { localeMessages, isPlatformAdmin, isOrganizationAdmin, direction, apiBaseUrl, platformBaseUrl } = useAppContext();
 
     const theme = useTheme();
     const isMdUpScreen = useMediaQuery(theme.breakpoints.up('md'));
@@ -126,7 +126,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
 
     let pages = []
 
-    if (localStorage.getItem('isOrganizationAdmin') == 'true') {
+    if (isOrganizationAdmin) {
         pages.push(
             { name: localeMessages["organizations"], icon: <Diversity3Icon fontSize="small" />, href:  platformBaseUrl + '/organizations/'},
         );
@@ -135,7 +135,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     pages.push({ name: localeMessages["course_management"], icon: <SchoolIcon fontSize="small" />, href: platformBaseUrl + '/courses/' });
     pages.push({ name: localeMessages["learners"], icon: <PeopleIcon fontSize="small" />, href: platformBaseUrl + '/learners/' });
     // pages.push({ name: 'Analytics', icon: <BarChartIcon fontSize="small" />, href: platformBaseUrl + '/analytics/' });
-    if (localStorage.getItem('isPlatformAdmin') == 'true') {
+    if (isPlatformAdmin) {
         pages.push({ name: localeMessages["api_keys"], icon: <VpnKeyIcon fontSize="small" />, href: platformBaseUrl + '/settings/api_keys' });
     }
 

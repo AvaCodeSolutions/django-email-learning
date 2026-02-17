@@ -1,6 +1,8 @@
 import { Box, Typography, RadioGroup, FormControlLabel, Radio } from '@mui/material';
+import { useAppContext } from '../../../src/render.jsx';
 
 const FilterForm = ({ onStatusChange }) => {
+  const { localeMessages } = useAppContext();
   return (
     <>
       <Typography variant="body2" component="div" sx={{ mb: 2, fontWeight: 'bold' }}>

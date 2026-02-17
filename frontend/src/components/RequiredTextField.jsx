@@ -1,7 +1,9 @@
 import { TextField } from '@mui/material';
 import React from 'react';
+import { useAppContext } from '../render.jsx';
 
 const RequiredTextField = React.forwardRef(({ label, value, onChange, error, helperText, sx: passedSx = {}, ...props }, ref) => {
+    const { direction } = useAppContext();
     console.log('RequiredTextField rendered, ref:', ref);
 
     return (

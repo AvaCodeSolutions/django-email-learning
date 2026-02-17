@@ -11,19 +11,17 @@ import AssignmentReturnedIcon from '@mui/icons-material/AssignmentReturned';
 import SearchIcon from '@mui/icons-material/Search';
 import SchoolIcon from '@mui/icons-material/School';
 import BackspaceIcon from '@mui/icons-material/Backspace';
-import render from '../../src/render.jsx';
+import render, { useAppContext } from '../../src/render.jsx';
 import { getCookie } from '../../src/utils.js';
 import { lazy, Suspense } from "react";
 
 const EnrollentList = lazy(() => import("./components/EnrollmentList.jsx"));
 
 
-const apiBaseUrl = localStorage.getItem('apiBaseUrl');
-
-
 function Learners(initialQs="") {
 
   const [organizationId, setOrganizationId] = useState(null);
+  const { localeMessages, direction, apiBaseUrl } = useAppContext();
   const [learners, setLearners] = useState([]);
   const searcchInputRef = useRef(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -196,7 +194,7 @@ function Learners(initialQs="") {
             </IconButton>
           </Paper>
 
-          <TableContainer component={Paper} sx={{ maxHeight: 440, border: '1px solid', borderColor: 'grey.300', borderRadius: 1 }}>
+          <TableContainer component={Paper} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1 }}>
             <Table stickyHeader>
               <TableHead>
                 <TableRow>

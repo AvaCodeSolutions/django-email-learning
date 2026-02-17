@@ -1,11 +1,11 @@
 {% extends "public/base.html" %}
 {% load django_vite %}
 {% load i18n %}
-{% block head_script %}
-    <script>
-        const organization = {{ organization_json | safe }};
-        const enrollApiUrl = "{{ enroll_api_url }}";
-        const localeMessages = {
+{% block extra_context %}
+        "organization": {{ organization_json|safe }},
+        "enrollApiUrl": "{{ enroll_api_url }}",
+{% endblock %}
+{% block extra_locale_messages %}
             "courses": "{% translate 'Courses' %}",
             "enroll_now": "{% translate 'Enroll Now' %}",
             "enrol_for_course": "{% translate 'Enroll for COURSE_NAME' %}",
@@ -16,8 +16,8 @@
             "enrollment_failed": "{% translate 'Enrollment failed. Please try again.' %}",
             "no_courses_available": "{% translate 'No courses available.' %}",
             "email_required": "{% translate 'Email is required' %}",
-            "email_invalid": "{% translate 'Please enter a valid email address' %}",
-        }
-    </script>
+            "email_invalid": "{% translate 'Please enter a valid email address' %}"
+{% endblock %}
+{% block head_script %}
     {% vite_asset 'public/organization/Organization.jsx' %}
 {% endblock %}

@@ -4,6 +4,7 @@ import QuizIcon from '@mui/icons-material/Quiz';
 import RequiredTextField from '../../../src/components/RequiredTextField';
 import QuestionForm from './QuestionForm';
 import { getCookie } from '../../../src/utils';
+import { useAppContext } from '../../../src/render';
 
 const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod, initialStrategy, initialDeadlineDays }) => {
 
@@ -19,9 +20,9 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     const [waitingPeriodUnit, setWaitingPeriodUnit] = useState(initialWaitingPeriod ? initialWaitingPeriod.type : "days");
     const questionInputRef = useRef(null);
     const dialogRef = useRef(null);
-    const apiBaseUrl = localStorage.getItem('apiBaseUrl');
     const organizationId = localStorage.getItem('activeOrganizationId');
-    const userRole = localStorage.getItem('userRole');
+
+    const { localeMessages, userRole, apiBaseUrl } = useAppContext();
 
     const addQuiz = () => {
         if (!validateQuiz()) {

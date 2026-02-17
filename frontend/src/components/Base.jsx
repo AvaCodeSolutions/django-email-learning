@@ -3,11 +3,12 @@ import MenuBar from "./MenuBar";
 import { useState, useEffect } from "react";
 import { Box, GlobalStyles, Grid, Breadcrumbs, Typography, Link } from "@mui/material";
 import { getCookie } from "../utils.js";
+import { useAppContext } from "../render.jsx";
 
 
 function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefreshCallback, showOrganizationSwitcher=true}) {
+  const { direction, apiBaseUrl } = useAppContext();
   const [activeOrganizationId, setActiveOrganizationId] = useState(null);
-  const baseApiUrl = localStorage.getItem('apiBaseUrl');
   const drawerWidth = 250;
 
   useEffect(() => {
@@ -28,7 +29,7 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
         return;
       }
       localStorage.setItem('activeOrganizationId', activeOrganizationId);
-      fetch(baseApiUrl + '/session', {
+      fetch(apiBaseUrl + '/session', {
         method: 'POST',
         credentials: 'include',
         headers: {

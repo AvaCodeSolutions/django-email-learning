@@ -3,12 +3,13 @@ import RequiredTextField  from '../../../src/components/RequiredTextField.jsx';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import IconButton from '@mui/material/IconButton';
 import AddImapConnectionForm from './AddImapConnectionForm.jsx';
+import { useAppContext } from '../../../src/render.jsx';
 import ImageUpload from '../../../src/components/ImageUpload.jsx';
 import { useEffect, useState } from 'react';
 import { getCookie } from '../../../src/utils.js';
 
 function CourseForm({successCallback, failureCallback, cancelCallback, activeOrganizationId, createMode, courseId}) {
-
+    const { localeMessages, apiBaseUrl } = useAppContext();
     const [courseTitle, setCourseTitle] = useState("")
     const [courseSlug, setCourseSlug] = useState("")
     const [courseDescription, setCourseDescription] = useState("")
@@ -20,8 +21,6 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     const [errorMessage, setErrorMessage] = useState("")
     const [imageUrl, setImageUrl] = useState(null)
     const [imageServerPath, setImageServerPath] = useState(null)
-
-    const apiBaseUrl = localStorage.getItem('apiBaseUrl');
 
     const switchImapConnection = () => {
         if (addImapConnection) {

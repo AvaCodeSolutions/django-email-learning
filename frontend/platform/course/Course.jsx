@@ -1,7 +1,7 @@
 import './styles.scss'
 
 import 'vite/modulepreload-polyfill'
-import render from '../../src/render.jsx';
+import render, { useAppContext } from '../../src/render.jsx';
 import Base from '../../src/components/Base.jsx'
 import FilterListIcon from '@mui/icons-material/FilterList';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -21,16 +21,13 @@ const DeleteContentForm = lazy(() => import("./components/DeleteContentForm.jsx"
 
 
 function Course() {
-    const platformBaseUrl = localStorage.getItem('platformBaseUrl');
+    const { course_title, course_id, localeMessages, direction, userRole, apiBaseUrl, platformBaseUrl } = useAppContext();
     const [dialogOpen, setDialogOpen] = useState(false)
     const [dialogContent, setDialogContent] = useState(null)
     const [contentLoaded, setContentLoaded] = useState(false)
     const [dialogMaxWidth, setDialogMaxWidth] = useState('lg');
     const [enrollmentsCount, setEnrollmentsCount] = useState(null);
     const [weeklyStats, setWeeklyStats] = useState(null);
-
-    const userRole = localStorage.getItem('userRole');
-    const apiBaseUrl = localStorage.getItem('apiBaseUrl');
     const organizationId = localStorage.getItem('activeOrganizationId');
 
     const theme = useTheme();

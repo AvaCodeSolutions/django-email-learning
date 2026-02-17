@@ -1,5 +1,6 @@
 from django_email_learning.services import jwt_service
 from django.urls import reverse
+import json
 
 
 URL = reverse("django_email_learning:personalised:quiz_public_view")
@@ -16,7 +17,8 @@ def test_quiz_public_view_valid_token(content_delivery, anonymous_client):
     response = anonymous_client.get(f"{URL}?token={token}")
     assert response.status_code == 200
     assert "quiz" in response.context
-    assert response.context["quiz"]["id"] == content_delivery.course_content.quiz.id
+    quiz = json.loads(response.context["quiz"])
+    assert quiz["id"] == content_delivery.course_content.quiz.id
 
 
 def test_quiz_public_view_invalid_token(anonymous_client):

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { getCookie } from '../../../src/utils.js';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragHandleIcon from '@mui/icons-material/DragHandle';
+import { useAppContext } from '../../../src/render.jsx';
 
 
 const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
@@ -15,10 +16,8 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
         setDraggedContentId(contentId);
     }
 
-    const apiBaseUrl = localStorage.getItem('apiBaseUrl');
+    const { apiBaseUrl, userRole, localeMessages, direction } = useAppContext();
     const organizationId = localStorage.getItem('activeOrganizationId');
-
-    const userRole = localStorage.getItem('userRole');
 
     const formatPeriod = (period) => {
         if (!period) {

@@ -1,12 +1,11 @@
 {% extends "platform/base.html" %}
 {% load django_vite %}
-{% block extra_head %}
 {% load i18n %}
-    <script>
-        let course_title = "{{ course.title|escapejs }}";
-        const course_id = "{{ course.id }}";
-        localeMessages = {
-            ...localeMessages,
+{%block extra_context %}
+        "course_title": "{{ course.title|escapejs }}",
+        "course_id": "{{ course.id }}",
+{% endblock %}
+{% block extra_locale_messages %}
             "actions": "{% translate 'Actions' %}",
             "published": "{% translate 'Published' %}",
             "type": "{% translate 'Type' %}",
@@ -65,8 +64,8 @@
             "deactivated": "{% translate 'Deactivated' %}",
             "completed": "{% translate 'Completed' %}",
             "enrollments_distribution": "{% translate 'Enrollments Distribution' %}",
-            "weekly_enrollments": "{% translate 'Weekly Enrollments' %}",
-        }
-    </script>
+            "weekly_enrollments": "{% translate 'Weekly Enrollments' %}"
+{% endblock %}
+{% block extra_head %}
     {% vite_asset 'platform/course/Course.jsx' %}
 {% endblock %}
