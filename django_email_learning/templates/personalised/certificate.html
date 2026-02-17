@@ -1,0 +1,22 @@
+{% extends "personalised/base.html" %}
+{% load i18n %}
+{% load django_vite %}
+{% block head_script %}
+    <script>
+      const name = "{{ name }}";
+      const course_title = "{{ course_title }}";
+      const issue_date = "{{ issue_date }}";
+      const certificate_number = "{{ certificate_number }}";
+      const organization_name = "{{ organization_name }}";
+      const qrcode_url = "{{ qrcode_url }}";
+      const logo_url = "{{ logo_url }}";
+      const localeMessages = {
+          "title": "{% translate 'Certificate Of Completion' %}",
+          "description": "{% blocktranslate with name=name course_title=course_title %}This certifies that {{ name }} has successfully completed the {{ course_title }} course{% endblocktranslate %}",
+          "issue_date": "{% translate 'Issued on' %}",
+          "certificate_number": "{% translate 'Certificate Number' %}",
+          "organization_team": "{% blocktranslate with organization_name=organization_name %}{{ organization_name }} Team{% endblocktranslate %}",
+        }
+    </script>
+    {% vite_asset 'personalised/certificate/Certificate.jsx' %}
+{% endblock %}

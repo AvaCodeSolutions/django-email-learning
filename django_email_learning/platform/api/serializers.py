@@ -570,7 +570,7 @@ class EnrollmentResponse(BaseModel):
                 events.append(
                     Event(
                         type=EventType.CONTENT_SENT,
-                        timestamp=schedule.time,
+                        timestamp=schedule.delivered_at,  # type: ignore[arg-type]
                         event_data=ContentSentEvent(
                             course_content_id=delivery.course_content.id,
                             course_content_title=delivery.course_content.lesson.title

@@ -33,6 +33,8 @@ export default defineConfig({
         settings_api_keys: resolve(__dirname, 'platform/settings_api_keys/index.html'),
         organization: resolve(__dirname, 'public/organization/index.html'),
         quiz_public: resolve(__dirname, "personalised/quiz_public/index.html"),
+        certificate: resolve(__dirname, "personalised/certificate/index.html"),
+        certtificate_form: resolve(__dirname, "personalised/certificate_form/index.html"),
         command_result: resolve(__dirname, "personalised/command_result/index.html"),
       }
     },
