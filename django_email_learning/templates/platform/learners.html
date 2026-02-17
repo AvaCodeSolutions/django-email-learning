@@ -1,10 +1,7 @@
 {% extends "platform/base.html" %}
 {% load django_vite %}
 {% load i18n %}
-{% block extra_head %}
-    <script>
-        localeMessages = {
-            ...localeMessages,
+{% block extra_locale_messages %}
             "search_learners": "{% translate 'Search learners...' %}",
             "learners_list": "{% translate 'Learners List' %}",
             "nor_enrollments_found": "{% translate 'No enrollments found.' %}",
@@ -30,8 +27,7 @@
             "deactivated": "{% translate 'Deactivated' %}",
             "canceled": "{% translate 'Canceled' %}",
             "blcoked": "{% translate 'Blocked' %}",
-            "inactive": "{% translate 'Inactive' %}",
-        };
-    </script>
+            "inactive": "{% translate 'Inactive' %}"{% endblock %}
+{% block extra_head %}
     {% vite_asset 'platform/learners/Learners.jsx' %}
 {% endblock %}

@@ -1,4 +1,3 @@
-import render from "../../src/render";
 import { lazy, Suspense, use } from "react";
 import Base from "../../src/components/Base";
 import Box from "@mui/material/Box";
@@ -18,18 +17,18 @@ import EditIcon from '@mui/icons-material/Edit';
 import { getCookie } from "../../src/utils.js";
 import { useState, useEffect } from "react";
 import { Button } from "@mui/material";
+import render, { useAppContext } from "../../src/render";
 
 const UserForm = lazy(() => import("./components/UserForm.jsx"));
 const DeleteUserDialog = lazy(() => import("./components/DeleteUserDialog.jsx"));
-const platformBaseUrl = localStorage.getItem('platformBaseUrl');
-const apiBaseUrl = localStorage.getItem('apiBaseUrl');
-const userRole = localStorage.getItem('userRole');
 
 function Organization() {
     const [organization, setOrganization] = useState(null);
     const [organizationUsers, setOrganizationUsers] = useState([]);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogContent, setDialogContent] = useState(null);
+
+    const { localeMessages, direction, userRole, apiBaseUrl, platformBaseUrl, organizationId } = useAppContext();
 
     const refreshUsers = () => {
         fetch(`${apiBaseUrl}/organizations/${organizationId}/users/`, {

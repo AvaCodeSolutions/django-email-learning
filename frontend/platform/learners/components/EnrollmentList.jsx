@@ -1,6 +1,8 @@
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography } from '@mui/material';
+import { useAppContext } from '../../../src/render.jsx';
 
 function EnrollentList({enrollments, selectHandler}) {
+  const { localeMessages, direction } = useAppContext();
   if (enrollments.length === 0) {
     return <Typography component="span">{localeMessages["nor_enrollments_found"]}</Typography>
   }

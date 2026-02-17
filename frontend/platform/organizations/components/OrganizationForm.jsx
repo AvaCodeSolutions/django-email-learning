@@ -3,6 +3,7 @@ import RequiredTextField  from "../../../src/components/RequiredTextField.jsx";
 import ImageUpload from '../../../src/components/ImageUpload.jsx';
 import { useState } from "react";
 import { getCookie } from '../../../src/utils.js';
+import { useAppContext } from '../../../src/render.jsx';
 
 function OrganizationForm({ successCallback, failureCallback, cancelCallback, createMode, initialName, initialDescription, initialLogoUrl, organizationId }) {
     const [name, setName] = useState(initialName || "");
@@ -11,7 +12,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
     const [descriptionHelperText, setDescriptionHelperText] = useState("");
     const [logoServerPath, setLogoServerPath] = useState(null);
     const [errorMessage, setErrorMessage] = useState();
-    const apiBaseUrl = localStorage.getItem('apiBaseUrl');
+    const { localeMessages, apiBaseUrl } = useAppContext();
 
     const validateForm = () => {
         let valid = true;

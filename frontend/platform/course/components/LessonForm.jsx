@@ -3,6 +3,7 @@ import { Alert, Box, Button, Typography, Select, MenuItem, Tooltip } from '@mui/
 import RequiredTextField from '../../../src/components/RequiredTextField.jsx';
 import ContentEditor from '../../../src/components/ContentEditor.jsx';
 import { getCookie } from '../../../src/utils.js';
+import { useAppContext } from '../../../src/render.jsx';
 
 function LessonForm({ header, initialTitle, initialContent, cancelCallback, successCallback, courseId, lessonId, initialWaitingPeriod, contentId }) {
     const [title, setTitle] = useState(initialTitle || "");
@@ -13,9 +14,10 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
     const [contentHelperText, setContentHelperText] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
 
-    const userRole = localStorage.getItem('userRole');
-    const apiBaseUrl = localStorage.getItem('apiBaseUrl');
+
+    const { localeMessages, apiBaseUrl, userRole } = useAppContext();
     const orgId = localStorage.getItem('activeOrganizationId');
+
 
     const addLesson = () =>{
         if (!validateForm()) {

@@ -1,10 +1,11 @@
 import { Button, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
 import { getCookie } from '../../../src/utils';
+import { useAppContext } from '../../../src/render.jsx';
+
 
 const EnableCourseSwitchPopup = ({ courseId, action, courseTitle, handleClose, handleSuccess}) => {
-
-    const apiBaseUrl = localStorage.getItem('apiBaseUrl');
     const activeOrganizationId = localStorage.getItem('activeOrganizationId');
+    const { localeMessages, apiBaseUrl } = useAppContext();
 
     const updateCourseState = () => {
         fetch(`${apiBaseUrl}/organizations/${activeOrganizationId}/courses/${courseId}/`, {

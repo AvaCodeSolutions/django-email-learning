@@ -20,7 +20,7 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import SchoolIcon from '@mui/icons-material/School';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import render from '../../src/render.jsx';
+import render, { useAppContext } from '../../src/render.jsx';
 import { getCookie } from '../../src/utils.js';
 import FilterForm from './components/FilterForm.jsx';
 import { lazy, Suspense } from "react";
@@ -37,9 +37,7 @@ function Courses() {
   const [courses, setCourses] = useState([])
   const [organizationId, setOrganizationId] = useState(null);
   const [queryParameters, setQueryParameters] = useState("");
-  const userRole = localStorage.getItem('userRole');
-  const apiBaseUrl = localStorage.getItem('apiBaseUrl');
-  const platformBaseUrl = localStorage.getItem('platformBaseUrl');
+  const { direction, localeMessages, apiBaseUrl, platformBaseUrl, userRole } = useAppContext();
 
   const renderCourses = () => {
     if (!organizationId) {
@@ -115,7 +113,7 @@ function Courses() {
 
   return (
     <Base
-      breadCrumbList={[{label: localeMessages["course_management"], href: '#'}]}
+      breadCrumbList={[{label: localeMessages.course_management, href: '#'}]}
       bottomDrawerParams={{
         icon: <FilterListIcon />,
         children: <FilterForm onStatusChange={(params) => setQueryParameters(params)} />

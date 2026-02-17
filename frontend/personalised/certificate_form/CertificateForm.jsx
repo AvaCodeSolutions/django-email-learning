@@ -8,11 +8,13 @@ import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
+import { useAppContext } from "../../src/render.jsx";
 
 const CertificateForm = () => {
     const [fullName, setFullName] = useState("");
     const [error, setError] = useState("");
     const [nameSubmitted, setNameSubmitted] = useState(false);
+    const { localeMessages, apiEndpoint, token, csrfToken } = useAppContext();
 
     const handleSubmit = (event) => {
         event.preventDefault();

@@ -1,11 +1,11 @@
 import { Alert, Button, Box, DialogActions, DialogContent, DialogContentText, DialogTitle, Typography } from "@mui/material";
 import { useState } from "react"
 import { getCookie } from '../../../src/utils';
+import { useAppContext } from '../../../src/render.jsx';
 import WarningIcon from '@mui/icons-material/Warning';
 
 const DeleteCoursePopup = ({ courseId, courseTitle, handleClose, handleSuccess}) => {
-
-    const apiBaseUrl = localStorage.getItem('apiBaseUrl');
+    const { localeMessages, apiBaseUrl } = useAppContext();
     const activeOrganizationId = localStorage.getItem('activeOrganizationId');
     const [showError, setShowError] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");

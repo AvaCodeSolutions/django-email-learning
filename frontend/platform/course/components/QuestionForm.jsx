@@ -4,6 +4,7 @@ import RuleIcon from '@mui/icons-material/Rule';
 import EditIcon from '@mui/icons-material/Edit';
 import ClearIcon from '@mui/icons-material/Clear';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import { useAppContext } from '../../../src/render';
 
 
 const QuestionForm = ({question, index, eventHandler}) => {
@@ -13,7 +14,7 @@ const QuestionForm = ({question, index, eventHandler}) => {
     const [addingOption, setAddingOption] = useState(false);
     const optionInputRef = useRef(null);
 
-    const userRole = localStorage.getItem('userRole');
+    const { userRole, localeMessages } = useAppContext();
 
     const editQuestion = () => {
         if (editMode && questionText.trim() === '' || userRole === 'viewer') {

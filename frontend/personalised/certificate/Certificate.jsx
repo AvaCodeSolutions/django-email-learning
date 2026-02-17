@@ -1,4 +1,4 @@
-import render from "../../src/render";
+import render, { useAppContext } from "../../src/render";
 
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
@@ -10,12 +10,15 @@ import { Alert } from "@mui/material";
 
 
 const Certificate = () => {
-    return (<>{ error_message ? <Alert severity="error" sx={{ maxWidth: 800, margin: '20px auto' }}>
-       {error_message}
+    const { errorMessage } = useAppContext();
+    return (<>{ errorMessage ? <Alert severity="error" sx={{ maxWidth: 800, margin: '20px auto' }}>
+       {errorMessage}
     </Alert> : <CertificateContent /> }</>);
 }
 
 const CertificateContent = () => {
+    const { localeMessages, name, issueDate, certificateNumber, qrcodeUrl, logoUrl } = useAppContext();
+
     return (
         <Box
             sx={{
@@ -131,18 +134,18 @@ const CertificateContent = () => {
                 <Grid container spacing={2} sx={{pt: 2, mt: 4, width: '100%', minHeight: '100px' }} alignItems="flex-end">
                     <Grid item size={4} sx={{ textAlign: 'center' }} >
                         <Typography variant="body2">
-                            { logo_url && <><img src={logo_url} alt="Organization Logo" style={{ width: 80, height: 80, objectFit: 'contain' }} /><br /></> }
+                            { logoUrl && <><img src={logoUrl} alt="Organization Logo" style={{ width: 80, height: 80, objectFit: 'contain' }} /><br /></> }
                             <b>{localeMessages['organization_team']}</b><br />
-                            {localeMessages['issue_date']}: {new Date().toLocaleDateString()}
+                            {localeMessages['issue_date']}: {issueDate}
                         </Typography>
                     </Grid>
                     <Grid item size={4} sx={{ textAlign: 'center' }} >
                     </Grid>
                     <Grid item size={4} sx={{ textAlign: 'center' }} >
                         <Typography variant="body2">
-                            <img src={qrcode_url} alt="QR Code" style={{ width: 80, height: 80 }} />
+                            <img src={qrcodeUrl} alt="QR Code" style={{ width: 80, height: 80 }} />
                             <br />
-                            {localeMessages['certificate_number']}:<br />{certificate_number}
+                            {localeMessages['certificate_number']}:<br />{certificateNumber}
                         </Typography>
                     </Grid>
                 </Grid>

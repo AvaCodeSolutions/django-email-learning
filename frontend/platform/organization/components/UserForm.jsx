@@ -8,13 +8,11 @@ import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import { getCookie } from '../../../src/utils.js';
-
-const apiBaseUrl = localStorage.getItem('apiBaseUrl');
-
-
+import { useAppContext } from '../../../src/render.jsx';
 
 
 const UserForm = ({ onClose, organizationId, refreshUsers, user = null }) => {
+    const { localeMessages, apiBaseUrl } = useAppContext();
     const [email, setEmail] = useState(user ? user.email : '');
     const [role, setRole] = useState(user ? user.role : 'viewer');
     const [error, setError] = useState('');

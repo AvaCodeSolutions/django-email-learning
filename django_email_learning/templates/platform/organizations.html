@@ -1,10 +1,7 @@
 {% extends "platform/base.html" %}
 {% load django_vite %}
 {% load i18n %}
-{% block extra_head %}
-    <script>
-        localeMessages = {
-            ...localeMessages,
+{% block extra_locale_messages %}
             "add_organization": "{% translate 'Add an Organization' %}",
             "actions": "{% translate 'Actions' %}",
             "name": "{% translate 'Name' %}",
@@ -21,8 +18,8 @@
             "create": "{% translate 'Create' %}",
             "update": "{% translate 'Update' %}",
             "uploaded_image_alt": "{% translate 'Organization Logo' %}",
-            "are_you_sure_delete_org": "{% translate 'Are you sure you want to delete the organization \"ORGANIZATION_NAME\"? All the courses contents and users under this organization will also be deleted.' %}",
-        }
-    </script>
+            "are_you_sure_delete_org": "{% translate 'Are you sure you want to delete the organization \"ORGANIZATION_NAME\"? All the courses contents and users under this organization will also be deleted.' %}"
+{% endblock %}
+{% block extra_head %}
     {% vite_asset 'platform/organizations/Organizations.jsx' %}
 {% endblock %}

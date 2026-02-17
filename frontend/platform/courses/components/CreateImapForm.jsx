@@ -1,6 +1,7 @@
 import RequiredTextField from "../../../src/components/RequiredTextField"
 import { Alert, Box, Button } from "@mui/material"
 import { useState } from "react"
+import { useAppContext } from '../../../src/render.jsx';
 import { getCookie } from '../../../src/utils';
 
 
@@ -15,7 +16,7 @@ const CreateImapForm = ({ onSuccess, activeOrganizationId }) => {
     const [password, setPassword] = useState("");
     const [passwordHelperText, setPasswordHelperText] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
-    const apiBaseUrl = localStorage.getItem('apiBaseUrl');
+    const { localeMessages, apiBaseUrl } = useAppContext();
 
     const handleCreateImap = () => {
         const isValid = validateForm();

@@ -1,14 +1,14 @@
 {% extends "personalised/base.html" %}
 {% load i18n %}
 {% load django_vite %}
+{% block extra_context %}
+        "successMessage": "{{ success_message|escapejs }}",
+        "confirmationMessage": "{{ confirmation_message|escapejs }}",
+        "confirmUrl": "{{ confirm_url|escapejs }}",
+{% endblock %}
+{% block extra_locale_messages %}
+            "Confirm": "{% translate 'Confirm' %}"
+{% endblock %}
 {% block head_script %}
-    <script>
-        const success_message = "{{ success_message|escapejs }}";
-        const confirmation_message = "{{ confirmation_message|escapejs }}";
-        const confirm_url = "{{ confirm_url|escapejs }}";
-        const localeMessages = {
-            "Confirm": "{% translate 'Confirm' %}",
-        }
-    </script>
     {% vite_asset 'personalised/command_result/CommandResult.jsx' %}
 {% endblock %}

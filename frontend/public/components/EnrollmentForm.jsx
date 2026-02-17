@@ -2,6 +2,7 @@ import React from 'react';
 import { Alert, Box, Button, CircularProgress, Typography } from '@mui/material';
 import RequiredTextField from  '../../src/components/RequiredTextField.jsx';
 import { getCookie } from '../../src/utils.js';
+import { useAppContext } from '../../src/render.jsx';
 
 
 const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, onCancle, onComplete}) => {
@@ -9,6 +10,7 @@ const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, o
     const emailRef = React.useRef('');
     const [errorMessage, setErrorMessage] = React.useState('');
     const [isProcessing, setIsProcessing] = React.useState(false);
+    const { localeMessages } = useAppContext();
 
     const validateForm = () => {
         const email = emailRef.current.value;

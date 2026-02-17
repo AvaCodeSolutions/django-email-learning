@@ -21,13 +21,13 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import { useState, useEffect, use } from "react";
 import { getCookie } from "../../src/utils";
-import render from "../../src/render";
+import render, { useAppContext } from "../../src/render";
 import { lazy, Suspense } from "react";
 
 const OrganizationForm = lazy(() => import("./components/OrganizationForm.jsx"));
-const platformBaseUrl = localStorage.getItem('platformBaseUrl');
 
 function Organizations() {
+  const { localeMessages, direction, apiBaseUrl, platformBaseUrl } = useAppContext();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogContent, setDialogContent] = useState(null);
   const [organizations, setOrganizations] = useState([]);
@@ -49,8 +49,6 @@ function Organizations() {
       console.error('Error fetching organizations:', error);
     });
   }, [tableUpdates]);
-
-  const apiBaseUrl = localStorage.getItem('apiBaseUrl');
 
   const handleSuccessFormSubmission = (data) => {
     console.log('Organization created successfully:', data);

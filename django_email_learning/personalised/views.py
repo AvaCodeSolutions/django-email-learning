@@ -15,6 +15,7 @@ from django_email_learning.services.command_models.unsubscribe_command import (
 from django.core.files.storage import default_storage
 import qrcode
 import uuid
+import json
 import logging
 import io
 
@@ -110,7 +111,7 @@ class QuizPublicView(View, ErrrorLoggingMixin):
                 ]
             return self.render_to_response(
                 context={
-                    "quiz": quiz_data,
+                    "quiz": json.dumps(quiz_data),
                     "token": token,
                     "csrf_token": request.META.get("CSRF_COOKIE", ""),
                     "api_endpoint": reverse(

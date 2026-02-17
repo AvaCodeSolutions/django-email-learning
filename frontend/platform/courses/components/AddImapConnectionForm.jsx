@@ -1,22 +1,24 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { Accordion, AccordionDetails, AccordionSummary, Box, FormControl, InputLabel, MenuItem, Select, Typography } from '@mui/material';
+import { useAppContext } from '../../../src/render.jsx';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PlusIcon from '@mui/icons-material/Add';
 import CreateImapForm from './CreateImapForm';
+
 
 function AddImapConnectionForm({onChangeCallback, activeOrganizationId, initialImapConnectionId = null}) {
   const [imapConnections, setImapConnections] = useState([]);
   const [expanded, setExpanded] = useState(false);
   const [imapConnectionId, setImapConnectionId] = useState(initialImapConnectionId);
+  const { localeMessages, apiBaseUrl } = useAppContext();
+
 
   const switchExpanded = () => {
     if (hasImapConnection) {
       setExpanded(!expanded);
     }
   };
-
-  const apiBaseUrl = localStorage.getItem('apiBaseUrl');
 
   const hasImapConnection = useMemo(() => {
     let returnValue = imapConnections.length > 0;
