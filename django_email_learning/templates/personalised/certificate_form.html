@@ -1,19 +1,5 @@
 {% extends "personalised/base.html" %}
-{% load i18n %}
 {% load django_vite %}
-{% block extra_context %}
-        "token": "{{ token }}",
-        "csrfToken": "{{ csrf_token }}",
-        "apiEndpoint": "{{ api_endpoint }}",
-{% endblock %}
-{% block extra_locale_messages %}
-            "form_intro": "{% translate 'Congratulations on completing the course! To issue your certificate, please enter the name you would like displayed on it.' %}",
-            "full_name": "{% translate 'Full Name' %}",
-            "full_name_required": "{% translate 'Full Name is required' %}",
-            "error_sending_data": "{% translate 'An error occurred while sending data. Please try again later.' %}",
-            "form_submission_success": "{% translate 'Your certificate name has been submitted successfully! You can now close this window.' %}",
-            "submit": "{% translate 'Submit' %}"
-{% endblock %}
 {% block head_script %}
     {% vite_asset 'personalised/certificate_form/CertificateForm.jsx' %}
 {% endblock %}

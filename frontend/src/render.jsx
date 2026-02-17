@@ -1,4 +1,4 @@
-import { StrictMode, createContext, useContext, useMemo } from "react";
+import { StrictMode, createContext, useContext } from "react";
 import { createRoot } from "react-dom/client";
 import { ThemeContextProvider } from "./theme/ThemeContext";
 import { lightTheme, darkTheme } from "./theme/themes";
@@ -35,7 +35,6 @@ function render({ children }) {
     storedTheme = "light";
   }
   const initialTheme = storedTheme === "dark" ? darkTheme : lightTheme;
-  console.log(appContext);
   createRoot(document.getElementById("root")).render(
     <StrictMode>
       <ThemeContextProvider initialTheme={initialTheme}>

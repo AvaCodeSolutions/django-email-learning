@@ -25,15 +25,15 @@ def test_anonymous_user_redirects_to_login(anonymous_client):
 def test_authenticated_user_access_courses_view(client, role):
     response = client.get(get_url())
     assert response.status_code == 200
-    assert response.context["user_role"] == role
+    assert response.context["appContext"]["userRole"] == role
 
 
 def test_context_values(superadmin_client):
     response = superadmin_client.get(get_url())
     assert response.status_code == 200
-    assert "api_base_url" in response.context
-    assert "platform_base_url" in response.context
-    assert "active_organization_id" in response.context
-    assert "user_role" in response.context
+    assert "apiBaseUrl" in response.context["appContext"]
+    assert "platformBaseUrl" in response.context["appContext"]
+    assert "activeOrganizationId" in response.context
+    assert "userRole" in response.context["appContext"]
     assert response.context["page_title"] == "Courses"
-    assert response.context["is_platform_admin"] is True
+    assert response.context["appContext"]["isPlatformAdmin"] is True

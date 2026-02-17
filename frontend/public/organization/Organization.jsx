@@ -42,21 +42,21 @@ function Organization() {
 
 
     return <Layout>
-        { organization.logo_url &&
-            <img src={ organization.logo_url } alt={`${organization.name} Logo`} style={{ maxWidth: '200px', height: 'auto' }} />
+        { organization["logo_url"] &&
+            <img src={ organization["logo_url"] } alt={`${organization["name"]} Logo`} style={{ maxWidth: '200px', height: 'auto' }} />
         }
-        <Typography variant="h1">{ organization.name }</Typography>
-        <Typography variant="body1" dangerouslySetInnerHTML={{ __html: organization.description }} />
+        <Typography variant="h1">{ organization["name"] }</Typography>
+        <Typography variant="body1" dangerouslySetInnerHTML={{ __html: organization["description"] }} />
         <Box my={4}>
             <Typography variant="h2">{localeMessages['courses']}:</Typography>
-            { organization.courses.length > 0 ? (
+            { organization["courses"].length > 0 ? (
                 <Grid container columnSpacing={2} rowSpacing={6} alignItems="stretch">
                 { courses.map((course) => (
-                    <Grid size={{ xs: 12, md: 6 }} key={course.id} display="flex" >
-                    <Box key={course.id} p={2} border={1} borderRadius={2} sx={{ height: '100%', width: '100%'}}>
+                    <Grid size={{ xs: 12, md: 6 }} key={course["id"]} display="flex" >
+                    <Box key={course["id"]} p={2} border={1} borderRadius={2} sx={{ height: '100%', width: '100%'}}>
                     <CardMedia
-                    component={course.image ? "img" : "div"} // Swaps element type
-                    image={course.image}
+                    component={course["image"] ? "img" : "div"} // Swaps element type
+                    image={course["image"]}
                     sx={{
                         height: 360,
 
@@ -67,7 +67,7 @@ function Organization() {
 
                     </CardMedia>
 
-                        <Typography variant="h3" sx={{ pt: 2 }}>{course.title}</Typography>
+                        <Typography variant="h3" sx={{ pt: 2 }}>{course["title"]}</Typography>
                         <Button variant="contained" color="primary" rel="noopener noreferrer" sx={{ mt: 1, mb: 2 }} onClick={() => showModalForCourse(course)} disabled={course.enrolled}>
                             {localeMessages['enroll_now']}
                         </Button>

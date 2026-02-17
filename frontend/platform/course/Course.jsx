@@ -21,7 +21,7 @@ const DeleteContentForm = lazy(() => import("./components/DeleteContentForm.jsx"
 
 
 function Course() {
-    const { course_title, course_id, localeMessages, direction, userRole, apiBaseUrl, platformBaseUrl } = useAppContext();
+    const { courseTitle, courseId, localeMessages, direction, userRole, apiBaseUrl, platformBaseUrl } = useAppContext();
     const [dialogOpen, setDialogOpen] = useState(false)
     const [dialogContent, setDialogContent] = useState(null)
     const [contentLoaded, setContentLoaded] = useState(false)
@@ -39,7 +39,7 @@ function Course() {
     }
 
     useEffect(() => {
-        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${course_id}/`, {
+        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/`, {
             method: 'GET',
             headers: {
                 'X-CSRFToken': getCookie('csrftoken')
@@ -56,7 +56,7 @@ function Course() {
             })
             .catch(error => console.error('Error fetching course data:', error));
 
-        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${course_id}/enrollments/statistics/`, {
+        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/enrollments/statistics/`, {
             method: 'GET',
             headers: {
                 'X-CSRFToken': getCookie('csrftoken')
@@ -78,7 +78,7 @@ function Course() {
     }
     const getContent = async (contentId, ) => {
         console.log("Fetching content with ID:", contentId);
-        const response = await fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${course_id}/contents/${contentId}/`, {
+        const response = await fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${contentId}/`, {
             method: 'GET',
             headers: {
                 'X-CSRFToken': getCookie('csrftoken')
@@ -110,7 +110,7 @@ function Course() {
     }
 
     const deletContent = (contentId) => {
-        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${course_id}/contents/${contentId}/`, {
+        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${contentId}/`, {
             method: 'DELETE',
             headers: {
                 'X-CSRFToken': getCookie('csrftoken')
@@ -144,7 +144,7 @@ function Course() {
                             initialContent={content.lesson.content}
                             cancelCallback={() => {setDialogOpen(false);}}
                             successCallback={resetDialog}
-                            courseId={course_id}
+                            courseId={courseId}
                             lessonId={content.lesson.id}
                             initialWaitingPeriod={content.waiting_period}
                             contentId={content.id} /></Suspense>);
@@ -154,7 +154,7 @@ function Course() {
                 setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><QuizForm
                                 cancelCallback={() => setDialogOpen(false)}
                                 successCallback={resetDialog}
-                                courseId={course_id}
+                                courseId={courseId}
                                 quizId={content.quiz.id}
                                 contentId={content.id}
                                 initialTitle={content.quiz.title}
@@ -168,7 +168,7 @@ function Course() {
         }
         if (event.type === 'content_reordered') {
             console.log("Reordering contents with new order:", event.new_order);
-            fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${course_id}/contents/reorder/`, {
+            fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/reorder/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -197,7 +197,7 @@ function Course() {
         <Base
             breadCrumbList={[
                 {label: localeMessages["course_management"], href: platformBaseUrl + '/courses', index: 0},
-                {label: course_title, href: '#', index: 1}
+                {label: courseTitle, href: '#', index: 1}
             ]}
             bottomDrawerParams={{
                 icon: <FilterListIcon />,
@@ -212,15 +212,15 @@ function Course() {
                             header={localeMessages["new_lesson"]}
                             cancelCallback={() => setDialogOpen(false)}
                             successCallback={resetDialog}
-                            courseId={course_id} /></Suspense>);
+                            courseId={courseId} /></Suspense>);
                         setDialogOpen(true);}}>{localeMessages["add_lesson"]}</Button>
                     <Button variant="contained" startIcon={<BallotIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2, marginLeft: 1, marginRight: 1 }} onClick={() => {
                         setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><QuizForm
                             cancelCallback={() => setDialogOpen(false)}
                             successCallback={resetDialog}
-                            courseId={course_id} /></Suspense>);
+                            courseId={courseId} /></Suspense>);
                         setDialogOpen(true);}}>{localeMessages["add_quiz"]}</Button></> }
-                    <ContentTable courseId={course_id} loaded={contentLoaded} eventHandler={(event) => tableEventHandler(event)} />
+                    <ContentTable courseId={courseId} loaded={contentLoaded} eventHandler={(event) => tableEventHandler(event)} />
                 </Box>
                 <Grid container spacing={2}>
                 { enrollmentsCount && <Grid size={{xs: 12, lg: 6}} mt={2} mb={2} >

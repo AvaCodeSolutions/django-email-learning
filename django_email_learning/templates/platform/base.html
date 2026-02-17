@@ -1,36 +1,12 @@
-{% load django_vite %}
-{% load static %}
-{% load i18n %}
-{% get_current_language_bidi as IS_RTL %}
-<!doctype html>
+{% load django_vite %}{% load static %}{% load i18n %}{% get_current_language_bidi as IS_RTL %}<!doctype html>
 <html lang="en" dir="{% block direction %}{% if IS_RTL %}rtl{% else %}ltr{% endif %}{% endblock %}">
   <head>
     {% vite_hmr_client %}
     {% vite_react_refresh %}
     <script>
-        localStorage.setItem('activeOrganizationId', '{{ active_organization_id }}');
+        localStorage.setItem('activeOrganizationId', '{{ activeOrganizationId | escapejs }}');
     </script>
-
-    <script id="app-context" type="application/json">
-      {
-        "apiBaseUrl": "{{ api_base_url }}",
-        "platformBaseUrl": "{{ platform_base_url }}",
-        "userRole": "{{ user_role }}",
-        "isPlatformAdmin": {{ is_platform_admin|yesno:"true,false" }},
-        "isOrganizationAdmin": {{ is_organization_admin|yesno:"true,false" }},
-        "direction": "{% if IS_RTL %}rtl{% else %}ltr{% endif %}",{% block extra_context %}{% endblock %}
-        "localeMessages": {
-          "organizations": "{% translate 'Organizations' %}",
-          "course_management": "{% translate 'Course Management' %}",
-          "learners": "{% translate 'Learners' %}",
-          "settings": "{% translate 'Settings' %}",
-          "api_keys": "{% translate 'API Keys' %}",
-          "content_delivery_job": "{% translate 'Content Delivery Job' %}",
-          "last_run": "{% translate 'Last Run:' %}",
-          "content_delivery_tooltip": "{% translate 'This job should run on a regular schedule to ensure timely content delivery. Configure a cron job or cloud scheduler to execute it at appropriate intervals, such as every five minutes.' %}",{% block extra_locale_messages %}{% endblock %}
-        }
-      }
-    </script>
+    {{ appContext | json_script:"app-context" }}
     {% block extra_head %}{% endblock %}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

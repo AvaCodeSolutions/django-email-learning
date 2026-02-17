@@ -1,20 +1,5 @@
 {% extends "personalised/base.html" %}
-{% load i18n %}
 {% load django_vite %}
-{% block extra_context %}
-      "name": "{{ name }}",
-      "issueDate": "{{ issue_date }}",
-      "certificateNumber": "{{ certificate_number }}",
-      "qrcodeUrl": "{{ qrcode_url }}",
-      "logoUrl": "{{ logo_url }}",
-{% endblock %}
-{% block extra_locale_messages %}
-          "title": "{% translate 'Certificate Of Completion' %}",
-          "description": "{% blocktranslate with name=name course_title=course_title %}This certifies that {{ name }} has successfully completed the {{ course_title }} course{% endblocktranslate %}",
-          "issue_date": "{% translate 'Issued on' %}",
-          "certificate_number": "{% translate 'Certificate Number' %}",
-          "organization_team": "{% blocktranslate with organization_name=organization_name %}{{ organization_name }} Team{% endblocktranslate %}"
-{% endblock %}
 {% block head_script %}
     {% vite_asset 'personalised/certificate/Certificate.jsx' %}
 {% endblock %}

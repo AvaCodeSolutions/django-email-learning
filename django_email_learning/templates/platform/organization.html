@@ -1,26 +1,5 @@
 {% extends "platform/base.html" %}
 {% load django_vite %}
-{% load i18n %}
-{% block extra_context %}
-        "organizationId": {{ organization.id }},{% endblock %}
-{% block extra_locale_messages %}
-            "no_users_in_organization": "{% translate 'No users in this organization yet.' %}",
-            "add_users_to_organization": "{% translate 'Add user to organization' %}",
-            "add_user": "{% translate 'Add User' %}",
-            "edit_user": "{% translate 'Edit User' %}",
-            "change_user_role": "{% translate 'Change User Role' %}",
-            "user": "{% translate 'User' %}",
-            "role": "{% translate 'Role' %}",
-            "admin": "{% translate 'Admin' %}",
-            "editor": "{% translate 'Editor' %}",
-            "viewer": "{% translate 'Viewer' %}",
-            "email": "{% translate 'Email' %}",
-            "delete_user_with_email": "{% translate 'Deleting USER_EMAIL' %}",
-            "user_delete_confirmation": "{% translate 'Are you sure you want to remove USER_EMAIL from this organization?' %}",
-            "actions": "{% translate 'Actions' %}",
-            "delete_note": "{% translate 'Note: Removing a user from this organization will not delete their account. To permanently delete the user\'s account, you must do so separately within the Django Admin' %}",
-            "cancel": "{% translate 'Cancel' %}",
-            "delete": "{% translate 'Delete' %}"{% endblock %}
 {% block extra_head %}
     {% vite_asset 'platform/organization/Organization.jsx' %}
 {% endblock %}

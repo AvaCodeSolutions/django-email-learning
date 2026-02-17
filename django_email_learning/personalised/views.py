@@ -2,6 +2,7 @@ from django.views import View
 from django.views.generic.base import TemplateResponseMixin
 from django.http import HttpResponse
 from django.utils.translation import gettext as _
+from django.utils.translation import get_language_info, get_language
 from django.urls import reverse
 from django_email_learning.models import ContentDelivery, EnrollmentStatus, Certificate
 from django_email_learning.services import jwt_service
@@ -15,13 +16,12 @@ from django_email_learning.services.command_models.unsubscribe_command import (
 from django.core.files.storage import default_storage
 import qrcode
 import uuid
-import json
 import logging
 import io
 
 
-class ErrrorLoggingMixin(TemplateResponseMixin):
-    def errr_response(
+class BaseTemplateView(View, TemplateResponseMixin):
+    def error_response(
         self,
         message: str,
         exception: Exception | None,
@@ -37,8 +37,17 @@ class ErrrorLoggingMixin(TemplateResponseMixin):
             logging.error(
                 f"{message} - Ref: {error_ref}", extra={"error_ref": error_ref}
             )
+        current_lang_code = get_language()
+        lang_info = get_language_info(current_lang_code)
         return self.render_to_response(
-            context={"ref": error_ref, "error_message": message, "page_title": title},
+            context={
+                "appContext": {
+                    "ref": error_ref,
+                    "errorMessage": message,
+                    "direction": "rtl" if lang_info["bidi"] else "ltr",
+                },
+                "page_title": title,
+            },
             status=status_code,
         )
 
@@ -46,7 +55,7 @@ class ErrrorLoggingMixin(TemplateResponseMixin):
         try:
             token = request.GET["token"]
         except KeyError as e:
-            return self.errr_response(
+            return self.error_response(
                 message=_("The link is not valid."),
                 exception=e,
                 status_code=400,
@@ -55,22 +64,29 @@ class ErrrorLoggingMixin(TemplateResponseMixin):
         try:
             return jwt_service.decode_jwt(token=token)
         except jwt_service.InvalidTokenException as e:
-            return self.errr_response(
+            return self.error_response(
                 message=_("The link is not valid."),
                 exception=e,
                 status_code=400,
                 title=_("Invalid Link"),
             )
         except jwt_service.ExpiredTokenException as e:
-            return self.errr_response(
+            return self.error_response(
                 message=_("The link has expired."),
                 exception=e,
                 status_code=410,
                 title=_("Expired Link"),
             )
 
+    def get_app_context(self) -> dict:  # type: ignore[no-untyped-def]
+        current_lang_code = get_language()
+        lang_info = get_language_info(current_lang_code)
+        return {
+            "direction": "rtl" if lang_info["bidi"] else "ltr",
+        }
 
-class QuizPublicView(View, ErrrorLoggingMixin):
+
+class QuizPublicView(BaseTemplateView):
     template_name = "personalised/quiz_public.html"
 
     def get(self, request, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
@@ -86,20 +102,20 @@ class QuizPublicView(View, ErrrorLoggingMixin):
             )
             enrolment = delivery.enrollment
             if enrolment.status != EnrollmentStatus.ACTIVE:
-                return self.errr_response(
+                return self.error_response(
                     message=_("Quiz is not valid anymore"),
                     exception=ValueError("Enrolment is not active"),
                     title=_("Invalid Quiz"),
                 )
             quiz = delivery.course_content.quiz
             if not quiz:
-                return self.errr_response(
+                return self.error_response(
                     message=_("No quiz associated with this link"),
                     exception=None,
                     title=_("Invalid Quiz"),
                 )
             if not delivery.course_content.is_published:
-                return self.errr_response(
+                return self.error_response(
                     message=_("No valid quiz associated with this link"),
                     exception=ValueError("Quiz is not published"),
                     title=_("Invalid Quiz"),
@@ -111,37 +127,56 @@ class QuizPublicView(View, ErrrorLoggingMixin):
                 ]
             return self.render_to_response(
                 context={
-                    "quiz": json.dumps(quiz_data),
-                    "token": token,
-                    "csrf_token": request.META.get("CSRF_COOKIE", ""),
-                    "api_endpoint": reverse(
-                        "django_email_learning:api_personalised:quiz_submission"
-                    ),
+                    "appContext": {
+                        "quiz": quiz_data,
+                        "token": token,
+                        "csrfToken": request.META.get("CSRF_COOKIE", ""),
+                        "apiEndpoint": reverse(
+                            "django_email_learning:api_personalised:quiz_submission"
+                        ),
+                        "localeMessages": {
+                            "quiz_intro": _(
+                                "Please select all correct answers for each question. Note that some questions may have multiple correct answers. This quiz uses negative marking for incorrect choices; if you are unsure, it is better to leave the question unanswered."
+                            ),
+                            "no_answer_warning": _(
+                                "You have not selected any answers for this question. Are you sure you want to proceed?"
+                            ),
+                            "your_score": _("Your score"),
+                            "error_loading_quiz": _("Error loading quiz"),
+                            "ready_to_submit": _("Ready to submit?"),
+                            "submit_quiz_note": _(
+                                "Please keep in mind that this quiz uses negative marking for incorrect answers. If you are unsure of an answer, it may be better to leave it blank."
+                            ),
+                            "cancel": _("Cancel"),
+                            "submit": _("Submit"),
+                        },
+                    }
+                    | self.get_app_context(),
                 }
             )
 
         except ContentDelivery.DoesNotExist as e:
-            return self.errr_response(
+            return self.error_response(
                 message=_("An error occurred while retrieving the quiz"),
                 exception=e,
                 title=_("Error"),
             )
         except KeyError as e:
-            return self.errr_response(
+            return self.error_response(
                 message=_("The link is not valid"),
                 exception=e,
                 status_code=400,
                 title=_("Invalid Link"),
             )
         except jwt_service.InvalidTokenException as e:
-            return self.errr_response(
+            return self.error_response(
                 message=_("The link is not valid"),
                 exception=e,
                 status_code=400,
                 title=_("Invalid Link"),
             )
         except jwt_service.ExpiredTokenException as e:
-            return self.errr_response(
+            return self.error_response(
                 message=_("The link has expired"),
                 exception=e,
                 status_code=410,
@@ -149,7 +184,7 @@ class QuizPublicView(View, ErrrorLoggingMixin):
             )
 
 
-class CertificateFormView(View, ErrrorLoggingMixin):
+class CertificateFormView(BaseTemplateView):
     template_name = "personalised/certificate_form.html"
 
     def get(self, request, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
@@ -159,17 +194,33 @@ class CertificateFormView(View, ErrrorLoggingMixin):
 
         return self.render_to_response(
             context={
-                "enrollment_id": decoded_token["enrollment_id"],
-                "csrf_token": request.META.get("CSRF_COOKIE", ""),
-                "token": request.GET.get("token", ""),
-                "api_endpoint": reverse(
-                    "django_email_learning:api_personalised:submit_certificate_form"
-                ),
+                "appContext": {
+                    "csrfToken": request.META.get("CSRF_COOKIE", ""),
+                    "token": request.GET.get("token", ""),
+                    "apiEndpoint": reverse(
+                        "django_email_learning:api_personalised:submit_certificate_form"
+                    ),
+                    "localeMessages": {
+                        "form_intro": _(
+                            "Congratulations on completing the course! To issue your certificate, please enter the name you would like displayed on it."
+                        ),
+                        "full_name": _("Full Name"),
+                        "full_name_required": _("Full Name is required"),
+                        "error_sending_data": _(
+                            "An error occurred while sending data. Please try again later."
+                        ),
+                        "form_submission_success": _(
+                            "Your certificate name has been submitted successfully! You can now close this window."
+                        ),
+                        "submit": _("Submit"),
+                    },
+                }
+                | self.get_app_context(),
             }
         )
 
 
-class VerifyEnrollmentView(View, ErrrorLoggingMixin):
+class VerifyEnrollmentView(BaseTemplateView):
     template_name = "personalised/command_result.html"
 
     def get(self, request, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
@@ -187,7 +238,7 @@ class VerifyEnrollmentView(View, ErrrorLoggingMixin):
         try:
             command.execute()
         except Exception as e:
-            return self.errr_response(
+            return self.error_response(
                 message=_("An error occurred during enrollment verification."),
                 exception=e,
                 title=_("Verification Error"),
@@ -196,12 +247,18 @@ class VerifyEnrollmentView(View, ErrrorLoggingMixin):
         return self.render_to_response(
             context={
                 "page_title": _("Enrollment Verified"),
-                "success_message": _("Your enrollment has been successfully verified."),
+                "appContext": {
+                    "successMessage": _(
+                        "Your enrollment has been successfully verified."
+                    ),
+                    "localeMessages": {"Confirm": _("Confirm")},
+                }
+                | self.get_app_context(),
             }
         )
 
 
-class UnsubscribeView(View, ErrrorLoggingMixin):
+class UnsubscribeView(BaseTemplateView):
     template_name = "personalised/command_result.html"
 
     def get(self, request, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
@@ -212,10 +269,14 @@ class UnsubscribeView(View, ErrrorLoggingMixin):
             return self.render_to_response(
                 context={
                     "page_title": _("Confirm Unsubscription"),
-                    "confirmation_message": _(
-                        "Are you sure you want to unsubscribe from our mailing list?"
-                    ),
-                    "confirm_url": f"{request.path}?token={request.GET.get('token')}&confirm=true",
+                    "appContext": {
+                        "confirmationMessage": _(
+                            "Are you sure you want to unsubscribe from our mailing list?"
+                        ),
+                        "confirmUrl": f"{request.path}?token={request.GET.get('token')}&confirm=true",
+                        "localeMessages": {"Confirm": _("Confirm")},
+                    }
+                    | self.get_app_context(),
                 }
             )
         command = UnsubscribeCommand(
@@ -226,7 +287,7 @@ class UnsubscribeView(View, ErrrorLoggingMixin):
         try:
             command.execute()
         except Exception as e:
-            return self.errr_response(
+            return self.error_response(
                 message=_("An error occurred during unsubscription."),
                 exception=e,
                 title=_("Unsubscription Error"),
@@ -234,20 +295,24 @@ class UnsubscribeView(View, ErrrorLoggingMixin):
         return self.render_to_response(
             context={
                 "page_title": _("Unsubscribed"),
-                "success_message": _(
-                    "You have been successfully unsubscribed from our mailing list."
-                ),
+                "appContext": {
+                    "successMessage": _(
+                        "You have been successfully unsubscribed from our mailing list."
+                    ),
+                    "localeMessages": {"Confirm": _("Confirm")},
+                }
+                | self.get_app_context(),
             }
         )
 
 
-class CertificateView(View, ErrrorLoggingMixin):
+class CertificateView(BaseTemplateView):
     template_name = "personalised/certificate.html"
 
     def get(self, request, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
         certificate_number = kwargs.get("certificate_number")
         if not certificate_number:
-            return self.errr_response(
+            return self.error_response(
                 message=_("Certificate number is required."),
                 exception=ValueError("Certificate number is required"),
                 status_code=400,
@@ -255,7 +320,7 @@ class CertificateView(View, ErrrorLoggingMixin):
             )
         id_parts = certificate_number.split("-")
         if len(id_parts) != 4:
-            return self.errr_response(
+            return self.error_response(
                 message=_("Invalid certificate number format."),
                 exception=ValueError("Invalid certificate number format"),
                 status_code=400,
@@ -268,7 +333,7 @@ class CertificateView(View, ErrrorLoggingMixin):
                 id=certificate_id, random_suffix=random_suffix
             )
         except Certificate.DoesNotExist:
-            return self.errr_response(
+            return self.error_response(
                 message=_("Certificate not found."),
                 exception=ValueError("Certificate not found"),
                 status_code=404,
@@ -299,14 +364,31 @@ class CertificateView(View, ErrrorLoggingMixin):
         return self.render_to_response(
             context={
                 "page_title": f"{_("Certificate of Completion")} | {certificate.enrollment.course.title} | {certificate.name_on_certificate}",
-                "name": certificate.name_on_certificate.upper(),
-                "course_title": certificate.enrollment.course.title,
-                "issue_date": certificate.issued_at.strftime("%B %d, %Y"),
-                "certificate_number": certificate_number,
-                "organization_name": certificate.enrollment.course.organization.name,
-                "logo_url": certificate.enrollment.course.organization.logo.url
-                if certificate.enrollment.course.organization.logo
-                else "",
-                "qrcode_url": absolute_media_url,
+                "appContext": {
+                    "name": certificate.name_on_certificate,
+                    "courseTitle": certificate.enrollment.course.title,
+                    "issueDate": certificate.issued_at.strftime("%B %d, %Y"),
+                    "certificateNumber": certificate_number,
+                    "organizationName": certificate.enrollment.course.organization.name,
+                    "logoUrl": certificate.enrollment.course.organization.logo.url
+                    if certificate.enrollment.course.organization.logo
+                    else "",
+                    "qrcodeUrl": absolute_media_url,
+                    "localeMessages": {
+                        "title": _("Certificate Of Completion"),
+                        "description": _(
+                            "This certifies that {name} has successfully completed the {course_title} course"
+                        ).format(
+                            name=certificate.name_on_certificate,
+                            course_title=certificate.enrollment.course.title,
+                        ),
+                        "issue_date": _("Issued on"),
+                        "certificate_number": _("Certificate Number"),
+                        "organization_team": _("{organization_name} Team").format(
+                            organization_name=certificate.enrollment.course.organization.name
+                        ),
+                    },
+                }
+                | self.get_app_context(),
             }
         )

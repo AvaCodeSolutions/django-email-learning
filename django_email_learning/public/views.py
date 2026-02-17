@@ -1,6 +1,7 @@
 from django.views.generic import TemplateView
 from django.db.models import Prefetch
 from django_email_learning.models import Organization, Course
+from django.utils.translation import get_language_info, get_language
 from django.http import Http404
 from django.urls import reverse
 from django.utils.translation import gettext as _
@@ -54,11 +55,26 @@ class OrganizationView(TemplateView):
                 courses=courses,
             )
             enroll_api_path = reverse("django_email_learning:api_public:enroll")
-            context[
-                "enroll_api_url"
-            ] = f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{enroll_api_path}"
-            context["organization_json"] = organization_data.model_dump_json()
-            context["organization"] = organization_data.model_dump()
+            current_lang_code = get_language()
+            lang_info = get_language_info(current_lang_code)
+            context["appContext"] = {
+                "organization": organization_data.model_dump(),
+                "enrollApiUrl": f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{enroll_api_path}",
+                "direction": "rtl" if lang_info["bidi"] else "ltr",
+                "localeMessages": {
+                    "courses": _("Courses"),
+                    "enroll_now": _("Enroll Now"),
+                    "enrol_for_course": _("Enroll for COURSE_NAME"),
+                    "email": _("email"),
+                    "cancel": _("Cancel"),
+                    "submit": _("Submit"),
+                    "enrollment_success": _("You are enrolled in this course."),
+                    "enrollment_failed": _("Enrollment failed. Please try again."),
+                    "no_courses_available": _("No courses available."),
+                    "email_required": _("Email is required"),
+                    "email_invalid": _("Please enter a valid email address"),
+                },
+            }
             context["page_title"] = organization.name
             return context
 

@@ -27,6 +27,11 @@ def test_certificate_view(certificate, anonymous_client):
         response.context["page_title"]
         == f"Certificate of Completion | {certificate.enrollment.course.title} | John Doe"
     )
-    assert response.context["name"] == certificate.name_on_certificate.upper()
-    assert response.context["course_title"] == certificate.enrollment.course.title
-    assert response.context["issue_date"] == certificate.issued_at.strftime("%B %d, %Y")
+    assert response.context["appContext"]["name"] == certificate.name_on_certificate
+    assert (
+        response.context["appContext"]["courseTitle"]
+        == certificate.enrollment.course.title
+    )
+    assert response.context["appContext"][
+        "issueDate"
+    ] == certificate.issued_at.strftime("%B %d, %Y")

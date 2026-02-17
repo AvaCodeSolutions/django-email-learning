@@ -137,7 +137,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                             color='primary.dark' sx={{ cursor: 'pointer'}}>{content.title}</Typography></TableCell>
                         <TableCell align={direction == 'rtl' ? 'right' : 'left'}>{formatPeriod(content.waiting_period)}</TableCell>
                         <TableCell align={direction == 'rtl' ? 'right' : 'left'}>{localeMessages[content.type]}</TableCell>
-                        <TableCell align={direction == 'rtl' ? 'right' : 'left'}><Switch defaultChecked={content.is_published} onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} /></TableCell>
+                        <TableCell align={direction == 'rtl' ? 'right' : 'left'}><Switch checked={content.is_published}  onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} /></TableCell>
                         {userRole !== 'viewer' && <TableCell align={direction == 'rtl' ? 'right' : 'left'}>
                             <IconButton aria-label={localeMessages["delete"]} onClick={() => deleteContent(content.id)}>
                                 <DeleteIcon />

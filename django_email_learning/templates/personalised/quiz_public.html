@@ -1,21 +1,5 @@
 {% extends "personalised/base.html" %}
-{% load i18n %}
 {% load django_vite %}
-{% block extra_context %}
-        "quiz": {{ quiz|default:"null"|safe }},
-        "token": "{{ token }}",
-        "csrfToken": "{{ csrf_token }}",
-        "apiEndpoint": "{{ api_endpoint }}",{% endblock %}
-{% block extra_locale_messages %}
-          "quiz_intro": "{% translate 'Please select all correct answers for each question. Note that some questions may have multiple correct answers. This quiz uses negative marking for incorrect choices; if you are unsure, it is better to leave the question unanswered.' %}",
-          "no_answer_warning": "{% translate 'You have not selected any answers for this question. Are you sure you want to proceed?' %}",
-          "your_score": "{% translate 'Your score' %}",
-          "error_loading_quiz": "{% translate 'Error loading quiz' %}",
-          "ready_to_submit": "{% translate 'Ready to submit?' %}",
-          "submit_quiz_note": "{% translate 'Please keep in mind that this quiz uses negative marking for incorrect answers. If you are unsure of an answer, it may be better to leave it blank.' %}",
-          "cancel": "{% translate 'Cancel' %}",
-          "submit": "{% translate 'Submit' %}"
-{% endblock %}
 {% block head_script %}
     {% vite_asset 'personalised/quiz_public/Quiz.jsx' %}
 {% endblock %}

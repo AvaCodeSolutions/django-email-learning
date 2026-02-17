@@ -23,7 +23,7 @@ def test_unsubscribe_valid_token(command, enrollment, anonymous_client):
     assert "page_title" in response.context
     assert response.context["page_title"] == "Unsubscribed"
     assert (
-        response.context["success_message"]
+        response.context["appContext"]["successMessage"]
         == "You have been successfully unsubscribed from our mailing list."
     )
 
@@ -45,11 +45,14 @@ def test_unsubscribe_valid_token_confirmation(command, enrollment, anonymous_cli
     assert "page_title" in response.context
     assert response.context["page_title"] == "Confirm Unsubscription"
     assert (
-        response.context["confirmation_message"]
+        response.context["appContext"]["confirmationMessage"]
         == "Are you sure you want to unsubscribe from our mailing list?"
     )
-    assert "confirm_url" in response.context
-    assert response.context["confirm_url"] == f"{URL}?token={token}&confirm=true"
+    assert "confirmUrl" in response.context["appContext"]
+    assert (
+        response.context["appContext"]["confirmUrl"]
+        == f"{URL}?token={token}&confirm=true"
+    )
 
 
 def test_unsubscribe_invalid_token(anonymous_client):

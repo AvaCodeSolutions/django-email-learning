@@ -1,5 +1,6 @@
 import logging
 from django.views.generic import TemplateView
+from django.utils.translation import get_language_info, get_language
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
@@ -31,27 +32,50 @@ class BasePlatformView(TemplateView):
                 user=self.request.user,
                 organization_id=active_organization_id,
             ).role
+
+        current_lang_code = get_language()
+        lang_info = get_language_info(current_lang_code)
+
         return {
-            "api_base_url": reverse("django_email_learning:api_platform:root")[:-1],
-            "platform_base_url": reverse("django_email_learning:platform:root")[:-1],
-            "active_organization_id": active_organization_id,
-            "user_role": role,
-            "is_platform_admin": (
-                self.request.user.is_superuser
-                or (
-                    self.request.user.is_authenticated
-                    and getattr(self.request.user, "has_platform_admin_role", False)
-                )
-            ),
-            "is_organization_admin": (
-                self.request.user.is_superuser
-                or (
-                    OrganizationUser.objects.filter(
-                        user=self.request.user, role="admin"
-                    ).exists()  # type: ignore[misc]
-                )
-            ),
+            "appContext": {
+                "apiBaseUrl": reverse("django_email_learning:api_platform:root")[:-1],
+                "platformBaseUrl": reverse("django_email_learning:platform:root")[:-1],
+                "userRole": role,
+                "direction": "rtl" if lang_info["bidi"] else "ltr",
+                "isPlatformAdmin": (
+                    self.request.user.is_superuser
+                    or (
+                        self.request.user.is_authenticated
+                        and getattr(self.request.user, "has_platform_admin_role", False)
+                    )
+                ),
+                "isOrganizationAdmin": (
+                    self.request.user.is_superuser
+                    or (
+                        OrganizationUser.objects.filter(
+                            user=self.request.user, role="admin"
+                        ).exists()  # type: ignore[misc]
+                    )
+                ),
+                "localeMessages": {
+                    "organizations": _("Organizations"),
+                    "course_management": _("Course Management"),
+                    "learners": _("Learners"),
+                    "settings": _("Settings"),
+                    "api_keys": _("API Keys"),
+                    "content_delivery_job": _("Content Delivery Job"),
+                    "last_run": _("Last Run:"),
+                    "content_delivery_tooltip": _(
+                        "This job should run on a regular schedule to ensure timely content delivery. Configure a cron job or cloud scheduler to execute it at appropriate intervals, such as every five minutes."
+                    ),
+                }
+                | self.get_locale_messages(),
+            },
+            "activeOrganizationId": active_organization_id,
         }
+
+    def get_locale_messages(self) -> Dict[str, str]:
+        return {}
 
     def get_or_set_active_organization(self) -> str:
         org = self.request.session.get("active_organization_id")
@@ -82,6 +106,65 @@ class Courses(BasePlatformView):
         context["page_title"] = _("Courses")
         return context
 
+    def get_locale_messages(self) -> Dict[str, str]:
+        return {
+            "actions": _("Actions"),
+            "all": _("All"),
+            "enable_course": _("Enable COURSE_NAME"),
+            "disable_course": _("Disable COURSE_NAME"),
+            "delete_course": _("Delete COURSE_NAME"),
+            "enabled": _("Enabled"),
+            "disabled": _("Disabled"),
+            "title": _("Title"),
+            "slug": _("Slug"),
+            "filter": _("Filter"),
+            "add_course": _("Add a Course"),
+            "course_status": _("Course Status"),
+            "cancel": _("Cancel"),
+            "delete": _("Delete"),
+            "create": _("Create"),
+            "continue": _("Continue"),
+            "update": _("Update"),
+            "course_title": _("Course Title"),
+            "course_description": _("Course Description"),
+            "course_slug": _("Course Slug"),
+            "add_imap_connection": _("Add IMAP Connection"),
+            "imap_connection_tooltip": _(
+                "You don't need an IMAP connection to build your course, but you will need one if you want your users to interact via email. For example, they can sign up or check their progress just by sending a message. This is a great solution if your audience has limited platform access."
+            ),
+            "new_imap_connection": _("New IMAP Connection"),
+            "imap_connection": _("IMAP Connection"),
+            "add": _("Add"),
+            "email": _("Email"),
+            "password": _("Password"),
+            "server": _("Server"),
+            "port": _("Port"),
+            "course_enable_confirmation": _(
+                "Are you sure you want to enable the course COURSE_NAME?"
+            ),
+            "course_disable_confirmation": _(
+                "Are you sure you want to disable the course COURSE_NAME?"
+            ),
+            "course_delete_confirmation": _(
+                "Are you sure you want to delete the course COURSE_NAME?"
+            ),
+            "title_required_helper_text": _("The course title is required."),
+            "description_required_helper_text": _(
+                "The course description is required."
+            ),
+            "slug_required_helper_text": _("The course slug is required."),
+            "email_required_helper_text": _("The email is required."),
+            "password_required_helper_text": _("The password is required."),
+            "server_required_helper_text": _("The server is required."),
+            "port_required_helper_text": _("The port is required."),
+            "invalid_port_helper_text": _("The port must be a valid number."),
+            "invalid_email_helper_text": _("The email must be a valid email address."),
+            "total_enrollments": _("Total Enrollments"),
+            "upload_button_label": _("Upload Image"),
+            "remove_image": _("Remove Image"),
+            "uploaded_image_alt": _("Course Image"),
+        }
+
 
 @method_decorator(login_required, name="dispatch")
 @method_decorator(is_an_organization_member(), name="dispatch")
@@ -91,9 +174,89 @@ class CourseView(BasePlatformView):
     def get_context_data(self, **kwargs) -> dict:  # type: ignore[no-untyped-def]
         context = super().get_context_data(**kwargs)
         course = Course.objects.get(pk=self.kwargs["course_id"])
-        context["course"] = course
+        context["appContext"]["courseId"] = course.id
+        context["appContext"]["courseTitle"] = course.title
         context["page_title"] = _("Course: %(title)s") % {"title": course.title}
         return context
+
+    def get_locale_messages(self) -> Dict[str, str]:
+        return {
+            "actions": _("Actions"),
+            "published": _("Published"),
+            "type": _("Type"),
+            "waiting_time": _("Waiting Time"),
+            "title": _("Title"),
+            "add_quiz": _("Add Quiz"),
+            "add_lesson": _("Add Lesson"),
+            "lesson": _("Lesson"),
+            "quiz": _("Quiz"),
+            "add": _("Add"),
+            "new_lesson": _("New Lesson"),
+            "update_lesson": _("Update Lesson"),
+            "new_quiz": _("New Quiz"),
+            "update_quiz": _("Update Quiz"),
+            "lesson_title": _("Lesson Title"),
+            "lesson_waiting_tooltip": _(
+                "Set the amount of time that we should wait after the previous lesson or quiz submission before sending this lesson"
+            ),
+            "days": _("Days"),
+            "hours": _("Hours"),
+            "back": _("Back"),
+            "cancel": _("Cancel"),
+            "delete": _("Delete"),
+            "save_lesson": _("Save Lesson"),
+            "save_quiz": _("Save Quiz"),
+            "quiz_title": _("Quiz Title"),
+            "add_question": _("Add Question"),
+            "quiz_settings": _("Quiz Settings"),
+            "waiting_period": _("Waiting Period"),
+            "quiz_waiting_tooltip": _(
+                "Time to wait after the previous content delivery before sending this quiz"
+            ),
+            "required_score": _("Required Score to Pass (%)"),
+            "score_tooltip": _("Minimum percentage score required to pass this quiz"),
+            "period": _("Period"),
+            "period_tooltip": _(
+                "Time to wait after the previous content delivery before sending this quiz"
+            ),
+            "percentage": _("Percentage"),
+            "quiz_deadline": _("Deadline to Complete Quiz"),
+            "deadline_tooltip": _("Maximum time allowed to complete the quiz"),
+            "question_selection_strategy": _("Selection Strategy"),
+            "question_selection_strategy_tooltip": _(
+                "Choose how questions are selected for each quiz attempt, if total questions is less than 6, all questions will be used even if 'Random Questions' is selected"
+            ),
+            "all_questions": _("All Questions"),
+            "random_questions": _("Random Questions"),
+            "question": _("Question"),
+            "add_option": _("Add Option"),
+            "option_text": _("Option Text"),
+            "options": _("Options"),
+            "correct_answer": _("Correct Answer"),
+            "quiz_title_empty": _("Quiz title cannot be empty."),
+            "at_least_one_question": _("Quiz must have at least one question"),
+            "at_least_two_options": _(
+                "Question QUESTION_NUMBER must have at least two answer options"
+            ),
+            "at_least_one_correct": _(
+                "Question QUESTION_NUMBER must have at least one correct answer"
+            ),
+            "fix_errors": _("Please fix the errors in the form before submitting."),
+            "lesson_title_required": _("Lesson title is required."),
+            "lesson_content_required": _("Lesson content is required."),
+            "delete_content_confirmation": _(
+                "Are you sure you want to delete the content: CONTENT_TITLE?"
+            ),
+            "unverified": _("Unverified"),
+            "active": _("Active"),
+            "deactivated": _("Deactivated"),
+            "completed": _("Completed"),
+            "enrollments_distribution": _("Enrollments Distribution"),
+            "weekly_enrollments": _("Weekly Enrollments"),
+        }
+
+    def get_app_context(self) -> Dict[str, Any]:
+        return {}
 
 
 @method_decorator(login_required, name="dispatch")
@@ -105,6 +268,29 @@ class Organizations(BasePlatformView):
         context = super().get_context_data(**kwargs)
         context["page_title"] = _("Organizations")
         return context
+
+    def get_locale_messages(self) -> Dict[str, str]:
+        return {
+            "add_organization": _("Add an Organization"),
+            "actions": _("Actions"),
+            "name": _("Name"),
+            "description": _("Description"),
+            "name_required": _("Name is required."),
+            "description_required": _("Description is required."),
+            "error_try_again": _("An error occurred. Please try again."),
+            "upload_button_label": _("Upload Logo"),
+            "create_organization": _("Create Organization"),
+            "cancel": _("Cancel"),
+            "delete": _("Delete"),
+            "confirm_deletion": _("Confirm Deletion"),
+            "remove_image": _("Remove Logo"),
+            "create": _("Create"),
+            "update": _("Update"),
+            "uploaded_image_alt": _("Organization Logo"),
+            "are_you_sure_delete_org": _(
+                'Are you sure you want to delete the organization "ORGANIZATION_NAME"? All the courses contents and users under this organization will also be deleted.'
+            ),
+        }
 
 
 @method_decorator(login_required, name="dispatch")
@@ -119,7 +305,33 @@ class SingleOrganization(BasePlatformView):
         context["page_title"] = _("Organization: %(name)s") % {
             "name": organization.name
         }
+        context["appContext"]["organizationId"] = organization.id
         return context
+
+    def get_locale_messages(self) -> Dict[str, str]:
+        return {
+            "no_users_in_organization": _("No users in this organization yet."),
+            "add_users_to_organization": _("Add user to organization"),
+            "add_user": _("Add User"),
+            "edit_user": _("Edit User"),
+            "change_user_role": _("Change User Role"),
+            "user": _("User"),
+            "role": _("Role"),
+            "admin": _("Admin"),
+            "editor": _("Editor"),
+            "viewer": _("Viewer"),
+            "email": _("Email"),
+            "delete_user_with_email": _("Deleting USER_EMAIL"),
+            "user_delete_confirmation": _(
+                "Are you sure you want to remove USER_EMAIL from this organization?"
+            ),
+            "actions": _("Actions"),
+            "delete_note": _(
+                "Note: Removing a user from this organization will not delete their account. To permanently delete the user's account, you must do so separately within the Django Admin"
+            ),
+            "cancel": _("Cancel"),
+            "delete": _("Delete"),
+        }
 
 
 @method_decorator(login_required, name="dispatch")
@@ -132,6 +344,36 @@ class Learners(BasePlatformView):
         context["page_title"] = _("Learners")
         return context
 
+    def get_locale_messages(self) -> Dict[str, str]:
+        return {
+            "search_learners": _("Search learners..."),
+            "learners_list": _("Learners List"),
+            "nor_enrollments_found": _("No enrollments found."),
+            "course": _("Course"),
+            "status": _("Status"),
+            "learner_registered": _("Learner Registered"),
+            "learner_verified": _("Learner Verified Email"),
+            "lesson_sent": _("Lesson Sent"),
+            "quiz_sent": _("Quiz Sent"),
+            "quiz_submitted": _("Quiz Submitted"),
+            "course_completed": _("Course Completed"),
+            "learner_deactivated": _("Learner Deactivated"),
+            "score": _("Score"),
+            "result": _("Result"),
+            "reason": _("Reason"),
+            "passed": _("Passed"),
+            "failed": _("Failed"),
+            "enrollment_details": _("Enrollment Details"),
+            "enrollment_id": _("Enrollment ID"),
+            "unvierfied": _("Unverified"),
+            "active": _("Active"),
+            "completed": _("Completed"),
+            "deactivated": _("Deactivated"),
+            "canceled": _("Canceled"),
+            "blcoked": _("Blocked"),
+            "inactive": _("Inactive"),
+        }
+
 
 @method_decorator(login_required, name="dispatch")
 @method_decorator(is_platform_admin(), name="dispatch")
@@ -142,3 +384,25 @@ class ApiKeys(BasePlatformView):
         context = super().get_context_data(**kwargs)
         context["page_title"] = _("API Keys")
         return context
+
+    def get_locale_messages(self) -> Dict[str, str]:
+        return {
+            "settings": _("Settings"),
+            "api_keys": _("API Keys"),
+            "add_api_key": _("Add API Key"),
+            "display_key": _("Display Key"),
+            "hide_key": _("Hide Key"),
+            "actions": _("Actions"),
+            "key": _("Key"),
+            "created_at": _("Created At"),
+            "delete": _("Delete"),
+            "are_you_sure_delete_key": _(
+                "Are you sure you want to delete this API key?"
+            ),
+            "created_by": _("Created By"),
+            "cancel": _("Cancel"),
+            "confirm_deletion": _("Confirm Deletion"),
+            "api_key_intro": _(
+                "API keys allow external applications to interact with the platform and execute jobs. This is ideal for using cloud scheduling or third-party integrations instead of managing local cron jobs. You can create, view, and manage your keys below."
+            ),
+        }
