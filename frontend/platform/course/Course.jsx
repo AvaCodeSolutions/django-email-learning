@@ -199,13 +199,9 @@ function Course() {
                 {label: localeMessages["course_management"], href: platformBaseUrl + '/courses', index: 0},
                 {label: courseTitle, href: '#', index: 1}
             ]}
-            bottomDrawerParams={{
-                icon: <FilterListIcon />,
-                children: <div>Filter Options Here</div>,
-            }}
             showOrganizationSwitcher={false}
         >
-            <Grid size={{xs: 12, md: 9}} py={2} pl={2}>
+            <Grid size={{xs: 12}} py={2} pl={2}>
                 <Box p={2} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, minHeight: 300 }}>
                     {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
                         setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><LessonForm
