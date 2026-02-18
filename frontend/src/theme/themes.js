@@ -26,6 +26,16 @@ const defaultOptions = {
         size: 'small',
       },
     },
+    MuiLinearProgress: {
+      styleOverrides: {
+        root: {
+          backgroundColor: 'transparent',
+        },
+        bar: ({ theme }) => ({
+          background: `linear-gradient(90deg, ${theme.palette.secondary.main} 0%, ${theme.palette.primary.main} 70%)`,
+        }),
+      },
+    },
     MuiTypography: {
       styleOverrides: {
         h1: {
@@ -66,6 +76,14 @@ const defaultOptions = {
           },
           transition: 'color 0.3s, background-color 0.3s',
         }),
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: '8px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        },
       },
     },
     MuiButton: {

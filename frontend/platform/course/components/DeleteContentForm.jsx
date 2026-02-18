@@ -1,6 +1,8 @@
 import { Container, Typography, Button, Box } from '@mui/material';
+import { useAppContext } from '../../../src/render.jsx';
 
 const DeleteContentForm = ({ content, onDelete, onCancel }) => {
+    const { localeMessages } = useAppContext();
     return (
         <Container sx={{ padding: 4, textAlign: 'center' }}>
             <Typography variant="h6" gutterBottom>

@@ -3,7 +3,6 @@ import './styles.scss'
 import 'vite/modulepreload-polyfill'
 import render, { useAppContext } from '../../src/render.jsx';
 import Base from '../../src/components/Base.jsx'
-import FilterListIcon from '@mui/icons-material/FilterList';
 import DescriptionIcon from '@mui/icons-material/Description';
 import BallotIcon from '@mui/icons-material/Ballot';
 import { useState, useEffect } from 'react';
