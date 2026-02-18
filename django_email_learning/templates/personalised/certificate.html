@@ -1,5 +1,17 @@
 {% extends "personalised/base.html" %}
 {% load django_vite %}
 {% block head_script %}
+    <style>
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 0;
+            }
+            body {
+                padding: 0;
+                margin: 0;
+            }
+        }
+    </style>
     {% vite_asset 'personalised/certificate/Certificate.jsx' %}
 {% endblock %}

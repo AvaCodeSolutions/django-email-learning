@@ -22,7 +22,14 @@ const CertificateContent = () => {
     return (
         <Box
             sx={{
-                p: { xs: 1, sm: 2, md: 4 },
+                p: { xs: 1, sm: 2, md: 4},
+                '@media print': {
+                    '@page': {
+                        size: 'A4 landscape',
+                        margin: 0,
+                    },
+                    p: 0,
+                },
                 width: '100%',
                 boxSizing: 'border-box',
                 display: 'flex',

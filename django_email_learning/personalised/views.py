@@ -210,9 +210,10 @@ class CertificateFormView(BaseTemplateView):
                             "An error occurred while sending data. Please try again later."
                         ),
                         "form_submission_success": _(
-                            "Your certificate name has been submitted successfully! You can now close this window."
+                            "Your certificate name has been submitted successfully!"
                         ),
                         "submit": _("Submit"),
+                        "view_certificate": _("View Certificate"),
                     },
                 }
                 | self.get_app_context(),

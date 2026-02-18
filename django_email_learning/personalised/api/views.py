@@ -1,5 +1,6 @@
 from django.http import JsonResponse
 from django.views import View
+from django.urls import reverse
 from django_email_learning.personalised.api.serializers import (
     QuizSubmissionRequest,
     QuestionResponse,
@@ -212,10 +213,13 @@ class SubmitCertificateFormView(View):
                 },
                 status=400,
             )
-        Certificate.objects.update_or_create(
+        certificate, created = Certificate.objects.get_or_create(
             enrollment=enrollment, defaults={"name_on_certificate": name}
         )
-
-        return JsonResponse(
-            {"message": _("Certificate name submitted successfully.")}, status=200
+        certificate_path = reverse(
+            "django_email_learning:personalised:certificate",
+            kwargs={"certificate_number": certificate.certificate_number},
         )
+        absolute_certificate_url = request.build_absolute_uri(certificate_path)
+
+        return JsonResponse({"certificate_url": absolute_certificate_url}, status=200)

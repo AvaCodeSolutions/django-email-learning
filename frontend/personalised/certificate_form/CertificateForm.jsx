@@ -15,6 +15,7 @@ const CertificateForm = () => {
     const [error, setError] = useState("");
     const [nameSubmitted, setNameSubmitted] = useState(false);
     const { localeMessages, apiEndpoint, token, csrfToken } = useAppContext();
+    const [ certificateUrl, setCertificateUrl ] = useState("");
 
     const handleSubmit = (event) => {
         event.preventDefault();
@@ -36,6 +37,9 @@ const CertificateForm = () => {
                 throw new Error(localeMessages['error_sending_data']);
             }
             return response.json();
+        })
+        .then((data) => {
+            setCertificateUrl(data.certificate_url);
         })
         .then(() => {
             setNameSubmitted(true);
@@ -70,6 +74,19 @@ const CertificateForm = () => {
                 {localeMessages['submit']}
             </Button>
         </Box> : <Alert severity="success" sx={{ mt: 2 }}>{localeMessages['form_submission_success']}</Alert>}
+        {certificateUrl && (
+            <Box sx={{ mt: 2 }}>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    href={certificateUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    {localeMessages['view_certificate']}
+                </Button>
+            </Box>
+        )}
     </Container>);
 };
 
