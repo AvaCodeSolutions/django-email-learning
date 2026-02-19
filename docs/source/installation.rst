@@ -132,6 +132,55 @@ The default email address for outgoing course emails. If not specified, falls ba
         'FROM_EMAIL': 'courses@yourdomain.com',
     }
 
+**SIDEBAR.CUSTOM_COMPONENT**
+
+Optional configuration for injecting a custom component in the platform sidebar.
+
+- ``SCRIPT_URL``: URL of the JavaScript module that registers your custom element.
+- ``STYLE_URL``: Optional stylesheet URL for the component (use ``None`` if not needed).
+- ``COMPONENT_TAG``: HTML tag rendered in the sidebar.
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'SIDEBAR': {
+            'CUSTOM_COMPONENT': {
+                'SCRIPT_URL': 'url/path-to-your-component.js',
+                'STYLE_URL': 'url/path-to-your-component.css',
+                'COMPONENT_TAG': '<your-component />',
+            }
+        },
+    }
+
+**LOGO**
+
+Optional configuration for branding assets in the platform header.
+
+- ``HORIZONTAL_LOCKUP``: Used on mobile devices where the sidebar is not open by default and the logo is shown in the top navbar.
+- ``VERTICAL_LOCKUP``: Used for sidebar-oriented layouts.
+
+    - ``LIGHT_BACKGROUND``: Logo URL/path for light backgrounds.
+    - ``DARK_BACKGROUND``: Logo URL/path for dark backgrounds.
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'LOGO': {
+            'HORIZONTAL_LOCKUP': {
+                'LIGHT_BACKGROUND': 'url/path-to-horizontal-logo-for-light-background.png',
+                'DARK_BACKGROUND': 'url/path-to-horizontal-logo-for-dark-background.png',
+            },
+            'VERTICAL_LOCKUP': {
+                'LIGHT_BACKGROUND': 'url/path-to-vertical-logo-for-light-background.png',
+                'DARK_BACKGROUND': 'url/path-to-vertical-logo-for-dark-background.png',
+            },
+        },
+    }
+
 Email Backend Configuration
 ---------------------------
 
