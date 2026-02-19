@@ -65,6 +65,22 @@ class BasePlatformView(TemplateView):
                         and getattr(self.request.user, "has_platform_admin_role", False)
                     )
                 ),
+                "customLogo": {
+                    "horizontalLight": DJANGO_EMAIL_LEARNING_SETTINGS.get("LOGO", {})
+                    .get("HORIZONTAL_LOCKUP", {})
+                    .get("LIGHT_BACKGROUND"),
+                    "horizontalDark": DJANGO_EMAIL_LEARNING_SETTINGS.get("LOGO", {})
+                    .get("HORIZONTAL_LOCKUP", {})
+                    .get("DARK_BACKGROUND"),
+                    "verticalLight": DJANGO_EMAIL_LEARNING_SETTINGS.get("LOGO", {})
+                    .get("VERTICAL_LOCKUP", {})
+                    .get("LIGHT_BACKGROUND"),
+                    "verticalDark": DJANGO_EMAIL_LEARNING_SETTINGS.get("LOGO", {})
+                    .get("VERTICAL_LOCKUP", {})
+                    .get("DARK_BACKGROUND"),
+                }
+                if DJANGO_EMAIL_LEARNING_SETTINGS.get("LOGO")
+                else None,
                 "isOrganizationAdmin": (
                     self.request.user.is_superuser
                     or (

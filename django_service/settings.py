@@ -110,6 +110,16 @@ DJANGO_EMAIL_LEARNING = {
             "COMPONENT_TAG": "<l-helix />",
         }
     },
+    "LOGO": {
+        "HORIZONTAL_LOCKUP": {
+            "LIGHT_BACKGROUND": None,
+            "DARK_BACKGROUND": None,
+        },
+        "VERTICAL_LOCKUP": {
+            "LIGHT_BACKGROUND": None,
+            "DARK_BACKGROUND": None,
+        },
+    },
 }
 
 
