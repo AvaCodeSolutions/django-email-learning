@@ -127,9 +127,12 @@ class EncryptionMixin(models.Model):
             salt=salt.encode(),
             iterations=100000,
         )
+        DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(
+            settings, "DJANGO_EMAIL_LEARNING", {}
+        )
         try:
-            secret = settings.DJANGO_EMAIL_LEARNING["ENCRYPTION_SECRET_KEY"]
-        except (AttributeError, KeyError):
+            secret = DJANGO_EMAIL_LEARNING_SETTINGS["ENCRYPTION_SECRET_KEY"]
+        except KeyError:
             raise ImproperlyConfigured(
                 "DJANGO_EMAIL_LEARNING['ENCRYPTION_SECRET_KEY'] must be set in settings.py"
             )

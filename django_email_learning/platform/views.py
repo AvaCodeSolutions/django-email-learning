@@ -11,6 +11,7 @@ from django_email_learning.decorators import (
     is_an_organization_member,
 )
 from typing import Dict, Any
+from django.conf import settings
 
 
 @method_decorator(login_required, name="dispatch")
@@ -36,10 +37,25 @@ class BasePlatformView(TemplateView):
         current_lang_code = get_language()
         lang_info = get_language_info(current_lang_code)
 
+        DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(
+            settings, "DJANGO_EMAIL_LEARNING", {}
+        )
+
         return {
             "appContext": {
                 "apiBaseUrl": reverse("django_email_learning:api_platform:root")[:-1],
                 "platformBaseUrl": reverse("django_email_learning:platform:root")[:-1],
+                "sidebarCustomComponent": {
+                    "scriptUrl": DJANGO_EMAIL_LEARNING_SETTINGS.get("SIDEBAR", {})
+                    .get("CUSTOM_COMPONENT", {})
+                    .get("SCRIPT_URL"),
+                    "componentTag": DJANGO_EMAIL_LEARNING_SETTINGS.get("SIDEBAR", {})
+                    .get("CUSTOM_COMPONENT", {})
+                    .get("COMPONENT_TAG"),
+                    "styleUrl": DJANGO_EMAIL_LEARNING_SETTINGS.get("SIDEBAR", {})
+                    .get("CUSTOM_COMPONENT", {})
+                    .get("STYLE_URL"),
+                },
                 "userRole": role,
                 "direction": "rtl" if lang_info["bidi"] else "ltr",
                 "isPlatformAdmin": (

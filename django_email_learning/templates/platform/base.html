@@ -6,6 +6,12 @@
     <script>
         localStorage.setItem('activeOrganizationId', '{{ activeOrganizationId | escapejs }}');
     </script>
+    {% if appContext.sidebarCustomComponent.styleUrl %}
+        <link rel="stylesheet" href="{{ appContext.sidebarCustomComponent.styleUrl }}">
+    {% endif %}
+    {% if appContext.sidebarCustomComponent.scriptUrl %}
+        <script src="{{ appContext.sidebarCustomComponent.scriptUrl }}" type="module"></script>
+    {% endif %}
     {{ appContext | json_script:"app-context" }}
     {% block extra_head %}{% endblock %}
     <meta charset="UTF-8" />
