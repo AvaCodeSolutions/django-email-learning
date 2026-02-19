@@ -54,14 +54,23 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     const [organizations, setOrganizations] = useState([])
     const [deliverContentsJobStatus, setDeliverContentsJobStatus] = useState(null)
     const [chip, setChip] = useState(null)
-    const { localeMessages, isPlatformAdmin, isOrganizationAdmin, direction, apiBaseUrl, platformBaseUrl, sidebarCustomComponent } = useAppContext();
+    const { localeMessages, isPlatformAdmin, isOrganizationAdmin, direction, apiBaseUrl, platformBaseUrl, sidebarCustomComponent, customLogo } = useAppContext();
 
     const theme = useTheme();
     const isMdUpScreen = useMediaQuery(theme.breakpoints.up('md'));
 
     const drawerVariant = isMdUpScreen ? "permanent" : "temporary";
-    const logoHorizontalUrl = theme.palette.mode === 'light' ? logoHorizontalLightUrl : logoHorizontalDarkUrl;
-    const logoVerticalUrl = theme.palette.mode === 'light' ? logoVerticalLightUrl : logoVerticalDarkUrl;
+    let logoHorizontalUrl, logoVerticalUrl;
+    if (customLogo) {
+        logoHorizontalUrl = theme.palette.mode === 'light' ? (customLogo.horizontalLight ? customLogo.horizontalLight : customLogo.horizontalDark) : (customLogo.horizontalDark ? customLogo.horizontalDark : customLogo.horizontalLight);
+        logoVerticalUrl = theme.palette.mode === 'light' ? (customLogo.verticalLight ? customLogo.verticalLight : customLogo.verticalDark) : (customLogo.verticalDark ? customLogo.verticalDark : customLogo.verticalLight);
+    }
+    if (!logoHorizontalUrl) {
+        logoHorizontalUrl = theme.palette.mode === 'light' ? logoHorizontalLightUrl : logoHorizontalDarkUrl;
+    }
+    if (!logoVerticalUrl) {
+        logoVerticalUrl = theme.palette.mode === 'light' ? logoVerticalLightUrl : logoVerticalDarkUrl;
+    }
 
     const jobsStatusMap = {
         "healthy": {
