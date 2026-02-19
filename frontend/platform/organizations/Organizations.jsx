@@ -27,7 +27,7 @@ import { lazy, Suspense } from "react";
 const OrganizationForm = lazy(() => import("./components/OrganizationForm.jsx"));
 
 function Organizations() {
-  const { localeMessages, direction, apiBaseUrl, platformBaseUrl } = useAppContext();
+  const { localeMessages, direction, apiBaseUrl, platformBaseUrl, isPlatformAdmin } = useAppContext();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogContent, setDialogContent] = useState(null);
   const [organizations, setOrganizations] = useState([]);
@@ -108,7 +108,7 @@ function Organizations() {
     <Base breadCrumbList={[{label: localeMessages["organizations"], href: '#'}]} showOrganizationSwitcher={false}>
       <Grid size={12} py={2} pl={2}>
         <Box p={2} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, minHeight: 300, width: { lg: '80%' } }}>
-        <Button variant="contained" startIcon={<AddIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
+        {isPlatformAdmin && <Button variant="contained" startIcon={<AddIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
           setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><OrganizationForm
             successCallback={handleSuccessFormSubmission}
             failureCallback={handleFailedFormSubmission}
@@ -116,7 +116,7 @@ function Organizations() {
             createMode={true}
           /></Suspense>);
           setDialogOpen(true);
-        }}>{localeMessages["add_organization"]}</Button>
+        }}>{localeMessages["add_organization"]}</Button>}
 
         { organizations.length > 0 && (<TableContainer component={Paper} sx={{ maxHeight: 440, border: '1px solid', borderColor: 'grey.300', borderRadius: 1 }}>
           <Table>
@@ -132,7 +132,7 @@ function Organizations() {
                   <TableCell dir={htmlTag.dir} sx={{ textAlign: htmlTag.dir === 'rtl' ? 'right' : 'left' }}><Link color='primary.dark' href={`${platformBaseUrl}/organizations/${org.id}/`}>{org.name}</Link></TableCell>
                   <TableCell>
                     <IconButton onClick={() => goToUrl(org.public_url)}><PublicIcon fontSize="small"/></IconButton>
-                    <IconButton onClick={() => {
+                    { isPlatformAdmin && <><IconButton onClick={() => {
                       setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><OrganizationForm
                         successCallback={handleSuccessFormSubmission}
                         failureCallback={handleFailedFormSubmission}
@@ -145,7 +145,7 @@ function Organizations() {
                       /></Suspense>);
                       setDialogOpen(true);
                     }}><EditIcon fontSize="small"/></IconButton>
-                    <IconButton onClick={() => deleteConfirmationDialog(org)}><DeleteIcon fontSize="small" /></IconButton>
+                    <IconButton onClick={() => deleteConfirmationDialog(org)}><DeleteIcon fontSize="small" /></IconButton></>}
                   </TableCell>
                 </TableRow>
               ))}

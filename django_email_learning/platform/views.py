@@ -335,7 +335,7 @@ class SingleOrganization(BasePlatformView):
 
 
 @method_decorator(login_required, name="dispatch")
-@method_decorator(is_platform_admin(), name="dispatch")
+@method_decorator(is_an_organization_member(only_admin=True), name="dispatch")
 class Learners(BasePlatformView):
     template_name = "platform/learners.html"
 

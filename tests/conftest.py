@@ -36,7 +36,7 @@ def users(db):
     editor_user = User(
         id=2, username="editor", email="editor@example.com", password="editorpass"
     )
-    platform_admin = User(
+    platform_admin_user = User(
         id=3,
         username="platformadmin",
         email="platformadmin@example.com",
@@ -45,17 +45,39 @@ def users(db):
     viewer_user = User(
         id=4, username="viewer", email="viewer@example.com", password="viewerpass"
     )
-    User.objects.bulk_create([superadmin, editor_user, platform_admin, viewer_user])
+    organization_admin_user = User(
+        id=5,
+        username="orgadmin",
+        email="orgadmin@example.com",
+        password="orgadminpass",
+    )
+    User.objects.bulk_create(
+        [
+            superadmin,
+            editor_user,
+            platform_admin_user,
+            viewer_user,
+            organization_admin_user,
+        ]
+    )
     group = Group.objects.get(name=PLATFORM_ADMIN_GROUP_NAME)
-    platform_admin.groups.add(group)
+    platform_admin_user.groups.add(group)
     editor = OrganizationUser(user=editor_user, organization_id=1, role="editor")
-    admin = OrganizationUser(user=platform_admin, organization_id=1, role="admin")
+    platform_admin = OrganizationUser(
+        user=platform_admin_user, organization_id=1, role="admin"
+    )
+    organization_admin = OrganizationUser(
+        user=organization_admin_user, organization_id=1, role="admin"
+    )
     viewer = OrganizationUser(user=viewer_user, organization_id=1, role="viewer")
-    OrganizationUser.objects.bulk_create([editor, admin, viewer])
+    OrganizationUser.objects.bulk_create(
+        [editor, platform_admin, organization_admin, viewer]
+    )
     return {
         "superadmin": superadmin,
         "editor_user": editor_user,
-        "platform_admin": platform_admin,
+        "platform_admin": platform_admin_user,
+        "organization_admin": organization_admin_user,
         "viewer_user": viewer_user,
     }
 
@@ -87,6 +109,13 @@ def platform_admin_client(users):
 
 
 @pytest.fixture()
+def org_admin_client(users):
+    client = Client()
+    client.force_login(users["organization_admin"])
+    return client
+
+
+@pytest.fixture()
 def viewer_client(users):
     client = Client()
     client.force_login(users["viewer_user"])
@@ -101,6 +130,7 @@ def client(
     platform_admin_client,
     viewer_client,
     anonymous_client,
+    org_admin_client,
 ):
     def _get_client(role_name):
         role_map = {
@@ -109,6 +139,7 @@ def client(
             "editor": editor_client,
             "platform_admin": platform_admin_client,
             "viewer": viewer_client,
+            "org_admin": org_admin_client,
         }
         return role_map.get(role_name)
 

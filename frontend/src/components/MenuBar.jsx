@@ -133,7 +133,9 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     }
 
     pages.push({ name: localeMessages["course_management"], icon: <SchoolIcon fontSize="small" />, href: platformBaseUrl + '/courses/' });
-    pages.push({ name: localeMessages["learners"], icon: <PeopleIcon fontSize="small" />, href: platformBaseUrl + '/learners/' });
+    if (isOrganizationAdmin || isPlatformAdmin) {
+        pages.push({ name: localeMessages["learners"], icon: <PeopleIcon fontSize="small" />, href: platformBaseUrl + '/learners/' });
+    }
     // pages.push({ name: 'Analytics', icon: <BarChartIcon fontSize="small" />, href: platformBaseUrl + '/analytics/' });
     if (isPlatformAdmin) {
         pages.push({ name: localeMessages["api_keys"], icon: <VpnKeyIcon fontSize="small" />, href: platformBaseUrl + '/settings/api_keys' });
