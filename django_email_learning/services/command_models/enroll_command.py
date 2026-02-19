@@ -92,8 +92,11 @@ class EnrollCommand(AbstractCommand):
             reverse("django_email_learning:personalised:verify_enrollment")
             + f"?token={token}"
         )
+        DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(
+            settings, "DJANGO_EMAIL_LEARNING", {}
+        )
         verification_link = (
-            settings.DJANGO_EMAIL_LEARNING["SITE_BASE_URL"] + verification_relative_path
+            DJANGO_EMAIL_LEARNING_SETTINGS["SITE_BASE_URL"] + verification_relative_path
         )
 
         template_context = {

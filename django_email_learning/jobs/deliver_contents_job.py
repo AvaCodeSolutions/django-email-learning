@@ -58,9 +58,12 @@ class DeliverContentsJob:
                     )
 
     def get_delivery_queue(self) -> DeliveryQueueProtocol:
+        DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(
+            settings, "DJANGO_EMAIL_LEARNING", {}
+        )
         try:
-            return import_string(settings.DJANGO_EMAIL_LEARNING["DELIVERY_QUEUE"])
-        except (AttributeError, KeyError):
+            return import_string(DJANGO_EMAIL_LEARNING_SETTINGS["DELIVERY_QUEUE"])
+        except KeyError:
             from django_email_learning.services.defaults.database_delivery_queue import (
                 DatabaseDeliveryQueue,
             )

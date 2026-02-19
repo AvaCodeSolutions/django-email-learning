@@ -54,7 +54,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     const [organizations, setOrganizations] = useState([])
     const [deliverContentsJobStatus, setDeliverContentsJobStatus] = useState(null)
     const [chip, setChip] = useState(null)
-    const { localeMessages, isPlatformAdmin, isOrganizationAdmin, direction, apiBaseUrl, platformBaseUrl } = useAppContext();
+    const { localeMessages, isPlatformAdmin, isOrganizationAdmin, direction, apiBaseUrl, platformBaseUrl, sidebarCustomComponent } = useAppContext();
 
     const theme = useTheme();
     const isMdUpScreen = useMediaQuery(theme.breakpoints.up('md'));
@@ -166,7 +166,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
             </Box>
         </AppBar>
         <Drawer anchor={direction === 'rtl' ? 'right' : 'left'} variant={drawerVariant} onClose={toggleMenuDrawer(false)} display={{md: "none" }} open={menuOpen} sx={{ '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth } }}
-            slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(251, 251, 255, 0.57)', backdropFilter: 'blur(5px)' }}, paper: { sx: { boxShadow: '2px 0px 8px rgba(0, 0, 0, 0.1)'}}}}>
+            slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(251, 251, 255, 0.57)', backdropFilter: 'blur(5px)' }}, paper: { sx: { borderRadius: 0, boxShadow: '2px 0px 8px rgba(0, 0, 0, 0.1)'}}}}>
             <Box my={2} textAlign="center">
                 <img src={logoVerticalUrl} alt="Logo" style={{ width: "50%" }} />
             </Box>
@@ -185,6 +185,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                     </MenuItem>
                 )) }
             </MenuList>
+            {sidebarCustomComponent && <Box sx={{ height: "100px", width: "100%" }} dangerouslySetInnerHTML={{ __html: sidebarCustomComponent.componentTag }} />}
         </Drawer>
         </Box>)
 }

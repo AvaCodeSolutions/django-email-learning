@@ -43,6 +43,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
+
 
 @method_decorator(ensure_csrf_cookie, name="get")
 @method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
@@ -581,7 +583,7 @@ class GetOrCreateUserByEmail(View):
                     form.save(
                         request=request,
                         use_https=request.is_secure(),
-                        from_email=settings.DJANGO_EMAIL_LEARNING.get(
+                        from_email=DJANGO_EMAIL_LEARNING_SETTINGS.get(
                             "FROM_EMAIL", settings.DEFAULT_FROM_EMAIL
                         ),
                         email_template_name="emails/password_reset.txt",
@@ -831,10 +833,10 @@ class JobsStatus(View):
 
     @staticmethod
     def calculate_job_health_status(last_execution_started_at: datetime) -> str:
-        success_threshold = settings.DJANGO_EMAIL_LEARNING.get(
+        success_threshold = DJANGO_EMAIL_LEARNING_SETTINGS.get(
             "JOB_HEALTH_SUCCESS_THRESHOLD_MINUTES", DEFAULT_SUCCESS_THRESHOLD_MINUTES
         )
-        warning_threshold = settings.DJANGO_EMAIL_LEARNING.get(
+        warning_threshold = DJANGO_EMAIL_LEARNING_SETTINGS.get(
             "JOB_HEALTH_WARNING_THRESHOLD_MINUTES", DEFAULT_WARNING_THRESHOLD_MINUTES
         )
         if not isinstance(success_threshold, int) or success_threshold <= 0:

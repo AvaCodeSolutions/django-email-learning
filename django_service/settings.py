@@ -103,6 +103,13 @@ DJANGO_EMAIL_LEARNING = {
     "SITE_BASE_URL": "http://localhost:8000",
     "ENCRYPTION_SECRET_KEY": "your-very-secure-and-random-key",
     "FROM_EMAIL": os.environ.get("FROM_EMAIL", "webmaster@localhost"),
+    "SIDEBAR": {
+        "CUSTOM_COMPONENT": {
+            "SCRIPT_URL": "https://cdn.jsdelivr.net/npm/ldrs/dist/auto/helix.js",
+            "STYLE_URL": None,
+            "COMPONENT_TAG": "<l-helix />",
+        }
+    },
 }
 
 

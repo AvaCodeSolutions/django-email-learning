@@ -5,11 +5,14 @@ from django.utils.module_loading import import_string
 
 class EmailSenderService:
     def __init__(self) -> None:
+        DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(
+            settings, "DJANGO_EMAIL_LEARNING", {}
+        )
         try:
             self.email_sender = import_string(
-                settings.DJANGO_EMAIL_LEARNING["EMAIL_SENDER"]
+                DJANGO_EMAIL_LEARNING_SETTINGS["EMAIL_SENDER"]
             )
-        except (AttributeError, KeyError):
+        except KeyError:
             from django_email_learning.services.defaults.email_sender import (
                 DjangoEmailSender,
             )
@@ -17,7 +20,7 @@ class EmailSenderService:
             self.email_sender = DjangoEmailSender()
 
         try:
-            self.from_email = settings.DJANGO_EMAIL_LEARNING["FROM_EMAIL"]
+            self.from_email = DJANGO_EMAIL_LEARNING_SETTINGS["FROM_EMAIL"]
         except (AttributeError, KeyError):
             try:
                 self.from_email = settings.DEFAULT_FROM_EMAIL
