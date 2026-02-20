@@ -103,20 +103,20 @@ class QuizPublicView(BaseTemplateView):
             enrolment = delivery.enrollment
             if enrolment.status != EnrollmentStatus.ACTIVE:
                 return self.error_response(
-                    message=_("Quiz is not valid anymore"),
+                    message=_("This quiz is no longer valid."),
                     exception=ValueError("Enrolment is not active"),
                     title=_("Invalid Quiz"),
                 )
             quiz = delivery.course_content.quiz
             if not quiz:
                 return self.error_response(
-                    message=_("No quiz associated with this link"),
+                    message=_("There is no quiz associated with this link."),
                     exception=None,
                     title=_("Invalid Quiz"),
                 )
             if not delivery.course_content.is_published:
                 return self.error_response(
-                    message=_("No valid quiz associated with this link"),
+                    message=_("There is no valid quiz associated with this link."),
                     exception=ValueError("Quiz is not published"),
                     title=_("Invalid Quiz"),
                 )
@@ -376,7 +376,7 @@ class CertificateView(BaseTemplateView):
                     else "",
                     "qrcodeUrl": absolute_media_url,
                     "localeMessages": {
-                        "title": _("Certificate Of Completion"),
+                        "title": _("Certificate of Completion"),
                         "description": _(
                             "This certifies that {name} has successfully completed the {course_title} course"
                         ).format(

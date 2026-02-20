@@ -256,7 +256,7 @@ class CourseView(BasePlatformView):
             "deadline_tooltip": _("Maximum time allowed to complete the quiz"),
             "question_selection_strategy": _("Selection Strategy"),
             "question_selection_strategy_tooltip": _(
-                "Choose how questions are selected for each quiz attempt, if total questions is less than 6, all questions will be used even if 'Random Questions' is selected"
+                "Choose how questions are selected for each quiz attempt. If the total number of questions is fewer than 6, all questions will be used even if 'Random Questions' is selected."
             ),
             "all_questions": _("All Questions"),
             "random_questions": _("Random Questions"),
@@ -320,7 +320,7 @@ class Organizations(BasePlatformView):
             "update": _("Update"),
             "uploaded_image_alt": _("Organization Logo"),
             "are_you_sure_delete_org": _(
-                'Are you sure you want to delete the organization "ORGANIZATION_NAME"? All the courses contents and users under this organization will also be deleted.'
+                'Are you sure you want to delete the organization "ORGANIZATION_NAME"? All course content and users in this organization will also be deleted.'
             ),
         }
 

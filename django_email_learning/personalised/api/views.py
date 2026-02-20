@@ -96,7 +96,7 @@ class QuizSubmissionView(View):
 
             if failed_submissions_count > 1:
                 message = _(
-                    "You have failed the quiz twice. Unfortunatly you can not continue the course on this enrollment. But you can enroll again to retake the course."
+                    "You have failed the quiz twice. Unfortunately, you cannot continue this course with this enrollment. You can enroll again to retake the course."
                 )
                 logger.info(
                     f"Learner ID {enrolment.learner.id} has failed the quiz twice for Course {enrolment.course.title}. "
