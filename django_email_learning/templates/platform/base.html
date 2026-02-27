@@ -16,7 +16,7 @@
     {% block extra_head %}{% endblock %}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" href="{% static 'logo.png' %}" />
+    <link rel="icon" type="image/png" href="{% if favicon %}{{ favicon }}{% else %}{% static 'logo.png' %}{% endif %}" />
     <title>{% block title %}{{ page_title }}{% endblock %}</title>
   </head>
 

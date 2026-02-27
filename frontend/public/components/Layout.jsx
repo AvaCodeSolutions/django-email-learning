@@ -36,7 +36,7 @@ const Layout = ({ children }) => {
               target="_blank"
               rel="noopener noreferrer"
               sx={{
-                color: 'secondary.main',
+                color: 'primary.main',
                 textDecoration: 'none',
                 '&:hover': {
                   textDecoration: 'underline'

@@ -68,7 +68,7 @@ function Organization() {
                     </CardMedia>
 
                         <Typography variant="h3" sx={{ pt: 2 }}>{course["title"]}</Typography>
-                        <Button variant="contained" color="primary" rel="noopener noreferrer" sx={{ mt: 1, mb: 2 }} onClick={() => showModalForCourse(course)} disabled={course.enrolled}>
+                        <Button variant="contained" color="secondary" rel="noopener noreferrer" sx={{ mt: 1, mb: 2 }} onClick={() => showModalForCourse(course)} disabled={course.enrolled}>
                             {localeMessages['enroll_now']}
                         </Button>
                         <Typography variant="body2" dangerouslySetInnerHTML={{ __html: course.description }} />

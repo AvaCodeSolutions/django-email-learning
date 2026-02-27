@@ -241,7 +241,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             </Box>
             {/* Quiz Settings Section */}
             <Box mt={3} mb={3}>
-                <Typography variant="h6" sx={{ mb: 2, fontSize: '1.1rem', color: 'primary.main' }}>
+                <Typography variant="h6" sx={{ mb: 2, fontSize: '1.1rem', color: 'secondary.main' }}>
                     {localeMessages["quiz_settings"]}
                 </Typography>
 
@@ -351,7 +351,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                 <Button variant="outlined" sx={{ mr: 1, boxShadow: 'none' }} onClick={cancel}>
                     {localeMessages["back"]}
                 </Button>
-                {userRole !== 'viewer' && <Button type="submit" variant="contained" color="primary" sx={{ boxShadow: 'none', mr: 1}} onClick={() => {if(!quizId) { addQuiz(); } else { updateQuiz(); }}}>
+                {userRole !== 'viewer' && <Button type="submit" variant="contained" color="secondary" sx={{ boxShadow: 'none', mr: 1}} onClick={() => {if(!quizId) { addQuiz(); } else { updateQuiz(); }}}>
                     {localeMessages["save_quiz"]}
                 </Button>}
             </Box>

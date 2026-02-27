@@ -51,7 +51,7 @@ const CertificateForm = () => {
 
     return (<Container maxWidth="sm" sx={{ mt: 4 }}>
         <Box display="flex" alignItems="center" my={4} justifyContent="center">
-            <WorkspacePremiumIcon color="primary" sx={{ fontSize: 50, mr: 1 }} />
+            <WorkspacePremiumIcon color="secondary" sx={{ fontSize: 50, mr: 1 }} />
             <Typography variant="h4" component="h1">
                 {localeMessages['form_title']}
             </Typography>
@@ -70,7 +70,7 @@ const CertificateForm = () => {
                 onChange={(e) => setFullName(e.target.value)}
             />
             {error && <Alert severity="error">{error}</Alert>}
-            <Button type="submit" variant="contained" color="primary" sx={{ mt: 3 }}>
+            <Button type="submit" variant="contained" color="secondary" sx={{ mt: 3 }}>
                 {localeMessages['submit']}
             </Button>
         </Box> : <Alert severity="success" sx={{ mt: 2 }}>{localeMessages['form_submission_success']}</Alert>}
@@ -78,7 +78,7 @@ const CertificateForm = () => {
             <Box sx={{ mt: 2 }}>
                 <Button
                     variant="contained"
-                    color="primary"
+                    color="secondary"
                     href={certificateUrl}
                     target="_blank"
                     rel="noopener noreferrer"

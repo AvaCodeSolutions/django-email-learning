@@ -2,7 +2,7 @@ import { IconButton, Switch, TableContainer, Table, TableHead, TableRow, TableBo
 import { useState, useEffect } from 'react';
 import { getCookie } from '../../../src/utils.js';
 import DeleteIcon from '@mui/icons-material/Delete';
-import DragHandleIcon from '@mui/icons-material/DragHandle';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { useAppContext } from '../../../src/render.jsx';
 
 
@@ -129,12 +129,12 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                                 eventHandler(event);
                             }
                         }}>
-                         { userRole !== 'viewer' && <TableCell align={direction == 'rtl' ? 'right' : 'left'} sx={{ cursor: 'grab', width: '40px', padding: '8px 0', textAlign: 'center' }}><DragHandleIcon
+                         { userRole !== 'viewer' && <TableCell align={direction == 'rtl' ? 'right' : 'left'} sx={{ cursor: 'grab', width: '40px', padding: '8px 0', textAlign: 'center' }}><DragIndicatorIcon fontSize="small"
                         onMouseDown={() => startDrag(content.id)}
                         /></TableCell>}
                         <TableCell align={direction == 'rtl' ? 'right' : 'left'}><Typography
                             onClick={() => {let event = {type: 'content_clicked', content_id: content.id}; eventHandler(event);}}
-                            color='primary.dark' sx={{ cursor: 'pointer'}}>{content.title}</Typography></TableCell>
+                            color='secondary.dark' sx={{ cursor: 'pointer'}}>{content.title}</Typography></TableCell>
                         <TableCell align={direction == 'rtl' ? 'right' : 'left'}>{formatPeriod(content.waiting_period)}</TableCell>
                         <TableCell align={direction == 'rtl' ? 'right' : 'left'}>{localeMessages[content.type]}</TableCell>
                         <TableCell align={direction == 'rtl' ? 'right' : 'left'}><Switch checked={content.is_published}  onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} /></TableCell>

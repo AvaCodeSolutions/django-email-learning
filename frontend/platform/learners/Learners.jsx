@@ -1,8 +1,7 @@
 import Base from '../../src/components/Base.jsx'
-import { InputBase, IconButton, Accordion, AccordionDetails, AccordionSummary, Box, Dialog, Grid, LinearProgress, Pagination, Paper, TableContainer, Table, TableBody, TableHead, TableCell, TableRow, Typography } from '@mui/material'
+import { Avatar, InputBase, IconButton, Box, Dialog, Grid, LinearProgress, Pagination, Paper, TableContainer, Table, TableBody, TableHead, TableCell, TableRow, Typography } from '@mui/material'
 import { Timeline, TimelineItem, TimelineContent, TimelineOppositeContent, TimelineSeparator, TimelineConnector, TimelineDot } from '@mui/lab'
 import { useState, useEffect, useRef } from 'react'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
@@ -124,6 +123,7 @@ function Learners(initialQs="") {
       setLearners(data.items.map(learner => ({
         id: learner.id,
         email: learner.email,
+        enrollmentsCount: learner.enrollments_count || { total: 0, completed: 0 },
         enrollments: [],
         state: 0, // 0: not loaded, 1: loading, 2: loaded
       })));
@@ -141,14 +141,15 @@ function Learners(initialQs="") {
   }, [organizationId, qs, currentPage]);
 
   const loadEnrollments = (learner) => {
-    if (learner.state !== 0) {
-      return;
+    if (learner.state === 2) {
+      return Promise.resolve(learner.enrollments);
     }
-    learner.state = 1; // loading
-    setLearners([...learners]);
 
-    const apiBaseUrl = localStorage.getItem('apiBaseUrl');
-    fetch(`${apiBaseUrl}/organizations/${organizationId}/learners/${learner.id}`, {
+    setLearners((prevLearners) => prevLearners.map((item) => (
+      item.id === learner.id ? { ...item, state: 1 } : item
+    )));
+
+    return fetch(`${apiBaseUrl}/organizations/${organizationId}/learners/${learner.id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -157,14 +158,42 @@ function Learners(initialQs="") {
     })
     .then(response => response.json())
     .then(data => {
-      learner.enrollments = data.enrollments;
-      learner.state = 2; // loaded
-      setLearners([...learners]);
+      setLearners((prevLearners) => prevLearners.map((item) => (
+        item.id === learner.id ? { ...item, enrollments: data.enrollments, state: 2 } : item
+      )));
+      return data.enrollments;
     })
     .catch(error => {
       console.error('Error fetching enrollments for learner:', error);
-      learner.state = 0; // reset to not loaded on error
-      setLearners([...learners]);
+      setLearners((prevLearners) => prevLearners.map((item) => (
+        item.id === learner.id ? { ...item, state: 0 } : item
+      )));
+      return [];
+    });
+  }
+
+  const showLearnerEnrollments = (learner) => {
+    setDialogOpen(true);
+    setDialogContent(<LinearProgress sx={{ m: 10 }} />);
+
+    const renderEnrollmentList = (enrollments) => {
+      setDialogContent(
+        <Box p={2}>
+          <Typography variant="h6" gutterBottom>{learner.email}</Typography>
+          <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
+            <EnrollentList enrollments={enrollments} selectHandler={showEnrollmentStatus} />
+          </Suspense>
+        </Box>
+      );
+    };
+
+    if (learner.state === 2) {
+      renderEnrollmentList(learner.enrollments);
+      return;
+    }
+
+    loadEnrollments(learner).then((enrollments) => {
+      renderEnrollmentList(enrollments);
     });
   }
 
@@ -177,8 +206,8 @@ function Learners(initialQs="") {
           breadCrumbList={[{label: localeMessages["learners"], href: '#'}]}
           organizationIdRefreshCallback={setOrganizationId}
         >
-      <Grid size={{xs: 12, lg: 8}} py={2} pl={2}>
-        <Box p={2} sx={(theme) => ({ marginBottom: 2, border: '1px solid', borderColor: 'grey.300', borderRadius: 1, minHeight: 300, backgroundColor: theme.palette.background.nav })}>
+      <Grid size={{xs: 12}} py={2} pl={2}>
+        <Box p={2} sx={{ marginBottom: 2, border: '1px solid', borderColor: 'border.main', borderRadius: 2, minHeight: 300, backgroundColor: 'background.box' }}>
 
           <Paper
             sx={{ mb: '10px', p: '2px 4px', display: 'flex', alignItems: 'center', width: 400 }}
@@ -199,24 +228,41 @@ function Learners(initialQs="") {
               <TableHead>
                 <TableRow>
                   <TableCell sx={{textAlign: direction=="rtl" ? "right" : "left"}}>{localeMessages["learners_list"]}</TableCell>
+                  <TableCell sx={{textAlign: direction=="rtl" ? "right" : "left"}}>Courses</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {learners.map((learner) => (
-                  <TableRow key={learner.id}>
+                  <TableRow
+                    key={learner.id}
+                    sx={(theme) => ({
+                      ':hover': {
+                        backgroundColor: theme.palette.background.dark,
+                        cursor: 'pointer',
+                      },
+                    })}
+                    onClick={() => showLearnerEnrollments(learner)}
+                  >
                     <TableCell>
-                      <Accordion onChange={() => {loadEnrollments(learner)}}>
-                        <AccordionSummary
-                          expandIcon={<ExpandMoreIcon />}
-                          aria-controls="panel1-content"
-                          id="panel1-header"
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                        <Avatar
+                          sx={(theme) => ({
+                            width: 30,
+                            height: 30,
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            color: '#fff',
+                            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.deepPurple[400]} 100%)`,
+                          })}
                         >
-                          <Typography component="span">{learner.email}</Typography>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                          <Typography component="span">{learner.state === 0 ? "" : learner.state === 1 ? <LinearProgress /> : <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><EnrollentList enrollments={learner.enrollments} selectHandler={showEnrollmentStatus}/></Suspense>}</Typography>
-                        </AccordionDetails>
-                      </Accordion>
+                          {(learner.email?.[0] || '?').toUpperCase()}
+                        </Avatar>
+                        <Typography component="span">{learner.email}</Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>
+                      <Typography variant="body2">{learner.enrollmentsCount.total} enrolled</Typography>
+                      <Typography variant="body2" color="text.secondary">{learner.enrollmentsCount.completed} completed</Typography>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -226,7 +272,7 @@ function Learners(initialQs="") {
           { showPagination && <Pagination sx={{ mt: 2 }} count={pagesCount} onChange={(event, page) => setCurrentPage(page)} /> }
         </Box>
       </Grid>
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="md">
         {dialogContent}
       </Dialog>
     </Base>

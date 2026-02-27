@@ -146,7 +146,9 @@ class EncryptionMixin(models.Model):
 
     def _encrypt_password(self, password: str) -> str:
         if not self.salt:
-            self.salt = base64.urlsafe_b64encode(uuid.uuid4().bytes).decode().rstrip("=")
+            self.salt = (
+                base64.urlsafe_b64encode(uuid.uuid4().bytes).decode().rstrip("=")
+            )
         f = self._fernet(self.salt)
         return f.encrypt(password.encode()).decode()
 
@@ -446,6 +448,15 @@ class Learner(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
+    @property
+    def enrollments_count(self) -> dict[str, int]:
+        return {
+            "total": self.enrollment_set.count(),
+            "completed": self.enrollment_set.filter(
+                status=EnrollmentStatus.COMPLETED
+            ).count(),
+        }
+
     class Meta:
         unique_together = [["organization", "email"]]
 
@@ -616,6 +627,23 @@ class Enrollment(models.Model):
             scheduled.generate_link()
         else:
             raise ValidationError("No published content available to schedule.")
+
+    @property
+    def progress_percentage(self) -> int:
+        total_content = self.course.coursecontent_set.filter(is_published=True).count()
+        if total_content == 0:
+            return 0
+        delivered_content = (
+            ContentDelivery.objects.filter(
+                enrollment=self,
+                delivery_schedules__status=DeliveryStatus.DELIVERED,
+                course_content__is_published=True,
+            )
+            .distinct()
+            .count()
+        )
+        progress = int((delivered_content / total_content) * 100)
+        return progress
 
 
 class Certificate(models.Model):

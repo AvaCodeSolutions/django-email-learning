@@ -83,7 +83,7 @@ const ImageUpload = ({ onUploadSuccess, onUploadError, initialUrl }) => {
             />
             </Button>
             : (<><img src={imageUrl} alt={localeMessages["uploaded_image_alt"]} style={{ marginTop: '10px', maxHeight: '100px' }} /><br />
-                <Button variant="text" color="secondary" onClick={removeImage}>{localeMessages["remove_image"]}</Button></>
+                <Button variant="text" color="primary" onClick={removeImage}>{localeMessages["remove_image"]}</Button></>
             )}
     </>)
 }
