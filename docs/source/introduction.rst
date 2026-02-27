@@ -22,7 +22,7 @@ Key Features
 * **Django Native:** Built as a pluggable Django app that integrates seamlessly into your existing project.
 
 .. important::
-   The library is currently in its early stages of development. The current version is an alpha release,
+   The library is currently in its early stages of development. The current version is an beta release,
    and while it includes core features, it may not yet be suitable for production use and future updates may introduce breaking changes.
 
 

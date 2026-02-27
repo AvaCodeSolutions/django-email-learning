@@ -117,7 +117,7 @@ class OrganizationUser(models.Model):
 
 
 class EncryptionMixin(models.Model):
-    salt = models.CharField(max_length=32, editable=False, default=uuid.uuid4().hex)
+    salt = models.CharField(max_length=32, editable=False)
 
     @classmethod
     def _fernet(cls, salt: str) -> Fernet:
@@ -145,6 +145,8 @@ class EncryptionMixin(models.Model):
         return f.encrypt(value.encode()).decode()
 
     def _encrypt_password(self, password: str) -> str:
+        if not self.salt:
+            self.salt = base64.urlsafe_b64encode(uuid.uuid4().bytes).decode().rstrip("=")
         f = self._fernet(self.salt)
         return f.encrypt(password.encode()).decode()
 

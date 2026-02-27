@@ -12,9 +12,9 @@ A Django package for creating email-based learning platforms with IMAP integrati
 ![Tests](https://github.com/AvaCodeSolutions/django-email-learning/actions/workflows/pr-check.yml/badge.svg)
 
 
-## ⚠️ Early Development Notice
+## Early Development Notice
 
-**This project is currently in early development and is not yet ready for production use.**
+**Note: This project is in early development. If you plan to use it in production, expect possible issues, as it has not yet been thoroughly production-tested.**
 
 ## What is django-email-learning?
 

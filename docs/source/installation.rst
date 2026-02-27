@@ -3,8 +3,8 @@ Installation
 
 This guide will help you install and configure Django Email Learning in your Django project.
 
-.. warning::
-   The library is currently in its early stages of development. The current version is an alpha release,
+.. important::
+   The library is currently in its early stages of development. The current version is an beta release,
    and while it includes core features, it may not yet be suitable for production use and future updates may introduce breaking changes.
 
 

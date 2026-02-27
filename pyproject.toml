@@ -1,6 +1,6 @@
 [project]
 name = "django-email-learning"
-version = "0.1.34"
+version = "0.2.0"
 description = "A platform for creating and delivering  learning materials via email within a Django application. It provides tools for content management, user role-based administration, and scheduler integration for automated content delivery."
 authors = [
     {name = "Payam Najafizadeh",email = "payam.nj@gmail.com"}
@@ -17,7 +17,7 @@ dependencies = [
     "qrcode (>=8.2,<9.0)",
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Framework :: Django",
     "Framework :: Django :: 5.0",
     "Framework :: Django :: 6.0",
