@@ -54,6 +54,26 @@ const ImageUpload = ({ onUploadSuccess, onUploadError, initialUrl }) => {
         }
     }, [imageFile]);
 
+    const handleFileChange = (event) => {
+        const selectedFile = event.target.files?.[0];
+        if (!selectedFile) {
+            return;
+        }
+
+        const isImage = selectedFile.type.startsWith('image/');
+        const isWebp = selectedFile.type === 'image/webp' || selectedFile.name.toLowerCase().endsWith('.webp');
+
+        if (!isImage || isWebp) {
+            event.target.value = '';
+            if (onUploadError) {
+                onUploadError(new Error('Only non-WebP image files are allowed.'));
+            }
+            return;
+        }
+
+        setImageFile(selectedFile);
+    }
+
     const VisuallyHiddenInput = styled('input')({
         clip: 'rect(0 0 0 0)',
         clipPath: 'inset(50%)',
@@ -79,7 +99,8 @@ const ImageUpload = ({ onUploadSuccess, onUploadError, initialUrl }) => {
             {localeMessages["upload_button_label"]}
             <VisuallyHiddenInput
                 type="file"
-                onChange={(event) => setImageFile(event.target.files[0])}
+                accept="image/png,image/jpeg,image/gif,image/bmp,image/svg+xml,image/tiff,image/avif"
+                onChange={handleFileChange}
             />
             </Button>
             : (<><img src={imageUrl} alt={localeMessages["uploaded_image_alt"]} style={{ marginTop: '10px', maxHeight: '100px' }} /><br />

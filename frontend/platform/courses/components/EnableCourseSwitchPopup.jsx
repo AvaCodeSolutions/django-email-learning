@@ -14,7 +14,7 @@ const EnableCourseSwitchPopup = ({ courseId, action, courseTitle, handleClose, h
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken')
             },
-            body: JSON.stringify({ enabled: action === 'enable' })
+            body: JSON.stringify({ enabled: action === 'enable', image: "SKIP" }),
         })
         .then(response => response.json())
         .then(data => {

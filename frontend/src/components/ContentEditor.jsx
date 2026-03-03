@@ -1,4 +1,5 @@
 
+import { useEffect, useState } from 'react';
 import Text from '@tiptap/extension-text'
 import CodeBlock from '@tiptap/extension-code-block'
 import Document from '@tiptap/extension-document'
@@ -30,11 +31,41 @@ import { Code as CodeIcon } from '@mui/icons-material';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import ImageIcon from '@mui/icons-material/Image';
+import VerticalAlignCenterIcon from '@mui/icons-material/VerticalAlignCenter';
 import { useAppContext } from '../render'
 
-
-function ContentEditor({ initialContent, contentUpdateCallback, disabled = false }) {
+function ContentEditor({ initialContent, contentUpdateCallback, disabled = false, extraMinLines = 0, editorInstanceCallback }) {
     const { direction } = useAppContext();
+    const minHeight = 200 + (Math.max(0, extraMinLines) * 24);
+    const [editorHeight, setEditorHeight] = useState(minHeight);
+
+    useEffect(() => {
+        setEditorHeight((previousHeight) => Math.max(previousHeight, minHeight));
+    }, [minHeight]);
+
+    const handleResizeStart = (event) => {
+        event.preventDefault();
+        const startY = event.clientY;
+        const startHeight = editorHeight;
+
+        const onMouseMove = (moveEvent) => {
+            const deltaY = moveEvent.clientY - startY;
+            setEditorHeight(Math.max(minHeight, startHeight + deltaY));
+        };
+
+        const onMouseUp = () => {
+            document.body.style.userSelect = '';
+            document.body.style.cursor = '';
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+        };
+
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'ns-resize';
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+    };
+
     const editor = useEditor({
         extensions: [
             Document,
@@ -52,6 +83,7 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
             }),
             Image.configure({
                 allowBase64: false,
+                inline: true,
                 resize: {
                     enabled: true,
                     alwaysPreserveAspectRatio: true,
@@ -69,9 +101,31 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
         },
     })
 
+    useEffect(() => {
+        if (editorInstanceCallback) {
+            editorInstanceCallback(editor || null);
+        }
+
+        return () => {
+            if (editorInstanceCallback) {
+                editorInstanceCallback(null);
+            }
+        };
+    }, [editor, editorInstanceCallback]);
+
     if (!editor) {
         return null
     }
+
+    const applyAlignment = (align) => {
+        if (editor.isActive('image')) {
+            const isAppliedToParagraph = editor.chain().focus().updateAttributes('paragraph', { textAlign: align }).run();
+            if (isAppliedToParagraph) {
+                return;
+            }
+        }
+        editor.chain().focus().setTextAlign(align).run();
+    };
 
     return (
         <Paper elevation={2} sx={{ width: '100%' }}>
@@ -129,7 +183,7 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                     </Tooltip>
                     <Tooltip title="Align Left" placement="top">
                     <IconButton
-                        onClick={() => editor.chain().focus().setTextAlign('left').run()}
+                        onClick={() => applyAlignment('left')}
                         size="small"
                     >
                         <AlignHorizontalLeftIcon />
@@ -137,7 +191,7 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                     </Tooltip>
                     <Tooltip title="Align Center" placement="top">
                     <IconButton
-                        onClick={() => editor.chain().focus().setTextAlign('center').run()}
+                        onClick={() => applyAlignment('center')}
                         size="small"
                     >
                         <FormatAlignCenterIcon />
@@ -145,7 +199,7 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                     </Tooltip>
                     <Tooltip title="Align Right" placement="top">
                     <IconButton
-                        onClick={() => editor.chain().focus().setTextAlign('right').run()}
+                        onClick={() => applyAlignment('right')}
                         size="small"
                     >
                         <AlignHorizontalRightIcon />
@@ -213,12 +267,13 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                 <Box
                     sx={{
                         width: '100%',
+                        position: 'relative',
                         '& .ProseMirror': {
                             paddingTop: 2,
                             paddingLeft: 4,
                             paddingRight: 4,
                             paddingBottom: 2,
-                            minHeight: 200,
+                            minHeight: editorHeight,
                             outline: 'none',
                             fontSize: '16px',
                             lineHeight: 1.6,
@@ -242,6 +297,35 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                             '& strong': {
                                 fontWeight: 'bold'
                             },
+                            '& img': {
+                                display: 'inline-block',
+                                maxWidth: '100%',
+                                height: 'auto',
+                                marginTop: 4,
+                                marginBottom: 4,
+                            },
+                            '& [data-resize-wrapper]': {
+                                display: 'inline-block',
+                                maxWidth: '100%',
+                            },
+                            '& p[style*="text-align: left"] [data-resize-wrapper], & h1[style*="text-align: left"] [data-resize-wrapper], & h2[style*="text-align: left"] [data-resize-wrapper], & h3[style*="text-align: left"] [data-resize-wrapper]': {
+                                display: 'block',
+                                width: 'fit-content',
+                                marginLeft: 0,
+                                marginRight: 'auto',
+                            },
+                            '& p[style*="text-align: center"] [data-resize-wrapper], & h1[style*="text-align: center"] [data-resize-wrapper], & h2[style*="text-align: center"] [data-resize-wrapper], & h3[style*="text-align: center"] [data-resize-wrapper]': {
+                                display: 'block',
+                                width: 'fit-content',
+                                marginLeft: 'auto',
+                                marginRight: 'auto',
+                            },
+                            '& p[style*="text-align: right"] [data-resize-wrapper], & h1[style*="text-align: right"] [data-resize-wrapper], & h2[style*="text-align: right"] [data-resize-wrapper], & h3[style*="text-align: right"] [data-resize-wrapper]': {
+                                display: 'block',
+                                width: 'fit-content',
+                                marginLeft: 'auto',
+                                marginRight: 0,
+                            },
                             'blockquote': {
                                 borderLeft: direction == 'rtl' ? 'none' : '4px solid',
                                 borderRight: direction == 'rtl' ? '4px solid' : 'none',
@@ -254,6 +338,22 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                     }}
                 >
                     <EditorContent editor={editor} />
+                    <Box
+                        role="presentation"
+                        onMouseDown={handleResizeStart}
+                        sx={{
+                            position: 'absolute',
+                            bottom: 6,
+                            ...(direction === 'rtl' ? { left: 8 } : { right: 8 }),
+                            width: 16,
+                            height: 16,
+                            cursor: 'ns-resize',
+                            opacity: 0.65,
+                            color: 'text.secondary',
+                        }}
+                    >
+                        <VerticalAlignCenterIcon sx={{ fontSize: 16 }} />
+                    </Box>
                 </Box>
             </EditorContext.Provider>
         </Paper>

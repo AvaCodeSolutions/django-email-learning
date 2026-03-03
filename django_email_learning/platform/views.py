@@ -162,6 +162,10 @@ class Courses(BasePlatformView):
             "course_title": _("Course Title"),
             "course_description": _("Course Description"),
             "course_slug": _("Course Slug"),
+            "slug_tooltip": _(
+                "The slug is a unique identifier for the course used in URLs and API endpoints. It should be lowercase, contain no spaces (use hyphens instead), and be unique across all courses for your organization. Once set, the slug cannot be changed."
+            ),
+            "slug_no_space": _("Slug cannot contain spaces. Use hyphens instead."),
             "add_imap_connection": _("Add IMAP Connection"),
             "imap_connection_tooltip": _(
                 "You don't need an IMAP connection to build your course, but you will need one if you want your users to interact via email. For example, they can sign up or check their progress just by sending a message. This is a great solution if your audience has limited platform access."
@@ -232,6 +236,20 @@ class CourseView(BasePlatformView):
             "lesson_title": _("Lesson Title"),
             "lesson_waiting_tooltip": _(
                 "Set the amount of time that we should wait after the previous lesson or quiz submission before sending this lesson"
+            ),
+            "upload": _("Upload"),
+            "uploaded_image_preview": _("Uploaded image preview"),
+            "add_image_to_editor": _("Add image to editor"),
+            "remove_uploaded_image": _("Remove uploaded image"),
+            "confirm_delete_uploaded_image": _("Confirm image deletion"),
+            "delete_uploaded_image_warning": _(
+                "Please confirm this image is not used anywhere else. Deleting it will break existing links."
+            ),
+            "uploaded_image_used_in_editor_error": _(
+                "This image is already used in the editor content. Remove it from the content before deleting the file."
+            ),
+            "uploaded_image_delete_failed": _(
+                "Failed to delete image file. Please try again."
             ),
             "days": _("Days"),
             "hours": _("Hours"),

@@ -152,7 +152,8 @@ class UpdateCourseRequest(BaseModel):
         if self.reset_imap_connection:
             course.imap_connection = None
         if self.image is not None:
-            course.replace_image(self.image)
+            if self.image != "SKIP":
+                course.replace_image(self.image)
         if not self.image:
             course.image = None
 
