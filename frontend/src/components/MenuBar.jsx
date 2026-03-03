@@ -204,7 +204,27 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
             <Box sx={{display: { xs: 'flex'}, right: direction === 'rtl' ? 'auto' : '0', left: direction === 'rtl' ? '0' : 'auto', position: "absolute" }}>
                 <ThemeSwitcher />
                 <Box m={1} paddingTop="7px">
-                <IconButton aria-controls="menu-appbar" onClick={toggleMenuDrawer(true)} sx={{ display: { xs: 'inline-block', md: 'none' }}}>
+                <IconButton
+                    aria-controls="menu-appbar"
+                    onClick={toggleMenuDrawer(true)}
+                    disableRipple
+                    disableFocusRipple
+                    sx={(theme) => ({
+                        display: { xs: 'inline-block', md: 'none' },
+                        color: theme.palette.mode === 'light' ? theme.palette.grey[900] : 'inherit',
+                        border: 'none',
+                        outline: 'none',
+                        boxShadow: 'none',
+                        transition: 'ease 0.3s',
+                        '&:hover': {
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            color: theme.palette.primary.main,
+                            outline: 'none',
+                            boxShadow: 'none',
+                        }
+                    })}
+                >
                     <MenuIcon />
                 </IconButton>
                 </Box>

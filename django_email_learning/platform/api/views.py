@@ -14,6 +14,7 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordResetForm
 from datetime import timedelta, datetime
+from urllib.parse import urlparse
 from pydantic import ValidationError
 from enum import StrEnum
 from django_email_learning.platform.api import serializers
@@ -41,6 +42,7 @@ from typing import Any
 import uuid
 import json
 import logging
+import posixpath
 
 
 logger = logging.getLogger(__name__)
@@ -610,6 +612,7 @@ class GetOrCreateUserByEmail(View):
 
 
 @method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
+@method_decorator(accessible_for(roles={"admin", "editor"}), name="delete")
 class FileView(View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         uploaded_file = request.FILES.get("file")
@@ -630,6 +633,45 @@ class FileView(View):
         )
         file_url = default_storage.url(file_path)
         return JsonResponse({"file_url": file_url, "file_path": file_path}, status=201)
+
+    def delete(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            payload = json.loads(request.body or "{}")
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid request body"}, status=400)
+
+        file_path = payload.get("file_path")
+        file_url = payload.get("file_url")
+
+        if not file_path and file_url:
+            parsed_url_path = urlparse(file_url).path
+            media_url = settings.MEDIA_URL or "/media/"
+            normalized_media_url = (
+                media_url if media_url.endswith("/") else f"{media_url}/"
+            )
+            if parsed_url_path.startswith(normalized_media_url):
+                file_path = parsed_url_path[len(normalized_media_url) :]
+
+        if not file_path:
+            return JsonResponse({"error": "file_path is required"}, status=400)
+
+        normalized_file_path = posixpath.normpath(str(file_path)).lstrip("/")
+        path_parts = normalized_file_path.split("/")
+        organization_id = str(kwargs["organization_id"])
+
+        if (
+            len(path_parts) < 4
+            or path_parts[0] != "uploads"
+            or path_parts[2] != organization_id
+            or ".." in path_parts
+        ):
+            return JsonResponse({"error": "Invalid file path"}, status=400)
+
+        if not default_storage.exists(normalized_file_path):
+            return JsonResponse({"error": "File not found"}, status=404)
+
+        default_storage.delete(normalized_file_path)
+        return JsonResponse({"message": "File deleted successfully"}, status=200)
 
 
 @method_decorator(is_an_organization_member(), name="post")

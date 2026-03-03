@@ -1,8 +1,5 @@
-import { Alert, Box, Button, FormControlLabel, Switch, Tooltip, Typography } from '@mui/material';
+import { Alert, Box, Button, Tooltip} from '@mui/material';
 import RequiredTextField  from '../../../src/components/RequiredTextField.jsx';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import IconButton from '@mui/material/IconButton';
-import AddImapConnectionForm from './AddImapConnectionForm.jsx';
 import { useAppContext } from '../../../src/render.jsx';
 import ImageUpload from '../../../src/components/ImageUpload.jsx';
 import { useEffect, useState } from 'react';
@@ -67,6 +64,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
 
     const validateForm = () => {
         let isValid = true
+        const noWhitespacePattern = /^\S+$/;
         if (!courseTitle) {
             setTitleHelperText(localeMessages["title_required_helper_text"]);
             isValid = false;
@@ -75,6 +73,9 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
         }
         if (!courseSlug) {
             setSlugHelperText(localeMessages["slug_required_helper_text"]);
+            isValid = false;
+        } else if (!noWhitespacePattern.test(courseSlug)) {
+            setSlugHelperText(localeMessages["slug_no_space"]);
             isValid = false;
         } else {
             setSlugHelperText("");
@@ -185,8 +186,9 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     return (<Box p={2}>
               { errorMessage && <Alert severity="error" sx={{ marginBottom: "10px" }}>{errorMessage}</Alert> }
               <RequiredTextField label={localeMessages["course_title"]} helperText={titleHelperText} fullWidth margin="normal" value={courseTitle} onChange={(e) => setCourseTitle(e.target.value)} />
-              <RequiredTextField label={localeMessages["course_slug"]} helperText={slugHelperText} fullWidth margin="normal" value={courseSlug} onChange={(e) => setCourseSlug(e.target.value)} {...(!createMode ? { disabled: true } : {})} />
-
+              <Tooltip title={createMode ? localeMessages["slug_tooltip"] : ""}>
+                                <RequiredTextField label={localeMessages["course_slug"]} helperText={slugHelperText} fullWidth margin="normal" value={courseSlug} onChange={(e) => setCourseSlug(e.target.value)} inputProps={{ pattern: '^\\S+$', title: localeMessages['slug_no_space'] }} {...(!createMode ? { disabled: true } : {})} />
+              </Tooltip>
               <RequiredTextField label={localeMessages["course_description"]} helperText={descriptionHelperText} fullWidth margin="normal" multiline rows={4} value={courseDescription} onChange={(e) => setCourseDescription(e.target.value)} />
               {/* Imap Form is commented for now since it's backend command still not implemented but the API and UI works as expected */}
               {/* <FormControlLabel

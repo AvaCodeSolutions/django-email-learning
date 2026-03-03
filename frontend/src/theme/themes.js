@@ -180,6 +180,23 @@ const defaultOptions = {
         },
       },
     },
+    MuiTooltip: {
+      styleOverrides: {
+        tooltip: ({ theme }) => ({
+          lineHeight: 1.6,
+          color: theme.palette.text.primary,
+          backgroundColor: theme.palette.mode === 'light'
+            ? darken(theme.palette.background.main, 0.03)
+            : darken(theme.palette.background.main, 0.12),
+          border: `1px solid ${alpha(theme.palette.border.main, 0.8)}`,
+        }),
+        arrow: ({ theme }) => ({
+          color: theme.palette.mode === 'light'
+            ? darken(theme.palette.background.main, 0.03)
+            : darken(theme.palette.background.main, 0.12),
+        }),
+      },
+    },
     MuiIconButton: {
       defaultProps: {
         size: 'small',

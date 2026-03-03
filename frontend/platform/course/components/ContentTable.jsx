@@ -11,7 +11,8 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
     const [isDragging, setIsDragging] = useState(false);
     const [draggedContentId, setDraggedContentId] = useState(null);
 
-    const startDrag = (contentId) => {
+    const startDrag = (event, contentId) => {
+        event.preventDefault();
         setIsDragging(true);
         setDraggedContentId(contentId);
     }
@@ -47,6 +48,18 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
         window.addEventListener('pointerup', onPointerUp);
         return () => window.removeEventListener('pointerup', onPointerUp);
     }, []);
+
+    useEffect(() => {
+        if (isDragging) {
+            document.body.style.userSelect = 'none';
+        } else {
+            document.body.style.userSelect = '';
+        }
+
+        return () => {
+            document.body.style.userSelect = '';
+        };
+    }, [isDragging]);
 
     const deleteContent = (contentId) => {
         eventHandler({ type: 'delete_content', content: contentList.find(content => content.id === contentId)});
@@ -115,7 +128,26 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
             <TableBody>
                 {contentList.map((content) => (
                     <TableRow
-                        key={content.id} {...(isDragging && draggedContentId === content.id && { sx: { backgroundColor: 'background.main', boxShadow: 2 } })}
+                        key={content.id}
+                        sx={{
+                            transition: 'transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease',
+                            ...(isDragging && draggedContentId === content.id
+                                ? {
+                                    backgroundColor: 'background.box',
+                                    transform: 'translateY(-2px) scale(1.005)',
+                                    filter: (theme) => theme.palette.mode === 'dark'
+                                        ? 'drop-shadow(0 2px 4px rgba(0,0,0,0.22))'
+                                        : 'drop-shadow(0 2px 4px rgba(16,24,40,0.08))',
+                                    borderTop: '1px solid',
+                                    borderBottom: '1px solid',
+                                    borderColor: 'primary.main',
+                                    '& > td': {
+                                        backgroundColor: 'background.box',
+                                    },
+                                }
+                                : {}
+                            ),
+                        }}
                         onMouseOver={() => {
                             if (isDragging && draggedContentId !== content.id) {
                                 const draggedIndex = contentList.findIndex(c => c.id === draggedContentId);
@@ -130,7 +162,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                             }
                         }}>
                          { userRole !== 'viewer' && <TableCell align={direction == 'rtl' ? 'right' : 'left'} sx={{ cursor: 'grab', width: '40px', padding: '8px 0', textAlign: 'center' }}><DragIndicatorIcon fontSize="small"
-                        onMouseDown={() => startDrag(content.id)}
+                        onMouseDown={(event) => startDrag(event, content.id)}
                         /></TableCell>}
                         <TableCell align={direction == 'rtl' ? 'right' : 'left'}><Typography
                             onClick={() => {let event = {type: 'content_clicked', content_id: content.id}; eventHandler(event);}}
