@@ -49,10 +49,10 @@ const CertificateContent = () => {
                     borderRadius: 3,
                     position: 'relative',
                     backgroundImage: (() => {
-                        const band = alpha(theme.palette.secondary.main, 0.22);
-                        const glow = alpha(theme.palette.primary.main, 0.35);
-                        const baseStart = alpha(theme.palette.primary.main, 0.88);
-                        const baseEnd = alpha(theme.palette.secondary.main, 0.88);
+                        const band = alpha(theme.palette.primary.main, 0.22);
+                        const glow = alpha(theme.palette.secondary.main, 0.35);
+                        const baseStart = alpha(theme.palette.secondary.main, 0.88);
+                        const baseEnd = alpha(theme.palette.primary.main, 0.88);
                         const hatch = alpha(theme.palette.common.white, 0.05);
                         return [
                             `linear-gradient(15deg, transparent 0 35%, ${band} 35% 41%, transparent 41% 100%)`,
@@ -77,7 +77,6 @@ const CertificateContent = () => {
                     padding: "1mm",
                     borderRadius: 2,
                     boxSizing: 'border-box',
-                    overflow: 'scroll',
                     width: '100%',
                     height: '100%',
                 }}><Paper
@@ -87,10 +86,10 @@ const CertificateContent = () => {
                     height: '100%',
                     display: 'flex',
                     borderRadius: 2,
-                    border: `2px solid ${alpha(theme.palette.primary.main, 0.5)}`,
+                    border: `2px solid ${alpha(theme.palette.secondary.main, 0.5)}`,
                     position: 'relative',
                     backgroundImage: (() => {
-                        const fade = alpha(theme.palette.primary.main, 0.02);
+                        const fade = alpha(theme.palette.secondary.main, 0.02);
                         return [
                             `repeating-linear-gradient(135deg, ${fade} 0 1px, transparent 2px 6px)`,
                         ].join(", ");
@@ -105,7 +104,7 @@ const CertificateContent = () => {
                         right: 16,
                         height: 6,
                         borderRadius: 999,
-                        background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                        background: `linear-gradient(90deg, ${theme.palette.secondary.main} 0%, ${theme.palette.primary.main} 100%)`,
                         opacity: 0.25,
                     },
                     flexDirection: 'column',
@@ -113,10 +112,14 @@ const CertificateContent = () => {
                     justifyContent: 'center',
                     padding: 8,
                     boxSizing: 'border-box',
+                    color: alpha(theme.palette.common.black, 0.88),
+                    '& .MuiTypography-root': {
+                        color: alpha(theme.palette.common.black, 0.88),
+                    },
                 })}
             >
                 {/* Your content here */}
-                <WorkspacePremiumIcon sx={(theme) => ({ fontSize: 86, color: theme.palette.secondary.main, mb: 2 })} />
+                <WorkspacePremiumIcon sx={(theme) => ({ fontSize: 86, color: theme.palette.primary.main, mb: 2 })} />
                 <Typography
                     variant="h1"
                     gutterBottom

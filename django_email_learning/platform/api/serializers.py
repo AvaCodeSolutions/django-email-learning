@@ -485,12 +485,20 @@ class EnrollmentSummaryResponse(BaseModel):
     id: int
     course_title: str
     status: EnrollmentStatus
+    progress: int
+    certificate_url: str | None = None
+
+
+class EnrollmentsCount(BaseModel):
+    total: int
+    completed: int
 
 
 class LearnerResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     email: str
+    enrollments_count: EnrollmentsCount
 
 
 class EventType(enum.StrEnum):

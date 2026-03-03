@@ -123,7 +123,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
             }} />
             <DialogActions>
                 <Button onClick={cancelCallback}>{localeMessages["cancel"]}</Button>
-                <Button variant='contained' type="submit" color="primary" onClick={createMode? handleCreate() : handleUpdate() }>
+                <Button variant='contained' type="submit" color="secondary" onClick={createMode? handleCreate() : handleUpdate() }>
                     {createMode ? localeMessages["create"] : localeMessages["update"]}
                 </Button>
             </DialogActions>

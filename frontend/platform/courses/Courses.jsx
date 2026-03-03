@@ -114,14 +114,10 @@ function Courses() {
   return (
     <Base
       breadCrumbList={[{label: localeMessages.course_management, href: '#'}]}
-      bottomDrawerParams={{
-        icon: <FilterListIcon />,
-        children: <FilterForm onStatusChange={(params) => setQueryParameters(params)} />
-      }}
       organizationIdRefreshCallback={setOrganizationId}
     >
-      <Grid size={{xs: 12, md: 9}} py={2} pl={2}>
-        <Box p={2} sx={{ border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.main', borderRadius: 1, minHeight: 300 }}>
+      <Grid size={{xs: 12}} py={2} pl={2}>
+        <Box p={2} sx={{ border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: 2, minHeight: 300 }}>
         {userRole !== 'viewer' && <Button variant="contained" startIcon={<SchoolIcon sx={{ marginLeft: direction === 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
           setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><CourseForm
             successCallback={handleCourseCreated}
@@ -132,7 +128,7 @@ function Courses() {
           /></Suspense>);
           setDialogOpen(true);}}>{localeMessages["add_course"]}</Button>}
         <TableContainer component={Paper}>
-          <Table sx={{ width: "100%" }} aria-label={localeMessages["courses"]}>
+          <Table aria-label={localeMessages["courses"]}>
             <TableHead>
               <TableRow>
                 <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["title"]}</TableCell>
@@ -143,12 +139,9 @@ function Courses() {
             </TableHead>
             <TableBody>
               {courses.length > 0 && courses.map((course) => (
-                <TableRow
-                  key={course.id}
-                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                >
+                <TableRow key={course.id}>
                   <TableCell component="th" scope="row" sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>
-                    <Link href={`${platformBaseUrl}/courses/${course.id}`} color='primary.dark'>{course.title}</Link>
+                    <Link href={`${platformBaseUrl}/courses/${course.id}`} color='secondary.dark'>{course.title}</Link>
                   </TableCell>
                   <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{course.enrollments_count.total}</TableCell>
                   <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>
@@ -172,16 +165,22 @@ function Courses() {
                   </TableCell>}
                 </TableRow>
               ))}
+              {courses.length === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={userRole !== 'viewer' ? 4 : 3}
+                    sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}
+                  >
+                    {localeMessages["no_courses_found"] || "No courses found."}
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </TableContainer>
         </Box>
       </Grid>
-      <Grid display={{xs: "none", md: "block"}} size={{ md: 3 }} p={2}>
-        <Box p={2} sx={{ border: '1px solid', borderColor: 'border.main', borderRadius: 1, minHeight: 300, position: 'sticky', top: 85, backgroundColor: 'background.main' }}>
-          <FilterForm onStatusChange={(params) => setQueryParameters(params)} />
-        </Box>
-      </Grid>
+
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
         {dialogContent}
       </Dialog>

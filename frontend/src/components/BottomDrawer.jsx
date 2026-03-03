@@ -9,7 +9,7 @@ function BottomDrawer({icon, children}) {
     };
     return (
         <>
-            <Fab size="small" color="secondary" aria-label="Filter list" sx={{ position: 'fixed', bottom: 16, right: 16, display: {md: "none"}, boxShadow: "1px 1px 5px rgba(0, 0, 0, 0.2)" }} onClick={toggleDrawer(true)}>
+            <Fab size="small" color="primary" aria-label="Filter list" sx={{ position: 'fixed', bottom: 16, right: 16, display: {md: "none"}, boxShadow: "1px 1px 5px rgba(0, 0, 0, 0.2)" }} onClick={toggleDrawer(true)}>
                 {icon}
             </Fab>
             <Drawer open={drawerOpen} onClose={toggleDrawer(false)} display={{md: "none" }} anchor='bottom'

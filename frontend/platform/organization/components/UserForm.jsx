@@ -127,7 +127,7 @@ const UserForm = ({ onClose, organizationId, refreshUsers, user = null }) => {
                 </Select>
             </FormControl>
             {error && <Typography color="error">{error}</Typography>}
-            <Button type="submit" variant="contained" color="primary">
+            <Button type="submit" variant="contained" color="secondary">
                 {  user ? localeMessages["edit_user"] : localeMessages["add_user"]}
             </Button>
         </Box>

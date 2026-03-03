@@ -97,6 +97,7 @@ class BasePlatformView(TemplateView):
                     "api_keys": _("API Keys"),
                     "content_delivery_job": _("Content Delivery Job"),
                     "last_run": _("Last Run:"),
+                    "never_run": _("This job has never been executed."),
                     "content_delivery_tooltip": _(
                         "This job should run on a regular schedule to ensure timely content delivery. Configure a cron job or cloud scheduler to execute it at appropriate intervals, such as every five minutes."
                     ),
@@ -104,6 +105,7 @@ class BasePlatformView(TemplateView):
                 | self.get_locale_messages(),
             },
             "activeOrganizationId": active_organization_id,
+            "favicon": DJANGO_EMAIL_LEARNING_SETTINGS.get("FAVICON"),
         }
 
     def get_locale_messages(self) -> Dict[str, str]:
@@ -397,7 +399,7 @@ class Learners(BasePlatformView):
             "failed": _("Failed"),
             "enrollment_details": _("Enrollment Details"),
             "enrollment_id": _("Enrollment ID"),
-            "unvierfied": _("Unverified"),
+            "unverified": _("Unverified"),
             "active": _("Active"),
             "completed": _("Completed"),
             "deactivated": _("Deactivated"),

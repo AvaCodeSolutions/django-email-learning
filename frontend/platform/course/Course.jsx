@@ -48,9 +48,9 @@ function Course() {
             .then(data => {
                 setEnrollmentsCount([
                     { label: localeMessages["unverified"], value: data.enrollments_count.unverified, color: theme.palette.indigo[200] },
-                    { label: localeMessages["active"], value: data.enrollments_count.active, color: theme.palette.secondary.main },
+                    { label: localeMessages["active"], value: data.enrollments_count.active, color: theme.palette.primary.main },
                     { label: localeMessages["deactivated"], value: data.enrollments_count.deactivated, color: theme.palette.grey[300] },
-                    { label: localeMessages["completed"], value: data.enrollments_count.completed, color: theme.palette.primary.main },
+                    { label: localeMessages["completed"], value: data.enrollments_count.completed, color: theme.palette.secondary.main },
                 ]);
             })
             .catch(error => console.error('Error fetching course data:', error));
@@ -201,7 +201,7 @@ function Course() {
             showOrganizationSwitcher={false}
         >
             <Grid size={{xs: 12}} py={2} pl={2}>
-                <Box p={2} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, minHeight: 300 }}>
+                <Box p={2} sx={{ border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: 2, minHeight: 300 }}>
                     {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
                         setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><LessonForm
                             header={localeMessages["new_lesson"]}
@@ -219,7 +219,7 @@ function Course() {
                 </Box>
                 <Grid container spacing={2}>
                 { enrollmentsCount && <Grid size={{xs: 12, lg: 6}} mt={2} mb={2} >
-                <Box py={2} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, backgroundColor: 'background.main', height: '100%' }}>
+                <Box py={2} sx={{ border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', height: '100%' }}>
                     <Typography variant="h6" align='center'>{localeMessages["enrollments_distribution"]}</Typography>
                     <PieChart
                         height={300}
@@ -249,14 +249,14 @@ function Course() {
                 </Box>
                 </Grid> }
                 { weeklyStats && <Grid size={{xs: 12, lg: 6}} mt={2} mb={2} >
-                    <Box py={2} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, backgroundColor: 'background.main', height: '100%' }}>
+                    <Box py={2} sx={{ border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', height: '100%' }}>
                     <Typography variant="h6" align='center'>{localeMessages["weekly_enrollments"]}</Typography>
                     <BarChart
                         margin={{
                             top: 60,
                         }}
                         xAxis={[{data: weeklyStats.map((stat) => stat.date)}]}
-                        series={[{ data: weeklyStats.map((stat) => stat.count), color: theme.palette.primary.main }]}
+                        series={[{ data: weeklyStats.map((stat) => stat.count), color: theme.palette.secondary.main }]}
                         height={300}
                     />
                     </Box>

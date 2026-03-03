@@ -58,19 +58,61 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
 
   return (
    <>
-    <GlobalStyles styles={(theme) => ({ body: { margin: 0, padding: 0, backgroundColor: theme.palette.background.dark, color: theme.palette.text.primary } })} />
+    <GlobalStyles styles={(theme) => ({ body: { margin: 0, padding: 0, backgroundColor: theme.palette.background.main, color: theme.palette.text.primary } })} />
     <MenuBar activeOrganizationId={activeOrganizationId} changeOrganizationCallback={setActiveOrganizationId} showOrganizationSwitcher={showOrganizationSwitcher} drawerWidth={drawerWidth} />
     <Box component="main"
-        sx={{ flexGrow: 1, padding: {sm: 3, xs: 1, md: 5}, width: { md: `calc(100% - ${drawerWidth + 100}px)` }, float: { md: direction === 'rtl' ? 'left' : 'right' } }}>
-    <Grid container spacing={0} mt={10} px={4}>
+      sx={{ flexGrow: 1, padding: {sm: 3, xs: 1, md: 5}, width: { md: `calc(100% - ${drawerWidth}px)` }, float: { md: direction === 'rtl' ? 'left' : 'right' } }}>
+    <Grid container spacing={0} mt={6} px={4}>
       <Grid size={{xs: 12}}>
-      <Breadcrumbs aria-label="breadcrumb">
+      <Breadcrumbs
+        aria-label="breadcrumb"
+        maxItems={3}
+        separator="›"
+        sx={{
+          '& .MuiBreadcrumbs-separator': {
+            color: 'text.disabled',
+            opacity: 0.55,
+            fontSize: { xs: '0.85rem', sm: '0.92rem', md: '1.2rem' },
+            mx: 0.75,
+          },
+        }}
+      >
        { breadCrumbList.map(({label, href, index}) => (
          index < breadCrumbList.length - 1 ?
-         <Link key={index} underline="hover" color="inherit" href={href}>
+         <Link
+           key={index}
+           underline="hover"
+           color="text.secondary"
+           href={href}
+           sx={(theme) => ({
+             fontSize: { xs: '0.78rem', sm: '0.84rem', md: '1.15rem' },
+             lineHeight: 1.3,
+             maxWidth: { xs: 110, sm: 180, md: 300 },
+             whiteSpace: 'nowrap',
+             overflow: 'hidden',
+             textOverflow: 'ellipsis',
+             transition: 'color 0.2s ease',
+             '&:hover': {
+               color: 'text.primary',
+             },
+           })}
+         >
            {label}
          </Link> :
-         <Typography key={index} sx={{ color: 'text.primary' }}>
+         <Typography
+           key={index}
+           variant="body1"
+           sx={{
+             color: 'text.primary',
+             fontWeight: 400,
+             fontSize: { xs: '0.85rem', sm: '0.92rem', md: '1.2rem' },
+             lineHeight: 1.3,
+             maxWidth: { xs: 130, sm: 220, md: 360 },
+             whiteSpace: 'nowrap',
+             overflow: 'hidden',
+             textOverflow: 'ellipsis',
+           }}
+         >
            {label}
          </Typography>
        ))}
@@ -91,8 +133,8 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
       sx={{
         position: 'fixed',
         bottom: 0,
-        right: direction === 'rtl' ? 'auto' : 16,
-        left: direction === 'rtl' ? 16 : 'auto',
+        right: direction === 'rtl' ? 'auto' : 2,
+        left: direction === 'rtl' ? 2 : 'auto',
         padding: 1,
         zIndex: 1000,
         backgroundColor: 'transparent'
@@ -102,7 +144,6 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
         variant="caption"
         sx={{
           color: 'text.secondary',
-          fontSize: '0.7rem',
           opacity: 0.8
         }}
       >
@@ -112,7 +153,7 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
           target="_blank"
           rel="noopener noreferrer"
           sx={{
-            color: 'secondary.dark',
+            color: 'primary.dark',
             textDecoration: 'none',
             '&:hover': {
               textDecoration: 'underline'

@@ -63,7 +63,7 @@ const QuestionForm = ({question, index, eventHandler}) => {
        <Box key={index} sx={{ mb: 1, p: 2, border: '1px solid', borderColor: 'grey.300', borderRadius: 1 }}>
             <Grid container spacing={2} alignItems="center">
                 <Grid size={{ xs: 12, md: 9 }}>
-                    {userRole !== 'viewer' && <EditIcon sx={{borderRadius: "50%", display: "inline-block", float: "left", mr: 1, fontSize: "0.9rem", border: 1, borderColor: "grey.200", color: "grey.400", padding: "4px", cursor: "pointer", ':hover': { backgroundColor: "primary.main", color: "white", borderColor: "primary.main" } }} onClick={editQuestion}/>}
+                    {userRole !== 'viewer' && <EditIcon sx={{borderRadius: "50%", display: "inline-block", float: "left", mr: 1, fontSize: "0.9rem", border: 1, borderColor: "grey.200", color: "grey.400", padding: "4px", cursor: "pointer", ':hover': { backgroundColor: "secondary.main", color: "white", borderColor: "secondary.main" } }} onClick={editQuestion}/>}
                     {!editMode ? (
                         <Typography onClick={editQuestion}>{index + 1}. {questionText}</Typography>
                     ) : (
@@ -79,7 +79,7 @@ const QuestionForm = ({question, index, eventHandler}) => {
                     )}
                 </Grid>
                 <Grid size={{ xs: 12, md: 3 }} sx={{ textAlign: 'right' }}>
-                    {userRole !== 'viewer' && <><Button variant="outlined" color="primary" sx={{ fontSize: '0.75rem', mt: 1 }} onClick={() => setAddingOption(true)} >
+                    {userRole !== 'viewer' && <><Button variant="outlined" color="secondary" sx={{ fontSize: '0.75rem', mt: 1 }} onClick={() => setAddingOption(true)} >
                         <RuleIcon /><Typography variant="button" sx={{ ml: 1, fontSize: '0.75rem' }}>{localeMessages["add_option"]}</Typography>
                     </Button>
                     <Button variant="outlined" onClick={deleteCallback} sx={{ mx: 1, mt: 1, fontSize: '0.75rem' }}>

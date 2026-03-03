@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import { ThemeProvider } from '@mui/material/styles';
+import { CssBaseline } from '@mui/material';
 import { lightTheme } from './themes';
 
 const ThemeContext = createContext();
@@ -22,6 +23,7 @@ export const ThemeContextProvider = ({ children, initialTheme = lightTheme }) =>
   return (
     <ThemeContext.Provider value={{ currentTheme, changeTheme }}>
       <ThemeProvider theme={currentTheme}>
+        <CssBaseline />
         {children}
       </ThemeProvider>
     </ThemeContext.Provider>

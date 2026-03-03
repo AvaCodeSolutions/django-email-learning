@@ -107,7 +107,7 @@ function Organizations() {
   return (
     <Base breadCrumbList={[{label: localeMessages["organizations"], href: '#'}]} showOrganizationSwitcher={false}>
       <Grid size={12} py={2} pl={2}>
-        <Box p={2} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, minHeight: 300, width: { lg: '80%' } }}>
+        <Box p={2} sx={{ border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: 2, minHeight: 300 }}>
         {isPlatformAdmin && <Button variant="contained" startIcon={<AddIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
           setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><OrganizationForm
             successCallback={handleSuccessFormSubmission}
@@ -123,13 +123,13 @@ function Organizations() {
             <TableHead>
               <TableRow>
                 <TableCell dir={htmlTag.dir} sx={{ textAlign: htmlTag.dir === 'rtl' ? 'right' : 'left' }}>{localeMessages["name"]}</TableCell>
-                <TableCell sx={{ width: '100px' }}>{localeMessages["actions"]}</TableCell>
+                <TableCell sx={{ width: '150px' }}>{localeMessages["actions"]}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               { organizations.map((org) => (
                 <TableRow key={org.id}>
-                  <TableCell dir={htmlTag.dir} sx={{ textAlign: htmlTag.dir === 'rtl' ? 'right' : 'left' }}><Link color='primary.dark' href={`${platformBaseUrl}/organizations/${org.id}/`}>{org.name}</Link></TableCell>
+                  <TableCell dir={htmlTag.dir} sx={{ textAlign: htmlTag.dir === 'rtl' ? 'right' : 'left' }}><Link color='secondary.dark' href={`${platformBaseUrl}/organizations/${org.id}/`}>{org.name}</Link></TableCell>
                   <TableCell>
                     <IconButton onClick={() => goToUrl(org.public_url)}><PublicIcon fontSize="small"/></IconButton>
                     { isPlatformAdmin && <><IconButton onClick={() => {

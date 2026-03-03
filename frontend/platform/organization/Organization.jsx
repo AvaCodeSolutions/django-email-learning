@@ -79,15 +79,16 @@ function Organization() {
     return (<Base breadCrumbList={[
         {label: localeMessages["organizations"], href: `${platformBaseUrl}/organizations`, index: 0},
         {label: organization ? organization.name : '', href: '#', index: 1}]} showOrganizationSwitcher={false}>
-        <Grid size={12} py={2} px={4} container sx={{borderColor: 'grey.300', borderRadius: 1, borderWidth: 1, borderStyle: 'solid', mt: 2}}>
-            <Button variant="contained" color="primary" onClick={() => {setDialogContent(
-                <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
-                    <UserForm organizationId={organizationId} onClose={() => setDialogOpen(false)} refreshUsers={refreshUsers} />
-                 </Suspense>
-             ); setDialogOpen(true); }}>
-                {localeMessages["add_user"]}
-            </Button>
-            <Box sx={{ p: 2, mt: 2, borderRadius: 1, bgcolor: "background.paper", width: '100%' }}>
+        <Grid size={12} py={2} px={4}>
+            <Box sx={{ p: 2, border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: 2, minHeight: 300 }}>
+                <Button variant="contained" color="secondary" onClick={() => {setDialogContent(
+                    <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
+                        <UserForm organizationId={organizationId} onClose={() => setDialogOpen(false)} refreshUsers={refreshUsers} />
+                    </Suspense>
+                ); setDialogOpen(true); }}>
+                    {localeMessages["add_user"]}
+                </Button>
+                <Box sx={{ mt: 2, width: '100%' }}>
                 { organizationUsers.length > 0 ? <TableContainer>
                     <Table>
                         <TableHead>
@@ -116,9 +117,10 @@ function Organization() {
                             ))}
                         </TableBody>
                     </Table>
-                </TableContainer> : <Typography variant="body1">{localeMessages["no_users_in_organization"]}</Typography> }
+                                </TableContainer> : <Typography variant="body1">{localeMessages["no_users_in_organization"]}</Typography> }
+                                </Box>
             </Box>
-      </Grid>
+                </Grid>
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
         {dialogContent}
       </Dialog>

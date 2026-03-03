@@ -10,6 +10,7 @@ from django.db import models, transaction
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.utils import timezone
+from django.urls import reverse
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import PasswordResetForm
 from datetime import timedelta, datetime
@@ -19,6 +20,7 @@ from django_email_learning.platform.api import serializers
 from django_email_learning.platform.api.pagniated_api_mixin import PaginatedApiMixin
 from django_email_learning.models import (
     ApiKey,
+    Certificate,
     Course,
     CourseContent,
     Enrollment,
@@ -686,11 +688,24 @@ class SingleLearnerView(View):
             enrollments = Enrollment.objects.filter(learner=learner)
             enroolments_list = []
             for enrollment in enrollments:
+                certificate = Certificate.objects.filter(enrollment=enrollment).first()
+                certificate_url = None
+                if certificate:
+                    certificate_url = request.build_absolute_uri(
+                        reverse(
+                            "django_email_learning:personalised:certificate",
+                            kwargs={
+                                "certificate_number": certificate.certificate_number
+                            },
+                        )
+                    )
                 enroolments_list.append(
                     serializers.EnrollmentSummaryResponse(
                         id=enrollment.id,
                         course_title=enrollment.course.title,
                         status=EnrollmentStatus(enrollment.status),
+                        progress=enrollment.progress_percentage,
+                        certificate_url=certificate_url,
                     )
                 )
             return JsonResponse(
