@@ -49,7 +49,20 @@ const CertificateForm = () => {
         });
     };
 
-    return (<Container maxWidth="sm" sx={{ mt: 4 }}>
+    return (<Box sx={{ minHeight: "100vh", display: "flex", alignItems: "flex-start", justifyContent: "center", pt: "22vh", px: 2, bgcolor: "background.main" }}>
+        <Container
+            maxWidth="sm"
+            sx={{
+                mt: 0,
+                py: 4,
+                px: { xs: 3, sm: 4 },
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 3,
+                boxShadow: 2,
+                bgcolor: "background.paper",
+            }}
+        >
         <Box display="flex" alignItems="center" my={4} justifyContent="center">
             <WorkspacePremiumIcon color="secondary" sx={{ fontSize: 50, mr: 1 }} />
             <Typography variant="h4" component="h1">
@@ -70,24 +83,26 @@ const CertificateForm = () => {
                 onChange={(e) => setFullName(e.target.value)}
             />
             {error && <Alert severity="error">{error}</Alert>}
-            <Button type="submit" variant="contained" color="secondary" sx={{ mt: 3 }}>
+            <Button type="submit" variant="contained" color="secondary" sx={{ mt: 3, mx: "auto", display: "block", px: 4, fontSize: '1.1rem' }}>
                 {localeMessages['submit']}
             </Button>
         </Box> : <Alert severity="success" sx={{ mt: 2 }}>{localeMessages['form_submission_success']}</Alert>}
         {certificateUrl && (
-            <Box sx={{ mt: 2 }}>
+            <Box sx={{ mt: 2, mx: "auto", display: "flex", justifyContent: "center" }}>
                 <Button
                     variant="contained"
                     color="secondary"
                     href={certificateUrl}
                     target="_blank"
                     rel="noopener noreferrer"
+                    sx={{ px: 4, fontSize: '1.1rem' }}
                 >
                     {localeMessages['view_certificate']}
                 </Button>
             </Box>
         )}
-    </Container>);
+    </Container>
+    </Box>);
 };
 
 render({children: <CertificateForm />});

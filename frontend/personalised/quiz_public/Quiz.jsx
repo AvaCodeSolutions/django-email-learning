@@ -1,13 +1,13 @@
 import render, { useAppContext } from '../../src/render.jsx';
-import { useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import Layout from '../../public/components/Layout.jsx';
-import { Alert, Box, Button, Checkbox, FormControlLabel, GlobalStyles, Typography, Dialog } from '@mui/material';
+import { Alert, Box, Button, Checkbox, FormControlLabel, Typography, Dialog } from '@mui/material';
 import CelebrationIcon from '@mui/icons-material/Celebration';
 import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 
 
 const Quiz = () => {
-    const { localeMessages, token, csrfToken, apiEndpoint, errorMessage, quiz } = useAppContext();
+    const { localeMessages, token, csrfToken, apiEndpoint, errorMessage, quiz, ref, direction } = useAppContext();
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedAnswers, setSelectedAnswers] = useState(quiz? quiz.questions.map(q => ({"id": q.id, "answers": []})) : []);
     const [warning, setWarning] = useState("");
@@ -54,21 +54,20 @@ const Quiz = () => {
 
 
     return <Layout>
-    <Box textAlign="left" sx={{ maxWidth: 800, margin: '0 auto', backgroundColor: "background.light", height: 80 }}></Box>
-    <Box sx={{ maxWidth: 800, margin: '0 auto', padding: 4, border: '1px solid #ccc', borderRadius: 2, backgroundColor: "background.paper" }} component="form" method="POST" action="">
+    <Box sx={{ width: '100%', maxWidth: 920, mx: 'auto', p: { xs: 2, md: 4 }, borderRadius: 2, backgroundColor: "background.paper" }} component="form" method="POST" action="">
         { !errorMessage ? <Box>
-        <Box mb={4}>
+        {showQuestions ? <><Box mb={3}>
         <Typography variant="h4" mb={1}>{quiz.title}</Typography>
         </Box>
-        {showQuestions ? <Box>
-        <Typography>
+        <Box>
+        <Typography sx={{ mb: 3, color: 'text.secondary' }}>
         { localeMessages['quiz_intro'] }
         </Typography>
 
 
         {quiz.questions.map((question, index) => (
-            <Box key={index} sx={{marginBottom: 2, paddingTop: 1, borderBottom: "bacground.nav" }}>
-                <Box mb={1}><Typography sx={{fontWeight: 'bold'}}>{question.text}</Typography></Box>
+            <Box key={index} sx={{ mb: 2, py: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Box mb={1}><Typography sx={{ fontWeight: 'bold', lineHeight: 1.5 }}>{question.text}</Typography></Box>
                 {question.answers.map((answer, cIndex) => (
                     <FormControlLabel control={<Checkbox onChange={(e) => { if (!e.target.checked) {
                         const newSelectedAnswers = [...selectedAnswers];
@@ -80,22 +79,23 @@ const Quiz = () => {
                         const questionAnswers = newSelectedAnswers.find(qa => qa.id === question.id);
                         questionAnswers.answers.push(answer.id);
                         setSelectedAnswers(newSelectedAnswers);
-                    } }} />} label={answer.text} key={cIndex} sx={{display: 'block', fontSize: 'small'}}/>
+                    } }} />} label={answer.text} key={cIndex} sx={{ display: 'block', alignItems: 'flex-start', my: 0.25 }} />
                 ))}
             </Box>
         ))}
-        <Box mt={4} textAlign="center">
-            <Button variant="contained" onClick={showSubmitDialog}>{localeMessages['submit']}</Button>
+        <Box mt={3.5} textAlign="center">
+            <Button variant="contained" onClick={showSubmitDialog} sx={{px: 3, fontSize: '1.1rem'}}>{localeMessages['submit']}</Button>
         </Box>
-        </Box> : <Box textAlign="center">
-            {isPassed !== null && (isPassed ? <Alert severity="success"><Typography variant="h6"><CelebrationIcon /> {message} {localeMessages['your_score']}: {score}%.</Typography></Alert> :
-            <Alert severity="error"><Typography variant="h6"><SentimentVeryDissatisfiedIcon /> {message} {localeMessages['your_score']}: {score}%.</Typography></Alert>)}
+        </Box></> : <Box textAlign="center">
+            {isPassed !== null && (isPassed ? <><CelebrationIcon sx={{mb: 2, color: 'primary.main', fontSize: '3rem'}}/><Alert severity="success" sx={{justifyContent: 'center', alignItems: 'center'}} ><Typography variant='h6'>{message} {localeMessages['your_score']}: {score}%</Typography></Alert></> :
+            <Alert severity="error" sx={{ justifyContent: 'center', alignItems: 'center' }} ><Typography variant="h6">{message} {localeMessages['your_score']}: {score}%</Typography></Alert>)}
+            <Box sx={{mt: 6, fontSize: '0.8rem'}}><Typography>{localeMessages['close_window_message']}</Typography></Box>
         </Box>}
-        </Box> : <Alert severity="error"><Typography variant="h6">{localeMessages['error_loading_quiz']}: {errorMessage} {ref && `(Ref: ${ref})`}</Typography></Alert>}
+        </Box> : <Alert severity="error"><Typography variant="h6">{localeMessages['error']}: {errorMessage} {ref && `(Ref: ${ref})`}</Typography></Alert>}
         <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
             <Box p={4}>
                 <Typography variant="h6" mb={2}>{localeMessages['ready_to_submit']}</Typography>
-                {warning ? <Alert severity="warning" mb={2}><Typography>{warning}</Typography></Alert> :
+                {warning ? <Alert severity="warning" sx={{ mb: 2 }}><Typography>{warning}</Typography></Alert> :
                 <Typography>{localeMessages['submit_quiz_note']}</Typography>}
                 <Box mt={4} textAlign="right">
                     <Button variant="text" onClick={() => setDialogOpen(false)} sx={{ mr: 2 }}>{localeMessages['cancel']}</Button>

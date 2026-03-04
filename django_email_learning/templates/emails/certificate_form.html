@@ -3,19 +3,19 @@
 
 {% block content %}
 
-    <p>{% translate "Dear Learner," %}</p>
+    <p class="email-paragraph">{% translate "Hello there," %}</p>
 
-    <p>{% blocktranslate with course_title=course_title %}Congratulations on completing the course "{{ course_title }}"!{% endblocktranslate %}</p>
+    <p class="email-paragraph">{% blocktranslate with course_title=course_title %}Congratulations on completing the course "{{ course_title }}"!{% endblocktranslate %}</p>
 
-    <p>{% translate "To finalize your official Certificate of Completion, we need to verify how you would like your name to appear. Please follow the link below to submit your preferred name:" %}</p>
+    <p class="email-paragraph">{% translate "To finalize your official Certificate of Completion, we need to verify how you would like your name to appear. Please follow the link below to submit your preferred name:" %}</p>
 
-    <div style="text-align: center; margin: 20px 0;">
-        <a href="{{ link }}" style="background-color: {{ brand_color }}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+    <div class="email-cta-wrap">
+        <a href="{{ link }}" class="email-cta bg-brand">
             {% translate "Submit Name" %}
         </a>
     </div>
-    <p>
-        {% translate "Best Regards," %}<br />
+    <p class="email-paragraph">
+        {% translate "Best regards," %}<br />
         {% blocktranslate with organization_name=organization_name %}{{ organization_name }} Team{% endblocktranslate %}
     </p>
 

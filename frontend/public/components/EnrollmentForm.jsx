@@ -5,12 +5,23 @@ import { getCookie } from '../../src/utils.js';
 import { useAppContext } from '../../src/render.jsx';
 
 
-const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, onCancle, onComplete}) => {
+const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, onCancle, onComplete, autoFocusEmail = false}) => {
 
     const emailRef = React.useRef('');
     const [errorMessage, setErrorMessage] = React.useState('');
     const [isProcessing, setIsProcessing] = React.useState(false);
     const { localeMessages } = useAppContext();
+
+    React.useEffect(() => {
+        if (!autoFocusEmail) {
+            return;
+        }
+        const timeoutId = setTimeout(() => {
+            emailRef.current?.focus();
+        }, 150);
+
+        return () => clearTimeout(timeoutId);
+    }, [autoFocusEmail]);
 
     const validateForm = () => {
         const email = emailRef.current.value;

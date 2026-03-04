@@ -14,6 +14,7 @@ from django_email_learning.services.command_models.exceptions.invalid_verificati
 )
 from pydantic import ValidationError
 from django.core import mail
+from django.conf import settings
 import pytest
 
 
@@ -71,6 +72,54 @@ def test_verify_enrollment_command_execute(db, enrollment, course_lesson_content
     sent_email = mail.outbox[0]
     assert sent_email.to == [enrollment.learner.email]
     assert "Enrollment Verified" in sent_email.subject
+
+
+def test_verify_enrollment_command_includes_course_image_in_html_email(
+    db, enrollment, course_lesson_content
+):
+    enrollment.course.image = "course_images/course-cover.jpg"
+    enrollment.course.save(update_fields=["image"])
+
+    command = VerifyEnrollmentCommand(
+        enrollment_id=enrollment.id,
+        verification_code=enrollment.activation_code,
+    )
+
+    command.execute()
+
+    assert len(mail.outbox) == 1
+    sent_email = mail.outbox[0]
+    assert len(sent_email.alternatives) == 1
+
+    html_body, mime_type = sent_email.alternatives[0]
+    assert mime_type == "text/html"
+    expected_image_url = (
+        f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL'].rstrip('/')}"
+        f"{enrollment.course.image.url}"
+    )
+    assert f'src="{expected_image_url}"' in html_body
+
+
+def test_verify_enrollment_command_renders_html_without_course_image(
+    db, enrollment, course_lesson_content
+):
+    enrollment.course.image = None
+    enrollment.course.save(update_fields=["image"])
+
+    command = VerifyEnrollmentCommand(
+        enrollment_id=enrollment.id,
+        verification_code=enrollment.activation_code,
+    )
+
+    command.execute()
+
+    assert len(mail.outbox) == 1
+    sent_email = mail.outbox[0]
+    assert len(sent_email.alternatives) == 1
+
+    html_body, mime_type = sent_email.alternatives[0]
+    assert mime_type == "text/html"
+    assert 'class="email-cover"' not in html_body
 
 
 def test_verify_enrollment_command_invalid_enrollment(db):

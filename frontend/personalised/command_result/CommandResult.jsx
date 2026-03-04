@@ -1,4 +1,4 @@
-import { Alert, Box, Button } from '@mui/material';
+import { Alert, Box, Button, Typography } from '@mui/material';
 import render, { useAppContext } from '../../src/render.jsx';
 import Layout from '../../public/components/Layout.jsx';
 
@@ -8,9 +8,9 @@ const CommandResult = () => {
     return <Layout>
     { !errorMessage && !confirmationMessage ?<Alert severity='success' sx={{ maxWidth: 800, margin: '0 auto', backgroundColor: "background.light" }}>
        {successMessage}
-    </Alert> : confirmationMessage ? <Alert severity="warning" sx={{ maxWidth: 800, margin: '20px auto' }}>
-       {confirmationMessage}<Box mt={2}><Button href={confirmUrl} variant='contained' mt={2}>{localeMessages["Confirm"]}</Button></Box>
-    </Alert> : <Alert severity="error" sx={{ maxWidth: 800, margin: '20px auto' }}>
+    </Alert> : confirmationMessage ? <Box sx={{my: 6}}><Typography variant='h6' align='center' sx={{ mt: 4, color: 'text.primary' }}>
+       {confirmationMessage}
+    </Typography> <Box mt={6} sx={{ textAlign: 'center' }}><Button href={confirmUrl} variant='contained' mt={2} sx={{ mx: 'auto', px: 3, fontSize: '1rem'}}>{localeMessages["Confirm"]}</Button></Box></Box>: <Alert severity="error" sx={{ maxWidth: 800, margin: '20px auto' }}>
        {errorMessage} (ref: {ref})
     </Alert>}
     </Layout>

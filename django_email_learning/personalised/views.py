@@ -45,6 +45,9 @@ class BaseTemplateView(View, TemplateResponseMixin):
                     "ref": error_ref,
                     "errorMessage": message,
                     "direction": "rtl" if lang_info["bidi"] else "ltr",
+                    "localeMessages": {
+                        "error": _("Error"),
+                    },
                 },
                 "page_title": title,
             },
@@ -149,6 +152,7 @@ class QuizPublicView(BaseTemplateView):
                             ),
                             "cancel": _("Cancel"),
                             "submit": _("Submit"),
+                            "close_window_message": _("You can now close this window!"),
                         },
                     }
                     | self.get_app_context(),

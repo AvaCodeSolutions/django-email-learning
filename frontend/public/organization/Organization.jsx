@@ -23,7 +23,7 @@ function Organization() {
 
     const showModalForCourse = (course) => {
         // Logic to show modal for specific course
-        setModalContent(<EnrollmentForm course_title={course.title} course_slug={course.slug} organization_id={organization.id} endpoint={enrollApiUrl} onCancle={() => {setDisplayModal(false); setModalContent(null);}} onComplete={() => completeEnrollment(course)} />);
+        setModalContent(<EnrollmentForm course_title={course.title} course_slug={course.slug} organization_id={organization.id} endpoint={enrollApiUrl} autoFocusEmail={true} onCancle={() => {setDisplayModal(false); setModalContent(null);}} onComplete={() => completeEnrollment(course)} />);
         setDisplayModal(true);
     }
 
@@ -112,13 +112,12 @@ function Organization() {
                                     dangerouslySetInnerHTML={{ __html: course.description }}
                                 />
                                 <Box sx={{ mt: 'auto', pt: 1 }}>
-                                    {course.enrolled && (
+                                    {course.enrolled && (<>
                                         <Chip
                                             label={localeMessages['enrollment_success']}
-                                            color="success"
                                             size="small"
-                                            sx={{ mb: 1.5 }}
-                                        />
+                                            sx={(theme) => ({ mb: 1., backgroundColor: alpha(theme.palette.success.main, 0.15), color: theme.palette.success.main })}
+                                        /><br /></>
                                     )}
                                     <Button
                                         variant="contained"
