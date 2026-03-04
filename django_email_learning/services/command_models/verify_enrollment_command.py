@@ -14,6 +14,7 @@ from django_email_learning.services.email_sender_service import EmailSenderServi
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.translation import gettext as _
+from django.conf import settings
 from typing import Literal
 
 
@@ -61,6 +62,15 @@ class VerifyEnrollmentCommand(AbstractCommand):
         # Send confirmation email
         email_service = EmailSenderService()
         subject = _("Enrollment Verified")
+        course_image_url = None
+        if enrollment.course.image:
+            image_url = enrollment.course.image.url
+            if image_url.startswith(("http://", "https://")):
+                course_image_url = image_url
+            else:
+                site_base_url = settings.DJANGO_EMAIL_LEARNING["SITE_BASE_URL"]
+                course_image_url = f"{site_base_url}".rstrip("/") + image_url
+
         body = render_to_string(
             "emails/enrollment_verified.txt",
             {
@@ -80,6 +90,7 @@ class VerifyEnrollmentCommand(AbstractCommand):
             {
                 "course_title": enrollment.course.title,
                 "organization_name": enrollment.course.organization.name,
+                "course_image_url": course_image_url,
             },
         )
         email.attach_alternative(html_content, "text/html")

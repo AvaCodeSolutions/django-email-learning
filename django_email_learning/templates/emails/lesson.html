@@ -10,11 +10,11 @@
 {% endblock %}
 
 {% block content %}
-        <h2 style="color: #2c3e50; margin-top: 0; text-align: center; border-bottom: 2px solid {{ brand_color }}; padding-bottom: 15px;">{{ lesson.title }}</h2>
+        <h2 class="email-title">{{ lesson.title }}</h2>
 
         {{ lesson.content|safe }}
 
-        <p style="font-size: 0.9em; color: #7f8c8d; text-align: center; margin-top: 30px;">
-            {% blocktranslate %}If you wish to unsubscribe from this course, please <a href="{{ unsubscribe_link }}" style="color: {{ brand_color }}; text-decoration: none;">click here</a>{% endblocktranslate %}.
+        <p class="email-muted-note">
+            {% blocktranslate %}If you wish to unsubscribe from this course, please <a href="{{ unsubscribe_link }}" class="color-brand" style="text-decoration: none;">click here</a>{% endblocktranslate %}.
         </p>
 {% endblock %}

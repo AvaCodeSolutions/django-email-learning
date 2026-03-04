@@ -1,5 +1,5 @@
 {% load i18n %}
-{% with brand_color="#7c86ff" %}
+{% with brand_color="#636eec" %}
 <html>
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,6 +13,7 @@
             }
             .bg-brand {
                 background-color: {{ brand_color }};
+                color: #fff !important;
             }
             .border-brand {
                 border-color: {{ brand_color }};
@@ -21,6 +22,7 @@
                 width: 100%;
                 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
                 line-height: 1.8;
+                font-size: 15px;
                 color: #333;
                 background-color: #f9f9f9;
             }
@@ -72,6 +74,97 @@
                 {% endif %}
                 margin: 0px !important;
                 padding: 0 16px;
+            }
+            .email-title {
+                color: #2c3e50;
+                margin: 0 0 20px;
+                text-align: center;
+                border-bottom: 2px solid {{ brand_color }};
+                padding-bottom: 12px;
+                line-height: 1.35;
+                font-size: 24px;
+            }
+            .email-subtitle {
+                margin: 20px 0 10px;
+                color: #2c3e50;
+                font-size: 18px;
+            }
+            .email-paragraph {
+                font-size: 15px;
+                margin: 0 0 16px;
+            }
+            .email-cover-wrap {
+                margin: 0 0 20px;
+            }
+            .email-cover {
+                width: 100%;
+                max-width: 100%;
+                height: auto;
+                display: block;
+                border-radius: 6px;
+            }
+            .email-cta-wrap {
+                text-align: center;
+                margin: 24px 0;
+            }
+            .email-cta {
+                display: inline-block;
+                color: #1f2340;
+                padding: 12px 24px;
+                text-decoration: none;
+                border-radius: 5px;
+                font-weight: 400;
+                font-size: 15px;
+                border: 1px solid rgba(31, 35, 64, 0.18);
+            }
+            .email-panel {
+                background-color: #f8f9fa;
+                padding: 20px;
+                border-radius: 5px;
+                margin: 24px 0;
+            }
+            .email-panel.border-brand {
+                border-left: 4px solid;
+            }
+            .email-code-box {
+                background-color: #ffffff;
+                padding: 15px;
+                border-radius: 4px;
+                border: 1px dashed #6c757d;
+                text-align: center;
+            }
+            .email-divider-note {
+                margin-top: 30px;
+                padding-top: 20px;
+                border-top: 1px solid #e9ecef;
+                font-size: 14px;
+                color: #6c757d;
+            }
+            .email-muted-note {
+                font-size: 14px;
+                color: #7f8c8d;
+                text-align: center;
+                margin-top: 30px;
+            }
+            .email-signoff {
+                margin-top: 24px;
+            }
+            .email-signoff.centered {
+                text-align: center;
+            }
+            .email-org-name {
+                font-weight: bold;
+                color: #2c3e50;
+                font-size: 18px;
+                margin: 0;
+            }
+            .email-list {
+                margin: 0 0 16px;
+                padding-left: 20px;
+                font-size: 15px;
+            }
+            .email-list li {
+                margin-bottom: 6px;
             }
             {% block extra_styles %}{% endblock %}
         </style>
