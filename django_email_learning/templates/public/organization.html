@@ -1,5 +1,6 @@
 {% extends "public/base.html" %}
 {% load django_vite %}
+{% csrf_token %}
 {% block head_script %}
     {% vite_asset 'public/organization/Organization.jsx' %}
 {% endblock %}
