@@ -1,4 +1,6 @@
 from django.views.generic import TemplateView
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db.models import Prefetch
 from django_email_learning.models import Organization, Course
 from django.utils.translation import get_language_info, get_language
@@ -12,6 +14,7 @@ from django_email_learning.public.serializers import (
 )
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class OrganizationView(TemplateView):
     template_name = "public/organization.html"
 

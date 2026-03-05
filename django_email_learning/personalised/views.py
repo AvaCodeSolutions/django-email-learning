@@ -1,3 +1,5 @@
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views import View
 from django.views.generic.base import TemplateResponseMixin
 from django.http import HttpResponse
@@ -20,6 +22,7 @@ import logging
 import io
 
 
+@method_decorator(ensure_csrf_cookie, name="dispatch")
 class BaseTemplateView(View, TemplateResponseMixin):
     def error_response(
         self,
