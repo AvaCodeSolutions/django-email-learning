@@ -273,73 +273,72 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                         </Link>
                     </MenuItem>
                 )}) }
-                {settingsPages.length > 0 && (
-                    <>
-                        <MenuItem
-                            onClick={() => setSettingsOpen(!settingsOpen)}
-                            sx={(theme) => ({
-                                backgroundColor: isSettingsSectionActive ? (theme.palette.mode === 'dark' ? theme.palette.deepPurple[800] : theme.palette.deepPurple[50]) : 'transparent',
-                                '& .MuiTouchRipple-root': {
-                                    color: theme.palette.secondary.main,
-                                },
-                                '&:hover .MuiListItemIcon-root': { color: theme.palette.primary.dark },
-                            })}
-                        >
-                            <ListItemIcon sx={(theme) => ({ minWidth: 35, color: theme.palette.mode === 'dark' ? theme.palette.deepPurple[300] : theme.palette.deepPurple[500] })}>
-                                <SettingsOutlinedIcon fontSize="small" />
-                            </ListItemIcon>
-                            <ListItemText
-                                primary={localeMessages["settings"] || 'Settings'}
-                                primaryTypographyProps={{
-                                    fontSize: '0.95rem',
-                                }}
-                            />
-                            {settingsOpen ? <ExpandLess /> : <ExpandMore />}
-                        </MenuItem>
-                        <Collapse in={settingsOpen} timeout="auto" unmountOnExit>
-                            <MenuList disablePadding>
-                                {settingsPages.map((page) => {
-                                    const isActive = isActivePage(page.href);
-                                    return (
-                                        <MenuItem
-                                            key={page.name}
-                                            sx={(theme) => ({
-                                                pl: 4,
-                                                backgroundColor: isActive ? (theme.palette.mode === 'dark' ? theme.palette.deepPurple[800] : theme.palette.deepPurple[50]) : 'transparent',
-                                                '& .MuiTouchRipple-root': {
-                                                    color: theme.palette.secondary.main,
-                                                },
-                                                '&:hover .MuiListItemIcon-root': { color: theme.palette.primary.dark },
-                                            })}
+                {settingsPages.length > 0 && [
+                    <MenuItem
+                        key="settings-toggle"
+                        onClick={() => setSettingsOpen(!settingsOpen)}
+                        sx={(theme) => ({
+                            backgroundColor: isSettingsSectionActive ? (theme.palette.mode === 'dark' ? theme.palette.deepPurple[800] : theme.palette.deepPurple[50]) : 'transparent',
+                            '& .MuiTouchRipple-root': {
+                                color: theme.palette.secondary.main,
+                            },
+                            '&:hover .MuiListItemIcon-root': { color: theme.palette.primary.dark },
+                        })}
+                    >
+                        <ListItemIcon sx={(theme) => ({ minWidth: 35, color: theme.palette.mode === 'dark' ? theme.palette.deepPurple[300] : theme.palette.deepPurple[500] })}>
+                            <SettingsOutlinedIcon fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText
+                            primary={localeMessages["settings"] || 'Settings'}
+                            primaryTypographyProps={{
+                                fontSize: '0.95rem',
+                            }}
+                        />
+                        {settingsOpen ? <ExpandLess /> : <ExpandMore />}
+                    </MenuItem>,
+                    <Collapse key="settings-collapse" in={settingsOpen} timeout="auto" unmountOnExit>
+                        <MenuList disablePadding>
+                            {settingsPages.map((page) => {
+                                const isActive = isActivePage(page.href);
+                                return (
+                                    <MenuItem
+                                        key={page.name}
+                                        sx={(theme) => ({
+                                            pl: 4,
+                                            backgroundColor: isActive ? (theme.palette.mode === 'dark' ? theme.palette.deepPurple[800] : theme.palette.deepPurple[50]) : 'transparent',
+                                            '& .MuiTouchRipple-root': {
+                                                color: theme.palette.secondary.main,
+                                            },
+                                            '&:hover .MuiListItemIcon-root': { color: theme.palette.primary.dark },
+                                        })}
+                                    >
+                                        <Link
+                                            href={page.href}
+                                            underline="none"
+                                            color="inherit"
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                width: '100%',
+                                                py: 0.1,
+                                            }}
                                         >
-                                            <Link
-                                                href={page.href}
-                                                underline="none"
-                                                color="inherit"
-                                                sx={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    width: '100%',
-                                                    py: 0.1,
+                                            <ListItemIcon sx={(theme) => ({ minWidth: 35, color: theme.palette.mode === 'dark' ? theme.palette.deepPurple[300] : theme.palette.deepPurple[500] })}>
+                                                {page.icon}
+                                            </ListItemIcon>
+                                            <ListItemText
+                                                primary={page.name}
+                                                primaryTypographyProps={{
+                                                    fontSize: '0.95rem',
                                                 }}
-                                            >
-                                                <ListItemIcon sx={(theme) => ({ minWidth: 35, color: theme.palette.mode === 'dark' ? theme.palette.deepPurple[300] : theme.palette.deepPurple[500] })}>
-                                                    {page.icon}
-                                                </ListItemIcon>
-                                                <ListItemText
-                                                    primary={page.name}
-                                                    primaryTypographyProps={{
-                                                        fontSize: '0.95rem',
-                                                    }}
-                                                />
-                                            </Link>
-                                        </MenuItem>
-                                    );
-                                })}
-                            </MenuList>
-                        </Collapse>
-                    </>
-                )}
+                                            />
+                                        </Link>
+                                    </MenuItem>
+                                );
+                            })}
+                        </MenuList>
+                    </Collapse>
+                ]}
             </MenuList>
             {sidebarCustomComponent && <Box sx={{ height: "100px", width: "100%" }} dangerouslySetInnerHTML={{ __html: sidebarCustomComponent.componentTag }} />}
         </Drawer>

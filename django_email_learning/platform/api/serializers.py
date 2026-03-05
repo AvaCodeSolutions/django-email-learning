@@ -66,6 +66,10 @@ class GetOrCreateUserRequest(BaseModel):
         return email
 
 
+class CreateEnrollmentRequest(BaseModel):
+    learner_email: str = Field(min_length=1, examples=["user@example.com"])
+
+
 class UserResponse(BaseModel):
     id: int
     email: str

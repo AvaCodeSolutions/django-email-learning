@@ -4,6 +4,12 @@ from django_email_learning.services.command_models.abstract_command import (
 from django_email_learning.services.command_models.exceptions.invalid_course_slug_error import (
     InvalidCourseSlugError,
 )
+from django_email_learning.services.command_models.exceptions.enrollment_already_exists_error import (
+    EnrollmentAlreadyExistsError,
+)
+from django_email_learning.services.command_models.exceptions.blocked_email_error import (
+    BlockedEmailError,
+)
 from django_email_learning.models import (
     BlockedEmail,
     Learner,
@@ -27,6 +33,7 @@ class EnrollCommand(AbstractCommand):
     email: str
     course_slug: str
     organization_id: int
+    no_verification: bool = False
 
     def execute(self) -> None:
         # Check if the email is blocked
@@ -34,7 +41,7 @@ class EnrollCommand(AbstractCommand):
             self.logger.info(
                 f"Enrollment Rejected: {mask_email(self.email)} is blocked"
             )
-            return
+            raise BlockedEmailError(f"The email {mask_email(self.email)} is blocked.")
 
         # Check if Learner with the email exists, if not create one
         learner, created = Learner.objects.get_or_create(
@@ -68,7 +75,9 @@ class EnrollCommand(AbstractCommand):
             self.logger.info(
                 f"Enrollment Skipped: Learner ID {learner.id} is already enrolled in course '{self.course_slug}'"
             )
-            return
+            raise EnrollmentAlreadyExistsError(
+                f"Learner with email {mask_email(self.email)} is already enrolled in course '{self.course_slug}'"
+            )
 
         # Create the enrollment
         enrollment = Enrollment.objects.create(
@@ -78,6 +87,12 @@ class EnrollCommand(AbstractCommand):
         self.logger.info(
             f"Enrollment Successful: Learner ID {learner.id} enrolled in course '{self.course_slug}'. Enrollment ID: {enrollment.id}"
         )
+
+        if self.no_verification:
+            self.logger.info(
+                f"Verification email skipped for Enrollment ID: {enrollment.id} as per command parameter"
+            )
+            return
 
         # Send verification email
 
