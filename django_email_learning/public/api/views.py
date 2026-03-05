@@ -6,6 +6,12 @@ from django_email_learning.services.command_models.enroll_command import EnrollC
 from django_email_learning.services.command_models.exceptions.invalid_course_slug_error import (
     InvalidCourseSlugError,
 )
+from django_email_learning.services.command_models.exceptions.blocked_email_error import (
+    BlockedEmailError,
+)
+from django_email_learning.services.command_models.exceptions.enrollment_already_exists_error import (
+    EnrollmentAlreadyExistsError,
+)
 import json
 import logging
 
@@ -27,6 +33,12 @@ class EnrollView(View):
             try:
                 command.execute()
                 return JsonResponse({"status": "enrolled"}, status=200)
+            except EnrollmentAlreadyExistsError as e:
+                logger.info(f"Enrollment already exists: {e}")
+                return JsonResponse({"status": "already_enrolled"}, status=200)
+            except BlockedEmailError as e:
+                logger.error(f"Blocked email error: {e}")
+                return JsonResponse({"error": str(e)}, status=403)
             except InvalidCourseSlugError as e:
                 logger.error(f"Invalid course slug error: {e}")
                 return JsonResponse({"error": str(e)}, status=400)

@@ -3,10 +3,11 @@ import './styles.scss'
 import 'vite/modulepreload-polyfill'
 import render, { useAppContext } from '../../src/render.jsx';
 import Base from '../../src/components/Base.jsx'
+import EnrollMenu from './components/EnrollMenu.jsx';
 import DescriptionIcon from '@mui/icons-material/Description';
 import BallotIcon from '@mui/icons-material/Ballot';
 import { useState, useEffect } from 'react';
-import { Box, Grid, Button, Dialog, LinearProgress, Typography } from '@mui/material'
+import { Box, Grid, Button, Dialog, LinearProgress, Typography, Alert } from '@mui/material'
 import { useTheme } from '@mui/material/styles';
 import ContentTable from './components/ContentTable.jsx';
 import { PieChart } from '@mui/x-charts/PieChart'
@@ -27,6 +28,9 @@ function Course() {
     const [dialogMaxWidth, setDialogMaxWidth] = useState('lg');
     const [enrollmentsCount, setEnrollmentsCount] = useState(null);
     const [weeklyStats, setWeeklyStats] = useState(null);
+
+    const [pageSuccessMessage, setPageSuccessMessage] = useState('');
+
     const organizationId = localStorage.getItem('activeOrganizationId');
 
     const theme = useTheme();
@@ -75,6 +79,7 @@ function Course() {
             setDialogOpen(false);
         }
     }
+
     const getContent = async (contentId, ) => {
         console.log("Fetching content with ID:", contentId);
         const response = await fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${contentId}/`, {
@@ -200,6 +205,13 @@ function Course() {
             ]}
             showOrganizationSwitcher={false}
         >
+            {pageSuccessMessage && (
+                <Grid size={{ xs: 12 }} px={2} pt={2}>
+                    <Alert severity="success" onClose={() => setPageSuccessMessage('')}>
+                        {pageSuccessMessage}
+                    </Alert>
+                </Grid>
+            )}
             <Grid size={{xs: 12}} py={2} pl={2}>
                 <Box p={2} sx={{ border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: 2, minHeight: 300 }}>
                     {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
@@ -214,7 +226,9 @@ function Course() {
                             cancelCallback={() => setDialogOpen(false)}
                             successCallback={resetDialog}
                             courseId={courseId} /></Suspense>);
-                        setDialogOpen(true);}}>{localeMessages["add_quiz"]}</Button></> }
+                        setDialogOpen(true);}}>{localeMessages["add_quiz"]}</Button>
+                    {userRole === 'admin' && <EnrollMenu successCallback={() => {setPageSuccessMessage(localeMessages['enrollment_success'] || 'Learner enrolled successfully.'); setTimeout(() => setPageSuccessMessage(''), 3000);}} />}
+                    </> }
                     <ContentTable courseId={courseId} loaded={contentLoaded} eventHandler={(event) => tableEventHandler(event)} />
                 </Box>
                 <Grid container spacing={2}>

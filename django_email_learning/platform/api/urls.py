@@ -5,6 +5,7 @@ from django_email_learning.platform.api.views import (
     GetOrCreateUserByEmail,
     SingleApiKeyView,
     CourseView,
+    EnrollmentsView,
     EnrollmentView,
     EnrollmentsStatisticsView,
     FileView,
@@ -80,6 +81,11 @@ urlpatterns = [
         "organizations/<int:organization_id>/enrollments/<int:enrollment_id>/",
         EnrollmentView.as_view(),
         name="enrollment_view",
+    ),
+    path(
+        "organizations/<int:organization_id>/courses/<int:course_id>/enrollments/",
+        EnrollmentsView.as_view(),
+        name="enrollments_view",
     ),
     path(
         "organizations/<int:organization_id>/courses/<int:course_id>/enrollments/statistics/",

@@ -220,6 +220,8 @@ class CourseView(BasePlatformView):
     def get_locale_messages(self) -> Dict[str, str]:
         return {
             "actions": _("Actions"),
+            "enroll_learner": _("Enroll Learner"),
+            "manual_email": _("Manual Email"),
             "published": _("Published"),
             "type": _("Type"),
             "waiting_time": _("Waiting Time"),

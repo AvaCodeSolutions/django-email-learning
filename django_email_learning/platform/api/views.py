@@ -17,6 +17,16 @@ from datetime import timedelta, datetime
 from urllib.parse import urlparse
 from pydantic import ValidationError
 from enum import StrEnum
+from django_email_learning.services.command_models.enroll_command import EnrollCommand
+from django_email_learning.services.command_models.verify_enrollment_command import (
+    VerifyEnrollmentCommand,
+)
+from django_email_learning.services.command_models.exceptions.blocked_email_error import (
+    BlockedEmailError,
+)
+from django_email_learning.services.command_models.exceptions.enrollment_already_exists_error import (
+    EnrollmentAlreadyExistsError,
+)
 from django_email_learning.platform.api import serializers
 from django_email_learning.platform.api.pagniated_api_mixin import PaginatedApiMixin
 from django_email_learning.models import (
@@ -761,6 +771,50 @@ class SingleLearnerView(View):
         except ValidationError as e:
             logger.error(f"Error in SingleLearnerView: {e.json()}")
             return JsonResponse({"error": "An internal error occurred."}, status=500)
+
+
+@method_decorator(accessible_for(roles={"admin"}), name="post")
+class EnrollmentsView(PaginatedApiMixin, View):
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        payload = json.loads(request.body)
+        try:
+            serializer = serializers.CreateEnrollmentRequest.model_validate(payload)
+            try:
+                course = Course.objects.get(
+                    id=kwargs["course_id"], organization_id=kwargs["organization_id"]
+                )
+            except Course.DoesNotExist:
+                return JsonResponse({"error": "Course not found"}, status=404)
+            command = EnrollCommand(
+                email=serializer.learner_email,
+                course_slug=course.slug,
+                organization_id=kwargs["organization_id"],
+                no_verification=True,  # skip verification email for manual enrollments through the API
+            )
+            try:
+                command.execute()
+            except BlockedEmailError as e:
+                return JsonResponse({"error": str(e)}, status=403)
+            except EnrollmentAlreadyExistsError as e:
+                return JsonResponse({"error": str(e)}, status=409)
+
+            enrollment = Enrollment.objects.get(
+                learner__email=serializer.learner_email, course_id=kwargs["course_id"]
+            )
+            verify_command = VerifyEnrollmentCommand(
+                enrollment_id=enrollment.id,
+                verification_code=enrollment.activation_code,  # type: ignore[arg-type]
+            )
+            verify_command.execute()
+            enrollment.refresh_from_db()
+            return JsonResponse(
+                serializers.EnrollmentResponse.from_django_model(
+                    enrollment
+                ).model_dump(),
+                status=201,
+            )
+        except ValidationError as e:
+            return JsonResponse({"error": e.json()}, status=400)
 
 
 @method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")

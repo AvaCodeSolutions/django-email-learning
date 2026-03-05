@@ -6,6 +6,13 @@ from django_email_learning.models import Enrollment, Learner, EnrollmentStatus
 from django.core import mail
 import pytest
 
+from django_email_learning.services.command_models.exceptions.blocked_email_error import (
+    BlockedEmailError,
+)
+from django_email_learning.services.command_models.exceptions.enrollment_already_exists_error import (
+    EnrollmentAlreadyExistsError,
+)
+
 
 def test_enroll_command(db, course):
     course.enabled = True
@@ -35,6 +42,30 @@ def test_enroll_command(db, course):
     assert enrollment.activation_code in sent_email.body
 
 
+def test_enroll_command_skip_verification_email(db, course):
+    course.enabled = True
+    course.save()
+    command = EnrollCommand(
+        command_name="enroll",
+        email="test@example.com",
+        course_slug=course.slug,
+        organization_id=course.organization.id,
+        no_verification=True,  # Set the flag to skip verification email
+    )
+    command.execute()
+
+    # check learner and enrollment created
+    learner = Learner.objects.get(
+        email="test@example.com", organization_id=course.organization.id
+    )
+    Enrollment.objects.get(
+        learner=learner, course=course, status=EnrollmentStatus.UNVERIFIED
+    )
+
+    # check no verification email sent
+    assert len(mail.outbox) == 0
+
+
 def test_enroll_command_for_blocked_email(db, blocked_email, course):
     command = EnrollCommand(
         command_name="enroll",
@@ -42,7 +73,8 @@ def test_enroll_command_for_blocked_email(db, blocked_email, course):
         course_slug=course.slug,
         organization_id=course.organization.id,
     )
-    command.execute()
+    with pytest.raises(BlockedEmailError):
+        command.execute()
 
     # check no learner or enrollment created
     assert not Learner.objects.filter(email=blocked_email.email).exists()
@@ -66,7 +98,8 @@ def test_existing_enrollment_skipped(db, learner, course):
         course_slug=course.slug,
         organization_id=course.organization.id,
     )
-    command.execute()
+    with pytest.raises(EnrollmentAlreadyExistsError):
+        command.execute()
 
     # Check that no new enrollment is created
     enrollments = Enrollment.objects.filter(learner=learner, course=course)
