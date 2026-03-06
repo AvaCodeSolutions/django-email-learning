@@ -9,13 +9,18 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
     def user_enrolled_in_course(self, course_slug: str, organization_id: int) -> None:
         logger.info(
             "User enrolled",
-            extra={"course_slug": course_slug, "organization_id": organization_id},
+            extra={
+                "metric": "user_enrolled",
+                "course_slug": course_slug,
+                "organization_id": organization_id,
+            },
         )
 
     def quiz_sent(self, course_slug: str, organization_id: int, quiz_id: int) -> None:
         logger.info(
             "Quiz sent",
             extra={
+                "metric": "quiz_sent",
                 "course_slug": course_slug,
                 "organization_id": organization_id,
                 "quiz_id": quiz_id,
@@ -28,6 +33,7 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
         logger.info(
             "Lesson sent",
             extra={
+                "metric": "lesson_sent",
                 "course_slug": course_slug,
                 "organization_id": organization_id,
                 "lesson_id": lesson_id,
@@ -37,7 +43,11 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
     def user_enrollment_activated(self, course_slug: str, organization_id: int) -> None:
         logger.info(
             "User enrollment activated",
-            extra={"course_slug": course_slug, "organization_id": organization_id},
+            extra={
+                "metric": "user_enrollment_activated",
+                "course_slug": course_slug,
+                "organization_id": organization_id,
+            },
         )
 
     def user_enrollment_deactivated(
@@ -46,6 +56,7 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
         logger.info(
             "User enrollment deactivated",
             extra={
+                "metric": "user_enrollment_deactivated",
                 "course_slug": course_slug,
                 "organization_id": organization_id,
                 "reason": reason,
@@ -55,7 +66,11 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
     def user_completed_course(self, course_slug: str, organization_id: int) -> None:
         logger.info(
             "User completed course",
-            extra={"course_slug": course_slug, "organization_id": organization_id},
+            extra={
+                "metric": "user_completed_course",
+                "course_slug": course_slug,
+                "organization_id": organization_id,
+            },
         )
 
     def quiz_submitted(
@@ -64,6 +79,7 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
         logger.info(
             "Quiz submitted",
             extra={
+                "metric": "quiz_submitted",
                 "course_slug": course_slug,
                 "organization_id": organization_id,
                 "quiz_id": quiz_id,
@@ -74,5 +90,9 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
     def method_executed(self, method_name: str, execution_time: int) -> None:
         logger.info(
             "Method executed",
-            extra={"method_name": method_name, "execution_time": execution_time},
+            extra={
+                "metric": "method_executed",
+                "method_name": method_name,
+                "execution_time": execution_time,
+            },
         )
