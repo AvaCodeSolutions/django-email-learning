@@ -3,6 +3,7 @@ from django_email_learning.services.command_models.abstract_command import (
 )
 from django_email_learning.models import Quiz, CourseContent
 from django_email_learning.services.email_sender_service import EmailSenderService
+from django_email_learning.services.metrics_service import MetricsService
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from typing import Literal
@@ -19,6 +20,7 @@ class SendQuizCommand(AbstractCommand):
     content_id: int
 
     def execute(self) -> None:
+        metric_service = MetricsService()
         content = CourseContent.objects.get(id=self.content_id)
         if not content.quiz:
             raise QuizNotFoundError(
@@ -53,3 +55,8 @@ class SendQuizCommand(AbstractCommand):
         )
 
         email_service.send(email_message)
+        metric_service.quiz_sent(
+            course_slug=content.course.slug,
+            organization_id=content.course.organization.id,
+            quiz_id=quiz.id,
+        )

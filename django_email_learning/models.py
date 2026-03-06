@@ -17,6 +17,7 @@ from django.core.validators import (
     MinLengthValidator,
 )
 from django_email_learning.services.email_sender_service import EmailSenderService
+from django_email_learning.services.metrics_service import MetricsService
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.core.exceptions import ImproperlyConfigured
@@ -58,6 +59,9 @@ class DeliveryStatus(StrEnum):
     DELIVERED = "delivered"
     CANCELED = "canceled"
     BLOCKED = "blocked"
+
+
+METRIC_SERVICE = MetricsService()
 
 
 def is_domain_or_ip(value: str) -> None:
@@ -557,6 +561,10 @@ class Enrollment(models.Model):
                 )
             self.status = EnrollmentStatus.COMPLETED
             self.final_state_at = timezone.now()
+            METRIC_SERVICE.user_completed_course(
+                course_slug=self.course.slug,
+                organization_id=self.course.organization.id,
+            )
             logger.info(
                 f"Learner ID {self.learner.id} has completed the course {self.course.title}."
             )
@@ -609,6 +617,11 @@ class Enrollment(models.Model):
         self.status = EnrollmentStatus.DEACTIVATED
         self.deactivation_reason = DeactivationReason.FAILED
         self.final_state_at = timezone.now()
+        METRIC_SERVICE.user_enrollment_deactivated(
+            course_slug=self.course.slug,
+            organization_id=self.course.organization.id,
+            reason=DeactivationReason.FAILED,
+        )
         logger.info(
             f"Learner ID {self.learner.id} has failed the course {self.course.title}."
         )

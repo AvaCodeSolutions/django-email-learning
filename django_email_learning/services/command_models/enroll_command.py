@@ -20,6 +20,7 @@ from django_email_learning.models import (
 from django_email_learning.services.utils import mask_email
 from django_email_learning.services.email_sender_service import EmailSenderService
 from django_email_learning.services import jwt_service
+from django_email_learning.services.metrics_service import MetricsService
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.translation import gettext as _
@@ -36,6 +37,7 @@ class EnrollCommand(AbstractCommand):
     no_verification: bool = False
 
     def execute(self) -> None:
+        metric_service = MetricsService()
         # Check if the email is blocked
         if BlockedEmail.objects.filter(email=self.email).exists():
             self.logger.info(
@@ -87,6 +89,8 @@ class EnrollCommand(AbstractCommand):
         self.logger.info(
             f"Enrollment Successful: Learner ID {learner.id} enrolled in course '{self.course_slug}'. Enrollment ID: {enrollment.id}"
         )
+
+        metric_service.user_enrolled_in_course(self.course_slug, self.organization_id)
 
         if self.no_verification:
             self.logger.info(

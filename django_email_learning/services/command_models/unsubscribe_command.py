@@ -8,6 +8,7 @@ from django_email_learning.models import (
     DeactivationReason,
 )
 from django.utils import timezone
+from django_email_learning.services.metrics_service import MetricsService
 from django_email_learning.services.command_models.abstract_command import (
     AbstractCommand,
 )
@@ -23,6 +24,7 @@ class UnsubscribeCommand(AbstractCommand):
     organization_id: int
 
     def execute(self) -> None:
+        metric_service = MetricsService()
         try:
             course = Course.objects.get(
                 slug=self.course_slug, organization_id=self.organization_id
@@ -65,4 +67,9 @@ class UnsubscribeCommand(AbstractCommand):
             status=EnrollmentStatus.DEACTIVATED,
             deactivation_reason=DeactivationReason.CANCELED,
             final_state_at=timezone.now(),
+        )
+        metric_service.user_enrollment_deactivated(
+            course_slug=course.slug,
+            organization_id=course.organization.id,
+            reason=DeactivationReason.CANCELED,
         )

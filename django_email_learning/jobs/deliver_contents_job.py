@@ -62,7 +62,14 @@ class DeliverContentsJob:
             settings, "DJANGO_EMAIL_LEARNING", {}
         )
         try:
-            return import_string(DJANGO_EMAIL_LEARNING_SETTINGS["DELIVERY_QUEUE"])
+            configured_delivery_queue = import_string(
+                DJANGO_EMAIL_LEARNING_SETTINGS["DELIVERY_QUEUE"]
+            )
+            return (
+                configured_delivery_queue()
+                if isinstance(configured_delivery_queue, type)
+                else configured_delivery_queue
+            )
         except KeyError:
             from django_email_learning.services.defaults.database_delivery_queue import (
                 DatabaseDeliveryQueue,
