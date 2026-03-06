@@ -5,6 +5,7 @@ from django_email_learning.personalised.api.serializers import (
     QuizSubmissionRequest,
     QuestionResponse,
 )
+from django_email_learning.services.metrics_service import MetricsService
 from django_email_learning.services import jwt_service
 from django.utils.translation import gettext as _
 from django_email_learning.models import (
@@ -18,6 +19,8 @@ from django_email_learning.models import (
 from pydantic import ValidationError
 import json
 import logging
+
+METRIC_SERVICE = MetricsService()
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +116,12 @@ class QuizSubmissionView(View):
                 )
                 delivery.repeat_delivery_in_days(1)
 
+        METRIC_SERVICE.quiz_submitted(
+            course_slug=enrolment.course.slug,
+            organization_id=enrolment.course.organization.id,
+            quiz_id=quiz.id,
+            is_passed=passed,
+        )
         return JsonResponse(
             {
                 "score": score,

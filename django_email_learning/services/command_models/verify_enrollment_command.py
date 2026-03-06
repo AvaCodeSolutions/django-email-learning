@@ -11,6 +11,7 @@ from django_email_learning.services.command_models.exceptions.invalid_verificati
     InvalidVerificationCodeError,
 )
 from django_email_learning.services.email_sender_service import EmailSenderService
+from django_email_learning.services.metrics_service import MetricsService
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.translation import gettext as _
@@ -24,6 +25,7 @@ class VerifyEnrollmentCommand(AbstractCommand):
     verification_code: str = Field(..., pattern=r"^\d{6}$")
 
     def execute(self) -> None:
+        metric_service = MetricsService()
         try:
             enrollment = Enrollment.objects.get(
                 id=self.enrollment_id, status=EnrollmentStatus.UNVERIFIED
@@ -57,6 +59,9 @@ class VerifyEnrollmentCommand(AbstractCommand):
         enrollment.schedule_first_content_delivery()
         self.logger.info(
             f"Content Delivery Scheduled: First content delivery scheduled for Enrollment ID {self.enrollment_id}"
+        )
+        metric_service.user_enrollment_activated(
+            enrollment.course.slug, enrollment.course.organization.id
         )
 
         # Send confirmation email

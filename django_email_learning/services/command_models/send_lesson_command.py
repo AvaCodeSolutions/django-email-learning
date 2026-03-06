@@ -3,6 +3,7 @@ from django_email_learning.services.command_models.abstract_command import (
 )
 from django_email_learning.models import Lesson, CourseContent
 from django_email_learning.services.email_sender_service import EmailSenderService
+from django_email_learning.services.metrics_service import MetricsService
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from typing import Literal
@@ -18,6 +19,7 @@ class SendLessonCommand(AbstractCommand):
     email: str
 
     def execute(self) -> None:
+        metric_service = MetricsService()
         content = CourseContent.objects.get(id=self.content_id)
         if not content.lesson:
             raise LessonNotFoundError(
@@ -52,3 +54,8 @@ class SendLessonCommand(AbstractCommand):
         )
 
         email_service.send(email_message)
+        metric_service.lesson_sent(
+            course_slug=content.course.slug,
+            organization_id=content.course.organization.id,
+            lesson_id=lesson.id,
+        )

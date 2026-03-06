@@ -9,8 +9,13 @@ class EmailSenderService:
             settings, "DJANGO_EMAIL_LEARNING", {}
         )
         try:
-            self.email_sender = import_string(
+            configured_email_sender = import_string(
                 DJANGO_EMAIL_LEARNING_SETTINGS["EMAIL_SENDER"]
+            )
+            self.email_sender = (
+                configured_email_sender()
+                if isinstance(configured_email_sender, type)
+                else configured_email_sender
             )
         except KeyError:
             from django_email_learning.services.defaults.email_sender import (
