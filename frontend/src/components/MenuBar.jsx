@@ -171,7 +171,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     return (
         <Box component="nav"sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
         <AppBar sx={{boxShadow: 0, backgroundColor: 'background.nav', borderBottom: {xs: '1px solid'}, borderColor: {xs: 'border.main', md: 'none'} }}>
-            <Box my={1} ml={5} sx={{ height: {xs: "57px", md: "30px"}}}>
+            <Box my={1} ml={5} sx={{ height: {xs: "57px", md: "30px"}, display: 'flex', justifyContent: direction === 'rtl' ? 'flex-end' : 'flex-start', alignItems: 'center' }}>
                 <img src={logoHorizontalUrl} alt="Logo" style={{maxHeight: "57px", height: "100%"}} />
             </Box>
             <Box sx={{ position: "absolute", left: direction === 'rtl' ? 'auto' : '270px', right: direction === 'rtl' ? '270px' : 'auto', top: '10px', display: {xs: 'none', md: 'flex' }}}>
@@ -201,7 +201,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                     </Tooltip>
                 )}
             </Box>
-            <Box sx={{display: { xs: 'flex'}, right: direction === 'rtl' ? 'auto' : '0', left: direction === 'rtl' ? '0' : 'auto', position: "absolute" }}>
+            <Box sx={{display: { xs: 'flex'}, right: direction === 'rtl' ? 'auto' : '0', left: direction === 'rtl' ? '0' : 'auto', position: "absolute", direction: direction, alignItems: 'center'}}>
                 <ThemeSwitcher />
                 <Box m={1} paddingTop="7px">
                 <IconButton

@@ -34,8 +34,10 @@ import ImageIcon from '@mui/icons-material/Image';
 import VerticalAlignCenterIcon from '@mui/icons-material/VerticalAlignCenter';
 import { useAppContext } from '../render'
 
-function ContentEditor({ initialContent, contentUpdateCallback, disabled = false, extraMinLines = 0, editorInstanceCallback }) {
-    const { direction } = useAppContext();
+function ContentEditor({ initialContent, contentUpdateCallback, disabled = false, extraMinLines = 0, editorInstanceCallback, defaultDirection }) {
+    const { direction: appDirection } = useAppContext();
+    const direction = defaultDirection || appDirection;
+    const defaultTextAlign = direction === 'rtl' ? 'right' : 'left';
     const minHeight = 200 + (Math.max(0, extraMinLines) * 24);
     const [editorHeight, setEditorHeight] = useState(minHeight);
 
@@ -96,6 +98,12 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
         content: initialContent,
         editable: !disabled,
         autofocus: true,
+        editorProps: {
+            attributes: {
+                dir: direction,
+                style: `text-align: ${defaultTextAlign};`,
+            },
+        },
         onUpdate: ({ editor }) => {
             contentUpdateCallback(editor.getHTML());
         },

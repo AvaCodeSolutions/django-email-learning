@@ -7,6 +7,7 @@ import logging
 from enum import StrEnum
 from typing import Any
 from django.conf import settings
+from django.conf.global_settings import LANGUAGES
 from django.core.files.storage import default_storage
 from django.urls import reverse
 from django.db import models, transaction
@@ -196,6 +197,11 @@ class Course(models.Model):
     )
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     image = models.ImageField(upload_to="course_images/", null=True, blank=True)
+    language = models.CharField(
+        max_length=10,
+        choices=LANGUAGES,
+        default="en",
+    )
 
     def __str__(self) -> str:
         return self.title

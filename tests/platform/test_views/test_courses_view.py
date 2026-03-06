@@ -1,5 +1,6 @@
 from django.urls import reverse
 import pytest
+from django.conf.global_settings import LANGUAGES
 
 
 def get_url() -> str:
@@ -35,5 +36,8 @@ def test_context_values(superadmin_client):
     assert "platformBaseUrl" in response.context["appContext"]
     assert "activeOrganizationId" in response.context
     assert "userRole" in response.context["appContext"]
+    assert response.context["appContext"]["languageOptions"] == [
+        {"value": code, "label": name} for code, name in LANGUAGES
+    ]
     assert response.context["page_title"] == "Courses"
     assert response.context["appContext"]["isPlatformAdmin"] is True

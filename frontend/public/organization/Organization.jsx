@@ -3,6 +3,7 @@ import render from '../../src/render.jsx';
 import Layout from '../components/Layout.jsx';
 import EnrollmentForm from '../components/EnrollmentForm.jsx';
 import { Box, Button, Card, CardContent, CardMedia, Chip, Dialog, Grid, Stack, Typography } from '@mui/material';
+import LanguageIcon from '@mui/icons-material/Language';
 import { alpha, ThemeProvider } from '@mui/material/styles';
 import { useAppContext } from '../../src/render.jsx';
 import { lightTheme } from '../../src/theme/themes';
@@ -66,7 +67,9 @@ function Organization() {
             <Typography variant="h2" sx={{ mb: 2 }}>{localeMessages['courses']}</Typography>
             { courses.length > 0 ? (
                 <Grid container columnSpacing={2} rowSpacing={3} alignItems="stretch">
-                { courses.map((course) => (
+                { courses.map((course) => {
+                    const courseDirection = course.is_rtl ? 'rtl' : 'ltr';
+                    return (
                     <Grid size={{ xs: 12, sm: 6, md: 4 }} key={course["id"]} display="flex" >
                         <Card
                             key={course["id"]}
@@ -97,12 +100,33 @@ function Organization() {
                                     objectFit: 'cover',
                                 }}
                             />
-                            <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, flexGrow: 1 }}>
-                                <Typography variant="h3">{course["title"]}</Typography>
+                            <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, flexGrow: 1, direction: course.is_rtl ? 'rtl' : 'ltr' }}>
+                                <Box>
+                                    <Typography variant="h3" sx={{ textAlign: courseDirection === 'rtl' ? 'right' : 'left' }}>{course["title"]}</Typography>
+                                    <Stack direction={courseDirection === 'rtl' ? 'rtl' : 'ltr'} alignItems="center" spacing={0.5} sx={{ mt: 0.25 }}>
+                                        <LanguageIcon
+                                            sx={(theme) => ({
+                                                fontSize: '1rem',
+                                                color: theme.palette.grey[600],
+                                            })}
+                                        />
+                                        <Typography
+                                            variant="body2"
+                                            sx={(theme) => ({
+                                                fontSize: '0.875rem',
+                                                color: theme.palette.grey[600],
+                                                textAlign: courseDirection === 'rtl' ? 'right' : 'left',
+                                            })}
+                                        >
+                                            {course["language"]}
+                                        </Typography>
+                                    </Stack>
+                                </Box>
                                 <Typography
                                     variant="body2"
                                     sx={{
                                         color: 'text.secondary',
+                                        textAlign: courseDirection === 'rtl' ? 'right' : 'left',
                                         display: '-webkit-box',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
@@ -132,7 +156,8 @@ function Organization() {
                             </CardContent>
                         </Card>
                     </Grid>
-                ))}
+                    )
+                })}
                 </Grid>
             ) : (
                 <Box

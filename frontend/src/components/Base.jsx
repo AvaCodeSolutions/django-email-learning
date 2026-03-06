@@ -10,6 +10,7 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
   const { direction, apiBaseUrl } = useAppContext();
   const [activeOrganizationId, setActiveOrganizationId] = useState(null);
   const drawerWidth = 250;
+  const activeCrumbIndex = breadCrumbList.length - 1;
 
   useEffect(() => {
     const orgId = localStorage.getItem('activeOrganizationId');
@@ -68,7 +69,12 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
         aria-label="breadcrumb"
         maxItems={3}
         separator="›"
+        dir={direction}
         sx={{
+          direction: direction,
+          '& .MuiBreadcrumbs-ol': {
+            justifyContent: 'flex-start',
+          },
           '& .MuiBreadcrumbs-separator': {
             color: 'text.disabled',
             opacity: 0.55,
@@ -77,8 +83,8 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
           },
         }}
       >
-       { breadCrumbList.map(({label, href, index}) => (
-         index < breadCrumbList.length - 1 ?
+       { breadCrumbList.map(({label, href}, index) => (
+         index !== activeCrumbIndex ?
          <Link
            key={index}
            underline="hover"

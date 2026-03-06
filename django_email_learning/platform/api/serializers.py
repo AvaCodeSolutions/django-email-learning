@@ -27,6 +27,7 @@ from django_email_learning.models import (
     OrganizationUser,
 )
 from django_email_learning.services.jwt_service import generate_jwt
+from django.utils.translation import get_language_info
 import enum
 
 
@@ -90,6 +91,7 @@ class CreateCourseRequest(BaseModel):
     )
     imap_connection_id: Optional[int] = Field(None, examples=[1])
     image: Optional[str] = Field(None, examples=["/path/to/course_image.png"])
+    language: str = Field(min_length=2, max_length=10, examples=["en"])
 
     def to_django_model(self, organization_id: int) -> Course:
         organization = Organization.objects.get(id=organization_id)
@@ -113,6 +115,7 @@ class CreateCourseRequest(BaseModel):
             slug=self.slug,
             description=self.description,
             organization=organization,
+            language=self.language,
         )
         if imap_connection:
             course.imap_connection = imap_connection
@@ -133,6 +136,7 @@ class UpdateCourseRequest(BaseModel):
     enabled: Optional[bool] = Field(None, examples=[True])
     reset_imap_connection: Optional[bool] = Field(None, examples=[False])
     image: Optional[str] = Field(None, examples=["/path/to/course_image.png"])
+    language: Optional[str] = Field(None, min_length=2, max_length=10, examples=["en"])
 
     def to_django_model(self, course_id: int) -> Course:
         try:
@@ -160,7 +164,8 @@ class UpdateCourseRequest(BaseModel):
                 course.replace_image(self.image)
         if not self.image:
             course.image = None
-
+        if self.language is not None:
+            course.language = self.language
         return course
 
 
@@ -175,6 +180,8 @@ class CourseResponse(BaseModel):
     enrollments_count: dict[str, int]
     image: Optional[str] = None
     image_path: Optional[str] = None
+    language: str
+    is_rtl: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -182,6 +189,7 @@ class CourseResponse(BaseModel):
     def from_django_model(
         course: Course, abs_url_builder: Callable
     ) -> "CourseResponse":
+        language_info = get_language_info(course.language)
         return CourseResponse.model_validate(
             {
                 "id": course.id,
@@ -196,6 +204,8 @@ class CourseResponse(BaseModel):
                 "enrollments_count": course.enrollments_count,
                 "image": abs_url_builder(course.image.url) if course.image else None,
                 "image_path": course.image.name if course.image else None,
+                "language": course.language,
+                "is_rtl": language_info["bidi"],
             }
         )
 

@@ -25,6 +25,8 @@ def test_create_course_success(superadmin_client):
     assert response.json()["description"] == payload["description"]
     assert response.json()["organization_id"] == 1
     assert response.json()["imap_connection_id"] is None
+    assert response.json()["language"] == payload["language"]
+    assert response.json()["is_rtl"] is False
 
 
 def test_create_course_not_authenticated(anonymous_client):
@@ -336,6 +338,7 @@ def valid_create_course_payload(
         "slug": slug,
         "description": description,
         "imap_connection_id": None,
+        "language": "en",
     }
 
 

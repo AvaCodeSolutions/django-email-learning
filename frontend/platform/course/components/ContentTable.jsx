@@ -113,8 +113,8 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
     }
 
     return (
-        <TableContainer component={Paper}>
-           <Table sx={{ width: "100%" }} aria-label="Contents">
+          <TableContainer component={Paper} dir={direction}>
+              <Table sx={{ width: "100%", direction: direction }} aria-label="Contents">
             <TableHead>
               <TableRow>
                 { userRole !== 'viewer' && <TableCell sx={{ width: '40px', boxSizing: 'border-box' }}></TableCell>}
