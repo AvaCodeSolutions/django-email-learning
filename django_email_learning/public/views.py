@@ -37,6 +37,7 @@ class OrganizationView(TemplateView):
                 raise Http404(_("Organization does not exist"))
             courses = []
             for course in organization.courses:
+                course_lang_info = get_language_info(course.language)
                 course_data = PublicCourseSerializer(
                     id=course.id,
                     title=course.title,
@@ -48,6 +49,8 @@ class OrganizationView(TemplateView):
                     imap_email=course.imap_connection.email
                     if course.imap_connection
                     else None,
+                    language=course.language,
+                    is_rtl=course_lang_info["bidi"],
                 )
                 courses.append(course_data)
             organization_data = OrganizationSerializer(
@@ -76,6 +79,7 @@ class OrganizationView(TemplateView):
                     "no_courses_available": _("No courses available."),
                     "email_required": _("Email is required"),
                     "email_invalid": _("Please enter a valid email address"),
+                    "course_language": _("Course language"),
                 },
             }
             context["page_title"] = organization.name

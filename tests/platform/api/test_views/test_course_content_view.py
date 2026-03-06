@@ -38,6 +38,7 @@ def valid_create_course_payload(
         "slug": slug,
         "description": description,
         "imap_connection_id": None,
+        "language": "en",
     }
 
 

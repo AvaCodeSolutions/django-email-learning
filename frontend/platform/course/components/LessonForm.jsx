@@ -24,7 +24,7 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
     const [isDeletingImage, setIsDeletingImage] = useState(false);
 
 
-    const { localeMessages, apiBaseUrl, userRole } = useAppContext();
+    const { localeMessages, apiBaseUrl, userRole, direction } = useAppContext();
     const orgId = localStorage.getItem('activeOrganizationId');
 
     const VisuallyHiddenInput = styled('input')({
@@ -294,7 +294,7 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
         )}
         <RequiredTextField value={title} label={localeMessages["lesson_title"]} name="lesson_title" sx={{ width: '100%' }} onChange={(e) => setTitle(e.target.value)} helperText={titleHelperText} disabled={userRole === 'viewer'} />
         <Box sx={{ my: 2 }}>
-        <ContentEditor initialContent={content} contentUpdateCallback={handleContentChange} disabled={userRole === 'viewer'} extraMinLines={3} editorInstanceCallback={setEditorInstance} />
+        <ContentEditor initialContent={content} contentUpdateCallback={handleContentChange} disabled={userRole === 'viewer'} extraMinLines={3} editorInstanceCallback={setEditorInstance} defaultDirection={direction} />
         <Typography color="errorText.main" sx={{ marginTop: 1, fontSize: '0.75rem' }}>
             {contentHelperText}
         </Typography>

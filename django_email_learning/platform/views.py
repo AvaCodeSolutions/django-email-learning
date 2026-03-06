@@ -1,4 +1,5 @@
 import logging
+from django.conf.global_settings import LANGUAGES
 from django.views.generic import TemplateView
 from django.utils.translation import get_language_info, get_language
 from django.contrib.auth.decorators import login_required
@@ -103,6 +104,9 @@ class BasePlatformView(TemplateView):
                     ),
                 }
                 | self.get_locale_messages(),
+                "languageOptions": [
+                    {"value": code, "label": name} for code, name in LANGUAGES
+                ],
             },
             "activeOrganizationId": active_organization_id,
             "favicon": DJANGO_EMAIL_LEARNING_SETTINGS.get("FAVICON"),
@@ -162,6 +166,7 @@ class Courses(BasePlatformView):
             "course_title": _("Course Title"),
             "course_description": _("Course Description"),
             "course_slug": _("Course Slug"),
+            "course_language": _("Course Language"),
             "slug_tooltip": _(
                 "The slug is a unique identifier for the course used in URLs and API endpoints. It should be lowercase, contain no spaces (use hyphens instead), and be unique across all courses for your organization. Once set, the slug cannot be changed."
             ),
@@ -191,6 +196,7 @@ class Courses(BasePlatformView):
                 "The course description is required."
             ),
             "slug_required_helper_text": _("The course slug is required."),
+            "language_required_helper_text": _("The course language is required."),
             "email_required_helper_text": _("The email is required."),
             "password_required_helper_text": _("The password is required."),
             "server_required_helper_text": _("The server is required."),
@@ -214,6 +220,10 @@ class CourseView(BasePlatformView):
         course = Course.objects.get(pk=self.kwargs["course_id"])
         context["appContext"]["courseId"] = course.id
         context["appContext"]["courseTitle"] = course.title
+        context["appContext"]["courseLanguage"] = course.language
+        context["appContext"]["direction"] = (
+            "rtl" if get_language_info(course.language)["bidi"] else "ltr"
+        )
         context["page_title"] = _("Course: %(title)s") % {"title": course.title}
         return context
 

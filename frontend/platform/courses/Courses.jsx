@@ -37,7 +37,11 @@ function Courses() {
   const [courses, setCourses] = useState([])
   const [organizationId, setOrganizationId] = useState(null);
   const [queryParameters, setQueryParameters] = useState("");
-  const { direction, localeMessages, apiBaseUrl, platformBaseUrl, userRole } = useAppContext();
+  const { direction, localeMessages, apiBaseUrl, platformBaseUrl, userRole, languageOptions = [] } = useAppContext();
+
+  const getLanguageLabel = (languageCode) => {
+    return languageOptions.find((languageOption) => languageOption.value === languageCode)?.label || languageCode;
+  }
 
   const renderCourses = () => {
     if (!organizationId) {
@@ -132,6 +136,7 @@ function Courses() {
             <TableHead>
               <TableRow>
                 <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["title"]}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["course_language"]}</TableCell>
                 <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["total_enrollments"]}</TableCell>
                 <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["enabled"]}</TableCell>
                 {userRole !== 'viewer' && <TableCell align={direction === 'rtl' ? 'left' : 'right'}>{localeMessages["actions"]}</TableCell>}
@@ -143,6 +148,7 @@ function Courses() {
                   <TableCell component="th" scope="row" sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>
                     <Link href={`${platformBaseUrl}/courses/${course.id}`} color='secondary.dark'>{course.title}</Link>
                   </TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: direction === 'rtl' ? 'right' : 'left' }}>{getLanguageLabel(course.language)}</TableCell>
                   <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{course.enrollments_count.total}</TableCell>
                   <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>
                     <Switch
@@ -168,7 +174,7 @@ function Courses() {
               {courses.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={userRole !== 'viewer' ? 4 : 3}
+                    colSpan={userRole !== 'viewer' ? 5 : 4}
                     sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}
                   >
                     {localeMessages["no_courses_found"] || "No courses found."}

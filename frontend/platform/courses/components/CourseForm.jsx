@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Tooltip} from '@mui/material';
+import { Alert, Box, Button, MenuItem, Tooltip} from '@mui/material';
 import RequiredTextField  from '../../../src/components/RequiredTextField.jsx';
 import { useAppContext } from '../../../src/render.jsx';
 import ImageUpload from '../../../src/components/ImageUpload.jsx';
@@ -6,15 +6,17 @@ import { useEffect, useState } from 'react';
 import { getCookie } from '../../../src/utils.js';
 
 function CourseForm({successCallback, failureCallback, cancelCallback, activeOrganizationId, createMode, courseId}) {
-    const { localeMessages, apiBaseUrl } = useAppContext();
+    const { localeMessages, apiBaseUrl, languageOptions = [] } = useAppContext();
     const [courseTitle, setCourseTitle] = useState("")
     const [courseSlug, setCourseSlug] = useState("")
     const [courseDescription, setCourseDescription] = useState("")
+    const [courseLanguage, setCourseLanguage] = useState("")
     const [addImapConnection, setAddImapConnection] = useState(false)
     const [imapConnectionId, setImapConnectionId] = useState(null)
     const [titleHelperText, setTitleHelperText] = useState("")
     const [slugHelperText, setSlugHelperText] = useState("")
     const [descriptionHelperText, setDescriptionHelperText] = useState("")
+    const [languageHelperText, setLanguageHelperText] = useState("")
     const [errorMessage, setErrorMessage] = useState("")
     const [imageUrl, setImageUrl] = useState(null)
     const [imageServerPath, setImageServerPath] = useState(null)
@@ -26,6 +28,12 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             setAddImapConnection(true)
         }
     }
+
+    useEffect(() => {
+        if (createMode && !courseLanguage && languageOptions.length > 0) {
+            setCourseLanguage("en"); // Default to English or you can choose the first language in the options
+        }
+    }, [createMode, courseLanguage, languageOptions]);
 
     useEffect(() => {
         if (!createMode && courseId) {
@@ -47,6 +55,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setCourseTitle(data.title);
                 setCourseSlug(data.slug);
                 setCourseDescription(data.description);
+                setCourseLanguage(data.language || "");
                 setImageUrl(data.image);
                 setImageServerPath(data.image_path);
                 if (data.imap_connection_id) {
@@ -86,6 +95,12 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
         } else {
             setDescriptionHelperText("");
         }
+        if (!courseLanguage) {
+            setLanguageHelperText(localeMessages["language_required_helper_text"]);
+            isValid = false;
+        } else {
+            setLanguageHelperText("");
+        }
 
         return isValid;
     }
@@ -106,6 +121,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             title: courseTitle,
             // slug is not updatable
             description: courseDescription,
+            language: courseLanguage,
             imap_connection_id: imapConnectionId && addImapConnection? parseInt(imapConnectionId) : null,
             reset_imap_connection: !addImapConnection || imapConnectionId == null,
             image: imageServerPath ? imageServerPath : null
@@ -151,6 +167,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             title: courseTitle,
             slug: courseSlug,
             description: courseDescription,
+            language: courseLanguage,
             imap_connection_id: imapConnectionId ? parseInt(imapConnectionId) : null,
             image: imageServerPath ? imageServerPath : null
         }),
@@ -174,6 +191,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setCourseTitle("");
                 setCourseSlug("");
                 setCourseDescription("");
+                setCourseLanguage(languageOptions.length > 0 ? languageOptions[0].value : "");
                 successCallback(data);
             }
         })
@@ -189,6 +207,21 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
               <Tooltip title={createMode ? localeMessages["slug_tooltip"] : ""}>
                                 <RequiredTextField label={localeMessages["course_slug"]} helperText={slugHelperText} fullWidth margin="normal" value={courseSlug} onChange={(e) => setCourseSlug(e.target.value)} inputProps={{ pattern: '^\\S+$', title: localeMessages['slug_no_space'] }} {...(!createMode ? { disabled: true } : {})} />
               </Tooltip>
+                            <RequiredTextField
+                                label={localeMessages["course_language"]}
+                                helperText={languageHelperText}
+                                fullWidth
+                                margin="normal"
+                                value={courseLanguage}
+                                onChange={(e) => setCourseLanguage(e.target.value)}
+                                select
+                            >
+                                {languageOptions.map((languageOption) => (
+                                        <MenuItem key={languageOption.value} value={languageOption.value}>
+                                                {languageOption.label}
+                                        </MenuItem>
+                                ))}
+                            </RequiredTextField>
               <RequiredTextField label={localeMessages["course_description"]} helperText={descriptionHelperText} fullWidth margin="normal" multiline rows={4} value={courseDescription} onChange={(e) => setCourseDescription(e.target.value)} />
               {/* Imap Form is commented for now since it's backend command still not implemented but the API and UI works as expected */}
               {/* <FormControlLabel
