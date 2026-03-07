@@ -32,3 +32,6 @@ class MetricRecorderProtocol(Protocol):
 
     def method_executed(self, method_name: str, execution_time: int) -> None:
         ...
+
+    def delivery_schedule_blocked(self, content_id: int) -> None:
+        ...

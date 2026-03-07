@@ -96,3 +96,12 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
                 "execution_time": execution_time,
             },
         )
+
+    def delivery_schedule_blocked(self, content_id: int) -> None:
+        logger.info(
+            "Delivery schedule blocked",
+            extra={
+                "metric": "delivery_schedule_blocked",
+                "content_id": content_id,
+            },
+        )

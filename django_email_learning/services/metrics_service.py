@@ -56,3 +56,6 @@ class MetricsService:
 
     def method_executed(self, method_name: str, execution_time: int) -> None:
         self.metric_recorder.method_executed(method_name, execution_time)
+
+    def delivery_schedule_blocked(self, content_id: int) -> None:
+        self.metric_recorder.delivery_schedule_blocked(content_id)

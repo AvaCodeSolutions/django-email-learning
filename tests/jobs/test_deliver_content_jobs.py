@@ -12,6 +12,7 @@ from django_email_learning.models import (
 from tests.jobs.delivery_queue_mock import DeliveryQueueMock
 from unittest.mock import patch
 import pytest
+import django_email_learning.jobs.deliver_contents_job as deliver_contents_job_module
 
 
 @pytest.fixture
@@ -135,13 +136,19 @@ def test_deliver_contents_job_blocks_after_3_failed_attempts(
         SendLessonCommand,
         "execute",
         side_effect=Exception("Simulated sending failure"),
-    ):
+    ), patch.object(
+        deliver_contents_job_module.METRIC_SERVICE,
+        "delivery_schedule_blocked",
+    ) as metric_blocked_spy:
         job.run()
 
     # After running the job, the delivery schedule should be in BLOCKED status
     delivery_schedule.refresh_from_db()
     assert delivery_schedule.status == DeliveryStatus.BLOCKED
     assert delivery_schedule.failed_attempts == 3
+    metric_blocked_spy.assert_called_once_with(
+        delivery_schedule.delivery.course_content.id
+    )
 
 
 def test_deliver_contents_job_reschedules_failed_delivery_and_increments_attempts(

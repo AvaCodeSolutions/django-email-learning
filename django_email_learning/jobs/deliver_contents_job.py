@@ -8,6 +8,7 @@ from django_email_learning.services.command_models.send_quiz_command import (
     SendQuizCommand,
     QuizNotFoundError,
 )
+from django_email_learning.services.metrics_service import MetricsService
 from django_email_learning.models import JobExecution, JobName, JobStatus
 from django.utils.module_loading import import_string
 from django.conf import settings
@@ -17,6 +18,7 @@ import datetime
 
 
 logger = logging.getLogger(__name__)
+METRIC_SERVICE = MetricsService()
 
 
 class DeliverContentsJob:
@@ -53,6 +55,9 @@ class DeliverContentsJob:
                     # We log the error and mark the delivery as blocked to prevent further attempts until manual intervention.
                     delivery_schedule.status = DeliveryStatus.BLOCKED
                     delivery_schedule.save()
+                    METRIC_SERVICE.delivery_schedule_blocked(
+                        delivery_schedule.delivery.course_content.id
+                    )
                     logger.exception(
                         f"Error processing delivery schedule: {str(e)}. Continuing with next task."
                     )
@@ -193,6 +198,9 @@ class DeliverContentsJob:
             )
             delivery_schedule.status = DeliveryStatus.BLOCKED
             delivery_schedule.save()
+            METRIC_SERVICE.delivery_schedule_blocked(
+                delivery_schedule.delivery.course_content.id
+            )
         else:
             delivery_schedule.time += datetime.timedelta(minutes=60)
             delivery_schedule.failed_attempts += 1
