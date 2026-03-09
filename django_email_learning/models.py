@@ -165,7 +165,7 @@ class EncryptionMixin(models.Model):
         abstract = True
 
 
-class ImapConnection(EncryptionMixin, models.Model):
+class ImapConnection(EncryptionMixin):
     server = models.CharField(max_length=200, validators=[is_domain_or_ip])
     port = models.IntegerField(db_default=993)
     email = models.EmailField(max_length=200, unique=True)
@@ -849,7 +849,7 @@ class QuizSubmission(models.Model):
         super().save(*args, **kwargs)
 
 
-class ApiKey(EncryptionMixin, models.Model):
+class ApiKey(EncryptionMixin):
     key = models.CharField(
         max_length=256, unique=True, validators=[MinLengthValidator(50)]
     )

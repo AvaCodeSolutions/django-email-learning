@@ -1,4 +1,5 @@
 from django.urls import path, include
+from django.apps import apps
 from django_email_learning.platform.api import urls as api_urls
 from django_email_learning.platform import urls as platform_urls
 from django_email_learning.personalised.api import urls as personalised_api_urls
@@ -21,3 +22,14 @@ urlpatterns = [
     path("my/", include(personalised_urls, namespace="personalised")),
     path("api/jobs/", include(jobs_api_urls, namespace="api_jobs")),
 ]
+
+if apps.is_installed("django_email_learning.oauth_integrations"):
+    urlpatterns += [
+        path(
+            "oauth/",
+            include(
+                "django_email_learning.oauth_integrations.urls",
+                namespace="oauth_integrations",
+            ),
+        ),
+    ]
