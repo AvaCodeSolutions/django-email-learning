@@ -5,6 +5,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import render, {useAppContext} from "../../src/render";
 import { useState, useEffect } from "react";
 import { getCookie } from "../../src/utils.js";
@@ -98,6 +99,14 @@ const ApiKeys = () => {
         });
     }
 
+    const copyApiKey = async (apiKeyValue) => {
+        try {
+            await navigator.clipboard.writeText(apiKeyValue);
+        } catch (error) {
+            console.error('Failed to copy API key:', error);
+        }
+    }
+
     return (<Base breadCrumbList={[{label: localeMessages["api_keys"], href: '#'}]} showOrganizationSwitcher={false}>
         <Grid size={12} py={2} pl={2}>
         <Box p={2} sx={{ border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', minHeight: 300, width: { lg: '80%' } }}>
@@ -114,19 +123,40 @@ const ApiKeys = () => {
                     {localeMessages["add_api_key"]}
                 </Button>
         { apiKeyList.length > 0 && (<TableContainer sx={{ maxHeight: 440, border: '1px solid', borderColor: 'grey.300', borderRadius: 1 }} >
-          <Table>
+                    <Table sx={{ tableLayout: 'fixed', width: '100%' }}>
             <TableHead>
               <TableRow>
-                <TableCell dir={direction} sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["key"]}</TableCell>
-                <TableCell dir={direction} sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["created_by"]}</TableCell>
-                <TableCell dir={direction} sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["created_at"]}</TableCell>
-                <TableCell sx={{ width: '100px' }}>{localeMessages["actions"]}</TableCell>
+                                <TableCell dir={direction} sx={{ width: '50%', textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["key"]}</TableCell>
+                                <TableCell dir={direction} sx={{ width: '20%', textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["created_by"]}</TableCell>
+                                <TableCell dir={direction} sx={{ width: '20%', textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["created_at"]}</TableCell>
+                                <TableCell sx={{ width: '10%' }}>{localeMessages["actions"]}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               { apiKeyList.map((key) => (
                 <TableRow key={key.id}>
-                  <TableCell dir={direction} sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{ key.visible ? key.key : '••••••••••••••••' }</TableCell>
+                                    <TableCell dir={direction} sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+                                                <Typography
+                                                        component="span"
+                                                        sx={{
+                                                                fontFamily: 'monospace',
+                                                                overflowWrap: 'anywhere',
+                                                                whiteSpace: 'normal',
+                                                                flex: 1,
+                                                        }}
+                                                >
+                                                        { key.visible ? key.key : '••••••••••••••••' }
+                                                </Typography>
+                                                <IconButton
+                                                        size="small"
+                                                        onClick={() => copyApiKey(key.key)}
+                                                        aria-label={localeMessages['copy'] || 'Copy'}
+                                                >
+                                                        <ContentCopyIcon fontSize="small" />
+                                                </IconButton>
+                                        </Box>
+                                    </TableCell>
                   <TableCell dir={direction} sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{key.created_by}</TableCell>
                   <TableCell dir={direction} sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{key.created_at}</TableCell>
                   <TableCell>
