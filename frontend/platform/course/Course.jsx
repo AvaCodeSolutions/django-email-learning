@@ -73,7 +73,10 @@ function Course() {
         setContentLoaded(false);
     }
 
-    useEffect(() => {
+    const refreshEnrollmentAnalytics = () => {
+        setIsEnrollmentsLoading(true);
+        setIsWeeklyStatsLoading(true);
+
         fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/`, {
             method: 'GET',
             headers: {
@@ -100,13 +103,21 @@ function Course() {
         })
             .then(response => response.json())
             .then(data => {
-                // Handle the statistics data here
-                console.log("Enrollment statistics:", data.statistics);
                 setWeeklyStats(data.statistics);
             })
             .catch(error => console.error('Error fetching enrollment statistics:', error))
             .finally(() => setIsWeeklyStatsLoading(false));
+    }
+
+    useEffect(() => {
+        refreshEnrollmentAnalytics();
     }, []);
+
+    const handleEnrollMenuSuccess = (msg) => {
+        setPageSuccessMessage(msg);
+        setTimeout(() => setPageSuccessMessage(''), 4000);
+        refreshEnrollmentAnalytics();
+    }
 
     const handleClose = (event, reason) => {
         if (reason !== "backdropClick" && reason !== "escapeKeyDown") {
@@ -300,7 +311,7 @@ function Course() {
                             successCallback={resetDialog}
                             courseId={courseId} /></Suspense>);
                         setDialogOpen(true);}}>{localeMessages["add_quiz"]}</Button>
-                    {userRole === 'admin' && <EnrollMenu successCallback={(msg) => {setPageSuccessMessage(msg); setTimeout(() => setPageSuccessMessage(''), 4000);}} />}
+                    {userRole === 'admin' && <EnrollMenu successCallback={handleEnrollMenuSuccess} />}
                     </> }
                     <ContentTable courseId={courseId} loaded={contentLoaded} eventHandler={(event) => tableEventHandler(event)} />
                 </Box>

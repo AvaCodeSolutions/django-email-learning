@@ -14,6 +14,8 @@ const EnrollMenu = ({successCallback}) => {
     const [googleWorkspaceDialogOpen, setGoogleWorkspaceDialogOpen] = useState(false);
     const [googleAuthSubmitting, setGoogleAuthSubmitting] = useState(false);
     const [googleAuthError, setGoogleAuthError] = useState('');
+    const [googleAuthorizationUrl, setGoogleAuthorizationUrl] = useState('');
+    const [googleAuthSessionId, setGoogleAuthSessionId] = useState(null);
     const [manualEnrollEmail, setManualEnrollEmail] = useState('');
     const [manualEnrollError, setManualEnrollError] = useState('');
     const [manualEnrollSubmitting, setManualEnrollSubmitting] = useState(false);
@@ -68,10 +70,50 @@ const EnrollMenu = ({successCallback}) => {
         setManualEnrollOpen(true);
     }
 
-    const openGoogleWorkspaceDialog = () => {
+    const createGoogleOAuthSession = async () => {
+        setGoogleAuthSubmitting(true);
+        setGoogleAuthError('');
+        setGoogleAuthorizationUrl('');
+        setGoogleAuthSessionId(null);
+
+        try {
+            const oauthBaseUrl = apiBaseUrl.replace(/\/api\/platform$/, '/oauth');
+            const createSessionResponse = await fetch(`${oauthBaseUrl}/sessions/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({
+                    request: {
+                        command: {
+                            command_name: 'enroll_from_google_directory',
+                            course_id: Number(courseId),
+                        },
+                    },
+                }),
+            });
+
+            const createSessionData = await createSessionResponse.json();
+
+            if (!createSessionResponse.ok) {
+                throw new Error(createSessionData?.error || 'Failed to start OAuth session.');
+            }
+
+            setGoogleAuthorizationUrl(createSessionData.authorization_url || '');
+            setGoogleAuthSessionId(createSessionData.session_id || null);
+        } catch (error) {
+            setGoogleAuthError(error?.message || 'Failed to authorize with Google.');
+        } finally {
+            setGoogleAuthSubmitting(false);
+        }
+    }
+
+    const openGoogleWorkspaceDialog = async () => {
         closeEnrollMenu();
         setGoogleAuthError('');
         setGoogleWorkspaceDialogOpen(true);
+        await createGoogleOAuthSession();
     }
 
     const closeGoogleWorkspaceDialog = () => {
@@ -112,44 +154,15 @@ const EnrollMenu = ({successCallback}) => {
     }
 
     const authorizeWithGoogle = async () => {
+        if (!googleAuthSessionId) {
+            return;
+        }
+
         setGoogleAuthSubmitting(true);
         setGoogleAuthError('');
 
         try {
-            const oauthBaseUrl = apiBaseUrl.replace(/\/api\/platform$/, '/oauth');
-            const createSessionResponse = await fetch(`${oauthBaseUrl}/sessions/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken'),
-                },
-                body: JSON.stringify({
-                    request: {
-                        command: {
-                            command_name: 'enroll_from_google_directory',
-                            course_id: Number(courseId),
-                        },
-                    },
-                }),
-            });
-
-            const createSessionData = await createSessionResponse.json();
-
-            if (!createSessionResponse.ok) {
-                throw new Error(createSessionData?.error || 'Failed to start OAuth session.');
-            }
-
-            const authWindow = window.open(
-                createSessionData.authorization_url,
-                'google-oauth',
-                'width=600,height=700'
-            );
-
-            if (!authWindow) {
-                throw new Error('Popup blocked. Please allow popups and try again.');
-            }
-
-            await pollOAuthSessionUntilCompleted(createSessionData.session_id);
+            await pollOAuthSessionUntilCompleted(googleAuthSessionId);
             setGoogleWorkspaceDialogOpen(false);
             successCallback(localeMessages['imported_from_google_success'] || 'Learners imported from Google Workspace successfully.');
         } catch (error) {
@@ -320,7 +333,15 @@ const EnrollMenu = ({successCallback}) => {
                     <Button onClick={closeGoogleWorkspaceDialog} disabled={googleAuthSubmitting}>
                         {localeMessages['cancel'] || 'Cancel'}
                     </Button>
-                    <Button variant="contained" startIcon={<GoogleIcon />} onClick={authorizeWithGoogle} disabled={googleAuthSubmitting}>
+                    <Button
+                        variant="contained"
+                        startIcon={<GoogleIcon />}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        href={googleAuthorizationUrl || undefined}
+                        onClick={authorizeWithGoogle}
+                        disabled={googleAuthSubmitting || !googleAuthorizationUrl || !googleAuthSessionId}
+                    >
                         {localeMessages['authorize_button']}
                     </Button>
                 </DialogActions>
