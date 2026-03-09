@@ -7,7 +7,7 @@ import EnrollMenu from './components/EnrollMenu.jsx';
 import DescriptionIcon from '@mui/icons-material/Description';
 import BallotIcon from '@mui/icons-material/Ballot';
 import { useState, useEffect } from 'react';
-import { Box, Grid, Button, Dialog, LinearProgress, Typography, Alert } from '@mui/material'
+import { Box, Grid, Button, Dialog, LinearProgress, Typography, Alert, Divider, Skeleton } from '@mui/material'
 import { useTheme } from '@mui/material/styles';
 import ContentTable from './components/ContentTable.jsx';
 import { PieChart } from '@mui/x-charts/PieChart'
@@ -28,12 +28,44 @@ function Course() {
     const [dialogMaxWidth, setDialogMaxWidth] = useState('lg');
     const [enrollmentsCount, setEnrollmentsCount] = useState(null);
     const [weeklyStats, setWeeklyStats] = useState(null);
+    const [isEnrollmentsLoading, setIsEnrollmentsLoading] = useState(true);
+    const [isWeeklyStatsLoading, setIsWeeklyStatsLoading] = useState(true);
 
     const [pageSuccessMessage, setPageSuccessMessage] = useState('');
 
     const organizationId = localStorage.getItem('activeOrganizationId');
 
     const theme = useTheme();
+
+    const totalEnrollments = enrollmentsCount
+        ? enrollmentsCount.reduce((sum, item) => sum + item.value, 0)
+        : 0;
+
+    const enrollmentsPieData = enrollmentsCount
+        ? enrollmentsCount.map((item) => {
+            const percentage = totalEnrollments > 0
+                ? Math.round((item.value / totalEnrollments) * 100)
+                : 0;
+            return {
+                ...item,
+                label: `${item.label} (${percentage}%)`,
+            };
+        })
+        : null;
+
+    const activeEnrollments = enrollmentsCount
+        ? (enrollmentsCount.find((item) => item.label === localeMessages["active"])?.value || 0)
+        : 0;
+    const activePercentage = totalEnrollments > 0
+        ? Math.round((activeEnrollments / totalEnrollments) * 100)
+        : 0;
+
+    const currentWeekEnrollments = weeklyStats && weeklyStats.length > 0
+        ? weeklyStats.reduce((sum, stat) => sum + stat.count, 0)
+        : 0;
+
+    const hasEnrollmentsChartData = !!(enrollmentsPieData && totalEnrollments > 0);
+    const hasWeeklyChartData = !!(weeklyStats && weeklyStats.some((stat) => stat.count > 0));
 
 
     const resetDialog = () => {
@@ -57,7 +89,8 @@ function Course() {
                     { label: localeMessages["completed"], value: data.enrollments_count.completed, color: theme.palette.secondary.main },
                 ]);
             })
-            .catch(error => console.error('Error fetching course data:', error));
+            .catch(error => console.error('Error fetching course data:', error))
+            .finally(() => setIsEnrollmentsLoading(false));
 
         fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/enrollments/statistics/`, {
             method: 'GET',
@@ -71,7 +104,8 @@ function Course() {
                 console.log("Enrollment statistics:", data.statistics);
                 setWeeklyStats(data.statistics);
             })
-            .catch(error => console.error('Error fetching enrollment statistics:', error));
+            .catch(error => console.error('Error fetching enrollment statistics:', error))
+            .finally(() => setIsWeeklyStatsLoading(false));
     }, []);
 
     const handleClose = (event, reason) => {
@@ -206,14 +240,53 @@ function Course() {
             showOrganizationSwitcher={false}
         >
             {pageSuccessMessage && (
-                <Grid size={{ xs: 12 }} px={2} pt={2}>
+                <Box
+                    sx={{
+                        position: 'fixed',
+                        top: 88,
+                        insetInlineEnd: 24,
+                        zIndex: (muiTheme) => muiTheme.zIndex.snackbar,
+                        width: { xs: 'calc(100% - 32px)', sm: 420 },
+                    }}
+                >
                     <Alert severity="success" onClose={() => setPageSuccessMessage('')}>
                         {pageSuccessMessage}
                     </Alert>
-                </Grid>
+                </Box>
             )}
-            <Grid size={{xs: 12}} py={2} pl={2}>
-                <Box p={2} sx={{ border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: 2, minHeight: 300 }}>
+            <Grid size={{xs: 12}} px={2} pt={2} pb={3}>
+                <Box
+                    sx={{
+                        mb: 3,
+                        p: 2,
+                        border: '1px solid',
+                        borderColor: 'border.main',
+                        borderRadius: 2,
+                        backgroundColor: 'background.box',
+                    }}
+                >
+                    <Grid container spacing={2}>
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                                {localeMessages["total_enrollments"] || 'Total Enrollments'}
+                            </Typography>
+                            <Typography variant="h6">{totalEnrollments}</Typography>
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                                {localeMessages["active"] || 'Active'}
+                            </Typography>
+                            <Typography variant="h6">{activePercentage}%</Typography>
+                        </Grid>
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                                {localeMessages["weekly_enrollments"] || 'Weekly Enrollments'}
+                            </Typography>
+                            <Typography variant="h6">{currentWeekEnrollments}</Typography>
+                        </Grid>
+                    </Grid>
+                </Box>
+                <Box p={3} sx={{ border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: 2, minHeight: 300 }}>
                     {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
                         setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><LessonForm
                             header={localeMessages["new_lesson"]}
@@ -227,54 +300,87 @@ function Course() {
                             successCallback={resetDialog}
                             courseId={courseId} /></Suspense>);
                         setDialogOpen(true);}}>{localeMessages["add_quiz"]}</Button>
-                    {userRole === 'admin' && <EnrollMenu successCallback={() => {setPageSuccessMessage(localeMessages['enrollment_success'] || 'Learner enrolled successfully.'); setTimeout(() => setPageSuccessMessage(''), 3000);}} />}
+                    {userRole === 'admin' && <EnrollMenu successCallback={(msg) => {setPageSuccessMessage(msg); setTimeout(() => setPageSuccessMessage(''), 4000);}} />}
                     </> }
                     <ContentTable courseId={courseId} loaded={contentLoaded} eventHandler={(event) => tableEventHandler(event)} />
                 </Box>
-                <Grid container spacing={2}>
-                { enrollmentsCount && <Grid size={{xs: 12, lg: 6}} mt={2} mb={2} >
-                <Box py={2} sx={{ border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', height: '100%' }}>
-                    <Typography variant="h6" align='center'>{localeMessages["enrollments_distribution"]}</Typography>
-                    <PieChart
-                        height={300}
-                        series={[
-                        {
-                            data: enrollmentsCount,
-                            innerRadius: '50%',
-                            arcLabelMinAngle: 20,
-                            highlightScope: { fade: 'global', highlight: 'item' },
-                        },
-                        ]}
-                        skipAnimation={false}
-                        margin={{
-                            bottom: 20,
-                            top: 20,
-                            left: 5,
-                            right: 5,
-                        }}
-                        slotProps={{
-                            legend: {
-                            direction: 'row', // 'row' or 'column'
-                            position: { vertical: 'bottom', horizontal: 'middle' }, // vertical: 'top'|'middle'|'bottom'
-                            padding: 0,
-                            },
-                        }}
-                    />
+                <Box sx={{ mt: 3, mb: 3 }}>
+                    <Divider />
                 </Box>
-                </Grid> }
-                { weeklyStats && <Grid size={{xs: 12, lg: 6}} mt={2} mb={2} >
-                    <Box py={2} sx={{ border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', height: '100%' }}>
+                <Grid container spacing={3}>
+                <Grid size={{xs: 12, lg: 6}}>
+                <Box py={3} sx={{ border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', height: '100%' }}>
+                    <Typography variant="h6" align='center'>{localeMessages["enrollments_distribution"]}</Typography>
+                    <Typography variant="body2" align='center' sx={{ mt: 1, mb: 2, color: 'text.secondary' }}>
+                        {(localeMessages["total_enrollments"]) + ': ' + totalEnrollments}
+                    </Typography>
+                    {isEnrollmentsLoading ? (
+                        <Box px={2}>
+                            <Skeleton variant="circular" width={180} height={180} sx={{ mx: 'auto', my: 2 }} />
+                            <Skeleton variant="text" width="80%" sx={{ mx: 'auto' }} />
+                            <Skeleton variant="text" width="60%" sx={{ mx: 'auto' }} />
+                        </Box>
+                    ) : hasEnrollmentsChartData ? (
+                        <PieChart
+                            height={300}
+                            series={[
+                            {
+                                data: enrollmentsPieData,
+                                innerRadius: '50%',
+                                arcLabelMinAngle: 20,
+                                highlightScope: { fade: 'global', highlight: 'item' },
+                            },
+                            ]}
+                            skipAnimation={false}
+                            margin={{
+                                bottom: 20,
+                                top: 20,
+                                left: 5,
+                                right: 5,
+                            }}
+                            slotProps={{
+                                legend: {
+                                direction: 'row',
+                                position: { vertical: 'bottom', horizontal: 'middle' },
+                                padding: 0,
+                                },
+                            }}
+                        />
+                    ) : (
+                        <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2 }}>
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                {localeMessages['no_data_yet'] || 'No data yet'}
+                            </Typography>
+                        </Box>
+                    )}
+                </Box>
+                </Grid>
+                <Grid size={{xs: 12, lg: 6}}>
+                    <Box py={3} sx={{ border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', height: '100%' }}>
                     <Typography variant="h6" align='center'>{localeMessages["weekly_enrollments"]}</Typography>
-                    <BarChart
-                        margin={{
-                            top: 60,
-                        }}
-                        xAxis={[{data: weeklyStats.map((stat) => stat.date)}]}
-                        series={[{ data: weeklyStats.map((stat) => stat.count), color: theme.palette.secondary.main }]}
-                        height={300}
-                    />
+                    {isWeeklyStatsLoading ? (
+                        <Box px={2}>
+                            <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 1, my: 2 }} />
+                            <Skeleton variant="text" width="75%" sx={{ mx: 'auto' }} />
+                        </Box>
+                    ) : hasWeeklyChartData ? (
+                        <BarChart
+                            margin={{
+                                top: 60,
+                            }}
+                            xAxis={[{data: weeklyStats.map((stat) => stat.date)}]}
+                            series={[{ data: weeklyStats.map((stat) => stat.count), color: theme.palette.secondary.main }]}
+                            height={300}
+                        />
+                    ) : (
+                        <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2 }}>
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                {localeMessages['no_data_yet'] || 'No data yet'}
+                            </Typography>
+                        </Box>
+                    )}
                     </Box>
-                </Grid>}
+                </Grid>
                 </Grid>
             </Grid>
 

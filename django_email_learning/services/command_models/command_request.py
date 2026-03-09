@@ -3,9 +3,12 @@ from django_email_learning.services.command_models.enroll_command import EnrollC
 from django_email_learning.services.command_models.unsubscribe_command import (
     UnsubscribeCommand,
 )
+from django_email_learning.services.command_models.enroll_from_google_directory_command import (
+    EnrollFromGoogleDirectoryCommand,
+)
 
 
 class CommandRequest(BaseModel):
-    command: EnrollCommand | UnsubscribeCommand = Field(
-        ..., discriminator="command_name"
+    command: EnrollCommand | UnsubscribeCommand | EnrollFromGoogleDirectoryCommand = (
+        Field(..., discriminator="command_name")
     )

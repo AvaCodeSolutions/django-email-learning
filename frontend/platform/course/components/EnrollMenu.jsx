@@ -2,14 +2,18 @@ import { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../../../src/render.jsx';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import GoogleIcon from '@mui/icons-material/Google';
 import { getCookie } from '../../../src/utils.js';
-import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Menu, MenuItem, Alert } from '@mui/material';
+import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Menu, MenuItem, Alert, Typography } from '@mui/material';
 
 
 const EnrollMenu = ({successCallback}) => {
-    const {courseId, localeMessages, direction, apiBaseUrl } = useAppContext();
+    const {courseId, localeMessages, direction, apiBaseUrl, userRole, showGoogleWorkspaceImport } = useAppContext();
     const [enrollMenuAnchorEl, setEnrollMenuAnchorEl] = useState(null);
     const [manualEnrollOpen, setManualEnrollOpen] = useState(false);
+    const [googleWorkspaceDialogOpen, setGoogleWorkspaceDialogOpen] = useState(false);
+    const [googleAuthSubmitting, setGoogleAuthSubmitting] = useState(false);
+    const [googleAuthError, setGoogleAuthError] = useState('');
     const [manualEnrollEmail, setManualEnrollEmail] = useState('');
     const [manualEnrollError, setManualEnrollError] = useState('');
     const [manualEnrollSubmitting, setManualEnrollSubmitting] = useState(false);
@@ -64,6 +68,97 @@ const EnrollMenu = ({successCallback}) => {
         setManualEnrollOpen(true);
     }
 
+    const openGoogleWorkspaceDialog = () => {
+        closeEnrollMenu();
+        setGoogleAuthError('');
+        setGoogleWorkspaceDialogOpen(true);
+    }
+
+    const closeGoogleWorkspaceDialog = () => {
+        if (googleAuthSubmitting) {
+            return;
+        }
+        setGoogleWorkspaceDialogOpen(false);
+    }
+
+    const delay = (ms) => new Promise((resolve) => {
+        window.setTimeout(resolve, ms);
+    });
+
+    const pollOAuthSessionUntilCompleted = async (sessionId) => {
+        const oauthBaseUrl = apiBaseUrl.replace(/\/api\/platform$/, '/oauth');
+        const maxAttempts = 60;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+            const response = await fetch(`${oauthBaseUrl}/sessions/${sessionId}/`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data?.error || 'Failed to fetch OAuth session state.');
+            }
+
+            if (data.state === 'COMPLETED') {
+                return;
+            }
+
+            if (data.state === 'FAILED') {
+                throw new Error(localeMessages['enrollment_failed'] || 'Google authorization failed.');
+            }
+
+            await delay(2000);
+        }
+
+        throw new Error('Timed out waiting for Google authorization to complete.');
+    }
+
+    const authorizeWithGoogle = async () => {
+        setGoogleAuthSubmitting(true);
+        setGoogleAuthError('');
+
+        try {
+            const oauthBaseUrl = apiBaseUrl.replace(/\/api\/platform$/, '/oauth');
+            const createSessionResponse = await fetch(`${oauthBaseUrl}/sessions/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({
+                    request: {
+                        command: {
+                            command_name: 'enroll_from_google_directory',
+                            course_id: Number(courseId),
+                        },
+                    },
+                }),
+            });
+
+            const createSessionData = await createSessionResponse.json();
+
+            if (!createSessionResponse.ok) {
+                throw new Error(createSessionData?.error || 'Failed to start OAuth session.');
+            }
+
+            const authWindow = window.open(
+                createSessionData.authorization_url,
+                'google-oauth',
+                'width=600,height=700'
+            );
+
+            if (!authWindow) {
+                throw new Error('Popup blocked. Please allow popups and try again.');
+            }
+
+            await pollOAuthSessionUntilCompleted(createSessionData.session_id);
+            setGoogleWorkspaceDialogOpen(false);
+            successCallback(localeMessages['imported_from_google_success'] || 'Learners imported from Google Workspace successfully.');
+        } catch (error) {
+            setGoogleAuthError(error?.message || 'Failed to authorize with Google.');
+        } finally {
+            setGoogleAuthSubmitting(false);
+        }
+    }
+
     const closeManualEnrollDialog = () => {
         if (manualEnrollSubmitting) {
             return;
@@ -100,7 +195,7 @@ const EnrollMenu = ({successCallback}) => {
                 setManualEnrollError(data?.error || (localeMessages['enrollment_failed'] || 'Failed to enroll learner.'));
                 return;
             }
-            successCallback();
+            successCallback(localeMessages['enrollment_success'] || 'Learner enrolled successfully.');
             setManualEnrollEmail('');
             setManualEnrollOpen(false);
         } catch (error) {
@@ -156,6 +251,11 @@ const EnrollMenu = ({successCallback}) => {
                 <MenuItem onClick={openManualEnrollDialog} sx={{ fontSize: '0.87rem', px: 1 }}>
                     {localeMessages['manual_email']}
                 </MenuItem>
+                {userRole === 'admin' && showGoogleWorkspaceImport === true && (
+                    <MenuItem onClick={openGoogleWorkspaceDialog} sx={{ fontSize: '0.87rem', px: 1 }}>
+                        {localeMessages['from_google_workspace']}
+                    </MenuItem>
+                )}
             </Menu>
 
             <Dialog
@@ -196,6 +296,32 @@ const EnrollMenu = ({successCallback}) => {
                     </Button>
                     <Button variant="contained" onClick={submitManualEnrollment} disabled={manualEnrollSubmitting}>
                         {localeMessages['enroll'] || 'Enroll'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog
+                open={googleWorkspaceDialogOpen}
+                onClose={closeGoogleWorkspaceDialog}
+                fullWidth
+                maxWidth="sm"
+            >
+                <DialogTitle sx={{ px: 3, pt: 3, pb: 1.5 }}>{localeMessages['from_google_workspace']}</DialogTitle>
+                <DialogContent sx={{ px: 3, py: 1.5 }}>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                        {localeMessages['google_workspace_description']}
+                    </Typography>
+                    <Typography variant="body2">
+                        {localeMessages['authorize_description']}
+                    </Typography>
+                    {googleAuthError && <Alert severity="error" sx={{ mt: 2 }}>{googleAuthError}</Alert>}
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 3, pt: 1.5 }}>
+                    <Button onClick={closeGoogleWorkspaceDialog} disabled={googleAuthSubmitting}>
+                        {localeMessages['cancel'] || 'Cancel'}
+                    </Button>
+                    <Button variant="contained" startIcon={<GoogleIcon />} onClick={authorizeWithGoogle} disabled={googleAuthSubmitting}>
+                        {localeMessages['authorize_button']}
                     </Button>
                 </DialogActions>
             </Dialog>

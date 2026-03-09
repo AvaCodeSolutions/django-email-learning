@@ -354,6 +354,13 @@ class SingleCourseView(View):
             return JsonResponse({"error": str(e)}, status=409)
 
 
+class GoogleAuthSession(View):
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        state = str(uuid.uuid4())
+        request.session["google_oauth_state"] = state
+        return JsonResponse({"state": state}, status=200)
+
+
 @method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
 @method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
 class ImapConnectionView(View):

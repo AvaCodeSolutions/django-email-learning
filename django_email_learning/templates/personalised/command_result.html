@@ -2,4 +2,23 @@
 {% load django_vite %}
 {% block head_script %}
     {% vite_asset 'personalised/command_result/CommandResult.jsx' %}
+    <script>
+        (() => {
+            const appContextScript = document.getElementById('app-context');
+            if (!appContextScript) {
+                return;
+            }
+
+            try {
+                const appContext = JSON.parse(appContextScript.textContent || '{}');
+                if (appContext.closeWindow === true) {
+                    window.setTimeout(() => {
+                        window.close();
+                    }, 1200);
+                }
+            } catch (_) {
+                return;
+            }
+        })();
+    </script>
 {% endblock %}

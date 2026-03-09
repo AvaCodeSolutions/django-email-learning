@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_email_learning",
+    "django_email_learning.oauth_integrations",
     "corsheaders",
     "django_vite",
 ]
@@ -103,6 +104,8 @@ DJANGO_EMAIL_LEARNING = {
     "SITE_BASE_URL": "http://localhost:8000",
     "ENCRYPTION_SECRET_KEY": "your-very-secure-and-random-key",
     "FROM_EMAIL": os.environ.get("FROM_EMAIL", "webmaster@localhost"),
+    "GOOGLE_OAUTH_CLIENT_ID": os.environ.get("GOOGLE_OAUTH_CLIENT_ID"),
+    "GOOGLE_OAUTH_CLIENT_SECRET": os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET"),
     "LOGO": {
         "HORIZONTAL_LOCKUP": {
             "LIGHT_BACKGROUND": None,

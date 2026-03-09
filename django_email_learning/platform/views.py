@@ -1,4 +1,5 @@
 import logging
+from django.apps import apps
 from django.conf.global_settings import LANGUAGES
 from django.views.generic import TemplateView
 from django.utils.translation import get_language_info, get_language
@@ -13,6 +14,9 @@ from django_email_learning.decorators import (
 )
 from typing import Dict, Any
 from django.conf import settings
+
+
+DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
 
 
 @method_decorator(login_required, name="dispatch")
@@ -37,10 +41,6 @@ class BasePlatformView(TemplateView):
 
         current_lang_code = get_language()
         lang_info = get_language_info(current_lang_code)
-
-        DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(
-            settings, "DJANGO_EMAIL_LEARNING", {}
-        )
 
         return {
             "appContext": {
@@ -224,6 +224,9 @@ class CourseView(BasePlatformView):
         context["appContext"]["direction"] = (
             "rtl" if get_language_info(course.language)["bidi"] else "ltr"
         )
+        context["appContext"]["showGoogleWorkspaceImport"] = bool(
+            DJANGO_EMAIL_LEARNING_SETTINGS.get("GOOGLE_OAUTH_CLIENT_ID")
+        ) and apps.is_installed("django_email_learning.oauth_integrations")
         context["page_title"] = _("Course: %(title)s") % {"title": course.title}
         return context
 
@@ -231,7 +234,19 @@ class CourseView(BasePlatformView):
         return {
             "actions": _("Actions"),
             "enroll_learner": _("Enroll Learner"),
+            "enrollment_success": _("Learner enrolled successfully."),
+            "imported_from_google_success": _(
+                "Learners imported from Google Workspace successfully."
+            ),
             "manual_email": _("Manual Email"),
+            "from_google_workspace": _("Import from Google Workspace"),
+            "google_workspace_description": _(
+                "If you are an administrator of a Google Workspace domain, you can import users from your domain into the platform and enroll them in this course."
+            ),
+            "authorize_description": _(
+                "We need read-only access to your Google Workspace user directory to get started."
+            ),
+            "authorize_button": _("Authorize with Google"),
             "published": _("Published"),
             "type": _("Type"),
             "waiting_time": _("Waiting Time"),
@@ -311,6 +326,7 @@ class CourseView(BasePlatformView):
             "delete_content_confirmation": _(
                 "Are you sure you want to delete the content: CONTENT_TITLE?"
             ),
+            "total_enrollments": _("Total Enrollments"),
             "unverified": _("Unverified"),
             "active": _("Active"),
             "deactivated": _("Deactivated"),
