@@ -7,19 +7,16 @@
 A Django package for creating email-based learning platforms with IMAP integration and React frontend components.
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
-[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Django](https://img.shields.io/badge/django-5.0+-green.svg)](https://www.djangoproject.com/)
 ![Tests](https://github.com/AvaCodeSolutions/django-email-learning/actions/workflows/pr-check.yml/badge.svg)
 
 
-## Early Development Notice
-
-**Note: This project is in early development. If you plan to use it in production, expect possible issues, as it has not yet been thoroughly production-tested.**
-
 ## What is django-email-learning?
 
-**django-email-learning** is an open-source Django app, currently under active development, designed to provide a complete email-based learning platform.
+**django-email-learning** is an open-source Django app in active beta development, designed to provide a complete email-based learning platform.
 It is inspired by the Darsnameh email-learning service, which unfortunately shut down in July 2017. This library aims to revive that concept and make it accessible to anyone who wants to launch a similar service.
+Before the first stable release (`v1.0.0`), some APIs, settings, or behavior may still evolve (including occasional breaking changes), and early adopters can help shape the roadmap through feedback, bug reports, and contributions.
 
 ### Why an email learning platform?
 
@@ -46,6 +43,17 @@ While modern e-learning platforms often rely heavily on video content and comple
 - **Resilience to censorship:** Emails are often less likely to be blocked than certain websites or platforms under restrictive governments.
 
 - **Simplicity:** Email is universal, familiar, and works on virtually any device.
+
+## UI Preview
+
+A quick look at the platform interface:
+
+| Course Dashboard | Public Organization Page |
+| --- | --- |
+| ![Course Dashboard](assets/screenshots/course-dashboard.jpeg) | ![Public Organization Page](assets/screenshots/public-org.jpeg) |
+| Learner Progress | Certificate |
+| ![Learner Progress](assets/screenshots/learner-progress.jpeg) | ![Certificate](assets/screenshots/certificate.jpeg) |
+
 
 ## Documentation
 
@@ -83,9 +91,12 @@ Add the required configuration for the site base URL in your Django settings:
 
 ```python
 DJANGO_EMAIL_LEARNING = {
-    "SITE_BASE_URL": "<YOUR_SITE_BASE_URL_STARTING_WITH_HTTP>"
+    "SITE_BASE_URL": "<YOUR_SITE_BASE_URL_STARTING_WITH_HTTP>",
+    "ENCRYPTION_SECRET_KEY": "<LONG_RANDOM_STRING>",
 }
 ```
+
+`ENCRYPTION_SECRET_KEY` should be a long random string used to protect sensitive values such as stored API Keys.
 
 ### 4. Configure Media Files
 
@@ -117,7 +128,6 @@ The platform will be accessible at `your_preferred_path/platform/`.
 
 - **Platform Access:** You need to be logged in to access the `/platform` sub-URL, which is used for managing courses and viewing learner progress.
 
-- **Current MVP Limitations:** In the current MVP version, you can use the superuser account. Other staff users can access the platform only if they are programmatically assigned to an organization. The UI to assign members with different roles to organizations is not yet implemented, however, the access control for those roles is in place.
 
 ## Usage
 
@@ -130,6 +140,15 @@ Execute the content delivery job using:
 ```bash
 python manage.py deliver_contents
 ```
+
+You can also trigger this job via API, which is useful when running from an external scheduler (for example, cloud scheduler services):
+
+```http
+GET /your_preferred_path/api/jobs/deliver_contents/
+Authorization: Bearer <API_KEY>
+```
+
+This endpoint requires an API key. You can generate and manage API keys from Platform Settings > API Keys in the platform UI.
 
 ## Contributing
 
