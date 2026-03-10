@@ -10,6 +10,7 @@ from google_auth_oauthlib.flow import Flow  #  type: ignore
 from typing import Literal
 from django.conf import settings
 from urllib import error, parse, request
+from django.urls import reverse
 import json
 
 
@@ -42,10 +43,9 @@ class EnrollFromGoogleDirectoryCommand(AbstractCommand):
             scopes=["https://www.googleapis.com/auth/admin.directory.user.readonly"],
             state=self.state,
         )
-        flow.redirect_uri = (
-            DJANGO_EMAIL_LEARNING_SETTINGS.get("SITE_BASE_URL", "http://localhost:8000")
-            + "/email_learning/oauth/redirect/"
-        )
+        flow.redirect_uri = DJANGO_EMAIL_LEARNING_SETTINGS.get(
+            "SITE_BASE_URL", "http://localhost:8000"
+        ) + reverse("django_email_learning:oauth_integrations:redirect_view")
         return flow
 
     def get_authorization_url(self, state: str) -> str:
