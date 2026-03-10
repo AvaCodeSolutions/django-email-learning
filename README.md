@@ -7,7 +7,7 @@
 A Django package for creating email-based learning platforms with IMAP integration and React frontend components.
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
-[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Django](https://img.shields.io/badge/django-5.0+-green.svg)](https://www.djangoproject.com/)
 ![Tests](https://github.com/AvaCodeSolutions/django-email-learning/actions/workflows/pr-check.yml/badge.svg)
 
@@ -50,9 +50,9 @@ A quick look at the platform interface:
 
 | Course Dashboard | Public Organization Page |
 | --- | --- |
-| ![Course Dashboard](assets/screenshots/course.png) | ![Public Organization Page](assets/screenshots/public-org.png) |
+| ![Course Dashboard](assets/screenshots/course-dashboard.jpeg) | ![Public Organization Page](assets/screenshots/public-org.jpeg) |
 | Learner Progress | Certificate |
-| ![Learner Progress](assets/screenshots/learner-progress.png) | ![Certificate](assets/screenshots/certificate.png) |
+| ![Learner Progress](assets/screenshots/learner-progress.jpeg) | ![Certificate](assets/screenshots/certificate.jpeg) |
 
 
 ## Documentation
@@ -91,9 +91,12 @@ Add the required configuration for the site base URL in your Django settings:
 
 ```python
 DJANGO_EMAIL_LEARNING = {
-    "SITE_BASE_URL": "<YOUR_SITE_BASE_URL_STARTING_WITH_HTTP>"
+    "SITE_BASE_URL": "<YOUR_SITE_BASE_URL_STARTING_WITH_HTTP>",
+    "ENCRYPTION_SECRET_KEY": "<LONG_RANDOM_STRING>",
 }
 ```
+
+`ENCRYPTION_SECRET_KEY` should be a long random string used to protect sensitive values such as stored API Keys.
 
 ### 4. Configure Media Files
 
@@ -137,6 +140,15 @@ Execute the content delivery job using:
 ```bash
 python manage.py deliver_contents
 ```
+
+You can also trigger this job via API, which is useful when running from an external scheduler (for example, cloud scheduler services):
+
+```http
+GET /your_preferred_path/api/jobs/deliver_contents/
+Authorization: Bearer <API_KEY>
+```
+
+This endpoint requires an API key. You can generate and manage API keys from Platform Settings > API Keys in the platform UI.
 
 ## Contributing
 
