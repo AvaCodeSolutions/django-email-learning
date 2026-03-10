@@ -12,14 +12,11 @@ A Django package for creating email-based learning platforms with IMAP integrati
 ![Tests](https://github.com/AvaCodeSolutions/django-email-learning/actions/workflows/pr-check.yml/badge.svg)
 
 
-## Early Development Notice
-
-**Note: This project is in early development. If you plan to use it in production, expect possible issues, as it has not yet been thoroughly production-tested.**
-
 ## What is django-email-learning?
 
-**django-email-learning** is an open-source Django app, currently under active development, designed to provide a complete email-based learning platform.
+**django-email-learning** is an open-source Django app in active beta development, designed to provide a complete email-based learning platform.
 It is inspired by the Darsnameh email-learning service, which unfortunately shut down in July 2017. This library aims to revive that concept and make it accessible to anyone who wants to launch a similar service.
+Before the first stable release (`v1.0.0`), some APIs, settings, or behavior may still evolve (including occasional breaking changes), and early adopters can help shape the roadmap through feedback, bug reports, and contributions.
 
 ### Why an email learning platform?
 
@@ -46,6 +43,17 @@ While modern e-learning platforms often rely heavily on video content and comple
 - **Resilience to censorship:** Emails are often less likely to be blocked than certain websites or platforms under restrictive governments.
 
 - **Simplicity:** Email is universal, familiar, and works on virtually any device.
+
+## UI Preview
+
+A quick look at the platform interface:
+
+| Course Dashboard | Public Organization Page |
+| --- | --- |
+| ![Course Dashboard](assets/screenshots/course.png) | ![Public Organization Page](assets/screenshots/public-org.png) |
+| Learner Progress | Certificate |
+| ![Learner Progress](assets/screenshots/learner-progress.png) | ![Certificate](assets/screenshots/certificate.png) |
+
 
 ## Documentation
 
@@ -117,7 +125,6 @@ The platform will be accessible at `your_preferred_path/platform/`.
 
 - **Platform Access:** You need to be logged in to access the `/platform` sub-URL, which is used for managing courses and viewing learner progress.
 
-- **Current MVP Limitations:** In the current MVP version, you can use the superuser account. Other staff users can access the platform only if they are programmatically assigned to an organization. The UI to assign members with different roles to organizations is not yet implemented, however, the access control for those roles is in place.
 
 ## Usage
 
