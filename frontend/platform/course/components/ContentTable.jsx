@@ -1,8 +1,9 @@
-import { IconButton, Switch, TableContainer, Table, TableHead, TableRow, TableBody, TableCell, Paper, Typography, Tab } from '@mui/material';
+import { Alert, CircularProgress, IconButton, Switch, TableContainer, Table, TableHead, TableRow, TableBody, TableCell, Paper, Tooltip, Typography } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { getCookie } from '../../../src/utils.js';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import ForwardToInboxOutlinedIcon from '@mui/icons-material/ForwardToInboxOutlined';
 import { useAppContext } from '../../../src/render.jsx';
 
 
@@ -10,6 +11,8 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
     const [contentList, setContentList] = useState([]);
     const [isDragging, setIsDragging] = useState(false);
     const [draggedContentId, setDraggedContentId] = useState(null);
+    const [sendingContentId, setSendingContentId] = useState(null);
+    const [sendSuccessMessage, setSendSuccessMessage] = useState('');
 
     const startDrag = (event, contentId) => {
         event.preventDefault();
@@ -19,6 +22,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
 
     const { apiBaseUrl, userRole, localeMessages, direction } = useAppContext();
     const organizationId = localStorage.getItem('activeOrganizationId');
+    const canSendLesson = userRole === 'admin' || userRole === 'editor';
 
     const formatPeriod = (period) => {
         if (!period) {
@@ -60,6 +64,20 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
             document.body.style.userSelect = '';
         };
     }, [isDragging]);
+
+    useEffect(() => {
+        if (!sendSuccessMessage) {
+            return;
+        }
+
+        const timeoutId = window.setTimeout(() => {
+            setSendSuccessMessage('');
+        }, 4000);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+        };
+    }, [sendSuccessMessage]);
 
     const deleteContent = (contentId) => {
         eventHandler({ type: 'delete_content', content: contentList.find(content => content.id === contentId)});
@@ -112,7 +130,43 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
             .catch(error => console.error('Error fetching content list:', error));
     }
 
+    const sendLessonToCurrentUser = (contentId) => {
+        setSendingContentId(contentId);
+        fetch(`${apiBaseUrl}/organizations/${organizationId}/send-lesson/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                id: contentId,
+            }),
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(`Send lesson failed with status ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(() => {
+                console.log('Lesson sent successfully');
+                setSendSuccessMessage(localeMessages["lesson_sent_to_your_email"] || 'Lesson sent to your email.');
+            })
+            .catch((error) => {
+                console.error('Error sending lesson:', error);
+            })
+            .finally(() => {
+                setSendingContentId(null);
+            });
+    }
+
     return (
+        <>
+        {sendSuccessMessage && (
+            <Alert severity="success" sx={{ mb: 1 }}>
+                {sendSuccessMessage}
+            </Alert>
+        )}
           <TableContainer component={Paper} dir={direction}>
               <Table sx={{ width: "100%", direction: direction }} aria-label="Contents">
             <TableHead>
@@ -166,20 +220,38 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                         /></TableCell>}
                         <TableCell align={direction == 'rtl' ? 'right' : 'left'}><Typography
                             onClick={() => {let event = {type: 'content_clicked', content_id: content.id}; eventHandler(event);}}
-                            color='secondary.dark' sx={{ cursor: 'pointer'}}>{content.title}</Typography></TableCell>
+                            sx={{ cursor: 'pointer', color: theme => theme.palette.mode === 'dark' ? theme.palette.secondary.main : theme.palette.secondary.dark }}>{content.title}</Typography></TableCell>
                         <TableCell align={direction == 'rtl' ? 'right' : 'left'}>{formatPeriod(content.waiting_period)}</TableCell>
                         <TableCell align={direction == 'rtl' ? 'right' : 'left'}>{localeMessages[content.type]}</TableCell>
                         <TableCell align={direction == 'rtl' ? 'right' : 'left'}><Switch checked={content.is_published}  onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} /></TableCell>
                         {userRole !== 'viewer' && <TableCell align={direction == 'rtl' ? 'right' : 'left'}>
+
                             <IconButton aria-label={localeMessages["delete"]} onClick={() => deleteContent(content.id)}>
                                 <DeleteIcon />
                             </IconButton>
+                            {canSendLesson && content.type === 'lesson' && (
+                                sendingContentId === content.id ? (
+                                    <CircularProgress size="18px" sx={{ display: 'inline-block', verticalAlign: 'middle' }} />
+                                ) : (
+                                    <Tooltip title={localeMessages["send_lesson_to_yourself"] || 'Send it to yourself'} placement="top">
+                                        <span>
+                                            <IconButton
+                                                aria-label={localeMessages["send_lesson"] || 'Send lesson'}
+                                                onClick={() => sendLessonToCurrentUser(content.id)}
+                                            >
+                                                <ForwardToInboxOutlinedIcon />
+                                            </IconButton>
+                                        </span>
+                                    </Tooltip>
+                                )
+                            )}
                         </TableCell>}
                     </TableRow>
                 ))}
             </TableBody>
           </Table>
         </TableContainer>
+        </>
     );
 }
 

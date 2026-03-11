@@ -3,6 +3,7 @@ from django.views.defaults import page_not_found
 from django_email_learning.platform.api.views import (
     ApiKeyView,
     GetOrCreateUserByEmail,
+    SendLessonToPlatformUser,
     SingleApiKeyView,
     CourseView,
     EnrollmentsView,
@@ -91,6 +92,11 @@ urlpatterns = [
         "organizations/<int:organization_id>/courses/<int:course_id>/enrollments/statistics/",
         EnrollmentsStatisticsView.as_view(),
         name="enrollments_statistics_view",
+    ),
+    path(
+        "organizations/<int:organization_id>/send-lesson/",
+        SendLessonToPlatformUser.as_view(),
+        name="send_lesson_to_platform_user_view",
     ),
     path(
         "organizations/<int:organization_id>/file/",

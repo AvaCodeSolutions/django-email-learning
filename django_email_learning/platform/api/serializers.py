@@ -78,6 +78,10 @@ class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class Identifier(BaseModel):
+    id: int
+
+
 class CreateCourseRequest(BaseModel):
     title: str = Field(min_length=1, examples=["Introduction to Python"])
     slug: str = Field(

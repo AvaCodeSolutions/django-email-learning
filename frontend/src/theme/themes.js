@@ -45,6 +45,40 @@ const darkStatusPalette = {
 
 const defaultOptions = {
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        a: ({ theme }) => ({
+          color: theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main,
+          textDecorationColor: theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main,
+          transition: 'color 0.2s ease, text-decoration-color 0.2s ease',
+          '&:hover': {
+            color: theme.palette.mode === 'dark'
+              ? alpha(theme.palette.primary.light, 0.85)
+              : alpha(theme.palette.primary.main, 0.85),
+            textDecorationColor: theme.palette.mode === 'dark'
+              ? alpha(theme.palette.primary.light, 0.85)
+              : alpha(theme.palette.primary.main, 0.85),
+          },
+        }),
+      },
+    },
+    MuiLink: {
+      styleOverrides: {
+        root: ({ theme }) => ({
+          color: theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main,
+          textDecorationColor: theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main,
+          transition: 'color 0.2s ease, text-decoration-color 0.2s ease',
+          '&:hover': {
+            color: theme.palette.mode === 'dark'
+              ? alpha(theme.palette.primary.light, 0.85)
+              : alpha(theme.palette.primary.main, 0.85),
+            textDecorationColor: theme.palette.mode === 'dark'
+              ? alpha(theme.palette.primary.light, 0.85)
+              : alpha(theme.palette.primary.main, 0.85),
+          },
+        }),
+      },
+    },
     MuiTable: {
       defaultProps: {
         size: 'small',
