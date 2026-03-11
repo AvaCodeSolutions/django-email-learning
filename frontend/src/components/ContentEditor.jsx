@@ -15,17 +15,23 @@ import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted'
 import AlignHorizontalRightIcon from '@mui/icons-material/AlignHorizontalRight'
 import AlignHorizontalLeftIcon from '@mui/icons-material/AlignHorizontalLeft'
 import FormatAlignCenterIcon from '@mui/icons-material/FormatAlignCenter'
+import LinkOffIcon from '@mui/icons-material/LinkOff';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import UndoIcon from '@mui/icons-material/Undo';
+import RedoIcon from '@mui/icons-material/Redo';
 import TextAlign from '@tiptap/extension-text-align'
 import Image from "@tiptap/extension-image";
 import Heading from '@tiptap/extension-heading'
-import { Dropcursor } from '@tiptap/extensions'
+import { Dropcursor, UndoRedo } from '@tiptap/extensions'
 import { EditorContent, useEditor, EditorContext } from "@tiptap/react"
+import { BubbleMenu } from "@tiptap/react/menus"
 import {
     Paper,
     Toolbar,
     IconButton,
     Box,
-    Tooltip
+    Tooltip,
+    Button
 } from '@mui/material';
 import { Code as CodeIcon } from '@mui/icons-material';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
@@ -79,7 +85,10 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
             BulletList,
             ListItem,
             Italic,
-            Link,
+            Link.configure({
+                openOnClick: disabled,
+                enableClickSelection: true,
+            }),
             TextAlign.configure({
                 types: ['paragraph', 'heading'],
             }),
@@ -94,6 +103,7 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
             Heading.configure({
                 levels: [1, 2, 3],
             }),
+            UndoRedo,
             Dropcursor,],
         content: initialContent,
         editable: !disabled,
@@ -135,6 +145,21 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
         editor.chain().focus().setTextAlign(align).run();
     };
 
+    const openActiveLinkInNewTab = () => {
+        const href = editor.getAttributes('link').href;
+        if (!href) {
+            return;
+        }
+        window.open(href, '_blank', 'noopener,noreferrer');
+    };
+
+    const unlinkActiveLink = () => {
+        editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    };
+
+    const canUndo = editor.can().chain().focus().undo().run();
+    const canRedo = editor.can().chain().focus().redo().run();
+
     return (
         <Paper elevation={2} sx={{ width: '100%' }}>
             <EditorContext.Provider value={{ editor }}>
@@ -142,7 +167,10 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                 {!disabled && <Toolbar variant="dense" sx={{
                     backgroundColor: 'background.nav',
                     borderBottom: '1px solid',
-                    borderColor: 'divider'
+                    borderColor: 'divider',
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 10
                 }}>
                     <IconButton
                         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
@@ -165,6 +193,24 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                     >
                         H3
                     </IconButton> |
+                    <Tooltip title="Undo" placement="top">
+                    <IconButton
+                        onClick={() => editor.chain().focus().undo().run()}
+                        size="small"
+                        disabled={!canUndo}
+                    >
+                        <UndoIcon />
+                    </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Redo" placement="top">
+                    <IconButton
+                        onClick={() => editor.chain().focus().redo().run()}
+                        size="small"
+                        disabled={!canRedo}
+                    >
+                        <RedoIcon />
+                    </IconButton>
+                    </Tooltip>
                     <Tooltip title="Bold" placement="top">
                     <IconButton
                         onClick={() => editor.chain().focus().toggleBold().run()}
@@ -293,17 +339,24 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                                 }
                             },
                             '& pre': {
-                                backgroundColor: 'grey.50',
+                                backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'grey.700' : 'grey.50',
                                 borderRadius: 1,
                                 padding: 2,
                                 margin: '16px 0',
                                 fontFamily: 'Monaco, Consolas, monospace',
                                 fontSize: '14px',
                                 border: '1px solid',
-                                borderColor: 'grey.100'
+                                borderColor: (theme) => theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100'
                             },
                             '& strong': {
                                 fontWeight: 'bold'
+                            },
+                            '& a': {
+                                color: (theme) => theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main,
+                                textDecorationColor: (theme) => theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main,
+                                '&:hover': {
+                                    color: (theme) => theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main,
+                                },
                             },
                             '& img': {
                                 display: 'inline-block',
@@ -345,6 +398,54 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                         }
                     }}
                 >
+                    {!disabled && (
+                        <BubbleMenu
+                            editor={editor}
+                            shouldShow={({ editor: activeEditor, state }) => (
+                                activeEditor.isFocused
+                                && activeEditor.isActive('link')
+                                && !state.selection.empty
+                            )}
+                            updateDelay={0}
+                            tippyOptions={{
+                                duration: 0,
+                                placement: 'top-start',
+                                animation: false,
+                            }}
+                        >
+                            <Paper
+                                elevation={2}
+                                sx={{
+                                    display: 'flex',
+                                    gap: 1,
+                                    p: 0.75,
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                }}
+                            >
+                                <Button
+                                    size="small"
+                                    variant="text"
+                                    sx={{ color: 'primary.dark' }}
+                                    startIcon={<OpenInNewIcon />}
+                                    onMouseDown={(event) => event.preventDefault()}
+                                    onClick={openActiveLinkInNewTab}
+                                >
+                                    Open Link
+                                </Button>
+                                <Button
+                                    size="small"
+                                    variant="text"
+                                    sx={{ color: 'primary.dark' }}
+                                    startIcon={<LinkOffIcon />}
+                                    onMouseDown={(event) => event.preventDefault()}
+                                    onClick={unlinkActiveLink}
+                                >
+                                    Unlink
+                                </Button>
+                            </Paper>
+                        </BubbleMenu>
+                    )}
                     <EditorContent editor={editor} />
                     <Box
                         role="presentation"

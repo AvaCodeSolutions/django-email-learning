@@ -284,6 +284,8 @@ class CourseView(BasePlatformView):
             "cancel": _("Cancel"),
             "delete": _("Delete"),
             "save_lesson": _("Save Lesson"),
+            "lesson_saved_success": _("Lesson content saved successfully."),
+            "lesson_unsaved_changes_hint": _("You have unsaved changes."),
             "save_quiz": _("Save Quiz"),
             "quiz_title": _("Quiz Title"),
             "add_question": _("Add Question"),

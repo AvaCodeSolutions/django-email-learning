@@ -166,7 +166,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                         /></TableCell>}
                         <TableCell align={direction == 'rtl' ? 'right' : 'left'}><Typography
                             onClick={() => {let event = {type: 'content_clicked', content_id: content.id}; eventHandler(event);}}
-                            color='secondary.dark' sx={{ cursor: 'pointer'}}>{content.title}</Typography></TableCell>
+                            sx={{ cursor: 'pointer', color: theme => theme.palette.mode === 'dark' ? theme.palette.secondary.main : theme.palette.secondary.dark }}>{content.title}</Typography></TableCell>
                         <TableCell align={direction == 'rtl' ? 'right' : 'left'}>{formatPeriod(content.waiting_period)}</TableCell>
                         <TableCell align={direction == 'rtl' ? 'right' : 'left'}>{localeMessages[content.type]}</TableCell>
                         <TableCell align={direction == 'rtl' ? 'right' : 'left'}><Switch checked={content.is_published}  onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} /></TableCell>

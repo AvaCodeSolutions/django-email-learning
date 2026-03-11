@@ -9,23 +9,52 @@ import { getCookie } from '../../../src/utils.js';
 import { useAppContext } from '../../../src/render.jsx';
 
 function LessonForm({ header, initialTitle, initialContent, cancelCallback, successCallback, courseId, lessonId, initialWaitingPeriod, contentId }) {
+    const initialWaitingPeriodValue = initialWaitingPeriod ? initialWaitingPeriod.period : 1;
+    const initialWaitingPeriodUnit = initialWaitingPeriod ? initialWaitingPeriod.type : "days";
     const [title, setTitle] = useState(initialTitle || "");
     const [content, setContent] = useState(initialContent || "");
-    const [waitingPeriod, setWaitingPeriod] = useState(initialWaitingPeriod ? initialWaitingPeriod.period : 1);
-    const [waitingPeriodUnit, setWaitingPeriodUnit] = useState(initialWaitingPeriod ? initialWaitingPeriod.type : "days");
+    const [waitingPeriod, setWaitingPeriod] = useState(initialWaitingPeriodValue);
+    const [waitingPeriodUnit, setWaitingPeriodUnit] = useState(initialWaitingPeriodUnit);
     const [titleHelperText, setTitleHelperText] = useState("");
     const [contentHelperText, setContentHelperText] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
     const [uploadedImages, setUploadedImages] = useState([]);
     const [imageUploadError, setImageUploadError] = useState("");
     const [editorInstance, setEditorInstance] = useState(null);
     const [imagePendingDelete, setImagePendingDelete] = useState(null);
     const [deleteImageDialogOpen, setDeleteImageDialogOpen] = useState(false);
     const [isDeletingImage, setIsDeletingImage] = useState(false);
+    const [savedSnapshot, setSavedSnapshot] = useState({
+        title: initialTitle || "",
+        content: initialContent || "",
+        waitingPeriod: String(initialWaitingPeriodValue),
+        waitingPeriodUnit: initialWaitingPeriodUnit,
+    });
 
 
     const { localeMessages, apiBaseUrl, userRole, direction } = useAppContext();
     const orgId = localStorage.getItem('activeOrganizationId');
+
+    const hasUnsavedChanges =
+        title !== savedSnapshot.title
+        || content !== savedSnapshot.content
+        || String(waitingPeriod) !== savedSnapshot.waitingPeriod
+        || waitingPeriodUnit !== savedSnapshot.waitingPeriodUnit;
+
+    useEffect(() => {
+        if (!successMessage) {
+            return;
+        }
+
+        const timeoutId = window.setTimeout(() => {
+            setSuccessMessage("");
+        }, 4000);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+        };
+    }, [successMessage]);
 
     const VisuallyHiddenInput = styled('input')({
         clip: 'rect(0 0 0 0)',
@@ -63,15 +92,27 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
                 waiting_period: {"period": waitingPeriod, "type": waitingPeriodUnit},
             }),
         })
-        .then((response) => response.json())
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error('Lesson create failed');
+            }
+            return response.json();
+        })
         .then((data) => {
             console.log('Lesson created successfully:', data);
-            setContent("");
-            setTitle("");
-            successCallback();
+            setErrorMessage("");
+            setSuccessMessage(localeMessages["lesson_saved_success"] || "Lesson content saved successfully.");
+            setSavedSnapshot({
+                title,
+                content,
+                waitingPeriod: String(waitingPeriod),
+                waitingPeriodUnit,
+            });
         })
         .catch((error) => {
             console.error('Error creating lesson:', error);
+            setSuccessMessage("");
+            setErrorMessage(localeMessages["save_failed"] || "Unable to save lesson content. Please try again.");
         });
     }
 
@@ -102,16 +143,28 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
             console.log(response)
             if (response.status === 200) {
                 console.log('Lesson updated successfully');
-                successCallback();
+                setErrorMessage("");
+                setSuccessMessage(localeMessages["lesson_saved_success"]);
+                setSavedSnapshot({
+                    title,
+                    content,
+                    waitingPeriod: String(waitingPeriod),
+                    waitingPeriodUnit,
+                });
+                return;
             }
+            throw new Error('Lesson update failed');
         })
         .catch((error) => {
             console.error('Error updating lesson:', error);
+            setSuccessMessage("");
+            setErrorMessage(localeMessages["save_failed"] || "Unable to save lesson content. Please try again.");
         });
     }
 
     const handleContentChange = (newContent) => {
         setContent(newContent);
+        setSuccessMessage("");
     }
 
     const cancel = () => {
@@ -292,7 +345,10 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
                 {errorMessage}
             </Alert>
         )}
-        <RequiredTextField value={title} label={localeMessages["lesson_title"]} name="lesson_title" sx={{ width: '100%' }} onChange={(e) => setTitle(e.target.value)} helperText={titleHelperText} disabled={userRole === 'viewer'} />
+        <RequiredTextField value={title} label={localeMessages["lesson_title"]} name="lesson_title" sx={{ width: '100%' }} onChange={(e) => {
+            setTitle(e.target.value);
+            setSuccessMessage("");
+        }} helperText={titleHelperText} disabled={userRole === 'viewer'} />
         <Box sx={{ my: 2 }}>
         <ContentEditor initialContent={content} contentUpdateCallback={handleContentChange} disabled={userRole === 'viewer'} extraMinLines={3} editorInstanceCallback={setEditorInstance} defaultDirection={direction} />
         <Typography color="errorText.main" sx={{ marginTop: 1, fontSize: '0.75rem' }}>
@@ -364,23 +420,43 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
             name="waiting_period"
             type="number"
             value={waitingPeriod}
-            onChange={(e) => setWaitingPeriod(e.target.value)}
+            onChange={(e) => {
+                setWaitingPeriod(e.target.value);
+                setSuccessMessage("");
+            }}
             sx={{ width: '200px', mr: 2 }}
             inputProps={{ min: 1 }}
             disabled={userRole === 'viewer'}
         />
-        <Select size="small" value={waitingPeriodUnit} onChange={(e) => setWaitingPeriodUnit(e.target.value)} name="waiting_period_unit" sx={{ width: '150px', mr: 2 }} disabled={userRole === 'viewer'}>
+        <Select size="small" value={waitingPeriodUnit} onChange={(e) => {
+            setWaitingPeriodUnit(e.target.value);
+            setSuccessMessage("");
+        }} name="waiting_period_unit" sx={{ width: '150px', mr: 2 }} disabled={userRole === 'viewer'}>
             <MenuItem value="days">{localeMessages["days"]}</MenuItem>
             <MenuItem value="hours">{localeMessages["hours"]}</MenuItem>
         </Select>
         </Tooltip>
-        <Box mt={2} textAlign="right">
-        <Button variant="outlined" sx={{ mr: 1 }} onClick={cancel}>
-            {localeMessages["back"]}
-        </Button>
-        {userRole !== 'viewer' && <Button type="submit" variant="contained" sx={{ mr: 1 }} onClick={() => {if(!lessonId) { addLesson(); } else { updateLesson(); }}}>
-            {localeMessages["save_lesson"]}
-        </Button>}
+        <Box mt={2} textAlign="right" sx={{ position: 'sticky', bottom: 0, p: 1, pt: 2, backgroundColor: 'background.default', borderTop: '1px solid', borderColor: 'divider', zIndex: 2, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mr: 'auto' }}>
+            {successMessage && (
+                <Alert severity="success" sx={{ py: 0 }}>
+                    {successMessage}
+                </Alert>
+            )}
+            {hasUnsavedChanges && userRole !== 'viewer' && (
+                <Alert severity="warning" sx={{ py: 0 }}>
+                    {localeMessages["lesson_unsaved_changes_hint"]}
+                </Alert>
+            )}
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
+            <Button variant="outlined" onClick={cancel}>
+                {localeMessages["back"]}
+            </Button>
+            {userRole !== 'viewer' && <Button type="submit" variant="contained" onClick={() => {if(!lessonId) { addLesson(); } else { updateLesson(); }}}>
+                {localeMessages["save_lesson"]}
+            </Button>}
+        </Box>
         </Box>
         </Box>
         <Dialog
