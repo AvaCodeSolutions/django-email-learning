@@ -17,6 +17,7 @@ from django.conf import settings
 
 
 DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
+AI_CONFIGURATIONS: dict = DJANGO_EMAIL_LEARNING_SETTINGS.get("AI", {})
 
 
 @method_decorator(login_required, name="dispatch")
@@ -66,6 +67,7 @@ class BasePlatformView(TemplateView):
                         and getattr(self.request.user, "has_platform_admin_role", False)
                     )
                 ),
+                "aiTextEditingModel": AI_CONFIGURATIONS.get("TEXT_EDITING_MODEL"),
                 "customLogo": {
                     "horizontalLight": DJANGO_EMAIL_LEARNING_SETTINGS.get("LOGO", {})
                     .get("HORIZONTAL_LOCKUP", {})
@@ -261,6 +263,8 @@ class CourseView(BasePlatformView):
             "update_lesson": _("Update Lesson"),
             "new_quiz": _("New Quiz"),
             "update_quiz": _("Update Quiz"),
+            "editing": _("Editing..."),
+            "edit_with_ai": _("Edit with AI"),
             "lesson_title": _("Lesson Title"),
             "lesson_waiting_tooltip": _(
                 "Set the amount of time that we should wait after the previous lesson or quiz submission before sending this lesson"

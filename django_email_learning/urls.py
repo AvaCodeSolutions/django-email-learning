@@ -33,3 +33,11 @@ if apps.is_installed("django_email_learning.oauth_integrations"):
             ),
         ),
     ]
+
+if apps.is_installed("django_email_learning.ai"):
+    urlpatterns += [
+        path(
+            "api/ai/",
+            include("django_email_learning.ai.urls", namespace="api_ai"),
+        ),
+    ]

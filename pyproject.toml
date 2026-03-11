@@ -33,6 +33,10 @@ classifiers = [
 ]
 
 license-files = ["LICENSE*"]
+
+[project.optional-dependencies]
+ai = ["openai"]
+
 [dependency-groups]
 dev = [
     "django (>=5.0); python_version < '3.12'",
@@ -50,7 +54,8 @@ dev = [
     "freezegun (>=1.5.5,<2.0.0)",
     "python-json-logger (>=4.0.0,<5.0.0)",
     "python-dotenv[cli] (>=1.2.1,<2.0.0)",
-    "types-qrcode (>=8.2.0.20250914,<9.0.0.0)"
+    "types-qrcode (>=8.2.0.20250914,<9.0.0.0)",
+    "openai (>=2.26.0,<3.0.0)"
 ]
 
 [build-system]
