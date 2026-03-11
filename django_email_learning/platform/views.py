@@ -252,6 +252,7 @@ class CourseView(BasePlatformView):
             "waiting_time": _("Waiting Time"),
             "title": _("Title"),
             "add_quiz": _("Add Quiz"),
+            "send_lesson_to_yourself": _("Send it to yourself"),
             "add_lesson": _("Add Lesson"),
             "lesson": _("Lesson"),
             "quiz": _("Quiz"),

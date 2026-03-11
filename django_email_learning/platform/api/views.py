@@ -18,6 +18,9 @@ from urllib.parse import urlparse
 from pydantic import ValidationError
 from enum import StrEnum
 from django_email_learning.services.command_models.enroll_command import EnrollCommand
+from django_email_learning.services.command_models.send_lesson_command import (
+    SendLessonCommand,
+)
 from django_email_learning.services.command_models.verify_enrollment_command import (
     VerifyEnrollmentCommand,
 )
@@ -626,6 +629,37 @@ class GetOrCreateUserByEmail(View):
             return JsonResponse({"error": e.json()}, status=400)
         except IntegrityError as e:
             return JsonResponse({"error": str(e)}, status=409)
+
+
+@method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
+class SendLessonToPlatformUser(View):
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        if not request.user.email:
+            return JsonResponse(
+                {"error": "User does not have an email address"}, status=400
+            )
+        payload = json.loads(request.body)
+        serializer = serializers.Identifier.model_validate(payload)
+        email = request.user.email
+        try:
+            # Accept course content id directly (used by platform content table),
+            # with a lesson-id fallback for backward compatibility.
+            course_content = CourseContent.objects.filter(
+                id=serializer.id,
+                type="lesson",
+                course__organization_id=kwargs["organization_id"],
+            ).first()
+            if course_content is None:
+                course_content = CourseContent.objects.get(
+                    lesson_id=serializer.id,
+                    course__organization_id=kwargs["organization_id"],
+                )
+            SendLessonCommand(content_id=course_content.id, email=email).execute()
+        except CourseContent.DoesNotExist:
+            return JsonResponse({"error": "Lesson not found"}, status=404)
+        return JsonResponse(
+            {"message": "Email content logged successfully"}, status=200
+        )
 
 
 @method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
