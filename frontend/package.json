@@ -33,6 +33,7 @@
     "@tiptap/extensions": "^3.13.0",
     "@tiptap/pm": "^3.13.0",
     "@tiptap/react": "^3.13.0",
+    "ldrs": "^1.1.9",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },

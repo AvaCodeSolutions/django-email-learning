@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from django_email_learning.ai.language_models import LanguageModel
 import os
 
 
@@ -41,6 +42,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_email_learning",
     "django_email_learning.oauth_integrations",
+    "django_email_learning.ai",
     "corsheaders",
     "django_vite",
 ]
@@ -104,6 +106,10 @@ DJANGO_EMAIL_LEARNING = {
     "SITE_BASE_URL": "http://localhost:8000",
     "ENCRYPTION_SECRET_KEY": "your-very-secure-and-random-key",
     "FROM_EMAIL": os.environ.get("FROM_EMAIL", "webmaster@localhost"),
+    "AI": {
+        "OPENAI_API_KEY": os.environ.get("OPENAI_API_KEY"),
+        "TEXT_EDITING_MODEL": LanguageModel.GPT_4O_MINI.model_name,
+    },
     "GOOGLE_OAUTH_CLIENT_ID": os.environ.get("GOOGLE_OAUTH_CLIENT_ID"),
     "GOOGLE_OAUTH_CLIENT_SECRET": os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET"),
     "LOGO": {

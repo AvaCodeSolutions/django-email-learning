@@ -15,6 +15,7 @@ import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted'
 import AlignHorizontalRightIcon from '@mui/icons-material/AlignHorizontalRight'
 import AlignHorizontalLeftIcon from '@mui/icons-material/AlignHorizontalLeft'
 import FormatAlignCenterIcon from '@mui/icons-material/FormatAlignCenter'
+import AssistantIcon from '@mui/icons-material/Assistant';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import UndoIcon from '@mui/icons-material/Undo';
@@ -23,6 +24,7 @@ import TextAlign from '@tiptap/extension-text-align'
 import Image from "@tiptap/extension-image";
 import Heading from '@tiptap/extension-heading'
 import { Dropcursor, UndoRedo } from '@tiptap/extensions'
+import { DOMSerializer } from '@tiptap/pm/model'
 import { EditorContent, useEditor, EditorContext } from "@tiptap/react"
 import { BubbleMenu } from "@tiptap/react/menus"
 import {
@@ -30,6 +32,7 @@ import {
     Toolbar,
     IconButton,
     Box,
+    CircularProgress,
     Tooltip,
     Button
 } from '@mui/material';
@@ -39,13 +42,31 @@ import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import ImageIcon from '@mui/icons-material/Image';
 import VerticalAlignCenterIcon from '@mui/icons-material/VerticalAlignCenter';
 import { useAppContext } from '../render'
+import { getCookie } from '../utils.js';
+import { ChaoticOrbit } from 'ldrs/react'
+import 'ldrs/react/ChaoticOrbit.css'
+
 
 function ContentEditor({ initialContent, contentUpdateCallback, disabled = false, extraMinLines = 0, editorInstanceCallback, defaultDirection }) {
-    const { direction: appDirection } = useAppContext();
+    const {
+        direction: appDirection,
+        apiBaseUrl,
+        localeMessages,
+        userRole,
+        aiTextEditModel,
+        aiTextEditingModel,
+    } = useAppContext();
     const direction = defaultDirection || appDirection;
+    const configuredAiModel = aiTextEditModel || aiTextEditingModel;
+    const hasAiPermission = userRole === 'admin' || userRole === 'editor';
+    const hasAiFeatureEnabled = Boolean(configuredAiModel);
+    const aiBaseUrl = apiBaseUrl?.includes('/api/platform')
+        ? apiBaseUrl.replace('/api/platform', '/api/ai')
+        : '/email_learning/api/ai';
     const defaultTextAlign = direction === 'rtl' ? 'right' : 'left';
     const minHeight = 200 + (Math.max(0, extraMinLines) * 24);
     const [editorHeight, setEditorHeight] = useState(minHeight);
+    const [aiEditLoading, setAiEditLoading] = useState(false);
 
     useEffect(() => {
         setEditorHeight((previousHeight) => Math.max(previousHeight, minHeight));
@@ -155,6 +176,133 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
 
     const unlinkActiveLink = () => {
         editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    };
+
+    const getActiveOrganizationId = () => {
+        if (typeof window === 'undefined') {
+            return null;
+        }
+        return window.localStorage.getItem('activeOrganizationId');
+    };
+
+    const getSelectedTextForAi = (activeEditor) => {
+        const { selection, doc } = activeEditor.state;
+        const { from, to, empty } = selection;
+        if (empty) {
+            return null;
+        }
+
+        const selectedText = doc.textBetween(from, to, '\n', '\n');
+        const normalizedText = selectedText.trim();
+        const hasNoNewLine = !selectedText.includes('\n') && !selectedText.includes('\r');
+        const isWithinCharLimit = normalizedText.length >= 40 && normalizedText.length <= 500;
+        const $from = doc.resolve(from);
+        const $to = doc.resolve(to);
+        const isSameParagraph = $from.sameParent($to) && $from.parent.type.name === 'paragraph';
+        const isWholeParagraphSelected = isSameParagraph
+            && from === $from.start()
+            && to === $from.end();
+
+        if (!hasNoNewLine || !isWithinCharLimit || !isWholeParagraphSelected) {
+            return null;
+        }
+
+        const selectionSlice = activeEditor.state.selection.content();
+        const serializer = DOMSerializer.fromSchema(activeEditor.state.schema);
+        const wrapper = document.createElement('div');
+        wrapper.appendChild(serializer.serializeFragment(selectionSlice.content));
+        const textWithMarkup = wrapper.innerHTML.trim();
+
+        return {
+            from,
+            to,
+            text: normalizedText,
+            textWithMarkup,
+        };
+    };
+
+    const canShowAiEditBubbleMenu = (activeEditor) => {
+        if (disabled || aiEditLoading) {
+            return false;
+        }
+        if (!hasAiPermission || !hasAiFeatureEnabled) {
+            return false;
+        }
+        if (!getActiveOrganizationId()) {
+            return false;
+        }
+        if (!activeEditor.isFocused || activeEditor.isActive('link')) {
+            return false;
+        }
+        return Boolean(getSelectedTextForAi(activeEditor));
+    };
+
+    const normalizeAiEditedMarkup = (editedText) => {
+        if (typeof editedText !== 'string') {
+            return editedText;
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = editedText.trim();
+        if (wrapper.children.length !== 1) {
+            return editedText;
+        }
+
+        const rootTag = wrapper.firstElementChild?.tagName;
+        if (!rootTag) {
+            return editedText;
+        }
+
+        // Prevent duplicate block wrappers (e.g. ul-in-ul) when replacing inside an existing block context.
+        if (['UL', 'OL', 'P'].includes(rootTag)) {
+            return wrapper.firstElementChild.innerHTML;
+        }
+
+        return editedText;
+    };
+
+    const editSelectionWithAi = async () => {
+        const selection = getSelectedTextForAi(editor);
+        const organizationId = getActiveOrganizationId();
+        if (!selection || !organizationId || aiEditLoading) {
+            return;
+        }
+
+        setAiEditLoading(true);
+        try {
+            const response = await fetch(
+                `${aiBaseUrl}/organizations/${organizationId}/edit-text/`,
+                {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    },
+                    body: JSON.stringify({
+                        input: selection.textWithMarkup || selection.text,
+                    }),
+                },
+            );
+            const data = await response.json();
+            if (!response.ok || !data.edited_text) {
+                console.error('AI text editing failed:', data.error || 'Unexpected AI edit response');
+                return;
+            }
+
+            const normalizedEditedText = normalizeAiEditedMarkup(data.edited_text);
+
+            editor
+                .chain()
+                .focus()
+                .insertContentAt({ from: selection.from, to: selection.to }, normalizedEditedText)
+                .setTextSelection(selection.from + String(normalizedEditedText).length)
+                .run();
+        } catch (error) {
+            console.error('AI text editing request failed:', error);
+        } finally {
+            setAiEditLoading(false);
+        }
     };
 
     const canUndo = editor.can().chain().focus().undo().run();
@@ -400,6 +548,7 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                 >
                     {!disabled && (
                         <BubbleMenu
+                            pluginKey="link-bubble-menu"
                             editor={editor}
                             shouldShow={({ editor: activeEditor, state }) => (
                                 activeEditor.isFocused
@@ -407,15 +556,18 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                                 && !state.selection.empty
                             )}
                             updateDelay={0}
-                            tippyOptions={{
+                            options={{
                                 duration: 0,
                                 placement: 'top-start',
                                 animation: false,
+                                zIndex: 1500,
                             }}
                         >
                             <Paper
                                 elevation={2}
                                 sx={{
+                                    position: 'relative',
+                                    zIndex: 1500,
                                     display: 'flex',
                                     gap: 1,
                                     p: 0.75,
@@ -442,6 +594,45 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                                     onClick={unlinkActiveLink}
                                 >
                                     Unlink
+                                </Button>
+                            </Paper>
+                        </BubbleMenu>
+                    )}
+                    {!disabled && (
+                        <BubbleMenu
+                            pluginKey="ai-edit-bubble-menu"
+                            editor={editor}
+                            shouldShow={({ editor: activeEditor }) => canShowAiEditBubbleMenu(activeEditor)}
+                            updateDelay={400}
+                            options={{
+                                duration: 0,
+                                placement: 'top',
+                                animation: false,
+                                delay: [0, 0],
+                                zIndex: 1500,
+                            }}
+                        >
+                            <Paper
+                                elevation={2}
+                                sx={{
+                                    position: 'relative',
+                                    zIndex: 1500,
+                                    display: 'flex',
+                                    gap: 1,
+                                    p: 0.75,
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                }}
+                            >
+                                <Button
+                                    size="small"
+                                    variant="contained"
+                                    startIcon={aiEditLoading ? <ChaoticOrbit size="20" speed="1.5"  color='white'/> : <AssistantIcon />}
+                                    onMouseDown={(event) => event.preventDefault()}
+                                    onClick={editSelectionWithAi}
+                                    disabled={aiEditLoading}
+                                >
+                                    {aiEditLoading ? localeMessages['editing'] : localeMessages['edit_with_ai']}
                                 </Button>
                             </Paper>
                         </BubbleMenu>
