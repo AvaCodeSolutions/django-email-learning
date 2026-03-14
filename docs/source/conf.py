@@ -13,7 +13,10 @@ author = "Payam Najafizadeh"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = []
+extensions = ["sphinxcontrib.googleanalytics"]
+
+googleanalytics_id = "G-67JHEC135G"
+googleanalytics_enabled = True
 
 templates_path = ["_templates"]
 exclude_patterns = []
