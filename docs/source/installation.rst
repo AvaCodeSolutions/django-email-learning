@@ -26,6 +26,12 @@ Installation Steps
 
        pip install django-email-learning
 
+   If you want to use AI editing tools, install with the AI optional extra:
+
+   .. code-block:: bash
+
+       pip install 'django-email-learning[ai]'
+
 2. **Add to INSTALLED_APPS**
 
    Add 'django_email_learning' to your INSTALLED_APPS in settings.py:
@@ -180,6 +186,50 @@ Optional configuration for branding assets in the platform header.
             },
         },
     }
+
+**AI**
+
+Optional configuration for AI-powered text editing features.
+
+- Configure this only if you have an OpenAI account and want to use AI edit tools.
+- If you do not use AI features, you can omit ``AI`` entirely.
+- Install AI dependencies with ``pip install 'django-email-learning[ai]'``.
+- Add ``'django_email_learning.ai'`` to ``INSTALLED_APPS`` when using AI tools.
+
+.. code-block:: python
+
+    INSTALLED_APPS = [
+        # ... your other apps
+        'django_email_learning',
+        'django_email_learning.ai',
+        # ... more apps
+    ]
+
+Available keys:
+
+- ``OPENAI_API_KEY``: OpenAI API key used for AI requests.
+- ``TEXT_EDITING_MODEL``: OpenAI model name used by text editing.
+
+Currently supported built-in models are:
+
+- ``gpt-4o-mini``
+- ``gpt-5-nano``
+- ``gpt-5-mini``
+
+.. code-block:: python
+
+    from django_email_learning.ai.language_models import LanguageModel
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'AI': {
+            'OPENAI_API_KEY': os.environ.get('OPENAI_API_KEY'),
+            'TEXT_EDITING_MODEL': LanguageModel.GPT_4O_MINI.model_name,
+        },
+    }
+
+See `AI Configuration <technical/ai-configuration.html>`_ for full details.
 
 Email Backend Configuration
 ---------------------------

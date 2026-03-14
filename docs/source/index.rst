@@ -28,6 +28,7 @@ Django Email Learning documentation
    :maxdepth: 2
    :caption: Technical Reference
 
+   technical/ai-configuration
    technical/management-commands
 
 
