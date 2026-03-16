@@ -34,7 +34,12 @@ import {
     Box,
     CircularProgress,
     Tooltip,
-    Button
+    Button,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    TextField
 } from '@mui/material';
 import { Code as CodeIcon } from '@mui/icons-material';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
@@ -67,6 +72,8 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
     const minHeight = 200 + (Math.max(0, extraMinLines) * 24);
     const [editorHeight, setEditorHeight] = useState(minHeight);
     const [aiEditLoading, setAiEditLoading] = useState(false);
+    const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
+    const [imageFormValues, setImageFormValues] = useState({ src: '', alt: '' });
 
     useEffect(() => {
         setEditorHeight((previousHeight) => Math.max(previousHeight, minHeight));
@@ -176,6 +183,44 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
 
     const unlinkActiveLink = () => {
         editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    };
+
+    const openImageEditDialog = () => {
+        const { src = '', alt = '' } = editor.getAttributes('image');
+        setImageFormValues({ src, alt });
+        setIsImageDialogOpen(true);
+    };
+
+    const closeImageEditDialog = () => {
+        setIsImageDialogOpen(false);
+    };
+
+    const handleImageFieldChange = (field) => (event) => {
+        const { value } = event.target;
+        setImageFormValues((previousValues) => ({
+            ...previousValues,
+            [field]: value,
+        }));
+    };
+
+    const saveImageAttributes = () => {
+        const normalizedSrc = imageFormValues.src.trim();
+        const normalizedAlt = imageFormValues.alt.trim();
+
+        if (!normalizedSrc) {
+            return;
+        }
+
+        editor
+            .chain()
+            .focus()
+            .updateAttributes('image', {
+                src: normalizedSrc,
+                alt: normalizedAlt,
+            })
+            .run();
+
+        closeImageEditDialog();
     };
 
     const getActiveOrganizationId = () => {
@@ -637,7 +682,78 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                             </Paper>
                         </BubbleMenu>
                     )}
+                    {!disabled && (
+                        <BubbleMenu
+                            pluginKey="image-bubble-menu"
+                            editor={editor}
+                            shouldShow={({ editor: activeEditor }) => (
+                                activeEditor.isFocused && activeEditor.isActive('image')
+                            )}
+                            updateDelay={0}
+                            options={{
+                                duration: 0,
+                                placement: 'top',
+                                animation: false,
+                                zIndex: 2500,
+                            }}
+                        >
+                            <Paper
+                                elevation={2}
+                                sx={{
+                                    position: 'relative',
+                                    zIndex: 1500,
+                                    display: 'flex',
+                                    gap: 1,
+                                    p: 0.75,
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                }}
+                            >
+                                <Button
+                                    size="small"
+                                    variant="text"
+                                    startIcon={<ImageIcon />}
+                                    onMouseDown={(event) => event.preventDefault()}
+                                    onClick={openImageEditDialog}
+                                >
+                                    Edit Image
+                                </Button>
+                            </Paper>
+                        </BubbleMenu>
+                    )}
                     <EditorContent editor={editor} />
+                    <Dialog
+                        open={isImageDialogOpen}
+                        onClose={closeImageEditDialog}
+                        fullWidth
+                        maxWidth="sm"
+                    >
+                        <DialogTitle>Edit Image</DialogTitle>
+                        <DialogContent>
+                            <TextField
+                                autoFocus
+                                margin="dense"
+                                label="Image URL"
+                                type="url"
+                                fullWidth
+                                value={imageFormValues.src}
+                                onChange={handleImageFieldChange('src')}
+                            />
+                            <TextField
+                                margin="dense"
+                                label="Alt text"
+                                fullWidth
+                                value={imageFormValues.alt}
+                                onChange={handleImageFieldChange('alt')}
+                            />
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={closeImageEditDialog}>Cancel</Button>
+                            <Button onClick={saveImageAttributes} disabled={!imageFormValues.src.trim()} variant="contained">
+                                Save
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
                     <Box
                         role="presentation"
                         onMouseDown={handleResizeStart}
