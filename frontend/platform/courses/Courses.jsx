@@ -16,13 +16,11 @@ import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import Base from '../../src/components/Base.jsx'
-import FilterListIcon from '@mui/icons-material/FilterList';
 import SchoolIcon from '@mui/icons-material/School';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import render, { useAppContext } from '../../src/render.jsx';
 import { getCookie } from '../../src/utils.js';
-import FilterForm from './components/FilterForm.jsx';
 import { lazy, Suspense } from "react";
 
 const CourseForm = lazy(() => import("./components/CourseForm.jsx"));
@@ -38,6 +36,7 @@ function Courses() {
   const [organizationId, setOrganizationId] = useState(null);
   const [queryParameters, setQueryParameters] = useState("");
   const { direction, localeMessages, apiBaseUrl, platformBaseUrl, userRole, languageOptions = [] } = useAppContext();
+  const [coursesAreLoaded, setCoursesAreLoaded] = useState(false);
 
   const getLanguageLabel = (languageCode) => {
     return languageOptions.find((languageOption) => languageOption.value === languageCode)?.label || languageCode;
@@ -56,7 +55,10 @@ function Courses() {
           },
         })
       .then(response => response.json())
-      .then(data => setCourses(data.courses))
+      .then(data => {
+        setCourses(data.courses);
+        setCoursesAreLoaded(true);
+      })
       .catch(error => console.error('Error fetching courses:', error));
   };
 
@@ -131,7 +133,7 @@ function Courses() {
             createMode={true}
           /></Suspense>);
           setDialogOpen(true);}}>{localeMessages["add_course"]}</Button>}
-        <TableContainer component={Paper}>
+        {coursesAreLoaded ? <TableContainer component={Paper}>
           <Table aria-label={localeMessages["courses"]}>
             <TableHead>
               <TableRow>
@@ -183,7 +185,7 @@ function Courses() {
               )}
             </TableBody>
           </Table>
-        </TableContainer>
+        </TableContainer> : <LinearProgress />}
         </Box>
       </Grid>
 

@@ -112,6 +112,10 @@ const defaultOptions = {
               paddingTop: 12,
               paddingBottom: 12,
             },
+            'a': {
+              color: theme.palette.mode === 'light' ? theme.palette.secondary.dark : theme.palette.secondary.main,
+              textDecoration: 'none',
+            },
             '& .MuiIconButton-root': {
               borderRadius: 8,
               color: theme.palette.mode === 'light'
