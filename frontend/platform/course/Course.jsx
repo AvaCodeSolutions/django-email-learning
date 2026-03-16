@@ -302,7 +302,7 @@ function Course() {
                         setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><LessonForm
                             header={localeMessages["new_lesson"]}
                             cancelCallback={() => setDialogOpen(false)}
-                            successCallback={resetDialog}
+                            successCallback={() => setContentLoaded(false)}
                             courseId={courseId} /></Suspense>);
                         setDialogOpen(true);}}>{localeMessages["add_lesson"]}</Button>
                     <Button variant="contained" startIcon={<BallotIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2, marginLeft: 1, marginRight: 1 }} onClick={() => {

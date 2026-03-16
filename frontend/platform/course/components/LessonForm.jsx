@@ -11,6 +11,8 @@ import { useAppContext } from '../../../src/render.jsx';
 function LessonForm({ header, initialTitle, initialContent, cancelCallback, successCallback, courseId, lessonId, initialWaitingPeriod, contentId }) {
     const initialWaitingPeriodValue = initialWaitingPeriod ? initialWaitingPeriod.period : 1;
     const initialWaitingPeriodUnit = initialWaitingPeriod ? initialWaitingPeriod.type : "days";
+    const [lessonIdentifier, setLessonIdentifier] = useState(lessonId);
+    const [contentIdentifier, setContentIdentifier] = useState(contentId);
     const [title, setTitle] = useState(initialTitle || "");
     const [content, setContent] = useState(initialContent || "");
     const [waitingPeriod, setWaitingPeriod] = useState(initialWaitingPeriodValue);
@@ -101,6 +103,8 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
         .then((data) => {
             console.log('Lesson created successfully:', data);
             setErrorMessage("");
+            setLessonIdentifier(data.lesson.id);
+            setContentIdentifier(data.id);
             setSuccessMessage(localeMessages["lesson_saved_success"] || "Lesson content saved successfully.");
             setSavedSnapshot({
                 title,
@@ -108,6 +112,7 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
                 waitingPeriod: String(waitingPeriod),
                 waitingPeriodUnit,
             });
+            successCallback?.();
         })
         .catch((error) => {
             console.error('Error creating lesson:', error);
@@ -122,9 +127,9 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
             return;
         }
 
-        console.log("Updating lesson ID:", lessonId);
+        console.log("Updating lesson ID:", lessonIdentifier);
 
-        fetch(apiBaseUrl + '/organizations/' + orgId + '/courses/' + courseId + '/contents/' + contentId + '/', {
+        fetch(apiBaseUrl + '/organizations/' + orgId + '/courses/' + courseId + '/contents/' + contentIdentifier + '/', {
             method: 'POST',
             credentials: 'include',
             headers: {
@@ -453,7 +458,7 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
             <Button variant="outlined" onClick={cancel}>
                 {localeMessages["back"]}
             </Button>
-            {userRole !== 'viewer' && <Button type="submit" variant="contained" onClick={() => {if(!lessonId) { addLesson(); } else { updateLesson(); }}}>
+            {userRole !== 'viewer' && <Button type="submit" variant="contained" onClick={() => {if(!lessonIdentifier) { addLesson(); } else { updateLesson(); }}}>
                 {localeMessages["save_lesson"]}
             </Button>}
         </Box>
