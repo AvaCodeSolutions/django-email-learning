@@ -1,0 +1,12 @@
+.custom-component-wrapper {
+    float: right;
+}
+
+#custom-btn {
+    background-color: #eeeeee;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    z-index: 1000;
+}

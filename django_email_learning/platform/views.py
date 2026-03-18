@@ -223,6 +223,7 @@ class CourseView(BasePlatformView):
         context["appContext"]["courseId"] = course.id
         context["appContext"]["courseTitle"] = course.title
         context["appContext"]["courseLanguage"] = course.language
+        context["appContext"]["customComponent"] = None
         context["appContext"]["direction"] = (
             "rtl" if get_language_info(course.language)["bidi"] else "ltr"
         )
