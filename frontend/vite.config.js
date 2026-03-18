@@ -22,11 +22,27 @@ export default defineConfig({
   esbuild: {
     sourcemap: false,
   },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      '@mui/material',
+      '@mui/icons-material',
+      '@mui/lab',
+      '@mui/x-charts',
+      '@emotion/react',
+      '@emotion/styled',
+    ],
+    // Force pre-bundling for MPA entry pages.
+    entries: ['./platform/courses/Courses.jsx', './platform/course/Course.jsx', './platform/organizations/Organizations.jsx', './platform/learners/Learners.jsx', './platform/settings_api_keys/SettingsApiKeys.jsx', './public/organization/Organization.jsx', './personalised/quiz_public/QuizPublic.jsx', './personalised/command_result/CommandResult.jsx'],
+  },
   build: {
-    esbuild: {
-      minify: true,
-      sourcemap: false,
-      drop: ['console', 'debugger'],
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
     },
     rollupOptions: {
       input: {
@@ -46,19 +62,6 @@ export default defineConfig({
     manifest: 'manifest.json',
     outDir: resolve(__dirname, '../dist'),
     emptyOutDir: true,
-    sourcemap: true,
-    optimizeDeps: {
-      include: [
-      'react',
-      'react-dom',
-      '@mui/material',
-      '@mui/icons-material',
-      '@mui/lab',
-      '@mui/x-charts',
-      '@emotion/react',
-      '@emotion/styled',
-    ], // Force pre-bundling
-      entries: ['./platform/courses/Courses.jsx', './platform/course/Course.jsx', './platform/organizations/Organizations.jsx', './platform/learners/Learners.jsx', './platform/settings_api_keys/SettingsApiKeys.jsx', './public/organization/Organization.jsx', './personalised/quiz_public/QuizPublic.jsx', './personalised/command_result/CommandResult.jsx'],
-  },
+    sourcemap: false,
   }
 })

@@ -48,6 +48,7 @@
     "globals": "^17.0.0",
     "lightningcss": "^1.31.1",
     "sass-embedded": "^1.96.0",
+    "terser": "^5.46.1",
     "vite": "^8.0.0"
   }
 }
