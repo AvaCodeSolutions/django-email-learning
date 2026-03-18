@@ -7,10 +7,18 @@ import { getCookie } from '../../../src/utils';
 import { useAppContext } from '../../../src/render';
 
 const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod, initialStrategy, initialDeadlineDays }) => {
+    const questionIdRef = useRef(0);
+    const createQuestionId = () => {
+        questionIdRef.current += 1;
+        return `question-${questionIdRef.current}`;
+    };
 
     const [showQuestionField, setShowQuestionField] = useState(false);
     const [newQuestion, setNewQuestion] = useState("");
-    const [questions, setQuestions] = useState(initialQuestions || []);
+    const [questions, setQuestions] = useState(() => (initialQuestions || []).map((question) => ({
+        ...question,
+        _clientId: question._clientId || createQuestionId(),
+    })));
     const [errorMessage, setErrorMessage] = useState("");
     const [title, setTitle] = useState(initialTitle || "");
     const [requiredScore , setRequiredScore] = useState(initialRequiredScore || 70);
@@ -114,12 +122,13 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
 
     const questionEventHandler = (event) => {
         if (event.type === 'delete_question') {
-            const updatedQuestions = questions.filter((_, i) => i !== event.question_index);
-            setQuestions(updatedQuestions);
+            setQuestions((currentQuestions) => currentQuestions.filter((question) => question._clientId !== event.question_id));
         }
         if (event.type === 'update_question') {
-            const updatedQuestions = questions.map((q, i) =>
-                i === event.question_index ? event.question_data : q
+            const updatedQuestions = questions.map((question) =>
+                question._clientId === event.question_id
+                    ? { ...event.question_data, _clientId: question._clientId }
+                    : question
             );
             console.log('Updated Questions:', updatedQuestions);
             setQuestions(updatedQuestions);
@@ -190,7 +199,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     const addToQuestions = () => {
 
         if (newQuestion.trim() !== "") {
-            setQuestions([...questions, {"text": newQuestion.trim()}]);
+            setQuestions([...questions, {"text": newQuestion.trim(), _clientId: createQuestionId()}]);
         }
         setNewQuestion("");
         setShowQuestionField(false);
@@ -228,7 +237,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             ) }
             <Box>
                 { questions.map((question, index) => (
-                    <QuestionForm key={index} index={index} question={question} eventHandler={questionEventHandler} />
+                    <QuestionForm key={question._clientId} index={index} question={question} eventHandler={questionEventHandler} />
                 )) }
             </Box>
             {/* Quiz Settings Section */}
