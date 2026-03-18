@@ -21,7 +21,7 @@ const DeleteContentForm = lazy(() => import("./components/DeleteContentForm.jsx"
 
 
 function Course() {
-    const { courseTitle, courseId, localeMessages, direction, userRole, apiBaseUrl, platformBaseUrl } = useAppContext();
+    const { courseTitle, courseId, localeMessages, direction, userRole, apiBaseUrl, platformBaseUrl, customComponent } = useAppContext();
     const [dialogOpen, setDialogOpen] = useState(false)
     const [dialogContent, setDialogContent] = useState(null)
     const [contentLoaded, setContentLoaded] = useState(false)
@@ -313,6 +313,7 @@ function Course() {
                         setDialogOpen(true);}}>{localeMessages["add_quiz"]}</Button>
                     {userRole === 'admin' && <EnrollMenu successCallback={handleEnrollMenuSuccess} />}
                     </> }
+                    {customComponent && <Box className="custom-component-wrapper" sx={{ display: customComponent.container_display }} dangerouslySetInnerHTML={{ __html: customComponent.html }}></Box>}
                     <ContentTable courseId={courseId} loaded={contentLoaded} eventHandler={(event) => tableEventHandler(event)} />
                 </Box>
                 <Box sx={{ mt: 3, mb: 3 }}>

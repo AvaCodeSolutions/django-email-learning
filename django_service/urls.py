@@ -21,6 +21,8 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+from django_service.views import CustomComponentCourseView
+
 
 urlpatterns = [
     path(
@@ -57,6 +59,11 @@ urlpatterns = [
             template_name="registration/password_reset_complete.html"
         ),
         name="password_reset_complete",
+    ),
+    path(
+        "email_learning/platform/courses/<int:course_id>/",
+        CustomComponentCourseView.as_view(),
+        name="course",
     ),
     path(
         "email_learning/",
