@@ -192,7 +192,7 @@ function Course() {
                             initialTitle={content.lesson.title}
                             initialContent={content.lesson.content}
                             cancelCallback={() => {setDialogOpen(false);}}
-                            successCallback={resetDialog}
+                            successCallback={() => setContentLoaded(false)}
                             courseId={courseId}
                             lessonId={content.lesson.id}
                             initialWaitingPeriod={content.waiting_period}
