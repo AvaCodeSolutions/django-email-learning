@@ -114,7 +114,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
 
     const questionEventHandler = (event) => {
         if (event.type === 'delete_question') {
-            const updatedQuestions = questions.filter((_, i) => i !== index);
+            const updatedQuestions = questions.filter((_, i) => i !== event.question_index);
             setQuestions(updatedQuestions);
         }
         if (event.type === 'update_question') {
@@ -197,15 +197,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     }
 
     return (
-         <Box ref={dialogRef} sx={{ p: 3 }} onKeyDown={(e) => {
-            if (e.key === 'q' && !showQuestionField) {
-                setNewQuestion("");
-                setTimeout(() => {
-                    setShowQuestionField(true);
-                }, 100);
-
-            }
-        }} tabIndex={0} focusable="true">
+         <Box ref={dialogRef} sx={{ p: 3 }} tabIndex={0} focusable="true">
             <Typography variant="h2" sx={{ my: 2, fontSize: '1.5rem' }}>{ quizId ? localeMessages["update_quiz"] : localeMessages["new_quiz"] }</Typography>
             {errorMessage && <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert>}
             <RequiredTextField label={localeMessages["quiz_title"]} value={title} onChange={(e) => setTitle(e.target.value)} sx={{ mb: 2, width: '100%' }} disabled={userRole === 'viewer'} />
