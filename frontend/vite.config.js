@@ -23,6 +23,11 @@ export default defineConfig({
     sourcemap: false,
   },
   build: {
+    esbuild: {
+      minify: true,
+      sourcemap: false,
+      drop: ['console', 'debugger'],
+    },
     rollupOptions: {
       input: {
         courses: resolve(__dirname, 'platform/courses/index.html'),
