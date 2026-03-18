@@ -156,6 +156,7 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
                     waitingPeriod: String(waitingPeriod),
                     waitingPeriodUnit,
                 });
+                successCallback?.();
                 return;
             }
             throw new Error('Lesson update failed');
