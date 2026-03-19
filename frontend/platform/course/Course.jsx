@@ -111,7 +111,12 @@ function Course() {
 
     useEffect(() => {
         refreshEnrollmentAnalytics();
+        window.contenListAPI = {
+            refresh: () => setContentLoaded(false)
+        }
     }, []);
+
+
 
     const handleEnrollMenuSuccess = (msg) => {
         setPageSuccessMessage(msg);
@@ -183,6 +188,8 @@ function Course() {
             setContentLoaded(true);
         }
         if (event.type === 'content_clicked') {
+            setDialogOpen(false);
+            setDialogMaxWidth('lg');
             const content = await getContent(event.content_id);
             if (content.type == 'lesson') {
             console.log("Opening lesson editor for content:", content);

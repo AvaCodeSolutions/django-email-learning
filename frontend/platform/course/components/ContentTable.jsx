@@ -50,8 +50,22 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
         };
 
         window.addEventListener('pointerup', onPointerUp);
+
         return () => window.removeEventListener('pointerup', onPointerUp);
     }, []);
+
+    useEffect(() => {
+        window.ContentDialogAPI = {
+            open: (id) => {
+                if (contentList.some(content => content.id == id)) {
+                    let event = {type: 'content_clicked', content_id: id};
+                    eventHandler(event);
+                } else {
+                    console.warn(`Content with id ${id} not found in content list.`);
+                }
+            }
+        };
+    }, [contentList]);
 
     useEffect(() => {
         if (isDragging) {
