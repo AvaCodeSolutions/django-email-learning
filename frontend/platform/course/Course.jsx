@@ -111,8 +111,14 @@ function Course() {
 
     useEffect(() => {
         refreshEnrollmentAnalytics();
-        window.contenListAPI = {
+        window.ContentListAPI = {
             refresh: () => setContentLoaded(false)
+        }
+        window.DialogAPI = {
+            show: (content) => {
+                setDialogContent(content);
+                setDialogOpen(true);
+            }
         }
     }, []);
 
