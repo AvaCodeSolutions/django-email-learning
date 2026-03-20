@@ -1,6 +1,7 @@
 {% extends "platform/base.html" %}
 {% load django_vite %}
 {% block extra_head %}
+    {% vite_asset 'platform/course/Course.jsx' %}
     {% if appContext.customComponent %}
         {% if appContext.customComponent.script_url %}
             <script src="{{ appContext.customComponent.script_url }}"></script>
@@ -9,5 +10,4 @@
             <link rel="stylesheet" href="{{ appContext.customComponent.style_url }}">
         {% endif %}
     {% endif %}
-    {% vite_asset 'platform/course/Course.jsx' %}
 {% endblock %}
