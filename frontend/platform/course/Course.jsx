@@ -30,6 +30,7 @@ function Course() {
     const [weeklyStats, setWeeklyStats] = useState(null);
     const [isEnrollmentsLoading, setIsEnrollmentsLoading] = useState(true);
     const [isWeeklyStatsLoading, setIsWeeklyStatsLoading] = useState(true);
+    const [dialogCloseOnBackdropClick, setDialogCloseOnBackdropClick] = useState(false);
 
     const [pageSuccessMessage, setPageSuccessMessage] = useState('');
 
@@ -121,10 +122,10 @@ function Course() {
             },
             close: () => setDialogOpen(false),
             setMaxWidth: (maxWidth) => setDialogMaxWidth(maxWidth || 'md'),
+            setCloseOnBackdropClick: (closeOnBackdropClick) => setDialogCloseOnBackdropClick(!!closeOnBackdropClick),
+            getDialogBackdropClickSetting: () => dialogCloseOnBackdropClick,
         }
     }, []);
-
-
 
     const handleEnrollMenuSuccess = (msg) => {
         setPageSuccessMessage(msg);
