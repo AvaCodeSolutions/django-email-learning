@@ -134,6 +134,9 @@ function Course() {
     }
 
     const handleClose = (event, reason) => {
+        if (dialogCloseOnBackdropClick) {
+            setDialogOpen(false);
+        }
         if (reason !== "backdropClick" && reason !== "escapeKeyDown") {
             setDialogOpen(false);
         }
