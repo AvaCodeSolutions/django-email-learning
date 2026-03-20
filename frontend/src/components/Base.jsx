@@ -1,8 +1,8 @@
 import BottomDrawer from "./BottomDrawer";
 import MenuBar from "./MenuBar";
-import React from "react";
-
-import ReactDom from "react-dom";
+import * as React from "react";
+import * as ReactDom from "react-dom";
+import * as MaterialUI from "@mui/material";
 import { useState, useEffect } from "react";
 import { Box, Button, Select, GlobalStyles, Grid, Breadcrumbs, Typography, Link } from "@mui/material";
 import { getCookie } from "../utils.js";
@@ -17,7 +17,7 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
 
   window.React = React;
   window.ReactDom = ReactDom;
-  window.MUI = { Box, Button, Select, GlobalStyles, Grid, Breadcrumbs, Typography, Link };
+  window.MaterialUI = MaterialUI;
 
   useEffect(() => {
     const orgId = localStorage.getItem('activeOrganizationId');
