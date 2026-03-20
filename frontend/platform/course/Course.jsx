@@ -118,7 +118,9 @@ function Course() {
             show: (content) => {
                 setDialogContent(content);
                 setDialogOpen(true);
-            }
+            },
+            close: () => setDialogOpen(false),
+            setMaxWidth: (maxWidth) => setDialogMaxWidth(maxWidth || 'md'),
         }
     }, []);
 

@@ -1,7 +1,10 @@
 import BottomDrawer from "./BottomDrawer";
 import MenuBar from "./MenuBar";
+import React from "react";
+
+import ReactDom from "react-dom";
 import { useState, useEffect } from "react";
-import { Box, GlobalStyles, Grid, Breadcrumbs, Typography, Link } from "@mui/material";
+import { Box, Button, Select, GlobalStyles, Grid, Breadcrumbs, Typography, Link } from "@mui/material";
 import { getCookie } from "../utils.js";
 import { useAppContext } from "../render.jsx";
 
@@ -11,6 +14,10 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
   const [activeOrganizationId, setActiveOrganizationId] = useState(null);
   const drawerWidth = 250;
   const activeCrumbIndex = breadCrumbList.length - 1;
+
+  window.React = React;
+  window.ReactDom = ReactDom;
+  window.MUI = { Box, Button, Select, GlobalStyles, Grid, Breadcrumbs, Typography, Link };
 
   useEffect(() => {
     const orgId = localStorage.getItem('activeOrganizationId');
