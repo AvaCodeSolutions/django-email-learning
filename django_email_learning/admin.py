@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django import forms
 from .models import (
+    Lesson,
+    Quiz,
     Course,
     ImapConnection,
     Organization,
@@ -54,3 +56,5 @@ admin.site.register(ContentDelivery)
 admin.site.register(Learner)
 admin.site.register(DeliverySchedule)
 admin.site.register(QuizSubmission)
+admin.site.register(Lesson)
+admin.site.register(Quiz)

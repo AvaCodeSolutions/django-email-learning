@@ -1,11 +1,13 @@
 {% extends "emails/base.html" %}
 {% load i18n %}
+{% load static %}
 {% block extra_styles %}
     pre {
         background-color: #f4f4f4;
         padding: 10px;
         border-radius: 5px;
         overflow-x: auto;
+        margin: 15px 0 30px;
     }
 {% endblock %}
 
@@ -17,4 +19,13 @@
         <p class="email-muted-note">
             {% blocktranslate %}If you wish to unsubscribe from this course, please <a href="{{ unsubscribe_link }}" class="color-brand" style="text-decoration: none;">click here</a>{% endblocktranslate %}.
         </p>
+{% endblock %}
+
+{% block footer %}
+    <div class="footer">
+
+        <div class="mobile-content" style="text-align: center;">
+        {% blocktranslate %}This course is powered by <a href="https://github.com/AvaCodeSolutions/django-email-learning" class="color-brand" style="text-decoration: none;">Django Email Learning</a>.{% endblocktranslate %}
+        </div>
+    </div>
 {% endblock %}

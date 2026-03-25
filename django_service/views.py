@@ -1,3 +1,5 @@
+from django.views.generic import TemplateView
+from django_email_learning.models import Lesson, Quiz
 from django_email_learning.platform.views import CourseView
 from django_email_learning.platform.serializers import WebComponent
 
@@ -13,3 +15,41 @@ class CustomComponentCourseView(CourseView):
         )
         context["appContext"]["customComponent"] = custom_component.model_dump()
         return context
+
+
+class EmailTemplatePreview(TemplateView):
+    def get_template_names(self) -> list[str]:
+        template_name = self.request.GET.get("template")
+        if not template_name:
+            raise ValueError("The 'template' query parameter is required.")
+        if template_name not in [
+            "certificate_form",
+            "enrollment_verified",
+            "enrollment_verification",
+            "lesson",
+            "password_reset",
+            "quiz",
+        ]:
+            raise ValueError(
+                "Invalid template name. Allowed values are: 'certificate_form', 'enrollment_verified', 'enrollment_verification', 'lesson', 'password_reset', 'quiz'."
+            )
+
+        return [f"emails/{template_name}.html"]
+
+    def get_context_data(self, **kwargs):  # type: ignore[no-untyped-def]
+        lesson = Lesson.objects.first()
+        quiz = Quiz.objects.first()
+        return {
+            "course_title": "Example Course",
+            "organization_name": "Example Organization",
+            "course_image_url": "/static/src/assets/sample.jpg",
+            "support_imap_interface": False,
+            "verification_link": "https://example.com/verify",
+            "lesson": lesson,
+            "quiz": quiz,
+            "unsubscribe_link": "https://example.com/unsubscribe",
+            "protocol": "https",
+            "domain": "example.com",
+            "uid": "sampleuid",
+            "token": "sampletoken",
+        }
