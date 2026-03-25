@@ -57,8 +57,8 @@ class QuizSubmissionView(View):
                 status=500,
             )
 
-        enrolment = delivery.enrollment
-        if enrolment.status != EnrollmentStatus.ACTIVE:
+        enrollment = delivery.enrollment
+        if enrollment.status != EnrollmentStatus.ACTIVE:
             return JsonResponse({"error": "Quiz is not valid anymore"}, status=400)
 
         quiz = delivery.course_content.quiz
@@ -72,7 +72,7 @@ class QuizSubmissionView(View):
                 quiz, answers, decoded.get("question_ids")
             )
             logger.info(
-                f"Learner ID {enrolment.learner.id} submitted quiz for Course {enrolment.course.title} with score {score}. Passed: {passed}"
+                f"Learner ID {enrollment.learner.id} submitted quiz for Course {enrollment.course.title} with score {score}. Passed: {passed}"
             )
         except ValueError as ve:
             return JsonResponse({"error": str(ve)}, status=500)
@@ -89,7 +89,7 @@ class QuizSubmissionView(View):
             message = _("Congratulations! You have passed the quiz.")
             delivery = delivery.schedule_next_delivery()
             if not delivery:
-                enrolment.graduate()
+                enrollment.graduate()
         else:
             # Check if it's the second attempt failing
             failed_submissions_count = QuizSubmission.objects.filter(
@@ -102,23 +102,23 @@ class QuizSubmissionView(View):
                     "You have failed the quiz twice. Unfortunately, you cannot continue this course with this enrollment. You can enroll again to retake the course."
                 )
                 logger.info(
-                    f"Learner ID {enrolment.learner.id} has failed the quiz twice for Course {enrolment.course.title}. "
+                    f"Learner ID {enrollment.learner.id} has failed the quiz twice for Course {enrollment.course.title}. "
                     f"Marking enrollment as failed."
                 )
-                enrolment.fail()
+                enrollment.fail()
             else:
                 message = _(
                     "You have failed the quiz. You will receive another chance to retake it tomorrow."
                 )
                 logger.info(
-                    f"Learner ID {enrolment.learner.id} has failed the quiz for Course {enrolment.course.title}. "
+                    f"Learner ID {enrollment.learner.id} has failed the quiz for Course {enrollment.course.title}. "
                     f"Scheduling a retry for the next day."
                 )
                 delivery.repeat_delivery_in_days(1)
 
         METRIC_SERVICE.quiz_submitted(
-            course_slug=enrolment.course.slug,
-            organization_id=enrolment.course.organization.id,
+            course_slug=enrollment.course.slug,
+            organization_id=enrollment.course.organization.id,
             quiz_id=quiz.id,
             is_passed=passed,
         )

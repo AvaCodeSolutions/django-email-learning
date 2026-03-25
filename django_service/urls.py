@@ -21,7 +21,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
-from django_service.views import CustomComponentCourseView
+from django_service.views import CustomComponentCourseView, EmailTemplatePreview
 
 
 urlpatterns = [
@@ -68,6 +68,11 @@ urlpatterns = [
     path(
         "email_learning/",
         include("django_email_learning.urls", namespace="django_email_learning"),
+    ),
+    path(
+        "email_template_preview/",
+        EmailTemplatePreview.as_view(),
+        name="email_template_preview",
     ),
 ]
 

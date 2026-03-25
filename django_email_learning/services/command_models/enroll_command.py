@@ -131,14 +131,14 @@ class EnrollCommand(AbstractCommand):
         email_service = EmailSenderService()
         subject = _("Verify your enrollment")
         body = render_to_string(
-            "emails/enrolment_verification.txt",
+            "emails/enrollment_verification.txt",
             template_context,
         )
 
         to_emails = [self.email]
 
         html_content = render_to_string(
-            "emails/enrolment_verification.html",
+            "emails/enrollment_verification.html",
             template_context,
         )
 

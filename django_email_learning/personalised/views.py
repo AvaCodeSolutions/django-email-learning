@@ -106,11 +106,11 @@ class QuizPublicView(BaseTemplateView):
                 id=decoded_token["delivery_id"],
                 hash_value=decoded_token["delivery_hash"],
             )
-            enrolment = delivery.enrollment
-            if enrolment.status != EnrollmentStatus.ACTIVE:
+            enrollment = delivery.enrollment
+            if enrollment.status != EnrollmentStatus.ACTIVE:
                 return self.error_response(
                     message=_("This quiz is no longer valid."),
-                    exception=ValueError("Enrolment is not active"),
+                    exception=ValueError("Enrollment is not active"),
                     title=_("Invalid Quiz"),
                 )
             quiz = delivery.course_content.quiz

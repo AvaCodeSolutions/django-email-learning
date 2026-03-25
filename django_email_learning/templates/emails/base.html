@@ -19,12 +19,12 @@
                 border-color: {{ brand_color }};
             }
             .background {
+                padding: 10px;
                 width: 100%;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                box-sizing: border-box;
+                font-family: Helvetica, Arial, sans-serif;
                 line-height: 1.8;
                 font-size: 15px;
-                color: #333;
-                background-color: #f9f9f9;
             }
 
             .locale {
@@ -40,31 +40,28 @@
 
             @media screen and (max-width: 480px) {
                 .mobile-content {
+                    box-sizing: border-box;
                     width: 100% !important;
-                    padding: 10px !important;
+                    padding: 25px 20px !important;
                 }
             }
 
             @media screen and (min-width: 481px) and (max-width: 850px) {
                 .mobile-content {
-                    padding: 10px !important;
+                    box-sizing: border-box;
+                    padding: 25px 20px !important;
                     width: 100% !important;
                 }
             }
             @media screen and (min-width: 851px) {
-                .background {
-                    padding: 10px !important;
-                }
                 .mobile-content {
+                    box-sizing: border-box;
                     width: 800px !important;
                     max-width: 800px !important;
                     margin: 20px auto;
-                    padding: 20px !important;
+                    padding: 40px 45px 20px !important;
                     border-radius: 8px;
-                    border: 1px solid #e0e0e0;
-                }
-                h2 {
-                    padding: 20px 0;
+                    border: 1px solid #cbcbcb58;
                 }
             }
             img {
@@ -84,17 +81,15 @@
                 padding: 0 16px;
             }
             .email-title {
-                color: #2c3e50;
-                margin: 0 0 20px;
+                margin: 0 0 30px;
                 text-align: center;
-                border-bottom: 2px solid {{ brand_color }};
-                padding-bottom: 12px;
+                border-bottom: 2px solid #d8d9ee;
+                padding-bottom: 25px;
                 line-height: 1.35;
                 font-size: 24px;
             }
             .email-subtitle {
                 margin: 20px 0 10px;
-                color: #2c3e50;
                 font-size: 18px;
             }
             .email-paragraph {
@@ -102,7 +97,7 @@
                 margin: 0 0 16px;
             }
             .email-cover-wrap {
-                margin: 0 0 20px;
+                margin: 0 0 40px;
             }
             .email-cover {
                 width: 100%;
@@ -117,7 +112,6 @@
             }
             .email-cta {
                 display: inline-block;
-                color: #1f2340;
                 padding: 12px 24px;
                 text-decoration: none;
                 border-radius: 5px;
@@ -126,7 +120,6 @@
                 border: 1px solid rgba(31, 35, 64, 0.18);
             }
             .email-panel {
-                background-color: #f8f9fa;
                 padding: 20px;
                 border-radius: 5px;
                 margin: 24px 0;
@@ -135,7 +128,6 @@
                 border-left: 4px solid;
             }
             .email-code-box {
-                background-color: #ffffff;
                 padding: 15px;
                 border-radius: 4px;
                 border: 1px dashed #6c757d;
@@ -152,7 +144,7 @@
                 font-size: 14px;
                 color: #7f8c8d;
                 text-align: center;
-                margin-top: 30px;
+                margin-top: 50px;
             }
             .email-signoff {
                 margin-top: 24px;
@@ -162,7 +154,6 @@
             }
             .email-org-name {
                 font-weight: bold;
-                color: #2c3e50;
                 font-size: 18px;
                 margin: 0;
             }
@@ -174,14 +165,27 @@
             .email-list li {
                 margin-bottom: 6px;
             }
+            .footer {
+                margin-top: 40px;
+                padding: 40px;
+                border-top: 1px solid #e9ecef;
+                font-size: 14px;
+                background-color: #9ca0a316;
+            }
+            .footer .mobile-content {
+                border: 0;
+                margin: 0 auto;
+                padding: 0 10px !important;
+            }
             {% block extra_styles %}{% endblock %}
         </style>
     </head>
 <body>
     <div class="background">
-        <div class="mobile-content locale" style="background-color: #ffffff">
+        <div class="mobile-content locale">
             {% block content %}{% endblock %}
         </div>
+        {% block footer %}{% endblock %}
     </div>
 </body>
 </html>
