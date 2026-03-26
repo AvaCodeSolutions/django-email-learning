@@ -33,6 +33,7 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
         waitingPeriod: String(initialWaitingPeriodValue),
         waitingPeriodUnit: initialWaitingPeriodUnit,
     });
+    const [confirmCloseDialogOpen, setConfirmCloseDialogOpen] = useState(false);
 
 
     const { localeMessages, apiBaseUrl, userRole, direction } = useAppContext();
@@ -344,7 +345,15 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
 
     return (
         <>
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: 3 }} onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+                if (hasUnsavedChanges) {
+                    setConfirmCloseDialogOpen(true);
+                } else {
+                    cancel();
+                }
+            }
+        }}>
         <Typography variant="h2" sx={{ my: 2, fontSize: '1.5rem' }}>{header}</Typography>
         { errorMessage && (
             <Alert severity="error" sx={{ marginBottom: "10px" }}>
@@ -456,7 +465,13 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
             )}
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
-            <Button variant="outlined" onClick={cancel}>
+            <Button variant="outlined" onClick={() => {
+                if (hasUnsavedChanges) {
+                    setConfirmCloseDialogOpen(true);
+                } else {
+                    cancel();
+                }
+            }}>
                 {localeMessages["back"]}
             </Button>
             {userRole !== 'viewer' && <Button type="submit" variant="contained" onClick={() => {if(!lessonIdentifier) { addLesson(); } else { updateLesson(); }}}>
@@ -500,6 +515,24 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
                 </Button>
                 <Button onClick={confirmRemoveUploadedImage} color="error" disabled={isDeletingImage}>
                     {localeMessages["delete"]}
+                </Button>
+            </DialogActions>
+        </Dialog>
+        <Dialog open={hasUnsavedChanges && confirmCloseDialogOpen} onClose={() => setConfirmCloseDialogOpen(false)}>
+            <DialogContent>
+                <DialogContentText>
+                    {localeMessages["unsaved_changes_warning"]}
+                </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button variant="outlined" onClick={() => setConfirmCloseDialogOpen(false)} color="primary">
+                    {localeMessages["cancel"]}
+                </Button>
+                <Button variant="contained" onClick={() => {
+                    setConfirmCloseDialogOpen(false);
+                    cancel();
+                }} color="error">
+                    {localeMessages["close_without_saving"]}
                 </Button>
             </DialogActions>
         </Dialog>

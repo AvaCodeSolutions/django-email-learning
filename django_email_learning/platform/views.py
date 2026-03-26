@@ -341,6 +341,10 @@ class CourseView(BasePlatformView):
             "completed": _("Completed"),
             "enrollments_distribution": _("Enrollments Distribution"),
             "weekly_enrollments": _("Weekly Enrollments"),
+            "unsaved_changes_warning": _(
+                "You have unsaved changes. Are you sure you want to leave without saving?"
+            ),
+            "close_without_saving": _("Close without saving"),
         }
 
     def get_app_context(self) -> Dict[str, Any]:
