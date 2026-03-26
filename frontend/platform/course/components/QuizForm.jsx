@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { Alert,Box, Button, Grid, InputLabel, MenuItem, Select, Tooltip, Typography } from '@mui/material';
+import { Alert,Box, Button, Grid, InputLabel, MenuItem, Select, Tooltip, Typography, Dialog } from '@mui/material';
 import QuizIcon from '@mui/icons-material/Quiz';
 import RequiredTextField from '../../../src/components/RequiredTextField';
 import QuestionForm from './QuestionForm';
@@ -29,8 +29,44 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     const questionInputRef = useRef(null);
     const dialogRef = useRef(null);
     const organizationId = localStorage.getItem('activeOrganizationId');
+    const [confirmCloseDialogOpen, setConfirmCloseDialogOpen] = useState(false);
+
 
     const { localeMessages, userRole, apiBaseUrl } = useAppContext();
+
+    const compareQuestions = (questions1, questions2) => {
+        if (questions1.length !== questions2.length) {
+            return false;
+        }
+        for (let i = 0; i < questions1.length; i++) {
+            const q1 = questions1[i];
+            const q2 = questions2[i];
+            if (q1.text !== q2.text) {
+                return false;
+            }
+            const options1 = q1.options || [];
+            const options2 = q2.options || [];
+            if (options1.length !== options2.length) {
+                return false;
+            }
+            for (let j = 0; j < options1.length; j++) {
+                const o1 = options1[j];
+                const o2 = options2[j];
+                if (o1.optionText !== o2.optionText || o1.isCorrect !== o2.isCorrect) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    const hasUnsavedChanges = () => {
+        if (!compareQuestions(questions, initialQuestions) || title !== initialTitle || requiredScore !== initialRequiredScore || selectionStrategy !== initialStrategy || deadlineDays !== initialDeadlineDays || waitingPeriod !== (initialWaitingPeriod ? initialWaitingPeriod.period : 1) || waitingPeriodUnit !== (initialWaitingPeriod ? initialWaitingPeriod.type : "days")) {
+            console.log(questions, initialQuestions, title, initialTitle, requiredScore, initialRequiredScore, selectionStrategy, initialStrategy, deadlineDays, initialDeadlineDays, waitingPeriod, (initialWaitingPeriod ? initialWaitingPeriod.period : 1), waitingPeriodUnit, (initialWaitingPeriod ? initialWaitingPeriod.type : "days"));
+            return true;
+        }
+        return false;
+    }
 
     const addQuiz = () => {
         if (!validateQuiz()) {
@@ -206,7 +242,20 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     }
 
     return (
-         <Box ref={dialogRef} sx={{ p: 3 }} tabIndex={0} focusable="true">
+         <Box ref={dialogRef} sx={{ p: 3 }} tabIndex={0} focusable="true" onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+                if (showQuestionField) {
+                    setShowQuestionField(false);
+                    setNewQuestion("");
+                } else {
+                    if (hasUnsavedChanges()) {
+                        setConfirmCloseDialogOpen(true);
+                    } else {
+                        cancel();
+                    }
+                }
+            }
+        }}>
             <Typography variant="h2" sx={{ my: 2, fontSize: '1.5rem' }}>{ quizId ? localeMessages["update_quiz"] : localeMessages["new_quiz"] }</Typography>
             {errorMessage && <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert>}
             <RequiredTextField label={localeMessages["quiz_title"]} value={title} onChange={(e) => setTitle(e.target.value)} sx={{ mb: 2, width: '100%' }} disabled={userRole === 'viewer'} />
@@ -348,7 +397,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                 </Grid>
             </Box>
 
-            <Box mt={2} textAlign="right">
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', position: 'sticky', bottom: 0, backgroundColor: 'background.paper', py: 2 }}>
                 <Button variant="outlined" sx={{ mr: 1, boxShadow: 'none' }} onClick={cancel}>
                     {localeMessages["back"]}
                 </Button>
@@ -356,6 +405,23 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                     {localeMessages["save_quiz"]}
                 </Button>}
             </Box>
+            <Dialog open={confirmCloseDialogOpen} onClose={() => setConfirmCloseDialogOpen(false)}>
+                <Box sx={{ p: 3 }}>
+                    <Typography variant="h2" sx={{ fontSize: '1.25rem', mb: 2 }}>{localeMessages["confirm_close"]}</Typography>
+                    <Typography sx={{ mb: 3 }}>{localeMessages["unsaved_changes_warning"]}</Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button variant="outlined" sx={{ mr: 1 }} onClick={() => setConfirmCloseDialogOpen(false)}>
+                            {localeMessages["cancel"]}
+                        </Button>
+                        <Button variant="contained" color="secondary" onClick={() => {
+                            setConfirmCloseDialogOpen(false);
+                            cancel();
+                        }}>
+                            {localeMessages["close_without_saving"]}
+                        </Button>
+                    </Box>
+                </Box>
+            </Dialog>
         </Box>
     );
 }
