@@ -1,5 +1,5 @@
 from django.views.generic import TemplateView
-from django_email_learning.models import Lesson, Quiz
+from django_email_learning.models import Lesson, Quiz, CourseContent
 from django_email_learning.platform.views import CourseView
 from django_email_learning.platform.serializers import WebComponent
 
@@ -39,6 +39,9 @@ class EmailTemplatePreview(TemplateView):
     def get_context_data(self, **kwargs):  # type: ignore[no-untyped-def]
         lesson = Lesson.objects.first()
         quiz = Quiz.objects.first()
+        content = (
+            CourseContent.objects.filter(lesson=lesson).first() if lesson else None
+        )
         return {
             "course_title": "Example Course",
             "organization_name": "Example Organization",
@@ -52,4 +55,6 @@ class EmailTemplatePreview(TemplateView):
             "domain": "example.com",
             "uid": "sampleuid",
             "token": "sampletoken",
+            "progress": 40,
+            "next_content": content.get_next() if content else None,
         }

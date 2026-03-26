@@ -28,6 +28,7 @@ from django.forms import ValidationError
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 from datetime import timedelta
 from django_email_learning.services import jwt_service
 
@@ -399,6 +400,25 @@ class CourseContent(models.Model):
             return self.quiz.title
         return "Untitled Content"
 
+    def human_readable_waiting_period(self) -> str:
+        if self.waiting_period < 60:
+            return ngettext(
+                "%(count)d second", "%(count)d seconds", self.waiting_period
+            ) % {"count": self.waiting_period}
+        elif self.waiting_period < 3600:
+            minutes = self.waiting_period // 60
+            return ngettext("%(count)d minute", "%(count)d minutes", minutes) % {
+                "count": minutes
+            }
+        elif self.waiting_period < 86400:
+            hours = self.waiting_period // 3600
+            return ngettext("%(count)d hour", "%(count)d hours", hours) % {
+                "count": hours
+            }
+        else:
+            days = self.waiting_period // 86400
+            return ngettext("%(count)d day", "%(count)d days", days) % {"count": days}
+
     def _validate_content(self) -> None:
         if self.type == "lesson" and not self.lesson:
             raise ValidationError("Lesson must be provided for lesson content.")
@@ -416,6 +436,16 @@ class CourseContent(models.Model):
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self.full_clean()
         super().save(*args, **kwargs)
+
+    def get_next(self) -> Optional["CourseContent"]:
+        next_content = (
+            CourseContent.objects.filter(
+                course=self.course, is_published=True, priority__gt=self.priority
+            )
+            .order_by("priority")
+            .first()
+        )
+        return next_content
 
     class Meta:
         constraints = [

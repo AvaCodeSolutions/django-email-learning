@@ -1,7 +1,12 @@
 from django_email_learning.services.command_models.abstract_command import (
     AbstractCommand,
 )
-from django_email_learning.models import Lesson, CourseContent
+from django_email_learning.models import (
+    Lesson,
+    CourseContent,
+    Enrollment,
+    EnrollmentStatus,
+)
 from django_email_learning.services.email_sender_service import EmailSenderService
 from django_email_learning.services.metrics_service import MetricsService
 from django.core.mail import EmailMultiAlternatives
@@ -35,9 +40,21 @@ class SendLessonCommand(AbstractCommand):
             raise LessonNotFoundError(f"Lesson with ID {content.lesson.id} not found")
 
         subject = lesson.title
+        enrollment = Enrollment.objects.filter(
+            course=content.course,
+            learner__email=self.email,
+            status=EnrollmentStatus.ACTIVE,
+        ).first()
+        if not enrollment:
+            progress = 0
+        else:
+            progress = enrollment.progress_percentage
+        next_content = content.get_next()
         context = {
             "lesson": lesson,
             "unsubscribe_link": content.course.generate_unsubscribe_link(self.email),
+            "progress": progress,
+            "next_content": next_content,
         }
         payload = render_to_string("emails/lesson.txt", context)
 
