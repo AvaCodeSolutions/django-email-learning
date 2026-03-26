@@ -7,6 +7,8 @@ import HowToRegIcon from '@mui/icons-material/HowToReg';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import BallotIcon from '@mui/icons-material/Ballot';
 import AssignmentReturnedIcon from '@mui/icons-material/AssignmentReturned';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 import SearchIcon from '@mui/icons-material/Search';
 import SchoolIcon from '@mui/icons-material/School';
 import BackspaceIcon from '@mui/icons-material/Backspace';
@@ -84,7 +86,7 @@ function Learners(initialQs="") {
                 </Typography>
                 { event.type === "quiz_submitted" && <>
                   <Box><Typography>{localeMessages["score"]}: {event.event_data.score}</Typography></Box>
-                  <Box><Typography>{localeMessages["result"]}: {event.event_data.is_passed ? localeMessages["passed"] : localeMessages["failed"]}</Typography></Box>
+                  <Box><Typography sx={{ display: 'flex', alignItems: 'center' }}>{localeMessages["result"]}: {event.event_data.is_passed ? <>{localeMessages["passed"]}<CheckCircleIcon sx={{color: "#4caf50", marginX: "4px"}} /></> : <> {localeMessages["failed"]}<CancelIcon sx={{color: "#f44336", marginX: "4px"}} /></>}</Typography></Box>
                 </>}
                 { event.type === "content_sent" && <>
                   <Box><Typography>{event.event_data.course_content_title}</Typography></Box>
