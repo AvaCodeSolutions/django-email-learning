@@ -9,12 +9,57 @@
         overflow-x: auto;
         margin: 15px 0 30px;
     }
+    .progress-wrapper {
+        margin-top: 40px;
+        padding: 20px 0;
+        border-top: 1px solid #ddd;
+    }
+    .progress-label {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 14px;
+        color: #555;
+    }
+    .progress-container {
+        width: 100%;
+        background-color: #e0e0e0;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+    .progress-bar {
+        height: 20px;
+        background-color: #4caf50;
+        width: 0;
+        transition: width 0.5s ease-in-out;
+        background-image: linear-gradient(to right, #7070e6, #4dd2cb);
+    }
 {% endblock %}
 
 {% block content %}
         <h2 class="email-title">{{ lesson.title }}</h2>
 
         {{ lesson.content|safe }}
+
+        <div class="progress-wrapper">
+            {% block lesson_extras %}
+            {% if next_content %}
+                <h3>{% blocktranslate %}What’s coming up next?{% endblocktranslate %}</h3>
+                {% if next_content.lesson %}
+                    <p>{% blocktranslate with next_lesson_title=next_content.lesson.title delay=next_content.human_readable_waiting_period title=lesson.title %}
+                        Now that you've mastered {{ title }}, we’ll be moving on to {{ next_lesson_title }}. Keep an eye out for that email—it will hit your inbox in {{ delay }}.
+                        {% endblocktranslate %}</p>
+                {% elif next_content.quiz %}
+                    <p>{% blocktranslate with quiz_title=next_content.quiz.title delay=next_content.human_readable_waiting_period title=lesson.title %}
+                        Now that you've mastered {{ title }}, it’s time to put that knowledge to the test! Your next email will be the {{ quiz_title }}. Look out for it hitting your inbox in {{ delay }}.
+                        {% endblocktranslate %}</p>
+                {% endif %}
+            {% endif %}
+            {% endblock %}
+            <span class="progress-label">{% blocktranslate %}<b>Course Progress: {{ progress }}%</b>{% endblocktranslate %}</span>
+            <div class="progress-container">
+                <div class="progress-bar" style="width: {{ progress }}%;"></div>
+            </div>
+        </div>
 
         <p class="email-muted-note">
             {% blocktranslate %}If you wish to unsubscribe from this course, please <a href="{{ unsubscribe_link }}" class="color-brand" style="text-decoration: none;">click here</a>{% endblocktranslate %}.
