@@ -162,6 +162,7 @@ function Course() {
 
     const translateOptions = (options) => {
         return options.map((opt) => ({
+            id: opt.id,
             optionText: opt.text,
             isCorrect: opt.is_correct,
             editMode: false
@@ -170,6 +171,7 @@ function Course() {
 
     const translateQuestions = (questions) => {
         return questions.map((q) => ({
+            id: q.id,
             text: q.text,
             options: translateOptions(q.answers),
         }));

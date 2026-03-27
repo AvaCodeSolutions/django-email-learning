@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, use } from 'react';
 import { Box, Grid, Typography, Button, Switch, Table, TableHead, TableBody, TableRow, TableCell, TextField } from '@mui/material';
 import RuleIcon from '@mui/icons-material/Rule';
 import EditIcon from '@mui/icons-material/Edit';
@@ -26,12 +26,12 @@ const QuestionForm = ({question, index, eventHandler}) => {
 
     const triggerUpdateEvent = () => {
         console.log("Triggering update event for question index " + index + " with options" + JSON.stringify(options));
-        eventHandler({type: 'update_question', question_id: question._clientId, question_data: {'text': questionText, 'options': options}});
+        eventHandler({type: 'update_question', question_id: question._clientId, question_index: index, question_data: {'id': question.id, 'text': questionText, 'options': options}});
     }
 
     const deleteCallback = () => {
         console.log("Triggering delete event for question index " + index);
-        eventHandler({type: 'delete_question', question_id: question._clientId});
+        eventHandler({type: 'delete_question', question_id: question._clientId, question_index: index});
     }
 
     useEffect(() => {
@@ -48,6 +48,7 @@ const QuestionForm = ({question, index, eventHandler}) => {
         if (optionText.trim() !== "") {
             setOptions([...options, {"optionText": optionText.trim(), "isCorrect": false, "editMode": false}]);
         }
+        triggerUpdateEvent();
         setAddingOption(false);
     }
 

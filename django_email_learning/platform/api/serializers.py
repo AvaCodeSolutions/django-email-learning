@@ -386,6 +386,10 @@ class AnswerCreate(BaseModel):
     is_correct: bool = Field(examples=[True])
 
 
+class AnswerUpdate(AnswerCreate):
+    id: Optional[int] = None
+
+
 class AnswerObject(BaseModel):
     id: int
     text: str
@@ -410,6 +414,11 @@ class QuestionCreate(BaseModel):
         return answers
 
 
+class QuestionUpdate(QuestionCreate):
+    id: Optional[int] = None
+    answers: list[AnswerUpdate] = Field(min_length=2)  # type: ignore[assignment]
+
+
 class QuestionObject(BaseModel):
     id: int
     text: str
@@ -430,7 +439,7 @@ MAX_QUIZ_DEADLINE = 30
 
 
 class UpdateQuiz(BaseModel):
-    questions: Optional[list[QuestionCreate]] = Field(min_length=1)
+    questions: Optional[list[QuestionUpdate]] = Field(min_length=1)
     title: Optional[str] = None
     required_score: Optional[int] = Field(ge=0, examples=[80], default=None)
     selection_strategy: QuizSelectionStrategy
