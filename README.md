@@ -50,9 +50,9 @@ A quick look at the platform interface:
 
 | Course Dashboard | Public Organization Page |
 | --- | --- |
-| ![Course Dashboard](assets/screenshots/course-dashboard.jpeg) | ![Public Organization Page](assets/screenshots/public-org.jpeg) |
+| ![Course Dashboard](https://raw.githubusercontent.com/AvaCodeSolutions/django-email-learning/refs/heads/master/assets/screenshots/course-dashboard.jpeg) | ![Public Organization Page](https://raw.githubusercontent.com/AvaCodeSolutions/django-email-learning/refs/heads/master/assets/screenshots/public-org.jpeg) |
 | Learner Progress | Certificate |
-| ![Learner Progress](assets/screenshots/learner-progress.jpeg) | ![Certificate](assets/screenshots/certificate.jpeg) |
+| ![Learner Progress](https://raw.githubusercontent.com/AvaCodeSolutions/django-email-learning/master/assets/screenshots/learner-progress.jpeg) | ![Certificate](https://raw.githubusercontent.com/AvaCodeSolutions/django-email-learning/refs/heads/master/assets/screenshots/certificate.jpeg) |
 
 
 ## Documentation
