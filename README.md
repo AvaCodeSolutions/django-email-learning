@@ -64,6 +64,12 @@ Comprehensive documentation is available at [django-email-learning.readthedocs.i
 - **Technical Reference**: Management commands and configuration
 - **Usage Examples**: Real-world implementation scenarios
 
+## Try It as a Learner
+
+Want to experience the platform from a learner perspective? Enroll in a public course at:
+
+- [InboxAcademy: Django Email Learning - Build Your Own Email-Based Learning Platform](https://inboxacademy.io/learning/public/organizations/1/)
+
 ## Installation
 
 This is a Django app, so we assume you already have Django installed.

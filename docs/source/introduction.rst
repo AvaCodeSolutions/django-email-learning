@@ -21,6 +21,13 @@ Key Features
 * **Progress Tracking:** Real-time analytics on lesson sent, quiz completions, and learner bottlenecks.
 * **Django Native:** Built as a pluggable Django app that integrates seamlessly into your existing project.
 
+Try It as a Learner
+-------------------
+
+To experience Django Email Learning from a learner perspective, enroll in a public course at:
+
+`InboxAcademy <https://inboxacademy.io/learning/public/organizations/1/>`_
+
 .. important::
    The library is currently in its early stages of development. The current version is an beta release,
    and while it includes core features, it may not yet be suitable for production use and future updates may introduce breaking changes.
