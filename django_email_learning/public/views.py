@@ -14,6 +14,31 @@ from django_email_learning.public.serializers import (
 )
 
 
+def json_ld_from(
+    courses: list[PublicCourseSerializer], organization: Organization
+) -> dict:
+    course_list = []
+    for course in courses:
+        course_data = {
+            "@type": "Course",
+            "name": course.title,
+            "description": course.description,
+            "inLanguage": course.language,
+            "provider": {
+                "@type": "Organization",
+                "name": organization.name,
+            },
+        }
+        if course.image:
+            course_data["image"] = course.image
+        course_list.append(course_data)
+    return {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "itemListElement": course_list,
+    }
+
+
 @method_decorator(ensure_csrf_cookie, name="dispatch")
 class OrganizationView(TemplateView):
     template_name = "public/organization.html"
@@ -82,6 +107,16 @@ class OrganizationView(TemplateView):
                     "course_language": _("Course language"),
                 },
             }
+            context["organization_name"] = organization.name
+            context["organization_description"] = organization.description
+            context["organization_logo_url"] = (
+                self.request.build_absolute_uri(organization.logo.url)
+                if organization.logo
+                else None
+            )
+
+            if len(courses) > 0:
+                context["json_ld"] = json_ld_from(courses, organization)
             context["page_title"] = organization.name
             return context
 

@@ -1,5 +1,22 @@
 {% extends "public/base.html" %}
+{% load i18n %}
 {% load django_vite %}
 {% block head_script %}
     {% vite_asset 'public/organization/Organization.jsx' %}
+    {% if json_ld %}
+    <script type="application/ld+json">{{ json_ld|safe }}</script>
+    {% endif %}
+{% endblock %}
+{% block meta_tags %}
+    <meta name="description" content="{% blocktranslate %}Courses provided by {{ organization_name }}{% endblocktranslate %}, {{ organization_description }}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:title" content="{% blocktranslate %} Courses by {{ organization_name }} {% endblocktranslate %}">
+    {% if organization_description %}<meta property="og:description" content="{{ organization_description }}">{% endif %}
+    {% if organization_logo_url %}<meta property="og:image" content="{{ organization_logo_url }}">{% endif %}
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% blocktranslate %} Courses by {{ organization_name }} {% endblocktranslate %}">
+    {% if organization_description %}<meta name="twitter:description" content="{{ organization_description }}">{% endif %}
+    {% if organization_logo_url %}<meta name="twitter:image" content="{{ organization_logo_url }}">{% endif %}
 {% endblock %}

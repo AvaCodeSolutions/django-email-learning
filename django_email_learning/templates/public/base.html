@@ -11,6 +11,7 @@
     {{ appContext | json_script:"app-context" }}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {% block meta_tags %}{% endblock %}
     <link rel="icon" type="image/png" href="{% static 'logo.png' %}" />
     <title>{% block title %}{{ page_title }}{% endblock %}</title>
   </head>
