@@ -112,6 +112,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     }
 
     const validateQuiz = () => {
+        console.log("Validating quiz with title:", title, "and questions:", questions);
         if (title.trim() === "") {
             setErrorMessage(localeMessages["quiz_title_empty"]);
             return false;
@@ -128,6 +129,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             }
             const options = question.options || [];
             if (options.length < 2) {
+                console.log("Options: " + JSON.stringify(options));
                 setErrorMessage(localeMessages["at_least_two_options"].replace("QUESTION_NUMBER", i + 1));
                 return false;
             }
@@ -142,7 +144,10 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     }
 
     const questionsPayload = () => {
+        console.log("Generating questions payload for questions:", questions);
+        console.log("Initial questions were:", initialQuestions);
         return questions.map((question, index) => ({
+            id: question.id,
             text: question.text,
             answers: answersPayload(question.options || []),
             priority: index + 1,
@@ -151,6 +156,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
 
     const answersPayload = (options) => {
         return options.map((option) => ({
+            id: option.id,
             text: option.optionText,
             is_correct: option.isCorrect,
         }));
@@ -235,7 +241,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     const addToQuestions = () => {
 
         if (newQuestion.trim() !== "") {
-            setQuestions([...questions, {"text": newQuestion.trim(), _clientId: createQuestionId()}]);
+            setQuestions([...questions, {"text": newQuestion.trim(), _clientId: createQuestionId(), id: null, options: []}]);
         }
         setNewQuestion("");
         setShowQuestionField(false);

@@ -128,9 +128,12 @@ class QuizPublicView(BaseTemplateView):
                 )
             quiz_data = PublicQuizSerializer.model_validate(quiz).model_dump()
             if question_ids:
-                quiz_data["questions"] = [
+                selected_questions = [
                     q for q in quiz_data["questions"] if q["id"] in question_ids
                 ]
+                # Only filter questions if all specified question IDs are valid and included in the quiz
+                if len(selected_questions) == len(question_ids):
+                    quiz_data["questions"] = selected_questions
             return self.render_to_response(
                 context={
                     "appContext": {

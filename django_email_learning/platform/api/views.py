@@ -286,16 +286,36 @@ class SingleCourseContentView(View):
             if quiz_serializer.deadline_days is not None:
                 quiz.deadline_days = quiz_serializer.deadline_days
             if quiz_serializer.questions is not None:
-                # Clear existing questions and answers
-                quiz.questions.all().delete()
+                question_ids = set()
                 for question_data in quiz_serializer.questions:
-                    question = quiz.questions.create(
-                        text=question_data.text, priority=question_data.priority
-                    )
-                    for answer_data in question_data.answers:
-                        question.answers.create(
-                            text=answer_data.text, is_correct=answer_data.is_correct
+                    if question_data.id:
+                        question = quiz.questions.get(id=question_data.id)
+                        question.text = question_data.text
+                        question.priority = question_data.priority
+                        question.save()
+                    else:
+                        question = quiz.questions.create(
+                            text=question_data.text, priority=question_data.priority
                         )
+                    question_ids.add(question.id)
+                    answer_ids = set()
+                    for answer_data in question_data.answers:
+                        if answer_data.id:
+                            answer = question.answers.get(id=answer_data.id)
+                            answer.text = answer_data.text
+                            answer.is_correct = answer_data.is_correct
+                            answer.save()
+                        else:
+                            answer = question.answers.create(
+                                text=answer_data.text, is_correct=answer_data.is_correct
+                            )
+                        answer_ids.add(answer.id)
+                    question.answers.exclude(
+                        id__in=answer_ids
+                    ).delete()  # Remove any answers that were not included in the update payload
+                quiz.questions.exclude(
+                    id__in=question_ids
+                ).delete()  # Remove any questions that were not included in the update payload
             quiz.save()
 
         course_content.save()
