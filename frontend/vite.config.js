@@ -53,6 +53,7 @@ export default defineConfig({
         learners: resolve(__dirname, 'platform/learners/index.html'),
         settings_api_keys: resolve(__dirname, 'platform/settings_api_keys/index.html'),
         organization: resolve(__dirname, 'public/organization/index.html'),
+        public_course: resolve(__dirname, "public/course/index.html"),
         quiz_public: resolve(__dirname, "personalised/quiz_public/index.html"),
         certificate: resolve(__dirname, "personalised/certificate/index.html"),
         certtificate_form: resolve(__dirname, "personalised/certificate_form/index.html"),
