@@ -5,7 +5,7 @@ import { getCookie } from '../../src/utils.js';
 import { useAppContext } from '../../src/render.jsx';
 
 
-const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, onCancle, onComplete, autoFocusEmail = false}) => {
+const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, onCancle, onComplete, autoFocusEmail = false, csrfToken = null}) => {
 
     const emailRef = React.useRef('');
     const [errorMessage, setErrorMessage] = React.useState('');
@@ -46,7 +46,7 @@ const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, o
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-CSRFToken': csrfToken || getCookie('csrftoken'),
                 },
                 body: JSON.stringify({
                     email: emailRef.current.value,
