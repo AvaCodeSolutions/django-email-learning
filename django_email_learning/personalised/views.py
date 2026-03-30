@@ -170,6 +170,7 @@ class QuizPublicView(BaseTemplateView):
                 message=_("An error occurred while retrieving the quiz"),
                 exception=e,
                 title=_("Error"),
+                status_code=410,
             )
         except KeyError as e:
             return self.error_response(
