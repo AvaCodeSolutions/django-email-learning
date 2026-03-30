@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import render from '../../src/render.jsx';
 import Layout from '../components/Layout.jsx';
 import EnrollmentForm from '../components/EnrollmentForm.jsx';
-import { Box, Button, Card, CardContent, CardMedia, Chip, Dialog, Grid, Stack, Typography } from '@mui/material';
+import { Box, Button, Card, CardContent, CardMedia, Chip, Dialog, Grid, Stack, Typography, Link } from '@mui/material';
 import LanguageIcon from '@mui/icons-material/Language';
 import { alpha, ThemeProvider } from '@mui/material/styles';
 import { useAppContext } from '../../src/render.jsx';
@@ -102,7 +102,9 @@ function Organization() {
                             />
                             <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, flexGrow: 1, direction: course.is_rtl ? 'rtl' : 'ltr' }}>
                                 <Box>
-                                    <Typography variant="h3" sx={{ textAlign: courseDirection === 'rtl' ? 'right' : 'left' }}>{course["title"]}</Typography>
+                                    <Link href={`courses/${course["slug"]}/`} underline="none">
+                                        <Typography variant="h3" sx={{ textAlign: courseDirection === 'rtl' ? 'right' : 'left' }}>{course["title"]}</Typography>
+                                    </Link>
                                     <Stack direction={courseDirection === 'rtl' ? 'rtl' : 'ltr'} alignItems="center" spacing={0.5} sx={{ mt: 0.25 }}>
                                         <LanguageIcon
                                             sx={(theme) => ({

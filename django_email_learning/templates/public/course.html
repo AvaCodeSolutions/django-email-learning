@@ -1,0 +1,22 @@
+{% extends "public/base.html" %}
+{% load i18n %}
+{% load django_vite %}
+{% block head_script %}
+    {% vite_asset 'public/course/Course.jsx' %}
+    {% if json_ld %}
+    <script type="application/ld+json">{{ json_ld|safe }}</script>
+    {% endif %}
+{% endblock %}
+{% block meta_tags %}
+    <meta name="description" content="{{ course_description }}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:title" content="{{ course_title }}">
+    {% if course_description %}<meta property="og:description" content="{{ course_description }}">{% endif %}
+    {% if course_image_url %}<meta property="og:image" content="{{ course_image_url }}">{% endif %}
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ course_title }}">
+    {% if course_description %}<meta name="twitter:description" content="{{ course_description }}">{% endif %}
+    {% if course_image_url %}<meta name="twitter:image" content="{{ course_image_url }}">{% endif %}
+{% endblock %}

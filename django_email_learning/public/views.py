@@ -122,3 +122,87 @@ class OrganizationView(TemplateView):
 
         # If organization not found, raise 404
         raise Http404(_("Organization does not exist"))
+
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CourseView(TemplateView):
+    template_name = "public/course.html"
+
+    def get_context_data(self, **kwargs) -> dict:  # type: ignore[no-untyped-def]
+        course_slug: str = kwargs.get("course_slug")  # type: ignore[assignment]
+        organization_id: int = kwargs.get("organization_id")  # type: ignore[assignment]
+        context = super().get_context_data(**kwargs)
+        try:
+            course = Course.objects.select_related("organization").get(
+                slug=course_slug, organization__id=organization_id, enabled=True
+            )
+        except Course.DoesNotExist:
+            raise Http404(_("Course does not exist"))
+
+        course_lang_info = get_language_info(course.language)
+        course_data = PublicCourseSerializer(
+            id=course.id,
+            title=course.title,
+            slug=course.slug,
+            description=course.description,
+            image=self.request.build_absolute_uri(course.image.url)
+            if course.image
+            else None,
+            imap_email=None,
+            language=course.language,
+            is_rtl=course_lang_info["bidi"],
+            lessons=[
+                content.lesson.title  # type: ignore[union-attr]
+                for content in course.coursecontent_set.filter(
+                    lesson__isnull=False
+                ).order_by("priority")
+            ],
+        )
+        organization_data = OrganizationSerializer(
+            id=course.organization.id,
+            name=course.organization.name,
+            logo_url=self.request.build_absolute_uri(course.organization.logo.url)
+            if course.organization.logo
+            else None,
+            description=course.organization.description,
+        )
+        enroll_api_path = reverse("django_email_learning:api_public:enroll")
+        current_lang_code = get_language()
+        lang_info = get_language_info(current_lang_code)
+        context["appContext"] = {
+            "csrfToken": self.request.COOKIES.get("csrftoken", ""),
+            "course": course_data.model_dump(),
+            "organization": organization_data.model_dump(),
+            "enrollApiUrl": f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{enroll_api_path}",
+            "direction": "rtl" if lang_info["bidi"] else "ltr",
+            "localeMessages": {
+                "enroll_now": _("Enroll Now"),
+                "enrol_for_course": _("Enroll for COURSE_NAME"),
+                "email": _("email"),
+                "cancel": _("Cancel"),
+                "submit": _("Submit"),
+                "enrollment_success": _("You are enrolled in this course."),
+                "enrollment_failed": _("Enrollment failed. Please try again."),
+                "email_required": _("Email is required"),
+                "email_invalid": _("Please enter a valid email address"),
+                "course_language": _("Course language"),
+                "topics_covered": _(
+                    "Here is the list of topics covered in this course:"
+                ),
+                "provided_by": _("Provided by ORGANIZATION_NAME"),
+            },
+        }
+        context["course_title"] = course.title
+        context["course_description"] = course.description
+        context["course_image_url"] = (
+            self.request.build_absolute_uri(course.image.url) if course.image else None
+        )
+        context["organization_name"] = course.organization.name
+        context["organization_description"] = course.organization.description
+        context["organization_logo_url"] = (
+            self.request.build_absolute_uri(course.organization.logo.url)
+            if course.organization.logo
+            else None
+        )
+        context["page_title"] = course.title
+        return context

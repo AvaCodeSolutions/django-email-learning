@@ -10,6 +10,7 @@ class PublicCourseSerializer(BaseModel):
     image: str | None = None
     language: str
     is_rtl: bool = False
+    lessons: list[str] = []
 
     @field_serializer("description")
     def serialize_description_with_br(self, description: str | None) -> str | None:

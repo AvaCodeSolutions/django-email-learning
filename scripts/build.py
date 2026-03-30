@@ -16,6 +16,7 @@ TEMPLATES = [
     ["personalised", "certificate"],
     ["personalised", "certificate_form"],
     ["public", "organization"],
+    ["public", "course"],
 ]
 
 
