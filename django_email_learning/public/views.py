@@ -84,6 +84,7 @@ class OrganizationView(TemplateView):
                 logo_url=organization.logo.url if organization.logo else None,
                 description=organization.description,
                 courses=courses,
+                public_url=organization.public_url,
             )
             enroll_api_path = reverse("django_email_learning:api_public:enroll")
             current_lang_code = get_language()
@@ -165,6 +166,7 @@ class CourseView(TemplateView):
             if course.organization.logo
             else None,
             description=course.organization.description,
+            public_url=course.organization.public_url,
         )
         enroll_api_path = reverse("django_email_learning:api_public:enroll")
         current_lang_code = get_language()

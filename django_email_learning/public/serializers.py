@@ -32,6 +32,7 @@ class OrganizationSerializer(BaseModel):
     logo_url: str | None = None
     description: str | None = None
     courses: list[PublicCourseSerializer] = []
+    public_url: str
 
     @field_serializer("description")
     def serialize_description_with_br(self, description: str | None) -> str | None:

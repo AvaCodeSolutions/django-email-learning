@@ -2,7 +2,7 @@ import { useState } from 'react'
 import render from '../../src/render.jsx';
 import Layout from '../components/Layout.jsx';
 import EnrollmentForm from '../components/EnrollmentForm.jsx';
-import { Box, Button, Card, Chip, Dialog, List, ListItem, ListItemIcon, ListItemText, Stack, Typography } from '@mui/material';
+import { Box, Button, Card, Chip, Container, Dialog, Link, List, ListItem, ListItemIcon, ListItemText, Stack, Typography } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { alpha, ThemeProvider } from '@mui/material/styles';
 import { useAppContext } from '../../src/render.jsx';
@@ -112,20 +112,21 @@ function Course() {
                 >
                     <Stack spacing={1.5} direction={courseDirection === 'rtl' ? 'row-reverse' : 'row'} alignItems="center">
                         {organization.logo_url && (
-                            <Box
-                                component="img"
-                                src={organization.logo_url}
-                                alt={`${organization.name} Logo`}
-                                sx={{
-                                    maxWidth: 120,
+                            <Link href={organization.public_url} target="_blank" rel="noopener noreferrer">
+                                <Box
+                                    component="img"
+                                    src={organization.logo_url}
+                                    alt={`${organization.name} Logo`}
+                                    sx={{
+                                        maxWidth: 120,
                                     height: 'auto',
                                     borderRadius: 1,
                                 }}
-                            />
+                            /></Link>
                         )}
                         <Stack spacing={0.5} sx={{ flex: 1, direction: courseDirection }}>
                             <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>
-                                {localeMessages['provided_by'].replace('ORGANIZATION_NAME', organization.name)}
+                                <span dangerouslySetInnerHTML={{ __html: localeMessages['provided_by'].replace('ORGANIZATION_NAME', `<a href="${organization.public_url}" rel="noopener noreferrer">${organization.name}</a>`) }} />
                             </Typography>
                             {organization.description && (
                                 <Typography
@@ -196,26 +197,39 @@ function Course() {
             </Box>
         )}
 
-        {/* Enrollment Section */}
+        {/* Spacer to prevent content from being hidden behind fixed bar */}
+        <Box sx={{ pb: 10 }} />
+
+        {/* Enrollment Section - Fixed bottom bar */}
         <Box
             sx={{
-                p: { xs: 2, md: 3 },
-                borderRadius: 2,
+                position: 'fixed',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                zIndex: 1100,
+                px: { xs: 2, md: 4 },
+                py: 1.5,
                 backgroundColor: (theme) => theme.palette.mode === 'light'
-                    ? alpha(theme.palette.primary.main, 0.08)
+                    ? alpha("#fff", 0.75)
                     : alpha(theme.palette.primary.main, 0.15),
-                textAlign: courseDirection === 'rtl' ? 'right' : 'left',
+                backdropFilter: 'blur(7px)',
+                borderTop: '1px solid',
+                borderColor: 'border.main',
                 direction: courseDirection,
             }}
         >
-            <Stack spacing={2} alignItems={courseDirection === 'rtl' ? 'flex-end' : 'flex-start'}>
-                <Typography variant="h3">
-                    {localeMessages['ready_to_learn'] || 'Ready to Get Started?'}
+            <Container maxWidth="lg">
+            <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+                spacing={2}
+            >
+                <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                    {course.title}
                 </Typography>
-                <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                    {localeMessages['enrollment_intro'] || 'Enroll now to begin your learning journey with this course.'}
-                </Typography>
-                <Box sx={{ pt: 1 }}>
+                <Box>
                     {enrolled ? (
                         <Chip
                             label={localeMessages['enrollment_success']}
@@ -236,6 +250,7 @@ function Course() {
                     )}
                 </Box>
             </Stack>
+            </Container>
         </Box>
 
         <Dialog open={displayModal} onClose={() => setDisplayModal(false)} fullWidth maxWidth="sm">

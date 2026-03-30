@@ -88,6 +88,14 @@ class Organization(models.Model):
     def __str__(self) -> str:
         return self.name
 
+    @property
+    def public_url(self) -> str:
+        path = reverse(
+            "django_email_learning:public:organization_view",
+            kwargs={"organization_id": self.id},
+        )
+        return f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{path}"
+
     def replace_logo(self, file_path: str) -> str:
         if default_storage.exists(file_path):
             allowed_extensions = [".jpg", ".jpeg", ".png", ".svg"]
