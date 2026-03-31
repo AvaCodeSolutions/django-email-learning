@@ -65,6 +65,11 @@ const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, o
             })
             .then(response => {
                 if (!response.ok) {
+                    if (response.status === 403) {
+                        // CSRF token might be missing or invalid, prompt user to reload
+                        setShowReloadDialog(true);
+                        return;
+                    }
                     throw new Error('Network response was not ok');
                 }
                 return response.json();
