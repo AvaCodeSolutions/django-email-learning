@@ -44,6 +44,7 @@ const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, o
             setIsProcessing(true);
             fetch(endpoint, {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': csrfToken || getCookie('csrftoken'),
@@ -72,7 +73,7 @@ const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, o
         }
     }
 
-    return (<Box sx={{padding: 4, minWidth: '400px'}}>
+    return (<Box sx={{padding: 4}}>
         <Typography variant='h3'> {localeMessages['enrol_for_course'].replace('COURSE_NAME', course_title)}</Typography>
         { isProcessing ? <Typography variant='body1' sx={{ mt: 2 }}><CircularProgress enableTrackSlot size="30px" /></Typography> : <>
         {errorMessage && <Alert severity="error" sx={{ mt: 2 }}>{errorMessage}</Alert>}
