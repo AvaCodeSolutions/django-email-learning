@@ -15,7 +15,7 @@ function Course() {
     const [modalContent, setModalContent] = useState(null);
     const [enrolled, setEnrolled] = useState(false);
 
-    const { course, organization, enrollApiUrl, localeMessages, csrfToken } = useAppContext();
+    const { course, organization, enrollApiUrl, localeMessages } = useAppContext();
 
     const courseDirection = course.is_rtl ? 'rtl' : 'ltr';
 
@@ -29,7 +29,6 @@ function Course() {
                 autoFocusEmail={true}
                 onCancle={() => { setDisplayModal(false); setModalContent(null); }}
                 onComplete={() => completeEnrollment()}
-                csrfToken={csrfToken}
             />
         );
         setDisplayModal(true);
