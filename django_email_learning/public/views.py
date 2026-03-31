@@ -1,6 +1,7 @@
 from django.views.generic import TemplateView
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.middleware.csrf import get_token
 from django.db.models import Prefetch
 from django_email_learning.models import Organization, Course
 from django.utils.translation import get_language_info, get_language
@@ -44,6 +45,7 @@ class OrganizationView(TemplateView):
     template_name = "public/organization.html"
 
     def get_context_data(self, **kwargs) -> dict:  # type: ignore[no-untyped-def]
+        get_token(self.request)  # Ensure CSRF token is set in cookies
         organization_id: int = kwargs.get("organization_id")  # type: ignore[assignment]
         context = super().get_context_data(**kwargs)
         # Add any additional context if needed
@@ -130,6 +132,7 @@ class CourseView(TemplateView):
     template_name = "public/course.html"
 
     def get_context_data(self, **kwargs) -> dict:  # type: ignore[no-untyped-def]
+        get_token(self.request)  # Ensure CSRF token is set in cookies
         course_slug: str = kwargs.get("course_slug")  # type: ignore[assignment]
         organization_id: int = kwargs.get("organization_id")  # type: ignore[assignment]
         context = super().get_context_data(**kwargs)
@@ -172,7 +175,6 @@ class CourseView(TemplateView):
         current_lang_code = get_language()
         lang_info = get_language_info(current_lang_code)
         context["appContext"] = {
-            "csrfToken": self.request.COOKIES.get("csrftoken", ""),
             "course": course_data.model_dump(),
             "organization": organization_data.model_dump(),
             "enrollApiUrl": f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{enroll_api_path}",
