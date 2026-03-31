@@ -1,5 +1,5 @@
-import React from 'react';
-import { Alert, Box, Button, CircularProgress, Typography } from '@mui/material';
+import React, { useEffect } from 'react';
+import { Alert, Box, Button, CircularProgress, Typography, Dialog } from '@mui/material';
 import RequiredTextField from  '../../src/components/RequiredTextField.jsx';
 import { getCookie } from '../../src/utils.js';
 import { useAppContext } from '../../src/render.jsx';
@@ -10,7 +10,15 @@ const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, o
     const emailRef = React.useRef('');
     const [errorMessage, setErrorMessage] = React.useState('');
     const [isProcessing, setIsProcessing] = React.useState(false);
+    const [csrfToken, setCsrfToken] = React.useState(getCookie('csrftoken'));
+    const [showReloadDialog, setShowReloadDialog] = React.useState(false);
     const { localeMessages } = useAppContext();
+
+    useEffect(() => {
+        if (!csrfToken) {
+            setShowReloadDialog(true);
+        }
+    }, []);
 
     React.useEffect(() => {
         if (!autoFocusEmail) {
@@ -47,7 +55,7 @@ const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, o
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-CSRFToken': csrfToken,
                 },
                 body: JSON.stringify({
                     email: emailRef.current.value,
@@ -92,7 +100,17 @@ const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, o
         </Button>
         </Box>
         </>}
-        </Box>);
+        <Dialog open={showReloadDialog} onClose={() => setShowReloadDialog(false)}>
+            <Box sx={{ padding: 4 }}>
+                <Typography variant='h6'>{localeMessages['in_app_browser_or_disabled_cookies']}</Typography>
+                <Button variant="contained" color="primary" onClick={() => window.location.reload()}>
+                    {localeMessages['continue']}
+                </Button>
+            </Box>
+        </Dialog>
+        </Box>
+
+    );
 
 };
 

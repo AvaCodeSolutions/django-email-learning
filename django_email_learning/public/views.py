@@ -108,6 +108,10 @@ class OrganizationView(TemplateView):
                     "email_required": _("Email is required"),
                     "email_invalid": _("Please enter a valid email address"),
                     "course_language": _("Course language"),
+                    "in_app_browser_or_disabled_cookies": _(
+                        "It seems you are using an in-app browser or have disabled cookies. Please open this link in a regular browser and ensure cookies are enabled to enroll in courses."
+                    ),
+                    "continue": _("Continue"),
                 },
             }
             context["organization_name"] = organization.name
@@ -194,6 +198,10 @@ class CourseView(TemplateView):
                     "Here is the list of topics covered in this course:"
                 ),
                 "provided_by": _("Provided by ORGANIZATION_NAME"),
+                "in_app_browser_or_disabled_cookies": _(
+                    "It seems you are using an in-app browser or have disabled cookies. Please open this link in a regular browser and ensure cookies are enabled to enroll in courses."
+                ),
+                "continue": _("Continue"),
             },
         }
         context["course_title"] = course.title
