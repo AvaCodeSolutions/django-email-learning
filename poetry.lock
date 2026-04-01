@@ -2028,14 +2028,14 @@ files = [
 
 [[package]]
 name = "types-qrcode"
-version = "8.2.0.20250914"
+version = "8.2.0.20260322"
 description = "Typing stubs for qrcode"
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "types_qrcode-8.2.0.20250914-py3-none-any.whl", hash = "sha256:6b992d62f05c2df0422507c5307ddd969c0a4d2ab23863c4217f96226710c308"},
-    {file = "types_qrcode-8.2.0.20250914.tar.gz", hash = "sha256:fc82e0112095c60c0ef3e403ab2a604a9ae1929c70fb0e708bc1ebfe8ca5c45e"},
+    {file = "types_qrcode-8.2.0.20260322-py3-none-any.whl", hash = "sha256:91ddf8b648dd4b69b934aeb41a402a87f3cb50a678ec704b7d3fc75e21173288"},
+    {file = "types_qrcode-8.2.0.20260322.tar.gz", hash = "sha256:bb8f976104b58bb198458b99fa9432f761947eb649b2712dcf8baf6c411af200"},
 ]
 
 [package.dependencies]
