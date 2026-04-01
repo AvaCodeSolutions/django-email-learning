@@ -2,7 +2,7 @@ import { useState } from 'react'
 import render from '../../src/render.jsx';
 import Layout from '../components/Layout.jsx';
 import EnrollmentForm from '../components/EnrollmentForm.jsx';
-import { Box, Button, Card, Chip, Container, Dialog, Link, List, ListItem, ListItemIcon, ListItemText, Stack, Typography } from '@mui/material';
+import { Box, Button, Card, Chip, Container, Dialog, Grid, Link, List, ListItem, ListItemIcon, ListItemText, Stack, Typography } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { alpha, ThemeProvider } from '@mui/material/styles';
 import { useAppContext } from '../../src/render.jsx';
@@ -109,7 +109,9 @@ function Course() {
                         direction: courseDirection,
                     }}
                 >
-                    <Stack spacing={1.5} direction={courseDirection === 'rtl' ? 'row-reverse' : 'row'} alignItems="center">
+                    <Grid container spacing={2}>
+                    <Grid  size={{ xs: 12, md: 3 }} sx={{ mx: 'auto', textAlign: 'center' }}>
+
                         {organization.logo_url && (
                             <Link href={organization.public_url} target="_blank" rel="noopener noreferrer">
                                 <Box
@@ -123,7 +125,9 @@ function Course() {
                                 }}
                             /></Link>
                         )}
-                        <Stack spacing={0.5} sx={{ flex: 1, direction: courseDirection }}>
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 9 }} sx={{ mx: 'auto', mt: 2 }}>
+
                             <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>
                                 <span dangerouslySetInnerHTML={{ __html: localeMessages['provided_by'].replace('ORGANIZATION_NAME', `<a href="${organization.public_url}" rel="noopener noreferrer">${organization.name}</a>`) }} />
                             </Typography>
@@ -134,8 +138,8 @@ function Course() {
                                     dangerouslySetInnerHTML={{ __html: organization.description }}
                                 />
                             )}
-                        </Stack>
-                    </Stack>
+                        </Grid>
+                    </Grid>
                 </Box>
             </Stack>
         </Box>
