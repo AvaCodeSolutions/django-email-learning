@@ -105,3 +105,15 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
                 "content_id": content_id,
             },
         )
+
+    def imap_command_handling_failed(
+        self, imap_connection_id: int, organization_id: int
+    ) -> None:
+        logger.warning(
+            "IMAP command handling failed",
+            extra={
+                "metric": "imap_command_handling_failed",
+                "imap_connection_id": imap_connection_id,
+                "organization_id": organization_id,
+            },
+        )

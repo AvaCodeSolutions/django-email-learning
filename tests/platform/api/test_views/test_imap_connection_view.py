@@ -52,6 +52,7 @@ def test_create_imap_connection_success(superadmin_client):
         "password": "aSafePassword123!",
         "server": "imap.example.com",
         "port": 993,
+        "folders": ["inbox"],
     }
     response = superadmin_client.post(
         get_url(1), data=payload, content_type="application/json"
@@ -62,3 +63,18 @@ def test_create_imap_connection_success(superadmin_client):
     assert response.json()["server"] == payload["server"]
     assert response.json()["port"] == payload["port"]
     assert response.json()["organization_id"] == 1
+
+
+def test_create_imap_connection_without__inbox_folder(superadmin_client):
+    payload = {
+        "email": "user@example.com",
+        "password": "aSafePassword123!",
+        "server": "imap.example.com",
+        "port": 993,
+        "folders": ["spam"],
+    }
+    response = superadmin_client.post(
+        get_url(1), data=payload, content_type="application/json"
+    )
+    assert response.status_code == 400
+    assert "Folders list must contain 'inbox'." in response.json()["error"]

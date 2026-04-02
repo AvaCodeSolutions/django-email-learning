@@ -1,12 +1,14 @@
-import { Alert, Box, Button, MenuItem, Tooltip} from '@mui/material';
+import { Alert, Box, Button, IconButton, MenuItem, Tooltip, FormControlLabel, Switch} from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import RequiredTextField  from '../../../src/components/RequiredTextField.jsx';
+import AddImapConnectionForm from '../components/AddImapConnectionForm.jsx';
 import { useAppContext } from '../../../src/render.jsx';
 import ImageUpload from '../../../src/components/ImageUpload.jsx';
 import { useEffect, useState } from 'react';
 import { getCookie } from '../../../src/utils.js';
 
 function CourseForm({successCallback, failureCallback, cancelCallback, activeOrganizationId, createMode, courseId}) {
-    const { localeMessages, apiBaseUrl, languageOptions = [] } = useAppContext();
+    const { localeMessages, apiBaseUrl, direction, languageOptions = [] } = useAppContext();
     const [courseTitle, setCourseTitle] = useState("")
     const [courseSlug, setCourseSlug] = useState("")
     const [courseDescription, setCourseDescription] = useState("")
@@ -223,8 +225,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                                 ))}
                             </RequiredTextField>
               <RequiredTextField label={localeMessages["course_description"]} helperText={descriptionHelperText} fullWidth margin="normal" multiline rows={4} value={courseDescription} onChange={(e) => setCourseDescription(e.target.value)} />
-              {/* Imap Form is commented for now since it's backend command still not implemented but the API and UI works as expected */}
-              {/* <FormControlLabel
+              <FormControlLabel
                 control={<Switch onChange={() => switchImapConnection()} checked={addImapConnection} dir={direction} />}
                 label={localeMessages["add_imap_connection"]} sx={{ m: 0 }} />
                 <Tooltip title={localeMessages["imap_connection_tooltip"]}>
@@ -240,7 +241,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                         activeOrganizationId={activeOrganizationId}
                         initialImapConnectionId={imapConnectionId}
                     />
-              </Box>} */}
+              </Box>}
               <Box>
                 <ImageUpload initialUrl={imageUrl} onUploadSuccess={(data) => {
                     setImageUrl(data.file_url);

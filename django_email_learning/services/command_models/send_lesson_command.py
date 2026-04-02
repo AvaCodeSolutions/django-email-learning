@@ -55,6 +55,8 @@ class SendLessonCommand(AbstractCommand):
             "unsubscribe_link": content.course.generate_unsubscribe_link(self.email),
             "progress": progress,
             "next_content": next_content,
+            "course_slug": content.course.slug,
+            "support_imap_interface": content.course.imap_connection is not None,
         }
         payload = render_to_string("emails/lesson.txt", context)
 

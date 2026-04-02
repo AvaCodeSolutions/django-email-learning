@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "django_email_learning.ai",
     "corsheaders",
     "django_vite",
+    "django_service",
 ]
 
 MIDDLEWARE = [

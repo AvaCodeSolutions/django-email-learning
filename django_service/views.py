@@ -44,10 +44,13 @@ class EmailTemplatePreview(TemplateView):
         )
         return {
             "course_title": "Example Course",
+            "course_slug": "example-course",
             "organization_name": "Example Organization",
             "course_image_url": "/static/src/assets/sample.jpg",
-            "support_imap_interface": False,
+            "support_imap_interface": True,
             "verification_link": "https://example.com/verify",
+            "verification_code": "ABC123",
+            "imap_email_address": "test@test.com",
             "lesson": lesson,
             "quiz": quiz,
             "unsubscribe_link": "https://example.com/unsubscribe",
