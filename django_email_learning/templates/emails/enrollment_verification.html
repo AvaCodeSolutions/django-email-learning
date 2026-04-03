@@ -23,13 +23,8 @@
         <div class="email-panel border-brand">
             <h4 class="color-brand" style="margin-top: 0;">{% translate "Alternative Verification Method" %}</h4>
             <p class="email-paragraph" style="margin-bottom: 15px;">
-                {% blocktranslate %}You can also verify your email by sending a message to <strong style="color: #495057;">{{ imap_email_address }}</strong>{% endblocktranslate %}
-                {% translate "with your verification code in the subject line or email body." %}
-                {% translate "Simply forward this email to complete the verification process." %}
-            </p>
-            <p class="email-code-box">
-                {% translate "Verification Code:" %}
-                <span style="font-family: 'Courier New', monospace; font-size: 18px; font-weight: bold;">{{ verification_code }}</span>
+                {% blocktranslate %}You can also verify your email by sending an email to <strong style="color: #495057;">{{ imap_email_address }}</strong>{% endblocktranslate %}
+                {% blocktranslate %}The subject line should start with <b>verify {{ verification_code }}</b>{% endblocktranslate %}
             </p>
         </div>
         {% endif %}

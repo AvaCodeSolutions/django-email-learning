@@ -35,6 +35,7 @@ class EnrollCommand(AbstractCommand):
     course_slug: str
     organization_id: int
     no_verification: bool = False
+    case_insensitive_course_slug: bool = False
 
     def execute(self) -> None:
         metric_service = MetricsService()
@@ -55,11 +56,18 @@ class EnrollCommand(AbstractCommand):
             )
 
         try:
-            course = Course.objects.get(
-                slug=self.course_slug,
-                organization_id=self.organization_id,
-                enabled=True,
-            )
+            if self.case_insensitive_course_slug:
+                course = Course.objects.get(
+                    slug__iexact=self.course_slug,
+                    organization_id=self.organization_id,
+                    enabled=True,
+                )
+            else:
+                course = Course.objects.get(
+                    slug=self.course_slug,
+                    organization_id=self.organization_id,
+                    enabled=True,
+                )
         except Course.DoesNotExist:
             self.logger.error(
                 f"Enrollment Failed: Invalid course slug '{self.course_slug}' for organization ID {self.organization_id}"

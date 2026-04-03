@@ -22,13 +22,20 @@ class UnsubscribeCommand(AbstractCommand):
     email: str
     course_slug: str
     organization_id: int
+    case_insensitive_course_slug: bool = False
 
     def execute(self) -> None:
         metric_service = MetricsService()
         try:
-            course = Course.objects.get(
-                slug=self.course_slug, organization_id=self.organization_id
-            )
+            if self.case_insensitive_course_slug:
+                course = Course.objects.get(
+                    slug__iexact=self.course_slug,
+                    organization_id=self.organization_id,
+                )
+            else:
+                course = Course.objects.get(
+                    slug=self.course_slug, organization_id=self.organization_id
+                )
         except Course.DoesNotExist:
             self.logger.error(
                 f"Unsubscribe Failed: Invalid course slug '{self.course_slug}' for organization ID {self.organization_id}"

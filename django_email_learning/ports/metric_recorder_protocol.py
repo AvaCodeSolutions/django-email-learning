@@ -35,3 +35,8 @@ class MetricRecorderProtocol(Protocol):
 
     def delivery_schedule_blocked(self, content_id: int) -> None:
         ...
+
+    def imap_command_handling_failed(
+        self, imap_connection_id: int, organization_id: int
+    ) -> None:
+        ...

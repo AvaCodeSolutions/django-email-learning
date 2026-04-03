@@ -59,3 +59,10 @@ class MetricsService:
 
     def delivery_schedule_blocked(self, content_id: int) -> None:
         self.metric_recorder.delivery_schedule_blocked(content_id)
+
+    def imap_command_handling_failed(
+        self, imap_connection_id: int, organization_id: int
+    ) -> None:
+        self.metric_recorder.imap_command_handling_failed(
+            imap_connection_id, organization_id
+        )

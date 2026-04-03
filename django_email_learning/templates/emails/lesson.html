@@ -63,6 +63,9 @@
 
         <p class="email-muted-note">
             {% blocktranslate %}If you wish to unsubscribe from this course, please <a href="{{ unsubscribe_link }}" class="color-brand" style="text-decoration: none;">click here</a>{% endblocktranslate %}.
+            {% if support_imap_interface %}
+                {% blocktranslate %}Alternatively, you can also send an email with the subject <b>drop {{ course_slug }}</b> to {{ imap_email_address }}.{% endblocktranslate %}
+            {% endif %}
         </p>
 {% endblock %}
 

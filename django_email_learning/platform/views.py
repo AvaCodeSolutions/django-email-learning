@@ -175,7 +175,7 @@ class Courses(BasePlatformView):
             "slug_no_space": _("Slug cannot contain spaces. Use hyphens instead."),
             "add_imap_connection": _("Add IMAP Connection"),
             "imap_connection_tooltip": _(
-                "You don't need an IMAP connection to build your course, but you will need one if you want your users to interact via email. For example, they can sign up or check their progress just by sending a message. This is a great solution if your audience has limited platform access."
+                "You don't need an IMAP connection to build your course, but you will need one if you want your users to interact via email. For example, they can enroll, verify their enrollmnent or drop out just by sending a message. This is a great solution if your audience has limited platform access."
             ),
             "new_imap_connection": _("New IMAP Connection"),
             "imap_connection": _("IMAP Connection"),
@@ -209,6 +209,9 @@ class Courses(BasePlatformView):
             "upload_button_label": _("Upload Image"),
             "remove_image": _("Remove Image"),
             "uploaded_image_alt": _("Course Image"),
+            "add_folder_helper_text": _(
+                "Add folders to fetch emails from. The 'inbox' folder is required and will always be included."
+            ),  # noqa: E501
         }
 
 

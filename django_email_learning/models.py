@@ -197,6 +197,16 @@ class ImapConnection(EncryptionMixin):
         super().save(*args, **kwargs)
 
 
+class InboxFolder(models.Model):
+    imap_connection = models.ForeignKey(
+        ImapConnection, on_delete=models.CASCADE, related_name="folders"
+    )
+    folder_name = models.CharField(max_length=200)
+
+    def __str__(self) -> str:
+        return f"{self.imap_connection.email} - {self.folder_name}"
+
+
 class Course(models.Model):
     title = models.CharField(max_length=200)
     slug = models.SlugField(
@@ -507,6 +517,9 @@ class Learner(models.Model):
 
     class Meta:
         unique_together = [["organization", "email"]]
+
+    def __str__(self) -> str:
+        return self.email
 
 
 class Enrollment(models.Model):
@@ -885,6 +898,9 @@ class QuizSubmission(models.Model):
             )
         self.full_clean()
         super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return f"{self.delivery.course_content.quiz.title} | {self.delivery.enrollment.learner.email} | Score: {self.score} | Passed: {self.is_passed}"  # type: ignore[union-attr]
 
 
 class ApiKey(EncryptionMixin):

@@ -1,5 +1,5 @@
 import RequiredTextField from "../../../src/components/RequiredTextField"
-import { Alert, Box, Button } from "@mui/material"
+import { Alert, Box, Button, Chip, Stack, TextField, Tooltip } from "@mui/material"
 import { useState } from "react"
 import { useAppContext } from '../../../src/render.jsx';
 import { getCookie } from '../../../src/utils';
@@ -12,6 +12,9 @@ const CreateImapForm = ({ onSuccess, activeOrganizationId }) => {
     const [server, setServer] = useState("");
     const [serverHelperText, setServerHelperText] = useState("");
     const [port, setPort] = useState("");
+    const [folders, setFolders] = useState(["inbox"]);
+    const [folderInput, setFolderInput] = useState("");
+    const [folderHelperText, setFolderHelperText] = useState("");
     const [portHelperText, setPortHelperText] = useState("");
     const [password, setPassword] = useState("");
     const [passwordHelperText, setPasswordHelperText] = useState("");
@@ -34,7 +37,8 @@ const CreateImapForm = ({ onSuccess, activeOrganizationId }) => {
                 email: email,
                 password: password,
                 server: server,
-                port: port
+                port: port,
+                folders: folders.includes("inbox") ? folders : ["inbox", ...folders],
             }),
         })
         .then((response) => {
@@ -64,6 +68,28 @@ const CreateImapForm = ({ onSuccess, activeOrganizationId }) => {
     const isValidEmail = (email) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
+    }
+
+    const handleAddFolder = () => {
+        const normalizedFolder = folderInput.trim();
+        if (!normalizedFolder) {
+            setFolderHelperText("Folder name cannot be empty.");
+            return;
+        }
+        if (folders.includes(normalizedFolder)) {
+            setFolderHelperText("Folder already added.");
+            return;
+        }
+        setFolders((prevFolders) => [...prevFolders, normalizedFolder]);
+        setFolderInput("");
+        setFolderHelperText("");
+    }
+
+    const handleRemoveFolder = (folderToRemove) => {
+        if (folderToRemove === "inbox") {
+            return;
+        }
+        setFolders((prevFolders) => prevFolders.filter((folder) => folder !== folderToRemove));
     }
 
     const validateForm = () => {
@@ -107,6 +133,45 @@ const CreateImapForm = ({ onSuccess, activeOrganizationId }) => {
         <RequiredTextField label={localeMessages["password"]} helperText={passwordHelperText} type="password" fullWidth sx={{ marginTop: 2 }} value={password} onChange={(e) => setPassword(e.target.value)} />
         <RequiredTextField label={localeMessages["server"]} helperText={serverHelperText} fullWidth sx={{ marginTop: 2 }} value={server} onChange={(e) => setServer(e.target.value)} />
         <RequiredTextField label={localeMessages["port"]} helperText={portHelperText} fullWidth sx={{ marginTop: 2 }} value={port} onChange={(e) => setPort(e.target.value)} />
+        <Box mt={2}>
+            <Stack direction="row" spacing={1}>
+                <Tooltip title={localeMessages["add_folder_helper_text"]}>
+                <TextField
+                    label="Add folder"
+                    size="small"
+                    fullWidth
+                    value={folderInput}
+                    onChange={(e) => {
+                        setFolderInput(e.target.value);
+                        if (folderHelperText) {
+                            setFolderHelperText("");
+                        }
+                    }}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddFolder();
+                        }
+                    }}
+                    helperText={folderHelperText || "'inbox' is required and cannot be removed."}
+                    error={Boolean(folderHelperText)}
+                /></Tooltip>
+                <Button variant="outlined" size="small" onClick={handleAddFolder} sx={{ boxShadow: 'none', height: '40px' }}>
+                    {localeMessages["add"]}
+                </Button>
+            </Stack>
+            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ marginTop: 1.5 }}>
+                {folders.map((folder) => (
+                    <Chip
+                        key={folder}
+                        label={folder}
+                        color={folder === "inbox" ? "primary" : "default"}
+                        variant={folder === "inbox" ? "filled" : "outlined"}
+                        onDelete={folder === "inbox" ? undefined : () => handleRemoveFolder(folder)}
+                    />
+                ))}
+            </Stack>
+        </Box>
         <Box mt={2} textAlign="right">
             <Button variant="contained" onClick={() => handleCreateImap()} sx={{ boxShadow: 'none' }}>
                 {localeMessages["add"]}
