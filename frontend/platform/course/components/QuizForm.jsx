@@ -291,7 +291,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                 </Box>
             ) }
             <Box>
-                { questions.map((question, index) => (
+                { [...questions].reverse().map((question, index) => (
                     <QuestionForm key={question._clientId} index={index} question={question} eventHandler={questionEventHandler} />
                 )) }
             </Box>
@@ -403,7 +403,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                 </Grid>
             </Box>
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', position: 'sticky', bottom: 0, backgroundColor: 'background.paper', py: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', position: 'sticky', bottom: 0, backgroundColor: 'background.paper', py: 2, zIndex: 99 }}>
                 <Button variant="outlined" sx={{ mr: 1, boxShadow: 'none' }} onClick={cancel}>
                     {localeMessages["back"]}
                 </Button>
