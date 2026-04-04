@@ -225,6 +225,7 @@ class Course(models.Model):
         choices=LANGUAGES,
         default="en",
     )
+    target_audience = models.TextField(null=True, blank=True)
 
     def __str__(self) -> str:
         return self.title
@@ -294,6 +295,17 @@ class Course(models.Model):
             return final_path
         else:
             raise ValueError("Image file does not exist.")
+
+
+class ExternalReference(models.Model):
+    course = models.ForeignKey(
+        Course, on_delete=models.CASCADE, related_name="external_references"
+    )
+    name = models.CharField(max_length=200)
+    url = models.URLField(max_length=500)
+
+    def __str__(self) -> str:
+        return f"{self.course.title} - {self.name}"
 
 
 class Lesson(models.Model):

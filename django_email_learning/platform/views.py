@@ -167,6 +167,15 @@ class Courses(BasePlatformView):
             "update": _("Update"),
             "course_title": _("Course Title"),
             "course_description": _("Course Description"),
+            "target_audience": _("Target Audience"),
+            "external_references": _("External References"),
+            "add_external_reference": _("Add Reference"),
+            "external_references_helper_text": _(
+                "Add up to 10 optional links for learners, such as docs, repos, or supporting resources."
+            ),
+            "reference_name": _("Reference Name"),
+            "reference_url": _("Reference URL"),
+            "remove": _("Remove"),
             "course_slug": _("Course Slug"),
             "course_language": _("Course Language"),
             "slug_tooltip": _(
@@ -196,6 +205,12 @@ class Courses(BasePlatformView):
             "title_required_helper_text": _("The course title is required."),
             "description_required_helper_text": _(
                 "The course description is required."
+            ),
+            "reference_name_required_helper_text": _(
+                "A reference name is required when a reference link is provided."
+            ),
+            "reference_url_required_helper_text": _(
+                "A valid reference URL is required when a reference name is provided."
             ),
             "slug_required_helper_text": _("The course slug is required."),
             "language_required_helper_text": _("The course language is required."),

@@ -29,6 +29,27 @@ def test_create_course_success(superadmin_client):
     assert response.json()["is_rtl"] is False
 
 
+def test_create_course_with_target_audience_and_external_references(superadmin_client):
+    payload = valid_create_course_payload()
+    payload["target_audience"] = "Beginners with no prior programming experience."
+    payload["external_references"] = [
+        {
+            "name": "GitHub Repository",
+            "url": "https://github.com/AvaCodeSolutions/django-email-learning",
+        },
+        {
+            "name": "Documentation",
+            "url": "https://django-email-learning.readthedocs.io/",
+        },
+    ]
+    response = superadmin_client.post(
+        get_url(1), json.dumps(payload), content_type="application/json"
+    )
+    assert response.status_code == 201
+    assert response.json()["target_audience"] == payload["target_audience"]
+    assert response.json()["external_references"] == payload["external_references"]
+
+
 def test_create_course_not_authenticated(anonymous_client):
     payload = valid_create_course_payload()
     response = anonymous_client.post(
@@ -232,6 +253,79 @@ def test_update_course_success(superadmin_client):
     assert update_response.json()["title"] == update_payload["title"]
     assert update_response.json()["description"] == update_payload["description"]
     assert update_response.json()["enabled"] == update_payload["enabled"]
+
+
+def test_update_course_with_target_audience_and_external_references(superadmin_client):
+    # First, create a course to update
+    create_payload = valid_create_course_payload()
+    create_response = superadmin_client.post(
+        get_url(1), json.dumps(create_payload), content_type="application/json"
+    )
+    assert create_response.status_code == 201
+    course_id = create_response.json()["id"]
+
+    # Now, update the created course with target audience and external references
+    update_payload = valid_update_course_payload()
+    update_payload[
+        "target_audience"
+    ] = "Beginners with no prior programming experience."
+    update_payload["external_references"] = [
+        {
+            "name": "GitHub Repository",
+            "url": "https://github.com/AvaCodeSolutions/django-email-learning",
+        },
+        {
+            "name": "Documentation",
+            "url": "https://django-email-learning.readthedocs.io/",
+        },
+    ]
+    update_url = reverse(
+        "django_email_learning:api_platform:single_course_view",
+        kwargs={"organization_id": 1, "course_id": course_id},
+    )
+    update_response = superadmin_client.post(
+        update_url, json.dumps(update_payload), content_type="application/json"
+    )
+    assert update_response.status_code == 200
+    assert update_response.json()["id"] == course_id
+    assert (
+        update_response.json()["target_audience"] == update_payload["target_audience"]
+    )
+    assert (
+        update_response.json()["external_references"]
+        == update_payload["external_references"]
+    )
+
+
+def test_update_course_replaces_external_references(superadmin_client):
+    create_payload = valid_create_course_payload()
+    create_payload["external_references"] = [
+        {"name": "Old Docs", "url": "https://example.com/old-docs"},
+        {"name": "Old Repo", "url": "https://example.com/old-repo"},
+    ]
+    create_response = superadmin_client.post(
+        get_url(1), json.dumps(create_payload), content_type="application/json"
+    )
+    assert create_response.status_code == 201
+    course_id = create_response.json()["id"]
+
+    update_payload = valid_update_course_payload()
+    update_payload["external_references"] = [
+        {"name": "Updated Docs", "url": "https://example.com/new-docs"}
+    ]
+    update_url = reverse(
+        "django_email_learning:api_platform:single_course_view",
+        kwargs={"organization_id": 1, "course_id": course_id},
+    )
+    update_response = superadmin_client.post(
+        update_url, json.dumps(update_payload), content_type="application/json"
+    )
+
+    assert update_response.status_code == 200
+    assert (
+        update_response.json()["external_references"]
+        == update_payload["external_references"]
+    )
 
 
 def test_slug_change_not_allowed(superadmin_client):

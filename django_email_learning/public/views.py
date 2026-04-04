@@ -1,3 +1,5 @@
+import json
+
 from django.views.generic import TemplateView
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -15,9 +17,9 @@ from django_email_learning.public.serializers import (
 )
 
 
-def json_ld_from(
+def build_organization_courses_json_ld(
     courses: list[PublicCourseSerializer], organization: Organization
-) -> dict:
+) -> str:
     course_list = []
     for course in courses:
         course_data = {
@@ -33,11 +35,57 @@ def json_ld_from(
         if course.image:
             course_data["image"] = course.image
         course_list.append(course_data)
-    return {
+    return json.dumps(
+        {
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "itemListElement": course_list,
+        }
+    )
+
+
+def build_single_course_json_ld(  # type: ignore[no-untyped-def]
+    course: Course,
+    course_data: PublicCourseSerializer,
+    request,
+) -> str:
+    course_json_ld: dict[str, object] = {
         "@context": "https://schema.org",
-        "@type": "ItemList",
-        "itemListElement": course_list,
+        "@type": "Course",
+        "name": course.title,
+        "description": course.description,
+        "url": request.build_absolute_uri(),
+        "inLanguage": course.language,
+        "provider": {
+            "@type": "Organization",
+            "name": course.organization.name,
+        },
     }
+
+    if course_data.image:
+        course_json_ld["image"] = course_data.image
+
+    if course.organization.public_url:
+        course_json_ld["provider"]["url"] = course.organization.public_url  # type: ignore[index]
+
+    if course.organization.logo:
+        course_json_ld["provider"]["logo"] = request.build_absolute_uri(  # type: ignore[index]
+            course.organization.logo.url
+        )
+
+    if course.organization.description:
+        course_json_ld["provider"]["description"] = course.organization.description  # type: ignore[index]
+
+    if course.target_audience:
+        course_json_ld["audience"] = {
+            "@type": "Audience",
+            "audienceType": course.target_audience,
+        }
+
+    if course_data.lessons:
+        course_json_ld["teaches"] = course_data.lessons
+
+    return json.dumps(course_json_ld)
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -123,7 +171,9 @@ class OrganizationView(TemplateView):
             )
 
             if len(courses) > 0:
-                context["json_ld"] = json_ld_from(courses, organization)
+                context["json_ld"] = build_organization_courses_json_ld(
+                    courses, organization
+                )
             context["page_title"] = organization.name
             return context
 
@@ -159,6 +209,12 @@ class CourseView(TemplateView):
             imap_email=None,
             language=course.language,
             is_rtl=course_lang_info["bidi"],
+            target_audience=course.target_audience,
+            external_references=[
+                {"name": ref.name, "url": ref.url}
+                for ref in course.external_references.all()
+            ]
+            or None,
             lessons=[
                 content.lesson.title  # type: ignore[union-attr]
                 for content in course.coursecontent_set.filter(
@@ -202,12 +258,19 @@ class CourseView(TemplateView):
                     "It seems you are using an in-app browser or have disabled cookies. Please open this link in a regular browser and ensure cookies are enabled to enroll in courses."
                 ),
                 "continue": _("Continue"),
+                "target_audience_title": _("Who is this course for?"),
+                "external_references_title": _("External References"),
             },
         }
         context["course_title"] = course.title
         context["course_description"] = course.description
         context["course_image_url"] = (
             self.request.build_absolute_uri(course.image.url) if course.image else None
+        )
+        context["json_ld"] = build_single_course_json_ld(
+            course=course,
+            course_data=course_data,
+            request=self.request,
         )
         context["organization_name"] = course.organization.name
         context["organization_description"] = course.organization.description

@@ -97,6 +97,24 @@ class CreateCourseRequest(BaseModel):
     imap_connection_id: Optional[int] = Field(None, examples=[1])
     image: Optional[str] = Field(None, examples=["/path/to/course_image.png"])
     language: str = Field(min_length=2, max_length=10, examples=["en"])
+    target_audience: Optional[str] = Field(
+        None, examples=["Beginners with no prior programming experience."]
+    )
+    external_references: Optional[list[dict[str, str]]] = Field(
+        None,
+        examples=[
+            [
+                {
+                    "name": "GitHub Repository",
+                    "url": "https://github.com/AvaCodeSolutions/django-email-learning",
+                },
+                {
+                    "name": "Documentation",
+                    "url": "https://django-email-learning.readthedocs.io/",
+                },
+            ]
+        ],
+    )
 
     def to_django_model(self, organization_id: int) -> Course:
         organization = Organization.objects.get(id=organization_id)
@@ -126,6 +144,12 @@ class CreateCourseRequest(BaseModel):
             course.imap_connection = imap_connection
         if self.image:
             course.replace_image(self.image)
+        if self.target_audience:
+            course.target_audience = self.target_audience
+        if self.external_references:
+            course.save()  # Save course before adding external references
+            for ref in self.external_references:
+                course.external_references.create(name=ref["name"], url=ref["url"])
         return course
 
 
@@ -142,6 +166,24 @@ class UpdateCourseRequest(BaseModel):
     reset_imap_connection: Optional[bool] = Field(None, examples=[False])
     image: Optional[str] = Field(None, examples=["/path/to/course_image.png"])
     language: Optional[str] = Field(None, min_length=2, max_length=10, examples=["en"])
+    target_audience: Optional[str] = Field(
+        None, examples=["Beginners with no prior programming experience."]
+    )
+    external_references: Optional[list[dict[str, str]]] = Field(
+        None,
+        examples=[
+            [
+                {
+                    "name": "GitHub Repository",
+                    "url": "https://github.com/AvaCodeSolutions/django-email-learning",
+                },
+                {
+                    "name": "Documentation",
+                    "url": "https://django-email-learning.readthedocs.io/",
+                },
+            ]
+        ],
+    )
 
     def to_django_model(self, course_id: int) -> Course:
         try:
@@ -171,6 +213,14 @@ class UpdateCourseRequest(BaseModel):
             course.image = None
         if self.language is not None:
             course.language = self.language
+        if self.target_audience is not None:
+            course.target_audience = self.target_audience
+        if self.external_references is not None:
+            course.save()  # Save course before adding external references
+            course.external_references.all().delete()
+            for ref in self.external_references:
+                course.external_references.create(name=ref["name"], url=ref["url"])
+
         return course
 
 
@@ -187,6 +237,8 @@ class CourseResponse(BaseModel):
     image_path: Optional[str] = None
     language: str
     is_rtl: bool = False
+    target_audience: Optional[str] = None
+    external_references: Optional[list[dict[str, str]]] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -211,6 +263,13 @@ class CourseResponse(BaseModel):
                 "image_path": course.image.name if course.image else None,
                 "language": course.language,
                 "is_rtl": language_info["bidi"],
+                "target_audience": course.target_audience,
+                "external_references": [
+                    {"name": ref.name, "url": ref.url}
+                    for ref in course.external_references.all()
+                ]
+                if course.external_references.exists()
+                else None,
             }
         )
 

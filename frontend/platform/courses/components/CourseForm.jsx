@@ -1,4 +1,4 @@
-import { Alert, Box, Button, IconButton, MenuItem, Tooltip, FormControlLabel, Switch} from '@mui/material';
+import { Alert, Box, Button, IconButton, MenuItem, Stack, TextField, Tooltip, FormControlLabel, Switch, Typography } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import RequiredTextField  from '../../../src/components/RequiredTextField.jsx';
 import AddImapConnectionForm from '../components/AddImapConnectionForm.jsx';
@@ -7,11 +7,34 @@ import ImageUpload from '../../../src/components/ImageUpload.jsx';
 import { useEffect, useState } from 'react';
 import { getCookie } from '../../../src/utils.js';
 
+const MAX_EXTERNAL_REFERENCES = 10;
+
+const createEmptyExternalReference = () => ({ name: '', url: '' });
+
+const normalizeExternalReferences = (references = []) => references
+    .map((reference) => ({
+        name: (reference?.name || '').trim(),
+        url: (reference?.url || '').trim(),
+    }))
+    .filter((reference) => reference.name || reference.url);
+
+const externalReferencesChanged = (originalReferences, currentReferences) => {
+    if (originalReferences.length !== currentReferences.length) {
+        return true;
+    }
+
+    return originalReferences.some((reference, index) => (
+        reference.name !== currentReferences[index]?.name
+        || reference.url !== currentReferences[index]?.url
+    ));
+};
+
 function CourseForm({successCallback, failureCallback, cancelCallback, activeOrganizationId, createMode, courseId}) {
     const { localeMessages, apiBaseUrl, direction, languageOptions = [] } = useAppContext();
     const [courseTitle, setCourseTitle] = useState("")
     const [courseSlug, setCourseSlug] = useState("")
     const [courseDescription, setCourseDescription] = useState("")
+    const [courseTargetAudience, setCourseTargetAudience] = useState("")
     const [courseLanguage, setCourseLanguage] = useState("")
     const [addImapConnection, setAddImapConnection] = useState(false)
     const [imapConnectionId, setImapConnectionId] = useState(null)
@@ -19,9 +42,12 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     const [slugHelperText, setSlugHelperText] = useState("")
     const [descriptionHelperText, setDescriptionHelperText] = useState("")
     const [languageHelperText, setLanguageHelperText] = useState("")
+    const [externalReferenceErrors, setExternalReferenceErrors] = useState([])
     const [errorMessage, setErrorMessage] = useState("")
     const [imageUrl, setImageUrl] = useState(null)
     const [imageServerPath, setImageServerPath] = useState(null)
+    const [externalReferences, setExternalReferences] = useState([])
+    const [originalExternalReferences, setOriginalExternalReferences] = useState([])
 
     const switchImapConnection = () => {
         if (addImapConnection) {
@@ -57,9 +83,16 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setCourseTitle(data.title);
                 setCourseSlug(data.slug);
                 setCourseDescription(data.description);
+                setCourseTargetAudience(data.target_audience || "");
                 setCourseLanguage(data.language || "");
                 setImageUrl(data.image);
                 setImageServerPath(data.image_path);
+                const initialExternalReferences = (data.external_references || []).map((reference) => ({
+                    name: reference.name || '',
+                    url: reference.url || '',
+                }));
+                setExternalReferences(initialExternalReferences);
+                setOriginalExternalReferences(normalizeExternalReferences(initialExternalReferences));
                 if (data.imap_connection_id) {
                     setImapConnectionId(data.imap_connection_id);
                     setAddImapConnection(true);
@@ -76,6 +109,36 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     const validateForm = () => {
         let isValid = true
         const noWhitespacePattern = /^\S+$/;
+        const nextExternalReferenceErrors = externalReferences.map((reference) => {
+            const name = reference.name.trim();
+            const url = reference.url.trim();
+            const rowErrors = { name: false, url: false };
+
+            if (!name && !url) {
+                return rowErrors;
+            }
+
+            if (!name) {
+                rowErrors.name = true;
+                isValid = false;
+            }
+
+            if (!url) {
+                rowErrors.url = true;
+                isValid = false;
+                return rowErrors;
+            }
+
+            try {
+                new URL(url);
+            } catch {
+                rowErrors.url = true;
+                isValid = false;
+            }
+
+            return rowErrors;
+        });
+
         if (!courseTitle) {
             setTitleHelperText(localeMessages["title_required_helper_text"]);
             isValid = false;
@@ -104,7 +167,31 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             setLanguageHelperText("");
         }
 
+        setExternalReferenceErrors(nextExternalReferenceErrors);
+
         return isValid;
+    }
+
+    const handleExternalReferenceChange = (index, field, value) => {
+        setExternalReferences((currentReferences) => currentReferences.map((reference, currentIndex) => (
+            currentIndex === index ? { ...reference, [field]: value } : reference
+        )));
+        setExternalReferenceErrors((currentErrors) => currentErrors.map((error, currentIndex) => (
+            currentIndex === index ? { ...error, [field]: false } : error
+        )));
+    }
+
+    const handleAddExternalReference = () => {
+        if (externalReferences.length >= MAX_EXTERNAL_REFERENCES) {
+            return;
+        }
+        setExternalReferences((currentReferences) => [...currentReferences, createEmptyExternalReference()]);
+        setExternalReferenceErrors((currentErrors) => [...currentErrors, { name: false, url: false }]);
+    }
+
+    const handleRemoveExternalReference = (indexToRemove) => {
+        setExternalReferences((currentReferences) => currentReferences.filter((_, index) => index !== indexToRemove));
+        setExternalReferenceErrors((currentErrors) => currentErrors.filter((_, index) => index !== indexToRemove));
     }
 
     const handleUpdateCourse = () => {
@@ -112,6 +199,22 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
         if (!isValid) {
             return
         }
+        const normalizedExternalReferences = normalizeExternalReferences(externalReferences);
+        const updatePayload = {
+            title: courseTitle,
+            // slug is not updatable
+            description: courseDescription,
+            target_audience: courseTargetAudience.trim(),
+            language: courseLanguage,
+            imap_connection_id: imapConnectionId && addImapConnection? parseInt(imapConnectionId) : null,
+            reset_imap_connection: !addImapConnection || imapConnectionId == null,
+            image: imageServerPath ? imageServerPath : null
+        };
+
+        if (externalReferencesChanged(originalExternalReferences, normalizedExternalReferences)) {
+            updatePayload.external_references = normalizedExternalReferences;
+        }
+
         fetch(apiBaseUrl + '/organizations/' + activeOrganizationId + '/courses/' + courseId + '/', {
         method: 'POST',
         headers: {
@@ -119,15 +222,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             'X-CSRFToken': getCookie('csrftoken')
         },
         credentials: 'include', // Include cookies in the request
-        body: JSON.stringify({
-            title: courseTitle,
-            // slug is not updatable
-            description: courseDescription,
-            language: courseLanguage,
-            imap_connection_id: imapConnectionId && addImapConnection? parseInt(imapConnectionId) : null,
-            reset_imap_connection: !addImapConnection || imapConnectionId == null,
-            image: imageServerPath ? imageServerPath : null
-        }),
+        body: JSON.stringify(updatePayload),
         })
         .then(response => {
             if (!response.ok && response.status != 409) {
@@ -143,6 +238,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setErrorMessage(data.error);
                 failureCallback(data);
             } else {
+                setOriginalExternalReferences(normalizeExternalReferences(data.external_references || normalizedExternalReferences));
                 console.log('Success:', data);
                 successCallback(data);
             }
@@ -158,6 +254,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
         if (!isValid) {
             return
         }
+        const normalizedExternalReferences = normalizeExternalReferences(externalReferences);
         fetch(apiBaseUrl + '/organizations/' + activeOrganizationId + '/courses/', {
         method: 'POST',
         headers: {
@@ -169,8 +266,10 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             title: courseTitle,
             slug: courseSlug,
             description: courseDescription,
+            target_audience: courseTargetAudience.trim(),
             language: courseLanguage,
             imap_connection_id: imapConnectionId ? parseInt(imapConnectionId) : null,
+            external_references: normalizedExternalReferences.length > 0 ? normalizedExternalReferences : null,
             image: imageServerPath ? imageServerPath : null
         }),
         })
@@ -193,7 +292,11 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setCourseTitle("");
                 setCourseSlug("");
                 setCourseDescription("");
+                setCourseTargetAudience("");
                 setCourseLanguage(languageOptions.length > 0 ? languageOptions[0].value : "");
+                setExternalReferences([]);
+                setOriginalExternalReferences([]);
+                setExternalReferenceErrors([]);
                 successCallback(data);
             }
         })
@@ -225,6 +328,84 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                                 ))}
                             </RequiredTextField>
               <RequiredTextField label={localeMessages["course_description"]} helperText={descriptionHelperText} fullWidth margin="normal" multiline rows={4} value={courseDescription} onChange={(e) => setCourseDescription(e.target.value)} />
+              <TextField
+                label={localeMessages["target_audience"]}
+                fullWidth
+                margin="normal"
+                multiline
+                rows={3}
+                value={courseTargetAudience}
+                onChange={(e) => setCourseTargetAudience(e.target.value)}
+                dir={direction}
+              />
+              <Box mt={2}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                    <Typography variant="subtitle1">{localeMessages["external_references"]}</Typography>
+                    <Button
+                        onClick={handleAddExternalReference}
+                        disabled={externalReferences.length >= MAX_EXTERNAL_REFERENCES}
+                    >
+                        {localeMessages["add_external_reference"]}
+                    </Button>
+                </Stack>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {localeMessages["external_references_helper_text"]}
+                </Typography>
+                <Stack spacing={2}>
+                    {externalReferences.map((reference, index) => (
+                        <Box
+                            key={index}
+                            sx={{
+                                display: 'grid',
+                                gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) minmax(0, 1fr) auto' },
+                                columnGap: { xs: 0, md: 2 },
+                                rowGap: { xs: 0, md: 0 },
+                                alignItems: 'start',
+                            }}
+                        >
+                            <TextField
+                                label={localeMessages["reference_name"]}
+                                fullWidth
+                                margin="none"
+                                value={reference.name}
+                                onChange={(e) => handleExternalReferenceChange(index, 'name', e.target.value)}
+                                error={Boolean(externalReferenceErrors[index]?.name)}
+                                helperText={externalReferenceErrors[index]?.name ? localeMessages["reference_name_required_helper_text"] : ' '}
+                                sx={{
+                                    mb: 0,
+                                    '&.MuiTextField-root': {
+                                        mt: 0,
+                                    },
+                                    '&.MuiTextField-root + .MuiTextField-root': {
+                                        mt: 0,
+                                    },
+                                }}
+                                dir={direction}
+                            />
+                            <TextField
+                                label={localeMessages["reference_url"]}
+                                fullWidth
+                                margin="none"
+                                type="url"
+                                value={reference.url}
+                                onChange={(e) => handleExternalReferenceChange(index, 'url', e.target.value)}
+                                error={Boolean(externalReferenceErrors[index]?.url)}
+                                helperText={externalReferenceErrors[index]?.url ? localeMessages["reference_url_required_helper_text"] : ' '}
+                                sx={{
+                                    mt: 0,
+                                    '&.MuiTextField-root': {
+                                        mt: 0,
+                                    },
+                                }}
+                                dir={direction}
+                            />
+                            <Button color="error" onClick={() => handleRemoveExternalReference(index)} sx={{ mt: { xs: 0.5, md: 0 }, justifySelf: { xs: 'flex-start', md: 'start' }, alignSelf: { xs: 'flex-start', md: 'center' } }}>
+                                {localeMessages["remove"]}
+                            </Button>
+                        </Box>
+                    ))}
+                </Stack>
+              </Box>
               <FormControlLabel
                 control={<Switch onChange={() => switchImapConnection()} checked={addImapConnection} dir={direction} />}
                 label={localeMessages["add_imap_connection"]} sx={{ m: 0 }} />
