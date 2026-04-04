@@ -67,7 +67,7 @@ const QuestionForm = ({question, index, eventHandler}) => {
                 <Grid size={{ xs: 12, md: 9 }}>
                     {userRole !== 'viewer' && <EditIcon sx={{borderRadius: "50%", display: "inline-block", float: "left", mr: 1, fontSize: "0.9rem", border: 1, borderColor: "grey.200", color: "grey.400", padding: "4px", cursor: "pointer", ':hover': { backgroundColor: "secondary.main", color: "white", borderColor: "secondary.main" } }} onClick={editQuestion}/>}
                     {!editMode ? (
-                        <Typography onClick={editQuestion}>{index + 1}. {questionText}</Typography>
+                        <Typography onClick={editQuestion}>{questionText}</Typography>
                     ) : (
                         <TextField
                             variant="standard"
