@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import render from '../../src/render.jsx';
 import Layout from '../components/Layout.jsx';
 import EnrollmentForm from '../components/EnrollmentForm.jsx';
@@ -14,10 +14,33 @@ function Course() {
     const [displayModal, setDisplayModal] = useState(false);
     const [modalContent, setModalContent] = useState(null);
     const [enrolled, setEnrolled] = useState(false);
+    const [showFixedEnrollBar, setShowFixedEnrollBar] = useState(false);
+    const topEnrollButtonRef = useRef(null);
 
     const { course, organization, enrollApiUrl, localeMessages } = useAppContext();
 
     const courseDirection = course.is_rtl ? 'rtl' : 'ltr';
+
+    useEffect(() => {
+        const target = topEnrollButtonRef.current;
+
+        if (!target) {
+            return undefined;
+        }
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setShowFixedEnrollBar(!entry.isIntersecting);
+            },
+            {
+                threshold: 0.35,
+            }
+        );
+
+        observer.observe(target);
+
+        return () => observer.disconnect();
+    }, []);
 
     const showEnrollmentModal = () => {
         setModalContent(
@@ -42,15 +65,30 @@ function Course() {
 
     return <ThemeProvider theme={lightTheme}><Layout>
         {/* Course Header with Image and Title */}
+        <Typography
+                variant="h1"
+                sx={{
+                    display: { xs: 'block', md: 'none' },
+                    textAlign: 'center',
+                    mb: 2,
+                    fontSize: '1.6rem',
+                    color: 'text.primary',
+                }}
+            >
+                {course.title}
+            </Typography>
         <Box
             sx={{
                 mb: 4,
                 borderRadius: 2,
                 overflow: 'hidden',
-                backgroundColor: 'background.dark',
+                backgroundColor: { xs: 'background.paper', md: 'background.dark' },
                 direction: courseDirection,
+                position: 'relative',
             }}
         >
+
+
             {course.image && (
                 <Box
                     component="img"
@@ -65,6 +103,75 @@ function Course() {
                     }}
                 />
             )}
+
+            <Box
+                sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    p: { xs: 2, md: 3 },
+                    background: 'linear-gradient(180deg, rgba(0, 0, 0, 0) 25%, rgba(0, 0, 0, 0.75) 100%)',
+                    pointerEvents: 'none',
+                }}
+            >
+                <Stack
+                    direction={courseDirection === 'rtl' ? 'row-reverse' : 'row'}
+                    justifyContent={{ xs: 'center', md: 'space-between' }}
+                    alignItems={{ xs: 'center', md: 'flex-end' }}
+                    spacing={2}
+                    sx={{
+                        width: '100%',
+                    }}
+                >
+                    <Typography
+                        variant="h1"
+                        sx={{
+                            display: { xs: 'none', md: 'block' },
+                            color: 'common.white',
+                            maxWidth: { xs: '100%', md: '70%' },
+                            textShadow: '0 6px 24px rgba(0, 0, 0, 0.45)',
+                        }}
+                    >
+                        {course.title}
+                    </Typography>
+                    <Box
+                        ref={topEnrollButtonRef}
+                    sx={{
+                        pointerEvents: 'auto',
+                        flexShrink: 0,
+                        mx: { xs: 'auto', md: 0 },
+                    }}
+                    >
+                        {enrolled ? (
+                            <Chip
+                                label={localeMessages['enrollment_success']}
+                                sx={(theme) => ({
+                                    backgroundColor: alpha(theme.palette.success.main, 0.18),
+                                    color: theme.palette.common.white,
+                                    fontWeight: 600,
+                                    backdropFilter: 'blur(8px)',
+                                })}
+                            />
+                        ) : (
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                size="large"
+                                onClick={showEnrollmentModal}
+                                sx={{
+                                    minWidth: { xs: 160, sm: 190 },
+                                    boxShadow: '0 16px 40px rgba(0, 0, 0, 0.28)',
+                                    border: 'solid 1px #ffffff30',
+                                    fontWeight: 700,
+                                }}
+                            >
+                                {localeMessages['enroll_now']}
+                            </Button>
+                        )}
+                    </Box>
+                </Stack>
+            </Box>
         </Box>
 
         {/* Course Info Section */}
@@ -80,16 +187,6 @@ function Course() {
             }}
         >
             <Stack spacing={2}>
-                <Box>
-                    <Typography variant="h1" sx={{ mb: 1 }}>{course.title}</Typography>
-                    <Stack direction={courseDirection === 'rtl' ? 'row-reverse' : 'row'} spacing={1} alignItems="center">
-                        <Chip
-                            label={course.language}
-                            size="small"
-                            variant="outlined"
-                        />
-                    </Stack>
-                </Box>
 
                 {course.description && (
                     <Typography
@@ -220,6 +317,10 @@ function Course() {
                 borderTop: '1px solid',
                 borderColor: 'border.main',
                 direction: courseDirection,
+                opacity: showFixedEnrollBar ? 1 : 0,
+                visibility: showFixedEnrollBar ? 'visible' : 'hidden',
+                transform: showFixedEnrollBar ? 'translateY(0)' : 'translateY(100%)',
+                transition: 'opacity 180ms ease, transform 180ms ease, visibility 180ms ease',
             }}
         >
             <Container maxWidth="lg">
