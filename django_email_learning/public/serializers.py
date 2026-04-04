@@ -11,6 +11,8 @@ class PublicCourseSerializer(BaseModel):
     language: str
     is_rtl: bool = False
     lessons: list[str] = []
+    target_audience: str | None = None
+    external_references: list[dict[str, str]] | None = None
 
     @field_serializer("description")
     def serialize_description_with_br(self, description: str | None) -> str | None:

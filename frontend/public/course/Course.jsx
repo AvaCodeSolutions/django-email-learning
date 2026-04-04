@@ -196,6 +196,19 @@ function Course() {
                     />
                 )}
 
+                {course.target_audience && (
+                    <Box sx={{ py: 1 }}>
+                        <Typography variant="h2" sx={{ mb: 1, direction: courseDirection, fontSize: '1.25rem', fontWeight: 600 }}>
+                            {localeMessages['target_audience_title']}
+                        </Typography>
+                        <Typography
+                            variant="body2"
+                            sx={{ color: 'text.secondary', direction: courseDirection }}
+                            dangerouslySetInnerHTML={{ __html: course.target_audience }}
+                        />
+                    </Box>
+                )}
+
                 {/* Organization Info */}
                 <Box
                     sx={{
@@ -288,6 +301,60 @@ function Course() {
                                         sx: {
                                             textAlign: courseDirection === 'rtl' ? 'right' : 'left',
                                         }
+                                    }}
+                                />
+                            </ListItem>
+                        ))}
+                    </List>
+                </Card>
+            </Box>
+        )}
+
+        {course.external_references && course.external_references.length > 0 && (
+            <Box my={4}>
+                <Typography variant="h2" sx={{ mb: 2, direction: courseDirection }}>
+                    {localeMessages['external_references_title']}
+                </Typography>
+                <Card
+                    sx={{
+                        border: '1px solid',
+                        borderColor: 'border.main',
+                        boxShadow: 'none',
+                    }}
+                >
+                    <List sx={{ direction: courseDirection }}>
+                        {course.external_references.map((reference, index) => (
+                            <ListItem
+                                key={`${reference.url}-${index}`}
+                                sx={{
+                                    py: 1.5,
+                                    px: 2,
+                                    borderBottom: index < course.external_references.length - 1 ? '1px solid' : 'none',
+                                    borderColor: 'border.main',
+                                }}
+                            >
+                                <ListItemText
+                                    primary={
+                                        <Link href={reference.url} target="_blank" rel="noopener noreferrer" underline="hover">
+                                            {reference.name}
+                                        </Link>
+                                    }
+                                    secondary={reference.url}
+                                    primaryTypographyProps={{
+                                        variant: 'body1',
+                                        sx: {
+                                            textAlign: courseDirection === 'rtl' ? 'right' : 'left',
+                                            wordBreak: 'break-word',
+                                        },
+                                    }}
+                                    secondaryTypographyProps={{
+                                        variant: 'body2',
+                                        sx: {
+                                            mt: 0.5,
+                                            color: 'text.secondary',
+                                            textAlign: courseDirection === 'rtl' ? 'right' : 'left',
+                                            wordBreak: 'break-word',
+                                        },
                                     }}
                                 />
                             </ListItem>
