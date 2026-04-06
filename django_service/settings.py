@@ -107,6 +107,7 @@ DJANGO_EMAIL_LEARNING = {
     "SITE_BASE_URL": "http://localhost:8000",
     "ENCRYPTION_SECRET_KEY": "your-very-secure-and-random-key",
     "FROM_EMAIL": os.environ.get("FROM_EMAIL", "webmaster@localhost"),
+    "TERMS_OF_SERVICE_URL": "https://www.example.com/terms",
     "AI": {
         "OPENAI_API_KEY": os.environ.get("OPENAI_API_KEY"),
         "TEXT_EDITING_MODEL": LanguageModel.GPT_4O_MINI.model_name,

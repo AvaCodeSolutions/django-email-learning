@@ -17,6 +17,10 @@ from django_email_learning.public.serializers import (
 )
 
 
+def get_terms_of_service_url() -> str | None:
+    return settings.DJANGO_EMAIL_LEARNING.get("TERMS_OF_SERVICE_URL")  # type: ignore[return-value]
+
+
 def get_organization_json_ld_links(organization: Organization) -> dict[str, object]:
     json_ld_links: dict[str, object] = {"url": organization.public_url}
     same_as: list[str] = []
@@ -165,6 +169,7 @@ class OrganizationView(TemplateView):
                 "organization": organization_data.model_dump(),
                 "enrollApiUrl": f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{enroll_api_path}",
                 "direction": "rtl" if lang_info["bidi"] else "ltr",
+                "termsOfServiceUrl": get_terms_of_service_url(),
                 "localeMessages": {
                     "courses": _("Courses"),
                     "enroll_now": _("Enroll Now"),
@@ -188,6 +193,9 @@ class OrganizationView(TemplateView):
                     "linkedin_page": _("LinkedIn Page"),
                     "youtube_channel": _("YouTube Channel"),
                     "website": _("Website"),
+                    "terms_of_service_confirmation": _(
+                        "By enrolling, you agree to our <a href='TERMS_OF_SERVICE_URL' target='_blank'>Terms of Service</a>."
+                    ),
                 },
             }
             context["organization_name"] = organization.name
@@ -270,6 +278,7 @@ class CourseView(TemplateView):
             "organization": organization_data.model_dump(),
             "enrollApiUrl": f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{enroll_api_path}",
             "direction": "rtl" if lang_info["bidi"] else "ltr",
+            "termsOfServiceUrl": get_terms_of_service_url(),
             "localeMessages": {
                 "enroll_now": _("Enroll Now"),
                 "enrol_for_course": _("Enroll for COURSE_NAME"),
@@ -294,6 +303,9 @@ class CourseView(TemplateView):
                 "continue": _("Continue"),
                 "target_audience_title": _("Who is this course for?"),
                 "external_references_title": _("External References"),
+                "terms_of_service_confirmation": _(
+                    "By enrolling, you agree to our <a href='TERMS_OF_SERVICE_URL' target='_blank'>Terms of Service</a>."
+                ),
             },
         }
         context["course_title"] = course.title
