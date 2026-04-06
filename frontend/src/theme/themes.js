@@ -1,5 +1,5 @@
 import { createTheme, darken, alpha } from '@mui/material/styles';
-import { blueGrey, indigo, teal, lightGreen, amber, red, pink, deepPurple } from '@mui/material/colors';
+import { blueGrey, indigo, teal, lightGreen, amber, red, pink, deepPurple, blue } from '@mui/material/colors';
 
 const statusPalette = {
   healthy: {
@@ -415,6 +415,7 @@ const commonPalette = {
     lightGreen: lightGreen,
     amber: amber,
     red: red,
+    blue: blue,
     deepPurple: deepPurple,
 }
 

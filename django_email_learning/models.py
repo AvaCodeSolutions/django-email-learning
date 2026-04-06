@@ -84,6 +84,9 @@ class Organization(models.Model):
     name = models.CharField(max_length=200, unique=True)
     logo = models.ImageField(upload_to="organization_logos/", null=True, blank=True)
     description = models.TextField(null=True, blank=True)
+    website = models.URLField(max_length=500, null=True, blank=True)
+    youtube_channel = models.URLField(max_length=500, null=True, blank=True)
+    linkedin_page = models.URLField(max_length=500, null=True, blank=True)
 
     def __str__(self) -> str:
         return self.name

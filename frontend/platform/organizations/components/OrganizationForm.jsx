@@ -1,21 +1,45 @@
-import { Alert, Box, Button, DialogActions } from "@mui/material";
+import { Alert, Box, Button, DialogActions, TextField } from "@mui/material";
 import RequiredTextField  from "../../../src/components/RequiredTextField.jsx";
 import ImageUpload from '../../../src/components/ImageUpload.jsx';
 import { useState } from "react";
 import { getCookie } from '../../../src/utils.js';
 import { useAppContext } from '../../../src/render.jsx';
 
-function OrganizationForm({ successCallback, failureCallback, cancelCallback, createMode, initialName, initialDescription, initialLogoUrl, organizationId }) {
+function OrganizationForm({ successCallback, failureCallback, cancelCallback, createMode, initialName, initialDescription, initialLogoUrl, initialWebsite, initialLinkedinPage, initialYoutubeChannel, organizationId }) {
     const [name, setName] = useState(initialName || "");
     const [description, setDescription] = useState(initialDescription || "");
+    const [website, setWebsite] = useState(initialWebsite || "");
+    const [linkedinPage, setLinkedinPage] = useState(initialLinkedinPage || "");
+    const [youtubeChannel, setYoutubeChannel] = useState(initialYoutubeChannel || "");
     const [nameHelperText, setNameHelperText] = useState("");
     const [descriptionHelperText, setDescriptionHelperText] = useState("");
+    const [websiteHelperText, setWebsiteHelperText] = useState("");
+    const [linkedinPageHelperText, setLinkedinPageHelperText] = useState("");
+    const [youtubeChannelHelperText, setYoutubeChannelHelperText] = useState("");
     const [logoServerPath, setLogoServerPath] = useState(null);
     const [errorMessage, setErrorMessage] = useState();
     const { localeMessages, apiBaseUrl } = useAppContext();
 
+    const validateOptionalUrl = (value) => {
+        const trimmedValue = value.trim();
+
+        if (!trimmedValue) {
+            return true;
+        }
+
+        try {
+            const parsedUrl = new URL(trimmedValue);
+
+            return ["http:", "https:"].includes(parsedUrl.protocol) && Boolean(parsedUrl.hostname);
+        } catch {
+            return false;
+        }
+    };
+
     const validateForm = () => {
         let valid = true;
+        setErrorMessage(undefined);
+
         if (!name.trim()) {
             setNameHelperText(localeMessages["name_required"]);
             valid = false;
@@ -30,6 +54,27 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
             setDescriptionHelperText("");
         }
 
+        if (!validateOptionalUrl(website)) {
+            setWebsiteHelperText("Enter a valid URL starting with http:// or https://");
+            valid = false;
+        } else {
+            setWebsiteHelperText("");
+        }
+
+        if (!validateOptionalUrl(linkedinPage)) {
+            setLinkedinPageHelperText("Enter a valid URL starting with http:// or https://");
+            valid = false;
+        } else {
+            setLinkedinPageHelperText("");
+        }
+
+        if (!validateOptionalUrl(youtubeChannel)) {
+            setYoutubeChannelHelperText("Enter a valid URL starting with http:// or https://");
+            valid = false;
+        } else {
+            setYoutubeChannelHelperText("");
+        }
+
         return valid;
     }
 
@@ -40,8 +85,11 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
         }
 
         let payload = {
-            name: name,
-            description: description,
+            name: name.trim(),
+            description: description.trim(),
+            website: website.trim(),
+            linkedin_page: linkedinPage.trim(),
+            youtube_channel: youtubeChannel.trim(),
         };
 
         if (logoServerPath) {
@@ -90,9 +138,12 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
                 'X-CSRFToken': getCookie('csrftoken'),
             },
             body: JSON.stringify({
-                name: name,
-                description: description,
+                name: name.trim(),
+                description: description.trim(),
                 logo: logoServerPath,
+                website: website.trim(),
+                linkedin_page: linkedinPage.trim(),
+                youtube_channel: youtubeChannel.trim(),
             }),
         })
         .then(response => {
@@ -107,7 +158,8 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
             successCallback(data);
         })
         .catch(error => {
-            setErrorMessages(localeMessages["error_try_again"]);
+            setErrorMessage(localeMessages["error_try_again"]);
+            failureCallback(error);
         });
     }
 
@@ -116,10 +168,13 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
             { errorMessage && <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert> }
             <RequiredTextField label={localeMessages["name"]} helperText={nameHelperText} fullWidth margin="normal" value={name} onChange={(e) => setName(e.target.value)} />
             <RequiredTextField label={localeMessages["description"]} helperText={descriptionHelperText} fullWidth margin="normal" multiline rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <TextField label="Website" type="url" fullWidth margin="normal" value={website} error={Boolean(websiteHelperText)} helperText={websiteHelperText} onChange={(e) => setWebsite(e.target.value)} />
+            <TextField label="LinkedIn page" type="url" fullWidth margin="normal" value={linkedinPage} error={Boolean(linkedinPageHelperText)} helperText={linkedinPageHelperText} onChange={(e) => setLinkedinPage(e.target.value)} />
+            <TextField label="YouTube channel" type="url" fullWidth margin="normal" value={youtubeChannel} error={Boolean(youtubeChannelHelperText)} helperText={youtubeChannelHelperText} onChange={(e) => setYoutubeChannel(e.target.value)} />
             <ImageUpload initialUrl={initialLogoUrl} onUploadSuccess={(data) => {
                 setLogoServerPath(data.file_path);
             }} onUploadError={(error) => {
-                setErrorMessages(localeMessages["logo_upload_failed"]);
+                setErrorMessage(localeMessages["logo_upload_failed"]);
             }} />
             <DialogActions>
                 <Button onClick={cancelCallback}>{localeMessages["cancel"]}</Button>

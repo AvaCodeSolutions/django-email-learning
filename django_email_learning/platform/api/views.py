@@ -564,6 +564,12 @@ class SingleOrganizationView(View):
                 organization.logo = serializer.logo
             if serializer.remove_logo:
                 organization.logo = None
+            if serializer.website is not None:
+                organization.website = serializer.website
+            if serializer.youtube_channel is not None:
+                organization.youtube_channel = serializer.youtube_channel
+            if serializer.linkedin_page is not None:
+                organization.linkedin_page = serializer.linkedin_page
             organization.save()
             return JsonResponse(
                 serializers.OrganizationResponse.from_django_model(

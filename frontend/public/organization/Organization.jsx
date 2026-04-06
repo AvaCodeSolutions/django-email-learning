@@ -4,6 +4,8 @@ import Layout from '../components/Layout.jsx';
 import EnrollmentForm from '../components/EnrollmentForm.jsx';
 import { Alert, Box, Button, Card, CardContent, CardMedia, Dialog, Grid, Stack, Typography, Link } from '@mui/material';
 import LanguageIcon from '@mui/icons-material/Language';
+import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import YouTubeIcon from '@mui/icons-material/YouTube';
 import { alpha, ThemeProvider } from '@mui/material/styles';
 import { useAppContext } from '../../src/render.jsx';
 import { lightTheme } from '../../src/theme/themes';
@@ -63,6 +65,56 @@ function Organization() {
                 }
                 <Typography variant="h1" sx={{ mb: 0 }}>{ organization["name"] }</Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary' }} dangerouslySetInnerHTML={{ __html: organization["description"] }} />
+                {(organization.website || organization.linkedin_page || organization.youtube_channel) && (
+                    <Stack
+                        direction="row"
+                        spacing={2.5}
+                        useFlexGap
+                        flexWrap="wrap"
+                        alignItems="center"
+                        sx={{ pt: 1 }}
+                    >
+                        {organization.website && (
+                            <Link
+                                href={organization.website}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                underline="hover"
+                                color="secondary.dark"
+                                sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, fontWeight: 500 }}
+                            >
+                                <LanguageIcon fontSize="small" sx={{ color: 'primary.dark' }} />
+                                {localeMessages['website']}
+                            </Link>
+                        )}
+                        {organization.linkedin_page && (
+                            <Link
+                                href={organization.linkedin_page}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                underline="hover"
+                                color="secondary.dark"
+                                sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, fontWeight: 500 }}
+                            >
+                                <LinkedInIcon fontSize="small" sx={(theme) => ({ color: theme.palette.blue[800] })} />
+                                {localeMessages['linkedin_page']}
+                            </Link>
+                        )}
+                        {organization.youtube_channel && (
+                            <Link
+                                href={organization.youtube_channel}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                underline="hover"
+                                color="secondary.dark"
+                                sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, fontWeight: 500 }}
+                            >
+                                <YouTubeIcon fontSize="small" sx={(theme) => ({ color: theme.palette.red[700] })} />
+                                {localeMessages['youtube_channel']}
+                            </Link>
+                        )}
+                    </Stack>
+                )}
             </Stack>
         </Box>
         {showSuccessMessage && (

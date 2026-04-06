@@ -336,6 +336,9 @@ class OrganizationResponse(BaseModel):
     logo_path: Optional[str] = None
     description: Optional[str] = None
     public_url: str
+    website: Optional[str] = None
+    youtube_channel: Optional[str] = None
+    linkedin_page: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -357,6 +360,9 @@ class OrganizationResponse(BaseModel):
                 "logo_path": organization.logo.name if organization.logo else None,
                 "description": organization.description,
                 "public_url": abs_url_builder(url),
+                "website": organization.website,
+                "youtube_channel": organization.youtube_channel,
+                "linkedin_page": organization.linkedin_page,
             }
         )
 
@@ -367,9 +373,22 @@ class CreateOrganizationRequest(BaseModel):
         None, examples=["A description of the organization."]
     )
     logo: Optional[str] = Field(None, examples=["/path/to/logo.png"])
+    website: Optional[str] = Field(None, examples=["https://example.com"])
+    youtube_channel: Optional[str] = Field(
+        None, examples=["https://youtube.com/channel/xyz"]
+    )
+    linkedin_page: Optional[str] = Field(
+        None, examples=["https://linkedin.com/company/xyz"]
+    )
 
     def to_django_model(self) -> Organization:
-        organization = Organization(name=self.name, description=self.description)
+        organization = Organization(
+            name=self.name,
+            description=self.description,
+            website=self.website,
+            youtube_channel=self.youtube_channel,
+            linkedin_page=self.linkedin_page,
+        )
         organization.save()
         organization.refresh_from_db()
         if self.logo:
@@ -383,6 +402,13 @@ class UpdateOrganizationRequest(BaseModel):
     name: Optional[str] = Field(None, min_length=1, examples=["AvaCode"])
     description: Optional[str] = Field(
         None, examples=["A description of the organization."]
+    )
+    website: Optional[str] = Field(None, examples=["https://example.com"])
+    youtube_channel: Optional[str] = Field(
+        None, examples=["https://youtube.com/channel/xyz"]
+    )
+    linkedin_page: Optional[str] = Field(
+        None, examples=["https://linkedin.com/company/xyz"]
     )
     logo: Optional[str] = Field(None, examples=["/path/to/logo.png"])
     remove_logo: Optional[bool] = Field(None, examples=[True])

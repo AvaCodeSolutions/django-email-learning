@@ -45,12 +45,39 @@ def test_get_organizations_view_as_anonymous(anonymous_client):
 
 
 def test_post_organizations_view_as_superadmin(superadmin_client):
-    payload = {"name": "New Org", "description": "A newly created organization"}
+    payload = {
+        "name": "New Org",
+        "description": "A newly created organization",
+        "website": "https://new-org.example.com",
+        "linkedin_page": "https://www.linkedin.com/company/new-org",
+        "youtube_channel": "https://www.youtube.com/@new-org",
+    }
     response = superadmin_client.post(
         get_url(), data=payload, content_type="application/json"
     )
     assert response.status_code == 201
     assert response.json().get("name") == "New Org"
+    assert response.json().get("website") == payload["website"]
+    assert response.json().get("linkedin_page") == payload["linkedin_page"]
+    assert response.json().get("youtube_channel") == payload["youtube_channel"]
+
+
+def test_post_organizations_view_optional_social_fields(superadmin_client):
+    payload = {"name": "Optional Org", "description": "Optional fields omitted"}
+
+    response = superadmin_client.post(
+        get_url(), data=payload, content_type="application/json"
+    )
+
+    assert response.status_code == 201
+    assert response.json().get("website") is None
+    assert response.json().get("linkedin_page") is None
+    assert response.json().get("youtube_channel") is None
+
+    organization = Organization.objects.get(id=response.json()["id"])
+    assert organization.website is None
+    assert organization.linkedin_page is None
+    assert organization.youtube_channel is None
 
 
 @pytest.fixture
@@ -101,10 +128,16 @@ def test_update_organizations_view(superadmin_client, existing_logo_path):
     initial_name = organization.name
     initial_description = organization.description
     initial_logo = organization.logo
+    initial_website = organization.website
+    initial_linkedin_page = organization.linkedin_page
+    initial_youtube_channel = organization.youtube_channel
     payload = {
         "name": "Updated Org",
         "description": "Updated description",
         "logo": existing_logo_path,
+        "website": "https://updated-org.example.com",
+        "linkedin_page": "https://www.linkedin.com/company/updated-org",
+        "youtube_channel": "https://www.youtube.com/@updated-org",
     }
     response = superadmin_client.post(
         update_url(organization.id), data=payload, content_type="application/json"
@@ -114,9 +147,42 @@ def test_update_organizations_view(superadmin_client, existing_logo_path):
     assert response.json().get("name") == "Updated Org"
     assert response.json().get("description") == "Updated description"
     assert response.json().get("logo").endswith(f"/{existing_logo_path}")
+    assert response.json().get("website") == payload["website"]
+    assert response.json().get("linkedin_page") == payload["linkedin_page"]
+    assert response.json().get("youtube_channel") == payload["youtube_channel"]
     assert response.json().get("name") != initial_name
     assert response.json().get("description") != initial_description
     assert response.json().get("logo") != initial_logo
+    assert response.json().get("website") != initial_website
+    assert response.json().get("linkedin_page") != initial_linkedin_page
+    assert response.json().get("youtube_channel") != initial_youtube_channel
+
+
+def test_update_organizations_view_optional_social_fields(superadmin_client):
+    organization = Organization.objects.first()
+    organization.website = "https://existing-org.example.com"
+    organization.linkedin_page = "https://www.linkedin.com/company/existing-org"
+    organization.youtube_channel = "https://www.youtube.com/@existing-org"
+    organization.save()
+
+    payload = {
+        "name": "Renamed Org",
+        "description": "Updated without changing social links",
+    }
+
+    response = superadmin_client.post(
+        update_url(organization.id), data=payload, content_type="application/json"
+    )
+
+    assert response.status_code == 200
+    assert response.json().get("website") == organization.website
+    assert response.json().get("linkedin_page") == organization.linkedin_page
+    assert response.json().get("youtube_channel") == organization.youtube_channel
+
+    organization.refresh_from_db()
+    assert organization.website == "https://existing-org.example.com"
+    assert organization.linkedin_page == "https://www.linkedin.com/company/existing-org"
+    assert organization.youtube_channel == "https://www.youtube.com/@existing-org"
 
 
 @pytest.mark.parametrize("client", ["viewer", "editor"], indirect=True)
