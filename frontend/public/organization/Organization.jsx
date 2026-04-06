@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import render from '../../src/render.jsx';
 import Layout from '../components/Layout.jsx';
 import EnrollmentForm from '../components/EnrollmentForm.jsx';
-import { Box, Button, Card, CardContent, CardMedia, Chip, Dialog, Grid, Stack, Typography, Link } from '@mui/material';
+import { Alert, Box, Button, Card, CardContent, CardMedia, Dialog, Grid, Stack, Typography, Link } from '@mui/material';
 import LanguageIcon from '@mui/icons-material/Language';
 import { alpha, ThemeProvider } from '@mui/material/styles';
 import { useAppContext } from '../../src/render.jsx';
@@ -14,6 +14,7 @@ function Organization() {
     const [displayModal, setDisplayModal] = useState(false);
     const [modalContent, setModalContent] = useState(null);
     const [courses, setCourses] = useState([]);
+    const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
     const { organization, enrollApiUrl, localeMessages } = useAppContext();
 
@@ -39,6 +40,7 @@ function Organization() {
             return c;
         });
         setCourses(updatedCourses);
+        setShowSuccessMessage(true);
     }
 
 
@@ -63,6 +65,16 @@ function Organization() {
                 <Typography variant="body1" sx={{ color: 'text.secondary' }} dangerouslySetInnerHTML={{ __html: organization["description"] }} />
             </Stack>
         </Box>
+        {showSuccessMessage && (
+            <Alert
+                severity="success"
+                onClose={() => setShowSuccessMessage(false)}
+                sx={{ mb: 4 }}
+            >
+                {localeMessages['enrollment_success']}
+            </Alert>
+        )}
+
         <Box my={4}>
             <Typography variant="h2" sx={{ mb: 2 }}>{localeMessages['courses']}</Typography>
             { courses.length > 0 ? (
@@ -138,13 +150,6 @@ function Organization() {
                                     dangerouslySetInnerHTML={{ __html: course.description }}
                                 />
                                 <Box sx={{ mt: 'auto', pt: 1 }}>
-                                    {course.enrolled && (<>
-                                        <Chip
-                                            label={localeMessages['enrollment_success']}
-                                            size="small"
-                                            sx={(theme) => ({ mb: 1., backgroundColor: alpha(theme.palette.success.main, 0.15), color: theme.palette.success.main })}
-                                        /><br /></>
-                                    )}
                                     <Button
                                         variant="contained"
                                         color="secondary"

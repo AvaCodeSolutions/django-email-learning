@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import render from '../../src/render.jsx';
 import Layout from '../components/Layout.jsx';
 import EnrollmentForm from '../components/EnrollmentForm.jsx';
-import { Box, Button, Card, Chip, Container, Dialog, Grid, Link, List, ListItem, ListItemIcon, ListItemText, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, Chip, Container, Dialog, Grid, Link, List, ListItem, ListItemIcon, ListItemText, Stack, Typography } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { alpha, ThemeProvider } from '@mui/material/styles';
 import { useAppContext } from '../../src/render.jsx';
@@ -14,6 +14,7 @@ function Course() {
     const [displayModal, setDisplayModal] = useState(false);
     const [modalContent, setModalContent] = useState(null);
     const [enrolled, setEnrolled] = useState(false);
+    const [showEnrollmentAlert, setShowEnrollmentAlert] = useState(false);
     const [showFixedEnrollBar, setShowFixedEnrollBar] = useState(false);
     const topEnrollButtonRef = useRef(null);
 
@@ -61,6 +62,8 @@ function Course() {
         setDisplayModal(false);
         setModalContent(null);
         setEnrolled(true);
+        setShowEnrollmentAlert(true);
+        scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     return <ThemeProvider theme={lightTheme}><Layout>
@@ -143,17 +146,7 @@ function Course() {
                         mx: { xs: 'auto', md: 0 },
                     }}
                     >
-                        {enrolled ? (
-                            <Chip
-                                label={localeMessages['enrollment_success']}
-                                sx={(theme) => ({
-                                    backgroundColor: alpha(theme.palette.success.main, 0.18),
-                                    color: theme.palette.common.white,
-                                    fontWeight: 600,
-                                    backdropFilter: 'blur(8px)',
-                                })}
-                            />
-                        ) : (
+                        {!enrolled && (
                             <Button
                                 variant="contained"
                                 color="primary"
@@ -173,6 +166,15 @@ function Course() {
                 </Stack>
             </Box>
         </Box>
+        {enrolled && showEnrollmentAlert && (
+            <Alert
+                severity="success"
+                onClose={() => setShowEnrollmentAlert(false)}
+                sx={{ mb: 4, direction: courseDirection }}
+            >
+                {localeMessages['enrollment_success']}
+            </Alert>
+        )}
 
         {/* Course Info Section */}
         <Box
@@ -186,7 +188,7 @@ function Course() {
                 direction: courseDirection,
             }}
         >
-            <Stack spacing={2}>
+            <Stack spacing={{ xs: 2, md: 5 }}>
 
                 {course.description && (
                     <Typography
@@ -196,27 +198,12 @@ function Course() {
                     />
                 )}
 
-                {course.target_audience && (
-                    <Box sx={{ py: 1 }}>
-                        <Typography variant="h2" sx={{ mb: 1, direction: courseDirection, fontSize: '1.25rem', fontWeight: 600 }}>
-                            {localeMessages['target_audience_title']}
-                        </Typography>
-                        <Typography
-                            variant="body2"
-                            sx={{ color: 'text.secondary', direction: courseDirection }}
-                            dangerouslySetInnerHTML={{ __html: course.target_audience }}
-                        />
-                    </Box>
-                )}
-
                 {/* Organization Info */}
                 <Box
                     sx={{
                         p: 2,
-                        borderRadius: 1.5,
+                        borderRadius: 2,
                         backgroundColor: "white",
-                        mt: 2,
-                        direction: courseDirection,
                     }}
                 >
                     <Grid container spacing={2}>
@@ -251,6 +238,20 @@ function Course() {
                         </Grid>
                     </Grid>
                 </Box>
+
+                {course.target_audience && (
+                    <Box sx={{ py: 1 }}>
+                        <Typography variant="h2" sx={{ mb: 1, direction: courseDirection, fontSize: '1.25rem', fontWeight: 600 }}>
+                            {localeMessages['target_audience_title']}
+                        </Typography>
+                        <Typography
+                            variant="body2"
+                            sx={{ color: 'text.secondary', direction: courseDirection }}
+                            dangerouslySetInnerHTML={{ __html: course.target_audience }}
+                        />
+                    </Box>
+                )}
+
             </Stack>
         </Box>
 
@@ -312,7 +313,7 @@ function Course() {
 
         {course.external_references && course.external_references.length > 0 && (
             <Box my={4}>
-                <Typography variant="h2" sx={{ mb: 2, direction: courseDirection }}>
+                <Typography variant="h2" sx={{ direction: courseDirection }}>
                     {localeMessages['external_references_title']}
                 </Typography>
                 <Card
@@ -401,15 +402,7 @@ function Course() {
                     {course.title}
                 </Typography>
                 <Box>
-                    {enrolled ? (
-                        <Chip
-                            label={localeMessages['enrollment_success']}
-                            sx={(theme) => ({
-                                backgroundColor: alpha(theme.palette.success.main, 0.15),
-                                color: theme.palette.success.main,
-                            })}
-                        />
-                    ) : (
+                    {!enrolled &&(
                         <Button
                             variant="contained"
                             color="primary"

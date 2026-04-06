@@ -150,7 +150,10 @@ class OrganizationView(TemplateView):
                     "email": _("email"),
                     "cancel": _("Cancel"),
                     "submit": _("Submit"),
-                    "enrollment_success": _("You are enrolled in this course."),
+                    "enrollment_success": _(
+                        "We've sent a confirmation email to verify your enrollment. Please check your inbox and follow the link to complete the process. \
+                                            Don't see it? Check your Spam or Junk folder."
+                    ),
                     "enrollment_failed": _("Enrollment failed. Please try again."),
                     "no_courses_available": _("No courses available."),
                     "email_required": _("Email is required"),
@@ -245,7 +248,10 @@ class CourseView(TemplateView):
                 "email": _("email"),
                 "cancel": _("Cancel"),
                 "submit": _("Submit"),
-                "enrollment_success": _("You are enrolled in this course."),
+                "enrollment_success": _(
+                    "We've sent a confirmation email to verify your enrollment. Please check your inbox and follow the link to complete the process. \
+                                        Don't see it? Check your Spam or Junk folder."
+                ),
                 "enrollment_failed": _("Enrollment failed. Please try again."),
                 "email_required": _("Email is required"),
                 "email_invalid": _("Please enter a valid email address"),
