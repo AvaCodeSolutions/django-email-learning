@@ -12,7 +12,7 @@ const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, o
     const [isProcessing, setIsProcessing] = React.useState(false);
     const [csrfToken, setCsrfToken] = React.useState(getCookie('csrftoken'));
     const [showReloadDialog, setShowReloadDialog] = React.useState(false);
-    const { localeMessages } = useAppContext();
+    const { localeMessages, termsOfServiceUrl } = useAppContext();
 
     useEffect(() => {
         if (!csrfToken) {
@@ -95,8 +95,27 @@ const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, o
                 enroll();
             }
         }} />
+        {termsOfServiceUrl && (
+            <Typography
+                variant='caption'
+                sx={{
+                    display: 'block',
+                    mt: 2.5,
+                    mb: 1.5,
+                    color: 'text.secondary',
+                    lineHeight: 1.6,
+                    '& a': {
+                        color: 'primary.main',
+                        textDecoration: 'underline',
+                        fontWeight: 500,
+                    },
+                }}
+            >
+                <span dangerouslySetInnerHTML={{ __html: localeMessages['terms_of_service_confirmation'].replace('TERMS_OF_SERVICE_URL', termsOfServiceUrl) }} />
+            </Typography>
+        )}
         <input type="hidden" name="course_slug" value={course_slug} />
-        <Box sx={{ mt: 2, textAlign: 'right' }}>
+        <Box sx={{ mt: 1.5, textAlign: 'right' }}>
         <Button variant="outlined" sx={{ mx: 1 }} onClick={onCancle}>
             {localeMessages['cancel']}
         </Button>

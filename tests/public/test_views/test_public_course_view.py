@@ -1,8 +1,22 @@
 import json
 
+from django.conf import settings
+from django.test import override_settings
 from django.urls import reverse
 
 from django_email_learning.models import ExternalReference
+import pytest
+
+
+@pytest.fixture
+def tos_settings(request):
+    with override_settings(
+        DJANGO_EMAIL_LEARNING={
+            **settings.DJANGO_EMAIL_LEARNING,
+            "TERMS_OF_SERVICE_URL": request.param,
+        }
+    ):
+        yield settings.DJANGO_EMAIL_LEARNING["TERMS_OF_SERVICE_URL"]
 
 
 def test_course_view_anonymous_client(
@@ -65,3 +79,24 @@ def test_course_view_non_existent_course(db, anonymous_client):
     )
     response = anonymous_client.get(url)
     assert response.status_code == 404
+
+
+@pytest.mark.parametrize(
+    "tos_settings",
+    ["https://example.com/terms", None],
+    indirect=True,
+)
+def test_course_view_includes_terms_of_service_url_when_configured(
+    db, anonymous_client, course, tos_settings
+):
+    course.enabled = True
+    course.save()
+
+    url = reverse(
+        "django_email_learning:public:course_view",
+        kwargs={"organization_id": 1, "course_slug": course.slug},
+    )
+    response = anonymous_client.get(url)
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["termsOfServiceUrl"] == tos_settings

@@ -138,6 +138,18 @@ The default email address for outgoing course emails. If not specified, falls ba
         'FROM_EMAIL': 'courses@yourdomain.com',
     }
 
+**TERMS_OF_SERVICE_URL**
+
+Optional link to your terms of service. When provided, this link is displayed in the public enrollment dialog so learners can review your terms before submitting their email address.
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'TERMS_OF_SERVICE_URL': 'https://yourdomain.com/terms',
+    }
+
 **SIDEBAR.CUSTOM_COMPONENT**
 
 Optional configuration for injecting a custom component in the platform sidebar.
