@@ -17,21 +17,39 @@ from django_email_learning.public.serializers import (
 )
 
 
+def get_organization_json_ld_links(organization: Organization) -> dict[str, object]:
+    json_ld_links: dict[str, object] = {"url": organization.public_url}
+    same_as: list[str] = []
+
+    if organization.website:
+        same_as.append(organization.website)
+
+    if organization.linkedin_page:
+        same_as.append(organization.linkedin_page)
+
+    if organization.youtube_channel:
+        same_as.append(organization.youtube_channel)
+
+    if same_as:
+        json_ld_links["sameAs"] = same_as
+
+    return json_ld_links
+
+
 def build_organization_courses_json_ld(
     courses: list[PublicCourseSerializer], organization: Organization
 ) -> str:
     course_list = []
     for course in courses:
-        course_data = {
+        course_data: dict[str, object] = {
             "@type": "Course",
             "name": course.title,
             "description": course.description,
             "inLanguage": course.language,
-            "provider": {
-                "@type": "Organization",
-                "name": organization.name,
-            },
         }
+        course_data["provider"] = {"@type": "Organization", "name": organization.name}
+
+        course_data["provider"].update(get_organization_json_ld_links(organization))  # type: ignore[attr-defined]
         if course.image:
             course_data["image"] = course.image
         course_list.append(course_data)
@@ -62,11 +80,12 @@ def build_single_course_json_ld(  # type: ignore[no-untyped-def]
         },
     }
 
+    course_json_ld["provider"].update(  # type: ignore[attr-defined]
+        get_organization_json_ld_links(course.organization)
+    )
+
     if course_data.image:
         course_json_ld["image"] = course_data.image
-
-    if course.organization.public_url:
-        course_json_ld["provider"]["url"] = course.organization.public_url  # type: ignore[index]
 
     if course.organization.logo:
         course_json_ld["provider"]["logo"] = request.build_absolute_uri(  # type: ignore[index]
@@ -135,6 +154,9 @@ class OrganizationView(TemplateView):
                 description=organization.description,
                 courses=courses,
                 public_url=organization.public_url,
+                website=organization.website,
+                youtube_channel=organization.youtube_channel,
+                linkedin_page=organization.linkedin_page,
             )
             enroll_api_path = reverse("django_email_learning:api_public:enroll")
             current_lang_code = get_language()
@@ -163,6 +185,9 @@ class OrganizationView(TemplateView):
                         "It seems you are using an in-app browser or have disabled cookies. Please open this link in a regular browser and ensure cookies are enabled to enroll in courses."
                     ),
                     "continue": _("Continue"),
+                    "linkedin_page": _("LinkedIn Page"),
+                    "youtube_channel": _("YouTube Channel"),
+                    "website": _("Website"),
                 },
             }
             context["organization_name"] = organization.name
@@ -233,6 +258,9 @@ class CourseView(TemplateView):
             else None,
             description=course.organization.description,
             public_url=course.organization.public_url,
+            website=course.organization.website,
+            youtube_channel=course.organization.youtube_channel,
+            linkedin_page=course.organization.linkedin_page,
         )
         enroll_api_path = reverse("django_email_learning:api_public:enroll")
         current_lang_code = get_language()

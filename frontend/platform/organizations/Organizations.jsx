@@ -141,6 +141,9 @@ function Organizations() {
                         initialName={org.name}
                         initialDescription={org.description}
                         initialLogoUrl={org.logo}
+                        initialWebsite={org.website}
+                        initialLinkedinPage={org.linkedin_page}
+                        initialYoutubeChannel={org.youtube_channel}
                         organizationId={org.id}
                       /></Suspense>);
                       setDialogOpen(true);
