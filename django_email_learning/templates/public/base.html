@@ -16,7 +16,9 @@
     <title>{% block title %}{{ page_title }}{% endblock %}</title>
   </head>
   <body dir="{% block directionrtl %}{% if IS_RTL %}rtl{% else %}ltr{% endif %}{% endblock %}">
+    {% block body %}
     <div id="root">
     </div>
+    {% endblock %}
   </body>
 </html>
