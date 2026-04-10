@@ -2,6 +2,7 @@ import 'vite/modulepreload-polyfill'
 import { useState, useEffect } from 'react'
 import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
 import Link from '@mui/material/Link';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
@@ -19,6 +20,7 @@ import Base from '../../src/components/Base.jsx'
 import SchoolIcon from '@mui/icons-material/School';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import LockIcon from '@mui/icons-material/Lock';
 import render, { useAppContext } from '../../src/render.jsx';
 import { getCookie } from '../../src/utils.js';
 import { lazy, Suspense } from "react";
@@ -148,7 +150,7 @@ function Courses() {
               {courses.length > 0 && courses.map((course) => (
                 <TableRow key={course.id}>
                   <TableCell component="th" scope="row" sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>
-                    <Link href={`${platformBaseUrl}/courses/${course.id}`} color='secondary.dark'>{course.title}</Link>
+                    <Link href={`${platformBaseUrl}/courses/${course.id}`} color='secondary.dark'>{course.title}</Link>{course.is_public ? "" : <Chip icon={<LockIcon fontSize="small" />} label={localeMessages["private"]} size="small" sx={{ ml: 1 }} />}
                   </TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: direction === 'rtl' ? 'right' : 'left' }}>{getLanguageLabel(course.language)}</TableCell>
                   <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{course.enrollments_count.total}</TableCell>

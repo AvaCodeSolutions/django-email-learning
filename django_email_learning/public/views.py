@@ -125,7 +125,9 @@ class OrganizationView(TemplateView):
         ).prefetch_related(
             Prefetch(
                 "course_set",
-                queryset=Course.objects.filter(enabled=True),
+                queryset=Course.objects.filter(
+                    enabled=True, is_public=True
+                ).select_related("imap_connection"),
                 to_attr="courses",
             ),
         )
@@ -228,7 +230,10 @@ class CourseView(TemplateView):
         context = super().get_context_data(**kwargs)
         try:
             course = Course.objects.select_related("organization").get(
-                slug=course_slug, organization__id=organization_id, enabled=True
+                slug=course_slug,
+                organization__id=organization_id,
+                enabled=True,
+                is_public=True,
             )
         except Course.DoesNotExist:
             raise Http404(_("Course does not exist"))

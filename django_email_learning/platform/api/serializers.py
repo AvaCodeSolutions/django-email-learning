@@ -115,6 +115,7 @@ class CreateCourseRequest(BaseModel):
             ]
         ],
     )
+    is_public: bool = Field(default=True, examples=[True])
 
     def to_django_model(self, organization_id: int) -> Course:
         organization = Organization.objects.get(id=organization_id)
@@ -139,6 +140,7 @@ class CreateCourseRequest(BaseModel):
             description=self.description,
             organization=organization,
             language=self.language,
+            is_public=self.is_public,
         )
         if imap_connection:
             course.imap_connection = imap_connection
@@ -184,6 +186,7 @@ class UpdateCourseRequest(BaseModel):
             ]
         ],
     )
+    is_public: Optional[bool] = Field(None, examples=[True])
 
     def to_django_model(self, course_id: int) -> Course:
         try:
@@ -220,7 +223,8 @@ class UpdateCourseRequest(BaseModel):
             course.external_references.all().delete()
             for ref in self.external_references:
                 course.external_references.create(name=ref["name"], url=ref["url"])
-
+        if self.is_public is not None:
+            course.is_public = self.is_public
         return course
 
 
@@ -239,6 +243,7 @@ class CourseResponse(BaseModel):
     is_rtl: bool = False
     target_audience: Optional[str] = None
     external_references: Optional[list[dict[str, str]]] = None
+    is_public: bool
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -270,6 +275,7 @@ class CourseResponse(BaseModel):
                 ]
                 if course.external_references.exists()
                 else None,
+                "is_public": course.is_public,
             }
         )
 
@@ -278,6 +284,7 @@ class CourseSummaryResponse(BaseModel):
     id: int
     title: str
     slug: str
+    is_public: bool
 
     model_config = ConfigDict(from_attributes=True)
 

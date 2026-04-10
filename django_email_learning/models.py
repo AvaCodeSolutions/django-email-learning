@@ -229,6 +229,7 @@ class Course(models.Model):
         default="en",
     )
     target_audience = models.TextField(null=True, blank=True)
+    is_public = models.BooleanField(default=True)
 
     def __str__(self) -> str:
         return self.title

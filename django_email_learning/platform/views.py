@@ -168,6 +168,10 @@ class Courses(BasePlatformView):
             "course_title": _("Course Title"),
             "course_description": _("Course Description"),
             "target_audience": _("Target Audience"),
+            "course_is_public": _("Public Course"),
+            "course_is_public_helper_text": _(
+                "Public courses are visible on your organization's public pages. Turn this off to keep the course private."
+            ),
             "external_references": _("External References"),
             "add_external_reference": _("Add Reference"),
             "external_references_helper_text": _(
@@ -193,6 +197,7 @@ class Courses(BasePlatformView):
             "password": _("Password"),
             "server": _("Server"),
             "port": _("Port"),
+            "private": _("Private"),
             "course_enable_confirmation": _(
                 "Are you sure you want to enable the course COURSE_NAME?"
             ),

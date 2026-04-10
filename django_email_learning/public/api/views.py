@@ -1,11 +1,9 @@
 from django.views import View
 from django.http import JsonResponse
 from pydantic import ValidationError
+from django_email_learning.models import Course
 from django_email_learning.public.api.serializers import EnrollmentRequest
 from django_email_learning.services.command_models.enroll_command import EnrollCommand
-from django_email_learning.services.command_models.exceptions.invalid_course_slug_error import (
-    InvalidCourseSlugError,
-)
 from django_email_learning.services.command_models.exceptions.blocked_email_error import (
     BlockedEmailError,
 )
@@ -24,6 +22,15 @@ class EnrollView(View):
         payload = json.loads(request.body)
         try:
             serlizer = EnrollmentRequest.model_validate(payload)
+            try:
+                Course.objects.get(
+                    slug=serlizer.course_slug,
+                    organization_id=serlizer.organization_id,
+                    is_public=True,
+                )
+            except Course.DoesNotExist:
+                return JsonResponse({"error": "Course not found"}, status=404)
+
             command = EnrollCommand(
                 email=serlizer.email,
                 course_slug=serlizer.course_slug,
@@ -39,9 +46,6 @@ class EnrollView(View):
             except BlockedEmailError as e:
                 logger.error(f"Blocked email error: {e}")
                 return JsonResponse({"error": str(e)}, status=403)
-            except InvalidCourseSlugError as e:
-                logger.error(f"Invalid course slug error: {e}")
-                return JsonResponse({"error": str(e)}, status=400)
 
         except ValidationError as e:
             return JsonResponse({"error": str(e)}, status=400)
