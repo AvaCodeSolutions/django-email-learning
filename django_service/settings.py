@@ -199,7 +199,7 @@ STATICFILES_DIRS = [
 ]
 
 # For production - where collectstatic puts files
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = BASE_DIR / "static"
 
 
 # Default primary key field type
