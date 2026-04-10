@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Divider, IconButton, MenuItem, Stack, TextField, Tooltip, FormControlLabel, Switch, Typography } from '@mui/material';
+import { Alert, Box, Button, Divider, IconButton, MenuItem, Stack, TextField, Tooltip, FormControlLabel, Switch, Typography, LinearProgress } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import RequiredTextField  from '../../../src/components/RequiredTextField.jsx';
 import AddImapConnectionForm from '../components/AddImapConnectionForm.jsx';
@@ -365,6 +365,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     };
 
     return (<Box p={2}>
+              { !createMode && !courseTitle ? <LinearProgress /> : <>
               { errorMessage && <Alert severity="error" sx={{ marginBottom: "10px" }}>{errorMessage}</Alert> }
               <RequiredTextField label={localeMessages["course_title"]} helperText={titleHelperText} fullWidth margin="normal" value={courseTitle} onChange={(e) => setCourseTitle(e.target.value)} />
               <Tooltip title={createMode ? localeMessages["slug_tooltip"] : ""}>
@@ -503,7 +504,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 <Button onClick={cancelCallback} sx={{ mr: 1 }}>Cancel</Button>
                 { createMode && <Button variant="contained" onClick={() => handleCreateCourse()} sx={{ boxShadow: 'none' }}>{localeMessages["create"]}</Button> }
                 { !createMode && <Button variant="contained" onClick={() => handleUpdateCourse()} sx={{ boxShadow: 'none' }}>{localeMessages["update"]}</Button> }
-              </Box>
+              </Box></>}
             </Box>);
 }
 
