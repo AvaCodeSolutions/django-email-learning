@@ -49,6 +49,15 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     const [imageServerPath, setImageServerPath] = useState(null)
     const [externalReferences, setExternalReferences] = useState([])
     const [originalExternalReferences, setOriginalExternalReferences] = useState([])
+    const [initialValues, setInitialValues] = useState({
+        title: "",
+        description: "",
+        targetAudience: "",
+        language: "",
+        isPublic: true,
+        imapConnectionId: null,
+        imageServerPath: null,
+    })
 
     const switchImapConnection = () => {
         if (addImapConnection) {
@@ -89,6 +98,15 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setIsPublic(data.is_public ?? true);
                 setImageUrl(data.image);
                 setImageServerPath(data.image_path);
+                setInitialValues({
+                    title: data.title || "",
+                    description: data.description || "",
+                    targetAudience: data.target_audience || "",
+                    language: data.language || "",
+                    isPublic: data.is_public ?? true,
+                    imapConnectionId: data.imap_connection_id ?? null,
+                    imageServerPath: data.image_path ?? null,
+                });
                 const initialExternalReferences = (data.external_references || []).map((reference) => ({
                     name: reference.name || '',
                     url: reference.url || '',
@@ -202,17 +220,43 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             return
         }
         const normalizedExternalReferences = normalizeExternalReferences(externalReferences);
+        const trimmedTargetAudience = courseTargetAudience.trim();
+        const currentImapConnectionId = addImapConnection && imapConnectionId != null
+            ? parseInt(imapConnectionId)
+            : null;
         const updatePayload = {
-            title: courseTitle,
-            // slug is not updatable
-            description: courseDescription,
-            target_audience: courseTargetAudience.trim(),
-            language: courseLanguage,
-            is_public: isPublic,
-            imap_connection_id: imapConnectionId && addImapConnection? parseInt(imapConnectionId) : null,
-            reset_imap_connection: !addImapConnection || imapConnectionId == null,
-            image: imageServerPath ? imageServerPath : null
+            image: imageServerPath === initialValues.imageServerPath
+                ? 'SKIP'
+                : (imageServerPath ? imageServerPath : null)
         };
+
+        if (courseTitle !== initialValues.title) {
+            updatePayload.title = courseTitle;
+        }
+
+        if (courseDescription !== initialValues.description) {
+            updatePayload.description = courseDescription;
+        }
+
+        if (trimmedTargetAudience !== initialValues.targetAudience.trim()) {
+            updatePayload.target_audience = trimmedTargetAudience;
+        }
+
+        if (courseLanguage !== initialValues.language) {
+            updatePayload.language = courseLanguage;
+        }
+
+        if (isPublic !== initialValues.isPublic) {
+            updatePayload.is_public = isPublic;
+        }
+
+        if (currentImapConnectionId !== initialValues.imapConnectionId) {
+            if (currentImapConnectionId == null) {
+                updatePayload.reset_imap_connection = true;
+            } else {
+                updatePayload.imap_connection_id = currentImapConnectionId;
+            }
+        }
 
         if (externalReferencesChanged(originalExternalReferences, normalizedExternalReferences)) {
             updatePayload.external_references = normalizedExternalReferences;
@@ -241,6 +285,15 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setErrorMessage(data.error);
                 failureCallback(data);
             } else {
+                setInitialValues({
+                    title: data.title || courseTitle,
+                    description: data.description || courseDescription,
+                    targetAudience: data.target_audience || trimmedTargetAudience,
+                    language: data.language || courseLanguage,
+                    isPublic: data.is_public ?? isPublic,
+                    imapConnectionId: data.imap_connection_id ?? currentImapConnectionId,
+                    imageServerPath: data.image_path ?? imageServerPath,
+                });
                 setOriginalExternalReferences(normalizeExternalReferences(data.external_references || normalizedExternalReferences));
                 console.log('Success:', data);
                 successCallback(data);
