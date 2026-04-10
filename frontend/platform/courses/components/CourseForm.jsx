@@ -365,7 +365,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     };
 
     return (<Box p={2}>
-              { !createMode && !courseTitle ? <LinearProgress /> : <>
+              { (!createMode && courseTitle=="") ? <LinearProgress /> : <>
               { errorMessage && <Alert severity="error" sx={{ marginBottom: "10px" }}>{errorMessage}</Alert> }
               <RequiredTextField label={localeMessages["course_title"]} helperText={titleHelperText} fullWidth margin="normal" value={courseTitle} onChange={(e) => setCourseTitle(e.target.value)} />
               <Tooltip title={createMode ? localeMessages["slug_tooltip"] : ""}>
