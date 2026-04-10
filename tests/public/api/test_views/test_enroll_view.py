@@ -52,6 +52,22 @@ def test_enroll_view_invalid_course_slug(anonymous_client, course):
         "course_slug": "non-existent-slug",
     }
     response = anonymous_client.post(URL, data=payload, content_type="application/json")
-    assert response.status_code == 400
+    assert response.status_code == 404
     assert "error" in response.json()
-    assert "does not exist" in response.json()["error"]
+    assert "Course not found" in response.json()["error"]
+
+
+def test_enroll_view_course_not_public(anonymous_client, course):
+    course.enabled = True
+    course.is_public = False
+    course.save()
+
+    payload = {
+        "organization_id": course.organization_id,
+        "email": "test@example.com",
+        "course_slug": course.slug,
+    }
+    response = anonymous_client.post(URL, data=payload, content_type="application/json")
+    assert response.status_code == 404
+    assert "error" in response.json()
+    assert "Course not found" in response.json()["error"]

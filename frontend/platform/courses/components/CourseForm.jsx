@@ -1,4 +1,4 @@
-import { Alert, Box, Button, IconButton, MenuItem, Stack, TextField, Tooltip, FormControlLabel, Switch, Typography } from '@mui/material';
+import { Alert, Box, Button, Divider, IconButton, MenuItem, Stack, TextField, Tooltip, FormControlLabel, Switch, Typography } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import RequiredTextField  from '../../../src/components/RequiredTextField.jsx';
 import AddImapConnectionForm from '../components/AddImapConnectionForm.jsx';
@@ -36,6 +36,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     const [courseDescription, setCourseDescription] = useState("")
     const [courseTargetAudience, setCourseTargetAudience] = useState("")
     const [courseLanguage, setCourseLanguage] = useState("")
+    const [isPublic, setIsPublic] = useState(createMode)
     const [addImapConnection, setAddImapConnection] = useState(false)
     const [imapConnectionId, setImapConnectionId] = useState(null)
     const [titleHelperText, setTitleHelperText] = useState("")
@@ -85,6 +86,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setCourseDescription(data.description);
                 setCourseTargetAudience(data.target_audience || "");
                 setCourseLanguage(data.language || "");
+                setIsPublic(data.is_public ?? true);
                 setImageUrl(data.image);
                 setImageServerPath(data.image_path);
                 const initialExternalReferences = (data.external_references || []).map((reference) => ({
@@ -206,6 +208,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             description: courseDescription,
             target_audience: courseTargetAudience.trim(),
             language: courseLanguage,
+            is_public: isPublic,
             imap_connection_id: imapConnectionId && addImapConnection? parseInt(imapConnectionId) : null,
             reset_imap_connection: !addImapConnection || imapConnectionId == null,
             image: imageServerPath ? imageServerPath : null
@@ -268,6 +271,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             description: courseDescription,
             target_audience: courseTargetAudience.trim(),
             language: courseLanguage,
+            is_public: isPublic,
             imap_connection_id: imapConnectionId ? parseInt(imapConnectionId) : null,
             external_references: normalizedExternalReferences.length > 0 ? normalizedExternalReferences : null,
             image: imageServerPath ? imageServerPath : null
@@ -294,6 +298,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setCourseDescription("");
                 setCourseTargetAudience("");
                 setCourseLanguage(languageOptions.length > 0 ? languageOptions[0].value : "");
+                setIsPublic(true);
                 setExternalReferences([]);
                 setOriginalExternalReferences([]);
                 setExternalReferenceErrors([]);
@@ -338,6 +343,18 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 onChange={(e) => setCourseTargetAudience(e.target.value)}
                 dir={direction}
               />
+              <Divider sx={{ my: 2 }} />
+              <Box mt={1}>
+                    <FormControlLabel
+                            control={<Switch checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} dir={direction} />}
+                            label={localeMessages["course_is_public"]}
+                            sx={{ m: 0 }}
+                    />
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                            {localeMessages["course_is_public_helper_text"]}
+                    </Typography>
+              </Box>
+              <Divider sx={{ my: 2 }} />
               <Box mt={2}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
                     <Typography variant="subtitle1">{localeMessages["external_references"]}</Typography>

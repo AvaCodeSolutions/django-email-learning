@@ -94,6 +94,12 @@ class CourseView(View):
                 courses = courses.filter(enabled=True)
             elif enabled.lower() in ["false", "no"]:
                 courses = courses.filter(enabled=False)
+        is_public = request.GET.get("is_public")
+        if is_public is not None:
+            if is_public.lower() in ["true", "yes"]:
+                courses = courses.filter(is_public=True)
+            elif is_public.lower() in ["false", "no"]:
+                courses = courses.filter(is_public=False)
 
         response_list = []
         for course in courses:

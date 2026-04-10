@@ -230,6 +230,24 @@ def test_get_courses_filter_by_enabled(
         assert response.json()["courses"][0]["enabled"] is (enabled == "true")
 
 
+def test_get_courses_filter_by_is_public(course, superadmin_client):
+    # Make one of the courses public
+    course.is_public = False
+    course.save()
+
+    # Check filtering for public courses
+    response = superadmin_client.get(get_url(1) + "?is_public=true")
+    assert response.status_code == 200
+    assert len(response.json()["courses"]) == 0
+
+    # Check filtering for non public courses
+    response = superadmin_client.get(get_url(1) + "?public=false")
+    assert response.status_code == 200
+    assert len(response.json()["courses"]) == 1
+    assert response.json()["courses"][0]["title"] == course.title
+    assert response.json()["courses"][0]["is_public"] is False
+
+
 def test_update_course_success(superadmin_client):
     # First, create a course to update
     create_payload = valid_create_course_payload()

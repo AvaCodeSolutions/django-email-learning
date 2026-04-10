@@ -100,3 +100,16 @@ def test_course_view_includes_terms_of_service_url_when_configured(
 
     assert response.status_code == 200
     assert response.context["appContext"]["termsOfServiceUrl"] == tos_settings
+
+
+def test_course_view_excludes_non_public_course(db, anonymous_client, course):
+    course.enabled = True
+    course.is_public = False
+    course.save()
+
+    url = reverse(
+        "django_email_learning:public:course_view",
+        kwargs={"organization_id": 1, "course_slug": course.slug},
+    )
+    response = anonymous_client.get(url)
+    assert response.status_code == 404
