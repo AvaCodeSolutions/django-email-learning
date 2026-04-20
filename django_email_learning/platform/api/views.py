@@ -576,6 +576,8 @@ class SingleOrganizationView(View):
                 organization.youtube_channel = serializer.youtube_channel
             if serializer.linkedin_page is not None:
                 organization.linkedin_page = serializer.linkedin_page
+            if serializer.is_public is not None:
+                organization.is_public = serializer.is_public
             organization.save()
             return JsonResponse(
                 serializers.OrganizationResponse.from_django_model(

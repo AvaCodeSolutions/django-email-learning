@@ -113,3 +113,21 @@ def test_course_view_excludes_non_public_course(db, anonymous_client, course):
     )
     response = anonymous_client.get(url)
     assert response.status_code == 404
+
+
+def test_course_view_excludes_course_from_non_public_organization(
+    db, anonymous_client, course
+):
+    course.enabled = True
+    course.save()
+
+    # Make the organization non-public
+    course.organization.is_public = False
+    course.organization.save()
+
+    url = reverse(
+        "django_email_learning:public:course_view",
+        kwargs={"organization_id": 1, "course_slug": course.slug},
+    )
+    response = anonymous_client.get(url)
+    assert response.status_code == 404

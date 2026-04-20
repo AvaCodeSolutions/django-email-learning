@@ -121,7 +121,8 @@ class OrganizationView(TemplateView):
         context = super().get_context_data(**kwargs)
         # Add any additional context if needed
         organization_details = Organization.objects.filter(
-            id=organization_id
+            id=organization_id,
+            is_public=True,
         ).prefetch_related(
             Prefetch(
                 "course_set",
@@ -234,6 +235,7 @@ class CourseView(TemplateView):
                 organization__id=organization_id,
                 enabled=True,
                 is_public=True,
+                organization__is_public=True,
             )
         except Course.DoesNotExist:
             raise Http404(_("Course does not exist"))
