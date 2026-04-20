@@ -204,3 +204,34 @@ def test_delete_organization_requires_platform_admin_or_superadmin(client):
     organization = Organization.objects.first()
     response = client.delete(update_url(organization.id))
     assert response.status_code == 403
+
+
+def test_create_private_organization(superadmin_client):
+    payload = {
+        "name": "Private Org",
+        "description": "This organization is private",
+        "is_public": False,
+    }
+    response = superadmin_client.post(
+        get_url(), data=payload, content_type="application/json"
+    )
+    assert response.status_code == 201
+    assert response.json().get("is_public") is False
+
+
+def test_update_organization_to_private(superadmin_client):
+    organization = Organization.objects.first()
+    assert organization.is_public is True
+    payload = {
+        "name": organization.name,
+        "description": organization.description,
+        "is_public": False,
+    }
+    response = superadmin_client.post(
+        update_url(organization.id), data=payload, content_type="application/json"
+    )
+    assert response.status_code == 200
+    assert response.json().get("is_public") is False
+
+    organization.refresh_from_db()
+    assert organization.is_public is False

@@ -2,6 +2,7 @@ import Base from "../../src/components/Base";
 import Alert from "@mui/material/Alert"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
+import Chip from "@mui/material/Chip"
 import Dialog from "@mui/material/Dialog"
 import Grid from "@mui/material/Grid"
 import IconButton from "@mui/material/IconButton"
@@ -19,6 +20,7 @@ import AddIcon from '@mui/icons-material/Add';
 import PublicIcon from '@mui/icons-material/Public';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import LockIcon from '@mui/icons-material/Lock';
 import { useState, useEffect, use } from "react";
 import { getCookie } from "../../src/utils";
 import render, { useAppContext } from "../../src/render";
@@ -129,9 +131,12 @@ function Organizations() {
             <TableBody>
               { organizations.map((org) => (
                 <TableRow key={org.id}>
-                  <TableCell dir={htmlTag.dir} sx={{ textAlign: htmlTag.dir === 'rtl' ? 'right' : 'left' }}><Link color='secondary.dark' href={`${platformBaseUrl}/organizations/${org.id}/`}>{org.name}</Link></TableCell>
+                  <TableCell dir={htmlTag.dir} sx={{ textAlign: htmlTag.dir === 'rtl' ? 'right' : 'left' }}>
+                    <Link color='secondary.dark' href={`${platformBaseUrl}/organizations/${org.id}/`}>{org.name}</Link>
+                    { !org.is_public && <Chip icon={<LockIcon fontSize="small" />} label={localeMessages["private"]} size="small" sx={{ ml: 1 }} /> }
+                  </TableCell>
                   <TableCell>
-                    <IconButton onClick={() => goToUrl(org.public_url)}><PublicIcon fontSize="small"/></IconButton>
+                    { org.is_public ? <IconButton onClick={() => goToUrl(org.public_url)}><PublicIcon fontSize="small"/></IconButton> : <IconButton disabled><PublicIcon fontSize="small" sx={{ color: 'grey.300' }}/></IconButton> }
                     { isPlatformAdmin && <><IconButton onClick={() => {
                       setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><OrganizationForm
                         successCallback={handleSuccessFormSubmission}
@@ -144,6 +149,7 @@ function Organizations() {
                         initialWebsite={org.website}
                         initialLinkedinPage={org.linkedin_page}
                         initialYoutubeChannel={org.youtube_channel}
+                        initialIsPublic={org.is_public}
                         organizationId={org.id}
                       /></Suspense>);
                       setDialogOpen(true);

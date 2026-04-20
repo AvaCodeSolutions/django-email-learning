@@ -382,6 +382,7 @@ class Organizations(BasePlatformView):
     def get_context_data(self, **kwargs):  # type: ignore[no-untyped-def]
         context = super().get_context_data(**kwargs)
         context["page_title"] = _("Organizations")
+        context["appContext"]["defaultOrgSetting"] = {"isPublic": True}
         return context
 
     def get_locale_messages(self) -> Dict[str, str]:
@@ -401,7 +402,12 @@ class Organizations(BasePlatformView):
             "remove_image": _("Remove Logo"),
             "create": _("Create"),
             "update": _("Update"),
+            "organization_is_public": _("Public Organization"),
+            "organization_is_public_helper_text": _(
+                "Public organizations are visible on your public pages. Turn this off to keep the organization private."
+            ),
             "uploaded_image_alt": _("Organization Logo"),
+            "private": _("Private"),
             "are_you_sure_delete_org": _(
                 'Are you sure you want to delete the organization "ORGANIZATION_NAME"? All course content and users in this organization will also be deleted.'
             ),

@@ -346,6 +346,7 @@ class OrganizationResponse(BaseModel):
     website: Optional[str] = None
     youtube_channel: Optional[str] = None
     linkedin_page: Optional[str] = None
+    is_public: bool
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -370,6 +371,7 @@ class OrganizationResponse(BaseModel):
                 "website": organization.website,
                 "youtube_channel": organization.youtube_channel,
                 "linkedin_page": organization.linkedin_page,
+                "is_public": organization.is_public,
             }
         )
 
@@ -387,6 +389,7 @@ class CreateOrganizationRequest(BaseModel):
     linkedin_page: Optional[str] = Field(
         None, examples=["https://linkedin.com/company/xyz"]
     )
+    is_public: bool = Field(default=True, examples=[True])
 
     def to_django_model(self) -> Organization:
         organization = Organization(
@@ -395,6 +398,7 @@ class CreateOrganizationRequest(BaseModel):
             website=self.website,
             youtube_channel=self.youtube_channel,
             linkedin_page=self.linkedin_page,
+            is_public=self.is_public,
         )
         organization.save()
         organization.refresh_from_db()
@@ -419,6 +423,7 @@ class UpdateOrganizationRequest(BaseModel):
     )
     logo: Optional[str] = Field(None, examples=["/path/to/logo.png"])
     remove_logo: Optional[bool] = Field(None, examples=[True])
+    is_public: Optional[bool] = Field(None, examples=[True])
 
 
 class UserRole(enum.StrEnum):

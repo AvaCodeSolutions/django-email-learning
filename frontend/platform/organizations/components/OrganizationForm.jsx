@@ -1,11 +1,13 @@
-import { Alert, Box, Button, DialogActions, TextField } from "@mui/material";
+import { Alert, Box, Button, DialogActions, Divider, FormControlLabel, Switch, TextField, Typography } from "@mui/material";
 import RequiredTextField  from "../../../src/components/RequiredTextField.jsx";
 import ImageUpload from '../../../src/components/ImageUpload.jsx';
 import { useState } from "react";
 import { getCookie } from '../../../src/utils.js';
 import { useAppContext } from '../../../src/render.jsx';
 
-function OrganizationForm({ successCallback, failureCallback, cancelCallback, createMode, initialName, initialDescription, initialLogoUrl, initialWebsite, initialLinkedinPage, initialYoutubeChannel, organizationId }) {
+function OrganizationForm({ successCallback, failureCallback, cancelCallback, createMode, initialName, initialDescription, initialLogoUrl, initialWebsite, initialLinkedinPage, initialYoutubeChannel, initialIsPublic, organizationId }) {
+    const { localeMessages, apiBaseUrl, direction, defaultOrgSetting, defaultOrgSettings } = useAppContext();
+    const defaultVisibility = defaultOrgSetting?.isPublic ?? defaultOrgSettings?.isPublic ?? true;
     const [name, setName] = useState(initialName || "");
     const [description, setDescription] = useState(initialDescription || "");
     const [website, setWebsite] = useState(initialWebsite || "");
@@ -17,8 +19,8 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
     const [linkedinPageHelperText, setLinkedinPageHelperText] = useState("");
     const [youtubeChannelHelperText, setYoutubeChannelHelperText] = useState("");
     const [logoServerPath, setLogoServerPath] = useState(null);
+    const [isPublic, setIsPublic] = useState(initialIsPublic ?? defaultVisibility);
     const [errorMessage, setErrorMessage] = useState();
-    const { localeMessages, apiBaseUrl } = useAppContext();
 
     const validateOptionalUrl = (value) => {
         const trimmedValue = value.trim();
@@ -90,6 +92,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
             website: website.trim(),
             linkedin_page: linkedinPage.trim(),
             youtube_channel: youtubeChannel.trim(),
+            is_public: isPublic,
         };
 
         if (logoServerPath) {
@@ -144,6 +147,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
                 website: website.trim(),
                 linkedin_page: linkedinPage.trim(),
                 youtube_channel: youtubeChannel.trim(),
+                is_public: isPublic,
             }),
         })
         .then(response => {
@@ -171,6 +175,18 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
             <TextField label="Website" type="url" fullWidth margin="normal" value={website} error={Boolean(websiteHelperText)} helperText={websiteHelperText} onChange={(e) => setWebsite(e.target.value)} />
             <TextField label="LinkedIn page" type="url" fullWidth margin="normal" value={linkedinPage} error={Boolean(linkedinPageHelperText)} helperText={linkedinPageHelperText} onChange={(e) => setLinkedinPage(e.target.value)} />
             <TextField label="YouTube channel" type="url" fullWidth margin="normal" value={youtubeChannel} error={Boolean(youtubeChannelHelperText)} helperText={youtubeChannelHelperText} onChange={(e) => setYoutubeChannel(e.target.value)} />
+            <Divider sx={{ my: 2 }} />
+            <Box mt={1}>
+                <FormControlLabel
+                    control={<Switch checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} dir={direction} />}
+                    label={localeMessages["organization_is_public"]}
+                    sx={{ m: 0 }}
+                />
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    {localeMessages["organization_is_public_helper_text"]}
+                </Typography>
+            </Box>
+            <Divider sx={{ my: 2 }} />
             <ImageUpload initialUrl={initialLogoUrl} onUploadSuccess={(data) => {
                 setLogoServerPath(data.file_path);
             }} onUploadError={(error) => {

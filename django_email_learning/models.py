@@ -87,12 +87,15 @@ class Organization(models.Model):
     website = models.URLField(max_length=500, null=True, blank=True)
     youtube_channel = models.URLField(max_length=500, null=True, blank=True)
     linkedin_page = models.URLField(max_length=500, null=True, blank=True)
+    is_public = models.BooleanField(default=True)
 
     def __str__(self) -> str:
         return self.name
 
     @property
     def public_url(self) -> str:
+        if not self.is_public:
+            raise ValueError("Organization is not public, no public URL available.")
         path = reverse(
             "django_email_learning:public:organization_view",
             kwargs={"organization_id": self.id},
