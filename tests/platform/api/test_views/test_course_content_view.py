@@ -167,6 +167,7 @@ def test_create_quiz_content(superadmin_client, create_course):
             "required_score": 70,
             "selection_strategy": "all",
             "deadline_days": 14,
+            "limited_attempts": False,
             "questions": [
                 {
                     "text": "What is Python?",
@@ -203,6 +204,8 @@ def test_create_quiz_content(superadmin_client, create_course):
     assert data["waiting_period"] == {"period": 1, "type": "hours"}
     assert data["quiz"]["title"] == "Quiz 1"
     assert data["quiz"]["required_score"] == 70
+    assert data["quiz"]["selection_strategy"] == "all"
+    assert data["quiz"]["limited_attempts"] is False
     assert len(data["quiz"]["questions"]) == 2
     assert len(data["quiz"]["questions"][0]["answers"]) == 2
     assert len(data["quiz"]["questions"][1]["answers"]) == 2
@@ -461,6 +464,22 @@ def test_update_course_content_waiting_period(superadmin_client, course_lesson_c
     data = response.json()
     assert data["id"] == course_lesson_content.id
     assert data["waiting_period"] == {"period": 3, "type": "days"}
+
+
+def test_update_course_content_limited_attempts(superadmin_client, course_quiz_content):
+    url = single_content_url(
+        course_content_id=course_quiz_content.id,
+        course_id=course_quiz_content.course.id,
+        organization_id=course_quiz_content.course.organization.id,
+    )
+    payload = {"quiz": {"limited_attempts": False}}
+    response = superadmin_client.post(
+        url, json.dumps(payload), content_type="application/json"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == course_quiz_content.id
+    assert data["quiz"]["limited_attempts"] is False
 
 
 def test_update_course_content_no_fields_provided(

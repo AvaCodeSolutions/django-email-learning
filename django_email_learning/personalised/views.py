@@ -158,6 +158,7 @@ class QuizPublicView(BaseTemplateView):
                             ),
                             "cancel": _("Cancel"),
                             "submit": _("Submit"),
+                            "try_again": _("Try Again"),
                             "close_window_message": _("You can now close this window!"),
                         },
                     }
@@ -166,6 +167,23 @@ class QuizPublicView(BaseTemplateView):
             )
 
         except ContentDelivery.DoesNotExist as e:
+            if ContentDelivery.objects.filter(  # type: ignore[misc]
+                id=decoded_token.get("delivery_id")
+            ).exists():
+                return self.render_to_response(
+                    context={
+                        "appContext": {
+                            "errorMessage": _(
+                                "The quiz link has already been used and is not valid anymore."
+                            ),
+                            "localeMessages": {
+                                "error": _("Error"),
+                            },
+                        },
+                        "page_title": _("Quiz Link Expired"),
+                    },
+                    status=410,
+                )
             return self.error_response(
                 message=_("An error occurred while retrieving the quiz"),
                 exception=e,

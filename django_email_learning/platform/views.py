@@ -247,6 +247,9 @@ class CourseView(BasePlatformView):
         context["appContext"]["courseTitle"] = course.title
         context["appContext"]["courseLanguage"] = course.language
         context["appContext"]["customComponent"] = None
+        context["appContext"]["quizDefaults"] = {
+            "limitedAttempts": True,
+        }
         context["appContext"]["direction"] = (
             "rtl" if get_language_info(course.language)["bidi"] else "ltr"
         )
@@ -320,6 +323,20 @@ class CourseView(BasePlatformView):
             "add_question": _("Add Question"),
             "quiz_settings": _("Quiz Settings"),
             "waiting_period": _("Waiting Period"),
+            "limited_attempts": _("Limited Attempts"),
+            "unlimited_attempts": _("Unlimited Attempts"),
+            "two_attempts": _("2 Attempts"),
+            "limited_attempts_tooltip": _(
+                "If limited attempts is enabled, learners only have 2 attempts to pass the quiz. "
+                "After 2 failed attempts, they will fail the course and need to restart it. If limited attempts is disabled, "
+                "learners can retry the quiz as many times as needed until they pass."
+            ),
+            "quiz_2_attempts_sub_note": _(
+                "Learners only have 2 attempts to pass the quiz. After 2 failed attempts, they will fail the course and need to restart it."
+            ),
+            "quiz_unlimited_attempts_sub_note": _(
+                "Learners can retry the quiz as many times as needed until they pass."
+            ),
             "quiz_waiting_tooltip": _(
                 "Time to wait after the previous content delivery before sending this quiz"
             ),

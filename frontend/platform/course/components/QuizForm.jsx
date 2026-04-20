@@ -1,12 +1,12 @@
 import { useRef, useState, useEffect } from 'react';
-import { Alert,Box, Button, Grid, InputLabel, MenuItem, Select, Tooltip, Typography, Dialog } from '@mui/material';
+import { Alert,Box, Button, FormControlLabel, Grid, InputLabel, MenuItem, Select, Switch, Tooltip, Typography, Dialog } from '@mui/material';
 import QuizIcon from '@mui/icons-material/Quiz';
 import RequiredTextField from '../../../src/components/RequiredTextField';
 import QuestionForm from './QuestionForm';
 import { getCookie } from '../../../src/utils';
 import { useAppContext } from '../../../src/render';
 
-const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod, initialStrategy, initialDeadlineDays }) => {
+const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod, initialStrategy, initialDeadlineDays, initialLimitedAttempts }) => {
     const questionIdRef = useRef(0);
     const createQuestionId = () => {
         questionIdRef.current += 1;
@@ -23,6 +23,9 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     const [title, setTitle] = useState(initialTitle || "");
     const [requiredScore , setRequiredScore] = useState(initialRequiredScore || 70);
     const [selectionStrategy, setSelectionStrategy] = useState(initialStrategy || "random");
+    const { localeMessages, userRole, apiBaseUrl, quizDefaults = {} } = useAppContext();
+    const initialLimitedAttemptsValue = initialLimitedAttempts ?? quizDefaults.limitedAttempts ?? true;
+    const [limitedAttempts, setLimitedAttempts] = useState(initialLimitedAttemptsValue);
     const [deadlineDays, setDeadlineDays] = useState(initialDeadlineDays || 14);
     const [waitingPeriod, setWaitingPeriod] = useState(initialWaitingPeriod ? initialWaitingPeriod.period : 1);
     const [waitingPeriodUnit, setWaitingPeriodUnit] = useState(initialWaitingPeriod ? initialWaitingPeriod.type : "days");
@@ -31,8 +34,6 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     const organizationId = localStorage.getItem('activeOrganizationId');
     const [confirmCloseDialogOpen, setConfirmCloseDialogOpen] = useState(false);
 
-
-    const { localeMessages, userRole, apiBaseUrl } = useAppContext();
 
     const compareQuestions = (questions1, questions2) => {
         if (questions1.length !== questions2.length) {
@@ -61,8 +62,8 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     }
 
     const hasUnsavedChanges = () => {
-        if (!compareQuestions(questions, initialQuestions) || title !== initialTitle || requiredScore !== initialRequiredScore || selectionStrategy !== initialStrategy || deadlineDays !== initialDeadlineDays || waitingPeriod !== (initialWaitingPeriod ? initialWaitingPeriod.period : 1) || waitingPeriodUnit !== (initialWaitingPeriod ? initialWaitingPeriod.type : "days")) {
-            console.log(questions, initialQuestions, title, initialTitle, requiredScore, initialRequiredScore, selectionStrategy, initialStrategy, deadlineDays, initialDeadlineDays, waitingPeriod, (initialWaitingPeriod ? initialWaitingPeriod.period : 1), waitingPeriodUnit, (initialWaitingPeriod ? initialWaitingPeriod.type : "days"));
+        if (!compareQuestions(questions, initialQuestions || []) || title !== initialTitle || requiredScore !== initialRequiredScore || selectionStrategy !== initialStrategy || limitedAttempts !== initialLimitedAttemptsValue || deadlineDays !== initialDeadlineDays || waitingPeriod !== (initialWaitingPeriod ? initialWaitingPeriod.period : 1) || waitingPeriodUnit !== (initialWaitingPeriod ? initialWaitingPeriod.type : "days")) {
+            console.log(questions, initialQuestions, title, initialTitle, requiredScore, initialRequiredScore, selectionStrategy, initialStrategy, limitedAttempts, initialLimitedAttemptsValue, deadlineDays, initialDeadlineDays, waitingPeriod, (initialWaitingPeriod ? initialWaitingPeriod.period : 1), waitingPeriodUnit, (initialWaitingPeriod ? initialWaitingPeriod.type : "days"));
             return true;
         }
         return false;
@@ -86,6 +87,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                     required_score: requiredScore,
                     selection_strategy: selectionStrategy,
                     deadline_days: deadlineDays,
+                    limited_attempts: limitedAttempts,
                     questions: questionsPayload(),
                 },
                 waiting_period: {
@@ -194,6 +196,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                     required_score: requiredScore,
                     selection_strategy: selectionStrategy,
                     deadline_days: deadlineDays,
+                    limited_attempts: limitedAttempts,
                     questions: questionsPayload(),
                 },
                 waiting_period: {
@@ -397,6 +400,29 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                                     <MenuItem value="all">{localeMessages["all_questions"]}</MenuItem>
                                     <MenuItem value="random">{localeMessages["random_questions"]}</MenuItem>
                                 </Select>
+                            </Box>
+                        </Tooltip>
+                    </Grid>
+
+                    <Grid size={{ xs: 12 }}>
+                        <Tooltip
+                            title={localeMessages["limited_attempts_tooltip"]}
+                            placement="top-start"
+                        >
+                            <Box>
+                                <InputLabel sx={{ mb: 1, fontSize: '0.9rem', color: 'text.secondary' }}>
+                                    {localeMessages["limited_attempts"]}
+                                </InputLabel>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={limitedAttempts}
+                                            onChange={(e) => setLimitedAttempts(e.target.checked)}
+                                            disabled={userRole === 'viewer'}
+                                        />
+                                    }
+                                    label={localeMessages["limited_attempts"]}
+                                />
                             </Box>
                         </Tooltip>
                     </Grid>
