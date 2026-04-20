@@ -233,6 +233,7 @@ function Course() {
                                 initialWaitingPeriod={content.waiting_period}
                                 initialStrategy={content.quiz.selection_strategy}
                                 initialDeadlineDays={content.quiz.deadline_days}
+                                initialLimitedAttempts={content.quiz.limited_attempts}
                                  /></Suspense>);
             }
         }

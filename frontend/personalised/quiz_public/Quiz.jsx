@@ -1,7 +1,7 @@
 import render, { useAppContext } from '../../src/render.jsx';
 import { use, useEffect, useState } from 'react';
 import Layout from '../../public/components/Layout.jsx';
-import { Alert, Box, Button, Checkbox, FormControlLabel, Typography, Dialog } from '@mui/material';
+import { Alert, Box, Button, Checkbox, FormControlLabel, Typography, Dialog, Link } from '@mui/material';
 import CelebrationIcon from '@mui/icons-material/Celebration';
 import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDissatisfied';
 
@@ -14,6 +14,7 @@ const Quiz = () => {
     const [showQuestions, setShowQuestions] = useState(true);
     const [isPassed, setIsPassed] = useState(null);
     const [message, setMessage] = useState("");
+    const [isInvalidated, setIsInvalidated] = useState(true);
     const [score, setScore] = useState(null);
 
 
@@ -46,6 +47,7 @@ const Quiz = () => {
            setIsPassed(data.passed);
            setScore(data.score);
            setMessage(data.message);
+           setIsInvalidated(data.is_invalidated);
         })
         .catch(() => {
             console.error("Error submitting quiz");
@@ -88,8 +90,10 @@ const Quiz = () => {
         </Box>
         </Box></> : <Box textAlign="center">
             {isPassed !== null && (isPassed ? <><CelebrationIcon sx={{mb: 2, color: 'primary.main', fontSize: '3rem'}}/><Alert severity="success" sx={{justifyContent: 'center', alignItems: 'center'}} ><Typography variant='h6'>{message} {localeMessages['your_score']}: {score}%</Typography></Alert></> :
-            <Alert severity="error" sx={{ justifyContent: 'center', alignItems: 'center' }} ><Typography variant="h6">{message} {localeMessages['your_score']}: {score}%</Typography></Alert>)}
-            <Box sx={{mt: 6, fontSize: '0.8rem'}}><Typography>{localeMessages['close_window_message']}</Typography></Box>
+            <><Alert severity="error" sx={{ justifyContent: 'center', alignItems: 'center' }} ><Typography variant="h6">{message} {localeMessages['your_score']}: {score}%</Typography></Alert>
+            {!isInvalidated && <Box mt={3} textAlign="center"><Button onClick={() => window.location.reload()} variant="contained">{localeMessages['try_again']}</Button></Box>}
+            </>)}
+            <Box sx={{mt: 6, fontSize: '0.8rem'}}>{ isInvalidated && <Typography>{localeMessages['close_window_message']}</Typography>}</Box>
         </Box>}
         </Box> : <Alert severity="error"><Typography variant="h6">{localeMessages['error']}: {errorMessage} {ref && `(Ref: ${ref})`}</Typography></Alert>}
         <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">

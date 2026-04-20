@@ -554,12 +554,13 @@ MAX_QUIZ_DEADLINE = 30
 
 
 class UpdateQuiz(BaseModel):
-    questions: Optional[list[QuestionUpdate]] = Field(min_length=1)
+    questions: Optional[list[QuestionUpdate]] = Field(min_length=1, default=None)
     title: Optional[str] = None
     required_score: Optional[int] = Field(ge=0, examples=[80], default=None)
-    selection_strategy: QuizSelectionStrategy
-    deadline_days: int = Field(
-        ge=MIN_QUIZ_DEADLINE, le=MAX_QUIZ_DEADLINE, examples=[14]
+    selection_strategy: Optional[QuizSelectionStrategy] = None
+    limited_attempts: Optional[bool] = None
+    deadline_days: Optional[int] = Field(
+        ge=MIN_QUIZ_DEADLINE, le=MAX_QUIZ_DEADLINE, examples=[14], default=None
     )
 
     model_config = ConfigDict(extra="forbid")
@@ -574,6 +575,7 @@ class QuizCreate(BaseModel):
     )
     questions: list[QuestionCreate] = Field(min_length=1)
     type: Literal["quiz"] = "quiz"
+    limited_attempts: bool = Field(default=True, examples=[True])
 
 
 class QuizResponse(BaseModel):
@@ -583,6 +585,7 @@ class QuizResponse(BaseModel):
     selection_strategy: str
     deadline_days: int = Field(ge=MIN_QUIZ_DEADLINE, le=MAX_QUIZ_DEADLINE)
     questions: Any  # Will be converted to list in field_serializer
+    limited_attempts: bool
 
     @field_serializer("questions")
     def serialize_questions(self, questions: Any) -> list[dict]:
@@ -827,6 +830,7 @@ class CreateCourseContentRequest(BaseModel):
                 required_score=self.content.required_score,
                 selection_strategy=self.content.selection_strategy.value,  # type: ignore[misc]
                 deadline_days=self.content.deadline_days,  # type: ignore[misc]
+                limited_attempts=self.content.limited_attempts,  # type: ignore[misc]
             )
             quiz.save()
             for question_data in self.content.questions:
@@ -905,6 +909,7 @@ class CourseContentSummaryResponse(BaseModel):
     waiting_period: int
     is_published: bool
     type: str
+    limited_attempts: Optional[bool] = None
 
     @field_serializer("waiting_period")
     def serialize_waiting_period(self, waiting_period: int) -> dict:

@@ -82,39 +82,47 @@ class QuizSubmissionView(View):
             score=score,
             is_passed=passed,
         )
-        # Updating the ContentDelivery hash value to invalidate the quiz link
-        delivery.update_hash()
 
         if passed:
+            delivery.update_hash()  # Invalidate the quiz link after successful submission
             message = _("Congratulations! You have passed the quiz.")
             delivery = delivery.schedule_next_delivery()
+
             if not delivery:
                 enrollment.graduate()
         else:
-            # Check if it's the second attempt failing
             failed_submissions_count = QuizSubmission.objects.filter(
                 delivery=delivery,
                 is_passed=False,
             ).count()
 
-            if failed_submissions_count > 1:
-                message = _(
-                    "You have failed the quiz twice. Unfortunately, you cannot continue this course with this enrollment. You can enroll again to retake the course."
-                )
-                logger.info(
-                    f"Learner ID {enrollment.learner.id} has failed the quiz twice for Course {enrollment.course.title}. "
-                    f"Marking enrollment as failed."
-                )
-                enrollment.fail()
+            if quiz.limited_attempts:
+                delivery.update_hash()
+
+                # Check if it's the second attempt failing
+
+                if failed_submissions_count > 1:
+                    message = _(
+                        "You have failed the quiz twice. Unfortunately, you cannot continue this course with this enrollment. You can enroll again to retake the course."
+                    )
+                    logger.info(
+                        f"Learner ID {enrollment.learner.id} has failed the quiz twice for Course {enrollment.course.title}. "
+                        f"Marking enrollment as failed."
+                    )
+                    enrollment.fail()
+                else:
+                    message = _(
+                        "You have failed the quiz. You will receive another chance to retake it tomorrow."
+                    )
+                    logger.info(
+                        f"Learner ID {enrollment.learner.id} has failed the quiz for Course {enrollment.course.title}. "
+                        f"Scheduling a retry for the next day."
+                    )
+                    delivery.repeat_delivery_in_days(1)
             else:
                 message = _(
-                    "You have failed the quiz. You will receive another chance to retake it tomorrow."
+                    f"You have failed the quiz with score {score}. Please review the material and try again."
                 )
-                logger.info(
-                    f"Learner ID {enrollment.learner.id} has failed the quiz for Course {enrollment.course.title}. "
-                    f"Scheduling a retry for the next day."
-                )
-                delivery.repeat_delivery_in_days(1)
 
         METRIC_SERVICE.quiz_submitted(
             course_slug=enrollment.course.slug,
@@ -128,6 +136,7 @@ class QuizSubmissionView(View):
                 "passed": passed,
                 "required_score": quiz.required_score,
                 "message": message,
+                "is_invalidated": quiz.limited_attempts and not passed,
             },
             status=200,
         )

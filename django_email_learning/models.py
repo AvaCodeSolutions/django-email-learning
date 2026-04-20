@@ -342,6 +342,7 @@ class Quiz(models.Model):
         help_text="Time limit to complete the quiz in days. Minimum is 1 day and maximum is 30 days.",
         validators=[MinValueValidator(1), MaxValueValidator(30)],
     )
+    limited_attempts = models.BooleanField(default=True)
 
     class Meta:
         verbose_name_plural = "Quizzes"
@@ -436,6 +437,12 @@ class CourseContent(models.Model):
         elif self.type == "quiz" and self.quiz:
             return self.quiz.title
         return "Untitled Content"
+
+    @property
+    def limited_attempts(self) -> Optional[bool]:
+        if self.type == "quiz" and self.quiz:
+            return self.quiz.limited_attempts
+        return None
 
     def human_readable_waiting_period(self) -> str:
         if self.waiting_period < 60:
@@ -911,7 +918,10 @@ class QuizSubmission(models.Model):
         already_submitted = QuizSubmission.objects.filter(
             delivery=self.delivery
         ).count()
-        if already_submitted >= self.delivery.times_delivered:
+        if (
+            self.delivery.course_content.quiz.limited_attempts  # type: ignore[union-attr]
+            and already_submitted >= self.delivery.times_delivered
+        ):
             raise ValidationError(
                 "Quiz submission count exceeds the number of times the quiz was sent."
             )
