@@ -1,5 +1,5 @@
 import Base from '../../src/components/Base.jsx'
-import { Avatar, InputBase, IconButton, Box, Dialog, Grid, LinearProgress, Pagination, Paper, TableContainer, Table, TableBody, TableHead, TableCell, TableRow, Typography } from '@mui/material'
+import { Avatar, InputBase, IconButton, Box, Chip, Dialog, Grid, LinearProgress, Pagination, Paper, TableContainer, Table, TableBody, TableHead, TableCell, TableRow, Typography } from '@mui/material'
 import { Timeline, TimelineItem, TimelineContent, TimelineOppositeContent, TimelineSeparator, TimelineConnector, TimelineDot } from '@mui/lab'
 import { useState, useEffect, useRef } from 'react'
 import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
@@ -57,11 +57,18 @@ function Learners(initialQs="") {
     .then(response => response.json())
     .then(data => {
       setDialogContent(
-        <Box p={2}>
-          <Typography variant="h5" gutterBottom sx={{ mt: 2 }}>{localeMessages["enrollment_details"]}</Typography>
-          <Typography>{data.learner.email}</Typography>
-          <Typography variant="subtitle1">{data.course.title}</Typography>
-          <Typography>{localeMessages["enrollment_id"]}: {data.id}</Typography>
+        <Box>
+          <Box sx={{ px: 3, pt: 3, pb: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar sx={(theme) => ({ width: 44, height: 44, fontSize: '1.1rem', fontWeight: 700, color: '#fff', background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.deepPurple?.[400] ?? theme.palette.secondary.main} 100%)` })}>
+              {(data.learner.email?.[0] || '?').toUpperCase()}
+            </Avatar>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.learner.email}</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.course.title}</Typography>
+            </Box>
+            <Chip label={`ID: ${data.id}`} size="small" variant="outlined" sx={{ flexShrink: 0, fontFamily: 'monospace' }} />
+          </Box>
+          <Box px={2}>
           <Timeline>
             {data.events.map((event, index) => (
             <TimelineItem key={index}>
@@ -86,7 +93,7 @@ function Learners(initialQs="") {
                 </Typography>
                 { event.type === "quiz_submitted" && <>
                   <Box><Typography>{localeMessages["score"]}: {event.event_data.score}</Typography></Box>
-                  <Box><Typography sx={{ display: 'flex', alignItems: 'center' }}>{localeMessages["result"]}: {event.event_data.is_passed ? <>{localeMessages["passed"]}<CheckCircleIcon sx={{color: "#4caf50", marginX: "4px"}} /></> : <> {localeMessages["failed"]}<CancelIcon sx={{color: "#f44336", marginX: "4px"}} /></>}</Typography></Box>
+                  <Box><Typography sx={{ display: 'flex', alignItems: 'center' }}>{ event.event_data.is_practice ? <Chip label={localeMessages["practice_attempt"]} size="small"/> : <>{localeMessages["result"]}: {event.event_data.is_passed ? <>{localeMessages["passed"]}<CheckCircleIcon sx={{color: "#4caf50", marginX: "4px"}} /></> : <> {localeMessages["failed"]}<CancelIcon sx={{color: "#f44336", marginX: "4px"}} /></>}</>}</Typography></Box>
                 </>}
                 { event.type === "content_sent" && <>
                   <Box><Typography>{event.event_data.course_content_title}</Typography></Box>
@@ -98,7 +105,7 @@ function Learners(initialQs="") {
             </TimelineItem>
             ))}
           </Timeline>
-          {/* Add more details as needed */}
+          </Box>
         </Box>
       );
 
@@ -180,11 +187,18 @@ function Learners(initialQs="") {
 
     const renderEnrollmentList = (enrollments) => {
       setDialogContent(
-        <Box p={2}>
-          <Typography variant="h6" gutterBottom>{learner.email}</Typography>
+        <Box>
+          <Box sx={{ px: 3, pt: 3, pb: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Avatar sx={(theme) => ({ width: 44, height: 44, fontSize: '1.1rem', fontWeight: 700, color: '#fff', background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.deepPurple?.[400] ?? theme.palette.secondary.main} 100%)` })}>
+              {(learner.email?.[0] || '?').toUpperCase()}
+            </Avatar>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{learner.email}</Typography>
+          </Box>
+          <Box p={2}>
           <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
             <EnrollentList enrollments={enrollments} selectHandler={showEnrollmentStatus} />
           </Suspense>
+          </Box>
         </Box>
       );
     };

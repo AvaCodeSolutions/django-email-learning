@@ -24,8 +24,8 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
     const { apiBaseUrl, userRole, localeMessages, direction } = useAppContext();
     const organizationId = localStorage.getItem('activeOrganizationId');
     const canSendLesson = userRole === 'admin' || userRole === 'editor';
-    const showQuizTwoAttemptNote = contentList.some((content) => content.type === 'quiz' && content.limited_attempts == true);
-    const showQuizUnlimitedAttemptsNote = contentList.some((content) => content.type === 'quiz' && content.limited_attempts == false);
+    const showQuizTwoAttemptNote = contentList.some((content) => content.type === 'quiz' && content.is_blocking !== false && content.limited_attempts == true);
+    const showQuizUnlimitedAttemptsNote = contentList.some((content) => content.type === 'quiz' && content.is_blocking !== false && content.limited_attempts == false);
 
     const formatPeriod = (period) => {
         if (!period) {
@@ -239,7 +239,18 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                             component="span"
                             onClick={() => {let event = {type: 'content_clicked', content_id: content.id}; eventHandler(event);}}
                             sx={{ cursor: 'pointer', color: theme => theme.palette.mode === 'dark' ? theme.palette.secondary.main : theme.palette.secondary.dark }}>{content.title}
-                            {content.limited_attempts !== null &&  ( content.limited_attempts ? <Chip label={localeMessages["two_attempts"]} size="small" sx={(theme) => ({ ml: 1, backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 152, 0, 0.15)' : 'rgba(255, 203, 71, 0.5)', color: theme.palette.mode === 'dark' ? '#FF9800' : '#9a4208' })}
+                            {content.type === 'quiz' && content.is_blocking === false && (
+                                <Chip
+                                    label={localeMessages["practice_quiz"]}
+                                    size="small"
+                                    sx={(theme) => ({
+                                        ml: 1,
+                                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.2)' : 'rgba(33, 150, 243, 0.14)',
+                                        color: theme.palette.mode === 'dark' ? '#64B5F6' : '#0D47A1',
+                                    })}
+                                />
+                            )}
+                            {content.type === 'quiz' && content.is_blocking !== false && content.limited_attempts !== null &&  ( content.limited_attempts ? <Chip label={localeMessages["two_attempts"]} size="small" sx={(theme) => ({ ml: 1, backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 152, 0, 0.15)' : 'rgba(255, 203, 71, 0.5)', color: theme.palette.mode === 'dark' ? '#FF9800' : '#9a4208' })}
                              /> : <Chip label={localeMessages["unlimited_attempts"]} size="small" sx={(theme) => ({ ml: 1, backgroundColor: theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.15)' : 'rgba(129, 199, 132, 0.5)', color: theme.palette.mode === 'dark' ? '#4CAF50' : '#256029' })} />)}</Typography></TableCell>
                         <TableCell align={direction == 'rtl' ? 'right' : 'left'}>{formatPeriod(content.waiting_period)}</TableCell>
                         <TableCell align={direction == 'rtl' ? 'right' : 'left'}>{localeMessages[content.type]}</TableCell>

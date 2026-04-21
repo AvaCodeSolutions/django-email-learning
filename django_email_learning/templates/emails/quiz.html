@@ -8,7 +8,9 @@
 
     <p class="email-paragraph">{% blocktranslate with deadline_days=quiz.deadline_days %}Your quiz is now available for completion. You have <strong>{{ deadline_days }} days</strong> from today to submit your responses.{% endblocktranslate %}</p>
 
-    <p class="email-paragraph">{% blocktranslate with score=quiz.required_score %}To successfully pass this quiz, you must achieve a minimum score of <strong>{{ score }}</strong>.{% endblocktranslate %}</p>
+    {% if quiz.is_blocking %}
+        <p class="email-paragraph">{% blocktranslate with score=quiz.required_score %}To successfully pass this quiz, you must achieve a minimum score of <strong>{{ score }}</strong>.{% endblocktranslate %}</p>
+    {% endif %}
     <p class="email-paragraph">{% translate "Please click the link below to access and submit your quiz:" %}</p>
 
     <div class="email-cta-wrap">

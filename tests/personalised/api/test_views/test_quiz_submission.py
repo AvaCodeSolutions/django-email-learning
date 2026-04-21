@@ -2,7 +2,7 @@ from django_email_learning.services import jwt_service
 from django_email_learning.personalised.api.views import QuizSubmissionView
 from django_email_learning.personalised.api.serializers import QuestionResponse
 from django.urls import reverse
-
+import pytest
 
 URL = reverse("django_email_learning:api_personalised:quiz_submission")
 
@@ -70,3 +70,44 @@ def test_calculate_score_and_passed_static_method(quiz_with_questions):
 
     assert score == 100
     assert passed is True
+
+
+@pytest.mark.parametrize(
+    "quiz_is_blocking,expected_quiz_data_in_response",
+    [
+        (True, False),
+        (False, True),
+    ],
+)
+def test_quiz_data_is_returned_only_for_non_blocking_quiz(
+    content_delivery, anonymous_client, quiz_is_blocking, expected_quiz_data_in_response
+):
+    quiz = content_delivery.course_content.quiz
+    quiz.is_blocking = quiz_is_blocking
+    quiz.save()
+
+    token = jwt_service.generate_jwt(
+        {
+            "delivery_id": content_delivery.id,
+            "delivery_hash": content_delivery.hash_value,
+        }
+    )
+
+    response = anonymous_client.post(
+        URL,
+        data={
+            "token": token,
+            "answers": [
+                {"id": q.id, "answers": []}
+                for q in content_delivery.course_content.quiz.questions.all()
+            ],
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    assert (
+        response.json()["quiz_data"] is not None
+        if expected_quiz_data_in_response
+        else response.json()["quiz_data"] is None
+    )

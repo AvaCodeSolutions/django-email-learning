@@ -168,6 +168,7 @@ def test_create_quiz_content(superadmin_client, create_course):
             "selection_strategy": "all",
             "deadline_days": 14,
             "limited_attempts": False,
+            "is_blocking": False,
             "questions": [
                 {
                     "text": "What is Python?",
@@ -206,6 +207,8 @@ def test_create_quiz_content(superadmin_client, create_course):
     assert data["quiz"]["required_score"] == 70
     assert data["quiz"]["selection_strategy"] == "all"
     assert data["quiz"]["limited_attempts"] is False
+    assert data["quiz"]["is_blocking"] is False
+    assert data["quiz"]["deadline_days"] == 14
     assert len(data["quiz"]["questions"]) == 2
     assert len(data["quiz"]["questions"][0]["answers"]) == 2
     assert len(data["quiz"]["questions"][1]["answers"]) == 2
@@ -327,6 +330,7 @@ def test_list_course_content_with_existing_contents(superadmin_client, create_co
             "required_score": 70,
             "selection_strategy": "random",
             "deadline_days": 14,
+            "is_blocking": False,
             "questions": [
                 {
                     "text": "What is Python?",
@@ -448,6 +452,53 @@ def test_get_course_content(viewer_client, course_lesson_content):
     assert get_data["waiting_period"] == {"period": 1, "type": "hours"}
     assert get_data["lesson"]["title"] == course_lesson_content.lesson.title
     assert get_data["lesson"]["content"] == course_lesson_content.lesson.content
+
+
+def test_update_course_content_valid_quiz_data(superadmin_client, course_quiz_content):
+    url = single_content_url(
+        course_content_id=course_quiz_content.id,
+        course_id=course_quiz_content.course.id,
+        organization_id=course_quiz_content.course.organization.id,
+    )
+    payload = {
+        "quiz": {
+            "title": "Updated Quiz Title",
+            "required_score": 80,
+            "selection_strategy": "random",
+            "deadline_days": 10,
+            "limited_attempts": False,
+            "is_blocking": False,
+            "questions": [
+                {
+                    "text": "What is Django?",
+                    "priority": 1,
+                    "answers": [
+                        {"text": "A web framework", "is_correct": True},
+                        {"text": "A type of dance", "is_correct": False},
+                    ],
+                }
+            ],
+        }
+    }
+    response = superadmin_client.post(
+        url, json.dumps(payload), content_type="application/json"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == course_quiz_content.id
+    assert data["quiz"]["title"] == "Updated Quiz Title"
+    assert data["quiz"]["required_score"] == 80
+    assert data["quiz"]["selection_strategy"] == "random"
+    assert data["quiz"]["limited_attempts"] is False
+    assert data["quiz"]["is_blocking"] is False
+    assert data["quiz"]["deadline_days"] == 10
+    assert len(data["quiz"]["questions"]) == 1
+    assert data["quiz"]["questions"][0]["text"] == "What is Django?"
+    assert len(data["quiz"]["questions"][0]["answers"]) == 2
+    assert data["quiz"]["questions"][0]["answers"][0]["text"] == "A web framework"
+    assert data["quiz"]["questions"][0]["answers"][0]["is_correct"] is True
+    assert data["quiz"]["questions"][0]["answers"][1]["text"] == "A type of dance"
+    assert data["quiz"]["questions"][0]["answers"][1]["is_correct"] is False
 
 
 def test_update_course_content_waiting_period(superadmin_client, course_lesson_content):

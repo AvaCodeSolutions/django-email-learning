@@ -562,6 +562,7 @@ class UpdateQuiz(BaseModel):
     deadline_days: Optional[int] = Field(
         ge=MIN_QUIZ_DEADLINE, le=MAX_QUIZ_DEADLINE, examples=[14], default=None
     )
+    is_blocking: Optional[bool] = None
 
     model_config = ConfigDict(extra="forbid")
 
@@ -576,6 +577,7 @@ class QuizCreate(BaseModel):
     questions: list[QuestionCreate] = Field(min_length=1)
     type: Literal["quiz"] = "quiz"
     limited_attempts: bool = Field(default=True, examples=[True])
+    is_blocking: bool = Field(default=True, examples=[True])
 
 
 class QuizResponse(BaseModel):
@@ -586,6 +588,7 @@ class QuizResponse(BaseModel):
     deadline_days: int = Field(ge=MIN_QUIZ_DEADLINE, le=MAX_QUIZ_DEADLINE)
     questions: Any  # Will be converted to list in field_serializer
     limited_attempts: bool
+    is_blocking: bool
 
     @field_serializer("questions")
     def serialize_questions(self, questions: Any) -> list[dict]:
@@ -672,6 +675,7 @@ class QuizSubmitedEvent(BaseModel):
     score: int
     is_passed: bool
     attempt_number: int
+    is_practice: bool
 
 
 class ContentSentEvent(BaseModel):
@@ -715,7 +719,7 @@ class EnrollmentResponse(BaseModel):
                     event_data=None,
                 )
             )
-        for delivery in enrollment.content_deliveries.all():  # type: ignore[attr-defined]
+        for delivery in enrollment.content_deliveries.all().order_by("id"):  # type: ignore[attr-defined]
             schedule_no = 0
             for schedule in delivery.delivery_schedules.filter(
                 status=DeliveryStatus.DELIVERED
@@ -740,26 +744,34 @@ class EnrollmentResponse(BaseModel):
                         "submitted_at"
                     )
                     attempt = None
-                    if schedule_no == 1:
-                        attempt = quiz_attempts.first()
+                    if delivery.course_content.quiz.is_blocking:  # type: ignore[union-attr]
+                        if schedule_no == 1:
+                            attempts = [quiz_attempts.first()]
+                            attempt_number = 1
+                        elif schedule_no > 1:
+                            attempt_number = schedule_no
+                            attempts = list(quiz_attempts[1:])
+                    else:
                         attempt_number = 1
-                    elif schedule_no > 1:
-                        attempt_number = schedule_no
-                        attempt = quiz_attempts[attempt_number - 1 :].first()
-                    if attempt:
-                        events.append(
-                            Event(
-                                type=EventType.QUIZ_SUBMITED,
-                                timestamp=attempt.submitted_at,
-                                event_data=QuizSubmitedEvent(
-                                    quiz_id=delivery.course_content.quiz.id,  # type: ignore[union-attr]
-                                    quiz_title=delivery.course_content.quiz.title,  # type: ignore[union-attr]
-                                    score=attempt.score,
-                                    is_passed=attempt.is_passed,
-                                    attempt_number=attempt_number,
-                                ),
+                        attempts = list(quiz_attempts)
+                    if attempts:
+                        for attempt in [i for i in attempts if i is not None]:  # type: ignore[union-attr]
+                            events.append(
+                                Event(
+                                    type=EventType.QUIZ_SUBMITED,
+                                    timestamp=attempt.submitted_at,
+                                    event_data=QuizSubmitedEvent(
+                                        quiz_id=delivery.course_content.quiz.id,  # type: ignore[union-attr]
+                                        quiz_title=delivery.course_content.quiz.title,  # type: ignore[union-attr]
+                                        score=attempt.score,
+                                        is_passed=attempt.is_passed,
+                                        attempt_number=attempt_number,
+                                        is_practice=delivery.course_content.quiz.is_blocking  # type: ignore[union-attr]
+                                        is False,  # type: ignore[union-attr]
+                                    ),
+                                )
                             )
-                        )
+                            attempt_number += 1
         if (
             enrollment.status == EnrollmentStatus.COMPLETED
             and enrollment.final_state_at
@@ -831,6 +843,7 @@ class CreateCourseContentRequest(BaseModel):
                 selection_strategy=self.content.selection_strategy.value,  # type: ignore[misc]
                 deadline_days=self.content.deadline_days,  # type: ignore[misc]
                 limited_attempts=self.content.limited_attempts,  # type: ignore[misc]
+                is_blocking=self.content.is_blocking,  # type: ignore[misc]
             )
             quiz.save()
             for question_data in self.content.questions:
@@ -910,6 +923,7 @@ class CourseContentSummaryResponse(BaseModel):
     is_published: bool
     type: str
     limited_attempts: Optional[bool] = None
+    is_blocking: Optional[bool] = None
 
     @field_serializer("waiting_period")
     def serialize_waiting_period(self, waiting_period: int) -> dict:

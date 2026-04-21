@@ -6,7 +6,7 @@ import QuestionForm from './QuestionForm';
 import { getCookie } from '../../../src/utils';
 import { useAppContext } from '../../../src/render';
 
-const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod, initialStrategy, initialDeadlineDays, initialLimitedAttempts }) => {
+const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod, initialStrategy, initialDeadlineDays, initialLimitedAttempts, initialIsBlocking }) => {
     const questionIdRef = useRef(0);
     const createQuestionId = () => {
         questionIdRef.current += 1;
@@ -21,9 +21,12 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     })));
     const [errorMessage, setErrorMessage] = useState("");
     const [title, setTitle] = useState(initialTitle || "");
-    const [requiredScore , setRequiredScore] = useState(initialRequiredScore || 70);
     const [selectionStrategy, setSelectionStrategy] = useState(initialStrategy || "random");
     const { localeMessages, userRole, apiBaseUrl, quizDefaults = {} } = useAppContext();
+    const initialIsBlockingValue = initialIsBlocking ?? quizDefaults.isBlocking ?? true;
+    const [isBlocking, setIsBlocking] = useState(initialIsBlockingValue);
+    const initialRequiredScoreValue = initialIsBlockingValue ? (initialRequiredScore ?? 70) : 0;
+    const [requiredScore , setRequiredScore] = useState(initialRequiredScoreValue);
     const initialLimitedAttemptsValue = initialLimitedAttempts ?? quizDefaults.limitedAttempts ?? true;
     const [limitedAttempts, setLimitedAttempts] = useState(initialLimitedAttemptsValue);
     const [deadlineDays, setDeadlineDays] = useState(initialDeadlineDays || 14);
@@ -62,8 +65,8 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     }
 
     const hasUnsavedChanges = () => {
-        if (!compareQuestions(questions, initialQuestions || []) || title !== initialTitle || requiredScore !== initialRequiredScore || selectionStrategy !== initialStrategy || limitedAttempts !== initialLimitedAttemptsValue || deadlineDays !== initialDeadlineDays || waitingPeriod !== (initialWaitingPeriod ? initialWaitingPeriod.period : 1) || waitingPeriodUnit !== (initialWaitingPeriod ? initialWaitingPeriod.type : "days")) {
-            console.log(questions, initialQuestions, title, initialTitle, requiredScore, initialRequiredScore, selectionStrategy, initialStrategy, limitedAttempts, initialLimitedAttemptsValue, deadlineDays, initialDeadlineDays, waitingPeriod, (initialWaitingPeriod ? initialWaitingPeriod.period : 1), waitingPeriodUnit, (initialWaitingPeriod ? initialWaitingPeriod.type : "days"));
+        if (!compareQuestions(questions, initialQuestions || []) || title !== initialTitle || requiredScore !== initialRequiredScoreValue || selectionStrategy !== initialStrategy || isBlocking !== initialIsBlockingValue || (isBlocking && limitedAttempts !== initialLimitedAttemptsValue) || deadlineDays !== initialDeadlineDays || waitingPeriod !== (initialWaitingPeriod ? initialWaitingPeriod.period : 1) || waitingPeriodUnit !== (initialWaitingPeriod ? initialWaitingPeriod.type : "days")) {
+            console.log(questions, initialQuestions, title, initialTitle, requiredScore, initialRequiredScoreValue, selectionStrategy, initialStrategy, isBlocking, initialIsBlockingValue, limitedAttempts, initialLimitedAttemptsValue, deadlineDays, initialDeadlineDays, waitingPeriod, (initialWaitingPeriod ? initialWaitingPeriod.period : 1), waitingPeriodUnit, (initialWaitingPeriod ? initialWaitingPeriod.type : "days"));
             return true;
         }
         return false;
@@ -74,6 +77,18 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             return;
         }
         console.log("Adding new quiz to course ID:", courseId);
+        const quizPayload = {
+            type: 'quiz',
+            title: title,
+            required_score: requiredScore,
+            selection_strategy: selectionStrategy,
+            deadline_days: deadlineDays,
+            is_blocking: isBlocking,
+            questions: questionsPayload(),
+        };
+        if (isBlocking) {
+            quizPayload.limited_attempts = limitedAttempts;
+        }
         fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/`, {
             method: 'POST',
             headers: {
@@ -82,13 +97,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             },
             body: JSON.stringify({
                 content: {
-                    type: 'quiz',
-                    title: title,
-                    required_score: requiredScore,
-                    selection_strategy: selectionStrategy,
-                    deadline_days: deadlineDays,
-                    limited_attempts: limitedAttempts,
-                    questions: questionsPayload(),
+                    ...quizPayload,
                 },
                 waiting_period: {
                     period: waitingPeriod,
@@ -184,6 +193,17 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             return;
         }
         console.log("Updating quiz ID:", quizId, "for course ID:", courseId);
+        const quizPayload = {
+            title: title,
+            required_score: requiredScore,
+            selection_strategy: selectionStrategy,
+            deadline_days: deadlineDays,
+            is_blocking: isBlocking,
+            questions: questionsPayload(),
+        };
+        if (isBlocking) {
+            quizPayload.limited_attempts = limitedAttempts;
+        }
         fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${contentId}/`, {
             method: 'POST',
             headers: {
@@ -192,12 +212,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             },
             body: JSON.stringify({
                 quiz: {
-                    title: title,
-                    required_score: requiredScore,
-                    selection_strategy: selectionStrategy,
-                    deadline_days: deadlineDays,
-                    limited_attempts: limitedAttempts,
-                    questions: questionsPayload(),
+                    ...quizPayload,
                 },
                 waiting_period: {
                     period: waitingPeriod,
@@ -239,6 +254,12 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             }
         }
     }, [showQuestionField]);
+
+    useEffect(() => {
+        if (!isBlocking && requiredScore !== 0) {
+            setRequiredScore(0);
+        }
+    }, [isBlocking, requiredScore]);
 
 
     const addToQuestions = () => {
@@ -306,6 +327,27 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
 
                 <Grid container spacing={3}>
                     {/* Row 1: Required Score and Waiting Period */}
+                    <Grid size={{ xs: 12 }}>
+                        <Box>
+                            <InputLabel sx={{ mb: 1, fontSize: '0.9rem', color: 'text.secondary' }}>
+                                {localeMessages["blocking_quiz"]}
+                            </InputLabel>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={isBlocking}
+                                        onChange={(e) => setIsBlocking(e.target.checked)}
+                                        disabled={userRole === 'viewer'}
+                                    />
+                                }
+                                label={localeMessages["blocking_quiz"]}
+                            />
+                            <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mt: 0.5 }}>
+                                {localeMessages["blocking_quiz_tooltip"]}
+                            </Typography>
+                        </Box>
+                    </Grid>
+
                     <Grid size={{ xs: 12, md: 6 }}>
                         <InputLabel sx={{ mb: 1, fontSize: '0.9rem', color: 'text.secondary' }}>
                             {localeMessages["required_score"]}
@@ -321,7 +363,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                                 onChange={(e) => setRequiredScore(e.target.value)}
                                 sx={{ width: '100%' }}
                                 inputProps={{ min: 0, max: 100 }}
-                                disabled={userRole === 'viewer'}
+                                disabled={userRole === 'viewer' || !isBlocking}
                             />
                         </Tooltip>
                     </Grid>
@@ -404,28 +446,28 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                         </Tooltip>
                     </Grid>
 
-                    <Grid size={{ xs: 12 }}>
-                        <Tooltip
-                            title={localeMessages["limited_attempts_tooltip"]}
-                            placement="top-start"
-                        >
-                            <Box>
-                                <InputLabel sx={{ mb: 1, fontSize: '0.9rem', color: 'text.secondary' }}>
-                                    {localeMessages["limited_attempts"]}
-                                </InputLabel>
-                                <FormControlLabel
-                                    control={
-                                        <Switch
-                                            checked={limitedAttempts}
-                                            onChange={(e) => setLimitedAttempts(e.target.checked)}
-                                            disabled={userRole === 'viewer'}
-                                        />
-                                    }
-                                    label={localeMessages["limited_attempts"]}
-                                />
-                            </Box>
-                        </Tooltip>
-                    </Grid>
+
+
+                    {isBlocking && <Grid size={{ xs: 12 }}>
+                        <Box>
+                            <InputLabel sx={{ mb: 1, fontSize: '0.9rem', color: 'text.secondary' }}>
+                                {localeMessages["limited_attempts"]}
+                            </InputLabel>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={limitedAttempts}
+                                        onChange={(e) => setLimitedAttempts(e.target.checked)}
+                                        disabled={userRole === 'viewer'}
+                                    />
+                                }
+                                label={localeMessages["limited_attempts"]}
+                            />
+                            <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mt: 0.5 }}>
+                                {localeMessages["limited_attempts_tooltip"]}
+                            </Typography>
+                        </Box>
+                    </Grid>}
                 </Grid>
             </Box>
 

@@ -48,10 +48,15 @@ class MetricsService:
         self.metric_recorder.user_completed_course(course_slug, organization_id)
 
     def quiz_submitted(
-        self, course_slug: str, organization_id: int, quiz_id: int, is_passed: bool
+        self,
+        course_slug: str,
+        organization_id: int,
+        quiz_id: int,
+        is_passed: bool,
+        is_blocking: bool,
     ) -> None:
         self.metric_recorder.quiz_submitted(
-            course_slug, organization_id, quiz_id, is_passed
+            course_slug, organization_id, quiz_id, is_passed, is_blocking
         )
 
     def method_executed(self, method_name: str, execution_time: int) -> None:

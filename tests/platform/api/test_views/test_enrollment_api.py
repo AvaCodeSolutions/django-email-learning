@@ -15,7 +15,7 @@ def test_enrollment_api_not_accessible_without_authentication(anonymous_client):
     assert response.status_code == 401
 
 
-def test_enrollment_apiexpected_payload(viewer_client, content_delivery):
+def test_enrollment_api_expected_payload(viewer_client, content_delivery):
     content_delivery.enrollment.status = EnrollmentStatus.ACTIVE
     content_delivery.enrollment.save()
     content_delivery.course_content.is_published = True

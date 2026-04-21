@@ -293,6 +293,8 @@ class SingleCourseContentView(View):
                 quiz.deadline_days = quiz_serializer.deadline_days
             if quiz_serializer.limited_attempts is not None:
                 quiz.limited_attempts = quiz_serializer.limited_attempts
+            if quiz_serializer.is_blocking is not None:
+                quiz.is_blocking = quiz_serializer.is_blocking
             if quiz_serializer.questions is not None:
                 question_ids = set()
                 for question_data in quiz_serializer.questions:

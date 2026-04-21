@@ -160,6 +160,9 @@ class QuizPublicView(BaseTemplateView):
                             "submit": _("Submit"),
                             "try_again": _("Try Again"),
                             "close_window_message": _("You can now close this window!"),
+                            "non_blocking_quiz_caption": _(
+                                "This quiz is for practice and does not affect your course progress. The course content will be sent to you regardless of your quiz answers."
+                            ),
                         },
                     }
                     | self.get_app_context(),
