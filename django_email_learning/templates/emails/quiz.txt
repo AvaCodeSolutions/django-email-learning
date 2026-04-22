@@ -5,7 +5,7 @@
 
 {% blocktranslate with deadline_days=quiz.deadline_days %}Your quiz is now available for completion. You have {{ deadline_days }} days from today to submit your responses.{% endblocktranslate %}
 
-{% blocktranslate with score=quiz.required_score %}To successfully pass this quiz, you must achieve a minimum score of {{ score }}.{% endblocktranslate %}
+{% if quiz.is_blocking %}{% blocktranslate with score=quiz.required_score %}To successfully pass this quiz, you must achieve a minimum score of {{ score }}.{% endblocktranslate %}{% endif %}
 
 {% translate "Please click the link below to access and submit your quiz:" %}
 {{ link }}

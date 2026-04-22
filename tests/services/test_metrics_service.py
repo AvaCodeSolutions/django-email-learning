@@ -32,7 +32,12 @@ class ConfiguredMetricRecorder:
         pass
 
     def quiz_submitted(
-        self, course_slug: str, organization_id: int, quiz_id: int, is_passed: bool
+        self,
+        course_slug: str,
+        organization_id: int,
+        quiz_id: int,
+        is_passed: bool,
+        is_blocking: bool,
     ) -> None:
         pass
 
@@ -82,7 +87,7 @@ def test_metrics_service_uses_configured_recorder_object_as_is(settings):
         ("user_enrollment_activated", ("course-1", 11)),
         ("user_enrollment_deactivated", ("course-1", 11, "inactive")),
         ("user_completed_course", ("course-1", 11)),
-        ("quiz_submitted", ("course-1", 11, 7, True)),
+        ("quiz_submitted", ("course-1", 11, 7, True, False)),
         ("method_executed", ("deliver_contents", 123)),
     ],
 )

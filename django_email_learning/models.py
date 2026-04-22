@@ -343,6 +343,7 @@ class Quiz(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(30)],
     )
     limited_attempts = models.BooleanField(default=True)
+    is_blocking = models.BooleanField(default=True)
 
     class Meta:
         verbose_name_plural = "Quizzes"
@@ -442,6 +443,12 @@ class CourseContent(models.Model):
     def limited_attempts(self) -> Optional[bool]:
         if self.type == "quiz" and self.quiz:
             return self.quiz.limited_attempts
+        return None
+
+    @property
+    def is_blocking(self) -> Optional[bool]:
+        if self.type == "quiz" and self.quiz:
+            return self.quiz.is_blocking
         return None
 
     def human_readable_waiting_period(self) -> str:

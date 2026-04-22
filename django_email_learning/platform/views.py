@@ -249,6 +249,7 @@ class CourseView(BasePlatformView):
         context["appContext"]["customComponent"] = None
         context["appContext"]["quizDefaults"] = {
             "limitedAttempts": True,
+            "isBlocking": True,
         }
         context["appContext"]["direction"] = (
             "rtl" if get_language_info(course.language)["bidi"] else "ltr"
@@ -293,6 +294,11 @@ class CourseView(BasePlatformView):
             "editing": _("Editing..."),
             "edit_with_ai": _("Edit with AI"),
             "lesson_title": _("Lesson Title"),
+            "blocking_quiz": _("Blocking Quiz"),
+            "blocking_quiz_tooltip": _(
+                "If enabled, learners must pass the quiz to continue receiving course content. For practice quizzes that don't gate content, "
+                "you can disable this option so learners can continue with the course regardless of their quiz performance."
+            ),
             "lesson_waiting_tooltip": _(
                 "Set the amount of time that we should wait after the previous lesson or quiz submission before sending this lesson"
             ),
@@ -326,6 +332,7 @@ class CourseView(BasePlatformView):
             "limited_attempts": _("Limited Attempts"),
             "unlimited_attempts": _("Unlimited Attempts"),
             "two_attempts": _("2 Attempts"),
+            "practice_quiz": _("Practice Quiz"),
             "limited_attempts_tooltip": _(
                 "If limited attempts is enabled, learners only have 2 attempts to pass the quiz. "
                 "After 2 failed attempts, they will fail the course and need to restart it. If limited attempts is disabled, "
@@ -510,6 +517,7 @@ class Learners(BasePlatformView):
             "canceled": _("Canceled"),
             "blcoked": _("Blocked"),
             "inactive": _("Inactive"),
+            "practice_attempt": _("Practice Attempt"),
         }
 
 

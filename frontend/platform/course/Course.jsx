@@ -234,6 +234,7 @@ function Course() {
                                 initialStrategy={content.quiz.selection_strategy}
                                 initialDeadlineDays={content.quiz.deadline_days}
                                 initialLimitedAttempts={content.quiz.limited_attempts}
+                                initialIsBlocking={content.quiz.is_blocking}
                                  /></Suspense>);
             }
         }

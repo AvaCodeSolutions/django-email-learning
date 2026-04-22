@@ -26,7 +26,12 @@ class MetricRecorderProtocol(Protocol):
         ...
 
     def quiz_submitted(
-        self, course_slug: str, organization_id: int, quiz_id: int, is_passed: bool
+        self,
+        course_slug: str,
+        organization_id: int,
+        quiz_id: int,
+        is_passed: bool,
+        is_blocking: bool,
     ) -> None:
         ...
 

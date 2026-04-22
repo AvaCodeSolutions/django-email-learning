@@ -74,7 +74,12 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
         )
 
     def quiz_submitted(
-        self, course_slug: str, organization_id: int, quiz_id: int, is_passed: bool
+        self,
+        course_slug: str,
+        organization_id: int,
+        quiz_id: int,
+        is_passed: bool,
+        is_blocking: bool,
     ) -> None:
         logger.info(
             "Quiz submitted",
@@ -84,6 +89,7 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
                 "organization_id": organization_id,
                 "quiz_id": quiz_id,
                 "is_passed": is_passed,
+                "is_blocking": is_blocking,
             },
         )
 

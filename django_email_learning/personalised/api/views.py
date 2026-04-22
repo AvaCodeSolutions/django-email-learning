@@ -36,6 +36,9 @@ class QuizSubmissionView(View):
         token = serializer.token
         answers = serializer.answers
 
+        submited_question_ids = {response.id for response in answers}
+        response_map = {response.id: response.answers for response in answers}
+
         try:
             decoded = jwt_service.decode_jwt(token=token)
         except jwt_service.InvalidTokenException as jde:
@@ -83,10 +86,19 @@ class QuizSubmissionView(View):
             is_passed=passed,
         )
 
-        if passed:
-            delivery.update_hash()  # Invalidate the quiz link after successful submission
-            message = _("Congratulations! You have passed the quiz.")
-            delivery = delivery.schedule_next_delivery()
+        if passed or not quiz.is_blocking:
+            if quiz.is_blocking:
+                delivery.update_hash()  # Invalidate the quiz link after successful submission
+                message = _("Congratulations! You have passed the quiz.")
+            else:
+                message = _("Your quiz submission has been recorded.")
+                if QuizSubmission.objects.filter(delivery=delivery).count() >= 10:
+                    delivery.update_hash()  # Invalidate the quiz link after 10 attempts to prevent abuse
+
+            if (quiz.is_blocking and passed) or QuizSubmission.objects.filter(
+                delivery=delivery
+            ).count() == 1:
+                delivery = delivery.schedule_next_delivery()
 
             if not delivery:
                 enrollment.graduate()
@@ -129,6 +141,7 @@ class QuizSubmissionView(View):
             organization_id=enrollment.course.organization.id,
             quiz_id=quiz.id,
             is_passed=passed,
+            is_blocking=quiz.is_blocking,
         )
         return JsonResponse(
             {
@@ -137,6 +150,30 @@ class QuizSubmissionView(View):
                 "required_score": quiz.required_score,
                 "message": message,
                 "is_invalidated": quiz.limited_attempts and not passed,
+                "is_blocking": quiz.is_blocking,
+                "quiz_data": {
+                    "id": quiz.id,
+                    "title": quiz.title,
+                    "questions": [
+                        {
+                            "text": question.text,
+                            "answers": [
+                                {
+                                    "text": answer.text,
+                                    "is_correct": answer.is_correct,
+                                    "user_selected": answer.id
+                                    in response_map.get(question.id, set()),
+                                }
+                                for answer in question.answers.all()
+                            ],
+                        }
+                        for question in quiz.questions.filter(
+                            id__in=submited_question_ids
+                        )
+                    ],
+                }
+                if not quiz.is_blocking
+                else None,
             },
             status=200,
         )
