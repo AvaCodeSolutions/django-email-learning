@@ -52,21 +52,14 @@ def test_quiz_create_serializer_invalid_selection_strategy():
     assert "Input should be 'all' or 'random" in str(excinfo.value)
 
 
-@pytest.mark.parametrize(
-    "params",
-    [
-        (0, "Input should be greater than or equal to 1"),
-        (31, "Input should be less than or equal to 30"),
-    ],
-)
-def test_quiz_create_serializer_deadline_days_bounds(params):
+def test_quiz_create_serializer_deadline_days_bounds():
     with pytest.raises(ValueError) as excinfo_low:
         QuizCreate.model_validate(
             {
                 "title": "Sample Quiz",
                 "required_score": 80,
                 "selection_strategy": "all",
-                "deadline_days": params[0],
+                "deadline_days": -1,
                 "questions": [
                     {
                         "text": "What is 2 + 2?",
@@ -80,4 +73,4 @@ def test_quiz_create_serializer_deadline_days_bounds(params):
                 ],
             }
         )
-    assert params[1] in str(excinfo_low.value)
+    assert "Input should be greater than or equal to 0" in str(excinfo_low.value)

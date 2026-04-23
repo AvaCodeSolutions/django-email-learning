@@ -250,6 +250,7 @@ class CourseView(BasePlatformView):
         context["appContext"]["quizDefaults"] = {
             "limitedAttempts": True,
             "isBlocking": True,
+            "hasDeadline": True,
         }
         context["appContext"]["direction"] = (
             "rtl" if get_language_info(course.language)["bidi"] else "ltr"
@@ -392,6 +393,12 @@ class CourseView(BasePlatformView):
                 "You have unsaved changes. Are you sure you want to leave without saving?"
             ),
             "close_without_saving": _("Close without saving"),
+            "required_score_blocking": _(
+                "A blocking quiz must have a required score greater than 0% to ensure learners can pass and continue with the course."
+            ),
+            "deadline_cannot_be_zero": _(
+                "Deadline cannot be 0 when deadline is enabled. Set a positive number of days or disable the deadline."
+            ),
         }
 
     def get_app_context(self) -> Dict[str, Any]:
