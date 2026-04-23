@@ -150,6 +150,28 @@ Optional link to your terms of service. When provided, this link is displayed in
         'TERMS_OF_SERVICE_URL': 'https://yourdomain.com/terms',
     }
 
+**QUIZ_DEFAULTS**
+
+Optional configuration for the initial default values shown in the quiz form when creating a new quiz.
+
+All values are boolean.
+
+- ``LIMITED_ATTEMPTS``: Sets the default state of the Limited Attempts switch. When enabled, learners only have 2 attempts to pass the quiz. When disabled, learners can retry as many times as needed.
+- ``IS_BLOCKING``: Sets the default state of the Blocking Quiz switch. When enabled, learners must pass the quiz to continue receiving course content. When disabled, the quiz is treated as practice and does not gate course progress.
+- ``HAS_DEADLINE``: Sets the default state of the quiz deadline switch. When enabled, new quizzes start with a deadline. When disabled, new quizzes default to having no deadline.
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'QUIZ_DEFAULTS': {
+            'LIMITED_ATTEMPTS': True,
+            'IS_BLOCKING': True,
+            'HAS_DEADLINE': True,
+        },
+    }
+
 **SIDEBAR.CUSTOM_COMPONENT**
 
 Optional configuration for injecting a custom component in the platform sidebar.
