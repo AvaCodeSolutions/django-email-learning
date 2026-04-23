@@ -339,8 +339,8 @@ class Quiz(models.Model):
         ],
     )
     deadline_days = models.IntegerField(
-        help_text="Time limit to complete the quiz in days. Minimum is 1 day and maximum is 30 days.",
-        validators=[MinValueValidator(1), MaxValueValidator(30)],
+        help_text="Time limit to complete the quiz in days. 0 indicates no deadline.",
+        validators=[MinValueValidator(0)],
     )
     limited_attempts = models.BooleanField(default=True)
     is_blocking = models.BooleanField(default=True)

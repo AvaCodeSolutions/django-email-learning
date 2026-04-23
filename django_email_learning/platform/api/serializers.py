@@ -549,8 +549,7 @@ class QuestionObject(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-MIN_QUIZ_DEADLINE = 1
-MAX_QUIZ_DEADLINE = 30
+MIN_QUIZ_DEADLINE = 0  # Allow 0 to indicate no deadline
 
 
 class UpdateQuiz(BaseModel):
@@ -560,7 +559,7 @@ class UpdateQuiz(BaseModel):
     selection_strategy: Optional[QuizSelectionStrategy] = None
     limited_attempts: Optional[bool] = None
     deadline_days: Optional[int] = Field(
-        ge=MIN_QUIZ_DEADLINE, le=MAX_QUIZ_DEADLINE, examples=[14], default=None
+        ge=MIN_QUIZ_DEADLINE, examples=[14], default=None
     )
     is_blocking: Optional[bool] = None
 
@@ -571,9 +570,7 @@ class QuizCreate(BaseModel):
     title: str
     required_score: int = Field(ge=0, examples=[80])
     selection_strategy: QuizSelectionStrategy
-    deadline_days: int = Field(
-        ge=MIN_QUIZ_DEADLINE, le=MAX_QUIZ_DEADLINE, examples=[14]
-    )
+    deadline_days: int = Field(ge=MIN_QUIZ_DEADLINE, examples=[14])
     questions: list[QuestionCreate] = Field(min_length=1)
     type: Literal["quiz"] = "quiz"
     limited_attempts: bool = Field(default=True, examples=[True])
@@ -585,7 +582,7 @@ class QuizResponse(BaseModel):
     title: str
     required_score: int
     selection_strategy: str
-    deadline_days: int = Field(ge=MIN_QUIZ_DEADLINE, le=MAX_QUIZ_DEADLINE)
+    deadline_days: int = Field(ge=MIN_QUIZ_DEADLINE)
     questions: Any  # Will be converted to list in field_serializer
     limited_attempts: bool
     is_blocking: bool
@@ -744,7 +741,10 @@ class EnrollmentResponse(BaseModel):
                         "submitted_at"
                     )
                     attempt = None
-                    if delivery.course_content.quiz.is_blocking:  # type: ignore[union-attr]
+                    if (
+                        delivery.course_content.quiz.is_blocking  # type: ignore[union-attr]
+                        and delivery.course_content.limited_attempts
+                    ):
                         if schedule_no == 1:
                             attempts = [quiz_attempts.first()]
                             attempt_number = 1

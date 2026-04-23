@@ -30,6 +30,8 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     const initialLimitedAttemptsValue = initialLimitedAttempts ?? quizDefaults.limitedAttempts ?? true;
     const [limitedAttempts, setLimitedAttempts] = useState(initialLimitedAttemptsValue);
     const [deadlineDays, setDeadlineDays] = useState(initialDeadlineDays || 14);
+    const initialHasDeadline = initialDeadlineDays !== undefined ? (initialDeadlineDays > 0) : (quizDefaults.hasDeadline ?? false);
+    const [hasDeadline, setHasDeadline] = useState(initialHasDeadline);
     const [waitingPeriod, setWaitingPeriod] = useState(initialWaitingPeriod ? initialWaitingPeriod.period : 1);
     const [waitingPeriodUnit, setWaitingPeriodUnit] = useState(initialWaitingPeriod ? initialWaitingPeriod.type : "days");
     const questionInputRef = useRef(null);
@@ -65,7 +67,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     }
 
     const hasUnsavedChanges = () => {
-        if (!compareQuestions(questions, initialQuestions || []) || title !== initialTitle || requiredScore !== initialRequiredScoreValue || selectionStrategy !== initialStrategy || isBlocking !== initialIsBlockingValue || (isBlocking && limitedAttempts !== initialLimitedAttemptsValue) || deadlineDays !== initialDeadlineDays || waitingPeriod !== (initialWaitingPeriod ? initialWaitingPeriod.period : 1) || waitingPeriodUnit !== (initialWaitingPeriod ? initialWaitingPeriod.type : "days")) {
+        if (!compareQuestions(questions, initialQuestions || []) || title !== initialTitle || requiredScore !== initialRequiredScoreValue || selectionStrategy !== initialStrategy || isBlocking !== initialIsBlockingValue || (isBlocking && limitedAttempts !== initialLimitedAttemptsValue) || deadlineDays !== initialDeadlineDays || hasDeadline !== initialHasDeadline || waitingPeriod !== (initialWaitingPeriod ? initialWaitingPeriod.period : 1) || waitingPeriodUnit !== (initialWaitingPeriod ? initialWaitingPeriod.type : "days")) {
             console.log(questions, initialQuestions, title, initialTitle, requiredScore, initialRequiredScoreValue, selectionStrategy, initialStrategy, isBlocking, initialIsBlockingValue, limitedAttempts, initialLimitedAttemptsValue, deadlineDays, initialDeadlineDays, waitingPeriod, (initialWaitingPeriod ? initialWaitingPeriod.period : 1), waitingPeriodUnit, (initialWaitingPeriod ? initialWaitingPeriod.type : "days"));
             return true;
         }
@@ -77,12 +79,13 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             return;
         }
         console.log("Adding new quiz to course ID:", courseId);
+        const finalDeadlineDays = hasDeadline ? deadlineDays : 0;
         const quizPayload = {
             type: 'quiz',
             title: title,
             required_score: requiredScore,
             selection_strategy: selectionStrategy,
-            deadline_days: deadlineDays,
+            deadline_days: finalDeadlineDays,
             is_blocking: isBlocking,
             questions: questionsPayload(),
         };
@@ -130,6 +133,14 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
         }
         if (questions.length === 0) {
             setErrorMessage(localeMessages["at_least_one_question"]);
+            return false;
+        }
+        if (isBlocking && requiredScore === 0) {
+            setErrorMessage(localeMessages["required_score_blocking"]);
+            return false;
+        }
+        if (hasDeadline && (Number(deadlineDays) === 0 || deadlineDays === "")) {
+            setErrorMessage(localeMessages["deadline_cannot_be_zero"] || "Deadline cannot be 0 when deadline is enabled");
             return false;
         }
         for (let i = 0; i < questions.length; i++) {
@@ -193,11 +204,12 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             return;
         }
         console.log("Updating quiz ID:", quizId, "for course ID:", courseId);
+        const finalDeadlineDays = hasDeadline ? deadlineDays : 0;
         const quizPayload = {
             title: title,
             required_score: requiredScore,
             selection_strategy: selectionStrategy,
-            deadline_days: deadlineDays,
+            deadline_days: finalDeadlineDays,
             is_blocking: isBlocking,
             questions: questionsPayload(),
         };
@@ -260,6 +272,12 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             setRequiredScore(0);
         }
     }, [isBlocking, requiredScore]);
+
+    useEffect(() => {
+        if (!hasDeadline && deadlineDays !== 0) {
+            setDeadlineDays(0);
+        }
+    }, [hasDeadline, deadlineDays]);
 
 
     const addToQuestions = () => {
@@ -402,27 +420,55 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                         </Tooltip>
                     </Grid>
 
-                    {/* Row 2: Deadline and Selection Strategy */}
+                    {/* Row 2: Deadline with Switch and Selection Strategy */}
                     <Grid size={{ xs: 12, md: 6 }}>
-                        <InputLabel sx={{ mb: 1, fontSize: '0.9rem', color: 'text.secondary' }}>
-                            {localeMessages["quiz_deadline"]}
-                        </InputLabel>
-                        <Tooltip
-                            title={localeMessages["deadline_tooltip"]}
-                            placement="top-start"
-                        >
-                            <RequiredTextField
-                                label="Days"
-                                type="number"
-                                value={deadlineDays}
-                                onChange={(e) => setDeadlineDays(e.target.value)}
-                                sx={{ width: '100%' }}
-                                inputProps={{ min: 1 }}
-                                disabled={userRole === 'viewer'}
-                            />
-                        </Tooltip>
+                        <Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                <InputLabel sx={{ fontSize: '0.9rem', color: 'text.secondary', m: 0 }}>
+                                    {localeMessages["quiz_deadline"]}
+                                </InputLabel>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={hasDeadline}
+                                            onChange={(e) => {
+                                                setHasDeadline(e.target.checked);
+                                                if (!e.target.checked) {
+                                                    setDeadlineDays(0);
+                                                } else if (deadlineDays === 0 || deadlineDays === "0" || deadlineDays === "") {
+                                                    setDeadlineDays(14);
+                                                }
+                                            }}
+                                            disabled={userRole === 'viewer'}
+                                            size="small"
+                                        />
+                                    }
+                                    label=""
+                                    sx={{ m: 0 }}
+                                />
+                            </Box>
+                            <Tooltip
+                                title={localeMessages["deadline_tooltip"]}
+                                placement="top-start"
+                            >
+                                <RequiredTextField
+                                    label="Days"
+                                    type="number"
+                                    value={deadlineDays}
+                                    onChange={(e) => {
+                                        if (hasDeadline) {
+                                            setDeadlineDays(e.target.value);
+                                        }
+                                    }}
+                                    sx={{ width: '100%' }}
+                                    inputProps={{ min: hasDeadline ? 1 : 0 }}
+                                    disabled={userRole === 'viewer' || !hasDeadline}
+                                />
+                            </Tooltip>
+                        </Box>
                     </Grid>
 
+                    {/* Row 3: Selection Strategy */}
                     <Grid size={{ xs: 12, md: 6 }}>
                         <Tooltip
                             title={localeMessages["question_selection_strategy_tooltip"]}
