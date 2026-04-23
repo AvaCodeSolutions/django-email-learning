@@ -18,6 +18,7 @@ from django.conf import settings
 
 DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
 AI_CONFIGURATIONS: dict = DJANGO_EMAIL_LEARNING_SETTINGS.get("AI", {})
+QUIZ_DEFAULTS: dict = DJANGO_EMAIL_LEARNING_SETTINGS.get("QUIZ_DEFAULTS", {})
 
 
 @method_decorator(login_required, name="dispatch")
@@ -248,9 +249,9 @@ class CourseView(BasePlatformView):
         context["appContext"]["courseLanguage"] = course.language
         context["appContext"]["customComponent"] = None
         context["appContext"]["quizDefaults"] = {
-            "limitedAttempts": True,
-            "isBlocking": True,
-            "hasDeadline": True,
+            "limitedAttempts": QUIZ_DEFAULTS.get("LIMITED_ATTEMPTS", True),
+            "isBlocking": QUIZ_DEFAULTS.get("IS_BLOCKING", True),
+            "hasDeadline": QUIZ_DEFAULTS.get("HAS_DEADLINE", True),
         }
         context["appContext"]["direction"] = (
             "rtl" if get_language_info(course.language)["bidi"] else "ltr"
