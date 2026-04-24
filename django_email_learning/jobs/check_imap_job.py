@@ -1,8 +1,14 @@
-from django_email_learning.models import ImapConnection
+from django_email_learning.models import (
+    ImapConnection,
+    JobExecution,
+    JobName,
+    JobStatus,
+)
 from django_email_learning.services.metrics_service import MetricsService
 from django_email_learning.ports.imap_interface_protocol import ImapInterfaceProtocol
 from django.utils.module_loading import import_string
 from django.conf import settings
+from django.utils import timezone
 import imaplib
 import email
 from email.policy import default
@@ -35,6 +41,19 @@ class CheckIMAPJob:
             return ImapInterface()
 
     def run(self) -> None:
+        if JobExecution.objects.filter(
+            job_name=JobName.CHECK_IMAP.value,
+            status=JobStatus.RUNNING.value,
+        ).exists():
+            logger.warning(
+                "Another instance of CheckIMAPJob is already running. Exiting this run."
+            )
+            return
+        job_execution = JobExecution.objects.create(
+            job_name=JobName.CHECK_IMAP.value,
+            status=JobStatus.RUNNING.value,
+            started_at=timezone.now(),
+        )
         imap_connections = ImapConnection.objects.filter(course__enabled=True)
 
         for imap_connection in imap_connections:
@@ -54,6 +73,9 @@ class CheckIMAPJob:
                 for folder in folders:
                     self._process_folder(account, folder, imap_connection)
             finally:
+                job_execution.status = JobStatus.COMPLETED.value
+                job_execution.finished_at = timezone.now()
+                job_execution.save()
                 self._logout_account(account, imap_connection)
 
     def _connect_account(

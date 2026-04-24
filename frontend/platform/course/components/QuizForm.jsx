@@ -6,7 +6,7 @@ import QuestionForm from './QuestionForm';
 import { getCookie } from '../../../src/utils';
 import { useAppContext } from '../../../src/render';
 
-const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod, initialStrategy, initialDeadlineDays, initialLimitedAttempts, initialIsBlocking }) => {
+const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod, initialStrategy, initialDeadlineDays, initialLimitedAttempts, initialIsBlocking, initialReminderIntervalDays }) => {
     const questionIdRef = useRef(0);
     const createQuestionId = () => {
         questionIdRef.current += 1;
@@ -32,12 +32,20 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     const [deadlineDays, setDeadlineDays] = useState(initialDeadlineDays || 14);
     const initialHasDeadline = initialDeadlineDays !== undefined ? (initialDeadlineDays > 0) : (quizDefaults.hasDeadline ?? false);
     const [hasDeadline, setHasDeadline] = useState(initialHasDeadline);
+    const defaultReminderIntervalDays = Number(quizDefaults.reminderIntervalDays ?? 0);
+    const initialReminderIntervalValue = !initialHasDeadline
+        ? (initialReminderIntervalDays ?? (quizId ? 0 : defaultReminderIntervalDays))
+        : 0;
+    const initialReminderEnabled = Number(initialReminderIntervalValue) > 0;
+    const [hasReminderInterval, setHasReminderInterval] = useState(initialReminderEnabled);
+    const [reminderIntervalDays, setReminderIntervalDays] = useState(initialReminderIntervalValue);
     const [waitingPeriod, setWaitingPeriod] = useState(initialWaitingPeriod ? initialWaitingPeriod.period : 1);
     const [waitingPeriodUnit, setWaitingPeriodUnit] = useState(initialWaitingPeriod ? initialWaitingPeriod.type : "days");
     const questionInputRef = useRef(null);
     const dialogRef = useRef(null);
     const organizationId = localStorage.getItem('activeOrganizationId');
     const [confirmCloseDialogOpen, setConfirmCloseDialogOpen] = useState(false);
+    const reminderIntervalDefaultValue = defaultReminderIntervalDays > 0 ? defaultReminderIntervalDays : 1;
 
 
     const compareQuestions = (questions1, questions2) => {
@@ -67,21 +75,21 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     }
 
     const hasUnsavedChanges = () => {
-        if (!compareQuestions(questions, initialQuestions || []) || title !== initialTitle || requiredScore !== initialRequiredScoreValue || selectionStrategy !== initialStrategy || isBlocking !== initialIsBlockingValue || (isBlocking && limitedAttempts !== initialLimitedAttemptsValue) || deadlineDays !== initialDeadlineDays || hasDeadline !== initialHasDeadline || waitingPeriod !== (initialWaitingPeriod ? initialWaitingPeriod.period : 1) || waitingPeriodUnit !== (initialWaitingPeriod ? initialWaitingPeriod.type : "days")) {
-            console.log(questions, initialQuestions, title, initialTitle, requiredScore, initialRequiredScoreValue, selectionStrategy, initialStrategy, isBlocking, initialIsBlockingValue, limitedAttempts, initialLimitedAttemptsValue, deadlineDays, initialDeadlineDays, waitingPeriod, (initialWaitingPeriod ? initialWaitingPeriod.period : 1), waitingPeriodUnit, (initialWaitingPeriod ? initialWaitingPeriod.type : "days"));
+        if (!compareQuestions(questions, initialQuestions || []) || title !== initialTitle || requiredScore !== initialRequiredScoreValue || selectionStrategy !== initialStrategy || isBlocking !== initialIsBlockingValue || (isBlocking && limitedAttempts !== initialLimitedAttemptsValue) || deadlineDays !== initialDeadlineDays || hasDeadline !== initialHasDeadline || hasReminderInterval !== initialReminderEnabled || reminderIntervalDays !== initialReminderIntervalValue || waitingPeriod !== (initialWaitingPeriod ? initialWaitingPeriod.period : 1) || waitingPeriodUnit !== (initialWaitingPeriod ? initialWaitingPeriod.type : "days")) {
+            console.log(questions, initialQuestions, title, initialTitle, requiredScore, initialRequiredScoreValue, selectionStrategy, initialStrategy, isBlocking, initialIsBlockingValue, limitedAttempts, initialLimitedAttemptsValue, deadlineDays, initialDeadlineDays, hasReminderInterval, initialReminderEnabled, reminderIntervalDays, initialReminderIntervalValue, waitingPeriod, (initialWaitingPeriod ? initialWaitingPeriod.period : 1), waitingPeriodUnit, (initialWaitingPeriod ? initialWaitingPeriod.type : "days"));
             return true;
         }
         return false;
     }
 
-    const addQuiz = () => {
-        if (!validateQuiz()) {
-            return;
-        }
-        console.log("Adding new quiz to course ID:", courseId);
+    const buildQuizPayload = () => {
         const finalDeadlineDays = hasDeadline ? deadlineDays : 0;
+        const normalizedReminderIntervalDays = !hasDeadline && hasReminderInterval
+            ? Number(reminderIntervalDays)
+            : 0;
+        const shouldClearReminderInterval = Boolean(quizId) && (initialReminderEnabled || Number(initialReminderIntervalValue) > 0) && normalizedReminderIntervalDays === 0;
+
         const quizPayload = {
-            type: 'quiz',
             title: title,
             required_score: requiredScore,
             selection_strategy: selectionStrategy,
@@ -89,9 +97,30 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             is_blocking: isBlocking,
             questions: questionsPayload(),
         };
+
+        if (!quizId) {
+            quizPayload.type = 'quiz';
+        }
+
         if (isBlocking) {
             quizPayload.limited_attempts = limitedAttempts;
         }
+
+        if (normalizedReminderIntervalDays > 0) {
+            quizPayload.reminder_interval_days = normalizedReminderIntervalDays;
+        } else if (shouldClearReminderInterval) {
+            quizPayload.reminder_interval_days = null;
+        }
+
+        return quizPayload;
+    }
+
+    const addQuiz = () => {
+        if (!validateQuiz()) {
+            return;
+        }
+        console.log("Adding new quiz to course ID:", courseId);
+        const quizPayload = buildQuizPayload();
         fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/`, {
             method: 'POST',
             headers: {
@@ -141,6 +170,10 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
         }
         if (hasDeadline && (Number(deadlineDays) === 0 || deadlineDays === "")) {
             setErrorMessage(localeMessages["deadline_cannot_be_zero"] || "Deadline cannot be 0 when deadline is enabled");
+            return false;
+        }
+        if (!hasDeadline && hasReminderInterval && (Number(reminderIntervalDays) <= 0 || reminderIntervalDays === "")) {
+            setErrorMessage(localeMessages["reminder_interval_days_required"] || "Reminder interval days must be greater than 0 when reminders are enabled.");
             return false;
         }
         for (let i = 0; i < questions.length; i++) {
@@ -204,18 +237,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             return;
         }
         console.log("Updating quiz ID:", quizId, "for course ID:", courseId);
-        const finalDeadlineDays = hasDeadline ? deadlineDays : 0;
-        const quizPayload = {
-            title: title,
-            required_score: requiredScore,
-            selection_strategy: selectionStrategy,
-            deadline_days: finalDeadlineDays,
-            is_blocking: isBlocking,
-            questions: questionsPayload(),
-        };
-        if (isBlocking) {
-            quizPayload.limited_attempts = limitedAttempts;
-        }
+        const quizPayload = buildQuizPayload();
         fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${contentId}/`, {
             method: 'POST',
             headers: {
@@ -278,6 +300,17 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             setDeadlineDays(0);
         }
     }, [hasDeadline, deadlineDays]);
+
+    useEffect(() => {
+        if (hasDeadline) {
+            if (hasReminderInterval) {
+                setHasReminderInterval(false);
+            }
+            if (reminderIntervalDays !== 0) {
+                setReminderIntervalDays(0);
+            }
+        }
+    }, [hasDeadline, hasReminderInterval, reminderIntervalDays]);
 
 
     const addToQuestions = () => {
@@ -420,7 +453,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                         </Tooltip>
                     </Grid>
 
-                    {/* Row 2: Deadline with Switch and Selection Strategy */}
+                    {/* Row 2: Deadline and Reminder Interval */}
                     <Grid size={{ xs: 12, md: 6 }}>
                         <Box>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -467,6 +500,53 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                             </Tooltip>
                         </Box>
                     </Grid>
+
+                    {!hasDeadline && <Grid size={{ xs: 12, md: 6 }}>
+                        <Tooltip
+                            title={localeMessages["reminder_interval_days_tooltip"]}
+                            placement="top-start"
+                        >
+                            <Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                    <InputLabel sx={{ fontSize: '0.9rem', color: 'text.secondary', m: 0 }}>
+                                        {localeMessages["reminder_interval_days"]}
+                                    </InputLabel>
+                                    <FormControlLabel
+                                        control={
+                                            <Switch
+                                                checked={hasReminderInterval}
+                                                onChange={(e) => {
+                                                    setHasReminderInterval(e.target.checked);
+                                                    if (!e.target.checked) {
+                                                        setReminderIntervalDays(0);
+                                                    } else if (reminderIntervalDays === 0 || reminderIntervalDays === "0" || reminderIntervalDays === "") {
+                                                        setReminderIntervalDays(reminderIntervalDefaultValue);
+                                                    }
+                                                }}
+                                                disabled={userRole === 'viewer'}
+                                                size="small"
+                                            />
+                                        }
+                                        label=""
+                                        sx={{ m: 0 }}
+                                    />
+                                </Box>
+                                <RequiredTextField
+                                    label="Days"
+                                    type="number"
+                                    value={reminderIntervalDays}
+                                    onChange={(e) => {
+                                        if (hasReminderInterval) {
+                                            setReminderIntervalDays(e.target.value);
+                                        }
+                                    }}
+                                    sx={{ width: '100%' }}
+                                    slotProps={{ htmlInput: { min: hasReminderInterval ? 1 : 0 } }}
+                                    disabled={userRole === 'viewer' || !hasReminderInterval}
+                                />
+                            </Box>
+                        </Tooltip>
+                    </Grid>}
 
                     {/* Row 3: Selection Strategy */}
                     <Grid size={{ xs: 12, md: 6 }}>

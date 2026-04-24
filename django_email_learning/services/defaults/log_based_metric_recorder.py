@@ -27,6 +27,19 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
             },
         )
 
+    def quiz_reminder_sent(
+        self, course_slug: str, organization_id: int, quiz_id: int
+    ) -> None:
+        logger.info(
+            "Quiz reminder sent",
+            extra={
+                "metric": "quiz_reminder_sent",
+                "course_slug": course_slug,
+                "organization_id": organization_id,
+                "quiz_id": quiz_id,
+            },
+        )
+
     def lesson_sent(
         self, course_slug: str, organization_id: int, lesson_id: int
     ) -> None:
@@ -108,6 +121,15 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
             "Delivery schedule blocked",
             extra={
                 "metric": "delivery_schedule_blocked",
+                "content_id": content_id,
+            },
+        )
+
+    def reminder_schedule_blocked(self, content_id: int) -> None:
+        logger.info(
+            "Reminder schedule blocked",
+            extra={
+                "metric": "reminder_schedule_blocked",
                 "content_id": content_id,
             },
         )

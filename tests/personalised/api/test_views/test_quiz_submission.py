@@ -1,3 +1,4 @@
+from django_email_learning.models import ContentDelivery
 from django_email_learning.services import jwt_service
 from django_email_learning.personalised.api.views import QuizSubmissionView
 from django_email_learning.personalised.api.serializers import QuestionResponse
@@ -14,6 +15,8 @@ def test_quiz_submission_api_valid_token(content_delivery, anonymous_client):
             "delivery_hash": content_delivery.hash_value,
         }
     )
+    original_remind_at = content_delivery.remind_at
+    assert original_remind_at is not None
 
     response = anonymous_client.post(
         URL,
@@ -37,6 +40,47 @@ def test_quiz_submission_api_valid_token(content_delivery, anonymous_client):
 
     # verify that the hash value has been updated
     content_delivery.refresh_from_db()
+    assert content_delivery.remind_at != original_remind_at
+    assert content_delivery.remind_at is not None
+    assert content_delivery.hash_value != jwt_service.decode_jwt(token)["delivery_hash"]
+
+
+def test_quiz_submission_when_quiz_is_passed(content_delivery, anonymous_client):
+    token = jwt_service.generate_jwt(
+        {
+            "delivery_id": content_delivery.id,
+            "delivery_hash": content_delivery.hash_value,
+        }
+    )
+
+    quiz = content_delivery.course_content.quiz
+    answers = []
+    for question in quiz.questions.all():
+        correct_answer_ids = list(
+            question.answers.filter(is_correct=True).values_list("id", flat=True)
+        )
+        answers.append(QuestionResponse(id=question.id, answers=correct_answer_ids))
+
+    response = anonymous_client.post(
+        URL,
+        data={
+            "token": token,
+            "answers": [answer.model_dump(mode="json") for answer in answers],
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["score"] == 100
+    assert response.json()["passed"] is True
+    assert (
+        response.json()["required_score"]
+        == content_delivery.course_content.quiz.required_score
+    )
+    content_delivery.refresh_from_db()
+    assert (
+        content_delivery.reminder_state == ContentDelivery.ReminderStatus.NOT_APPLICABLE
+    )
     assert content_delivery.hash_value != jwt_service.decode_jwt(token)["delivery_hash"]
 
 

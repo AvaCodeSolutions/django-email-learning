@@ -9,6 +9,11 @@ class MetricRecorderProtocol(Protocol):
     def quiz_sent(self, course_slug: str, organization_id: int, quiz_id: int) -> None:
         ...
 
+    def quiz_reminder_sent(
+        self, course_slug: str, organization_id: int, quiz_id: int
+    ) -> None:
+        ...
+
     def lesson_sent(
         self, course_slug: str, organization_id: int, lesson_id: int
     ) -> None:
@@ -39,6 +44,9 @@ class MetricRecorderProtocol(Protocol):
         ...
 
     def delivery_schedule_blocked(self, content_id: int) -> None:
+        ...
+
+    def reminder_schedule_blocked(self, content_id: int) -> None:
         ...
 
     def imap_command_handling_failed(

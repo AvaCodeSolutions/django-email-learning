@@ -2,6 +2,7 @@ from django.views.generic import TemplateView
 from django_email_learning.models import Lesson, Quiz, CourseContent
 from django_email_learning.platform.views import CourseView
 from django_email_learning.platform.serializers import WebComponent
+from django.utils import timezone
 
 
 class CustomComponentCourseView(CourseView):
@@ -29,9 +30,10 @@ class EmailTemplatePreview(TemplateView):
             "lesson",
             "password_reset",
             "quiz",
+            "quiz_reminder",
         ]:
             raise ValueError(
-                "Invalid template name. Allowed values are: 'certificate_form', 'enrollment_verified', 'enrollment_verification', 'lesson', 'password_reset', 'quiz'."
+                "Invalid template name. Allowed values are: 'certificate_form', 'enrollment_verified', 'enrollment_verification', 'lesson', 'password_reset', 'quiz', 'quiz_reminder'."
             )
 
         return [f"emails/{template_name}.html"]
@@ -59,5 +61,6 @@ class EmailTemplatePreview(TemplateView):
             "uid": "sampleuid",
             "token": "sampletoken",
             "progress": 40,
+            "deadline_time": timezone.now(),
             "next_content": content.get_next() if content else None,
         }

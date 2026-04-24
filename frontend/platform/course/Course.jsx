@@ -235,6 +235,7 @@ function Course() {
                                 initialDeadlineDays={content.quiz.deadline_days}
                                 initialLimitedAttempts={content.quiz.limited_attempts}
                                 initialIsBlocking={content.quiz.is_blocking}
+                                initialReminderIntervalDays={content.quiz.reminder_interval_days}
                                  /></Suspense>);
             }
         }

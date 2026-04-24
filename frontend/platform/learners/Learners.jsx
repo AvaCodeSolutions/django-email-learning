@@ -7,6 +7,7 @@ import HowToRegIcon from '@mui/icons-material/HowToReg';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import BallotIcon from '@mui/icons-material/Ballot';
 import AssignmentReturnedIcon from '@mui/icons-material/AssignmentReturned';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import SearchIcon from '@mui/icons-material/Search';
@@ -41,6 +42,7 @@ function Learners(initialQs="") {
     'quiz_submitted': {icon: <AssignmentReturnedIcon />, color: "#26a69a", title: localeMessages["quiz_submitted"]},
     'course_completed': {icon: <SchoolIcon />, color: "#0097a7", title: localeMessages["course_completed"]},
     'deactivated': {icon: <BackspaceIcon />, color: "#b71c1c", title: localeMessages["learner_deactivated"]},
+    "reminder_sent": {icon: <NotificationsActiveIcon />, color: "#ae4ad6", title: localeMessages["reminder_sent"]},
   };
 
 
@@ -100,6 +102,9 @@ function Learners(initialQs="") {
                 </>}
                 { event.type === "deactivated" && <>
                   <Box><Typography>{localeMessages["reason"]}: {event.event_data.reason}</Typography></Box>
+                </>}
+                { event.type === "reminder_sent" && <>
+                  <Box><Typography>{localeMessages["quiz_title"]}: {event.event_data.quiz_title}</Typography></Box>
                 </>}
               </TimelineContent>
             </TimelineItem>
