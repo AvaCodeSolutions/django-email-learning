@@ -100,8 +100,8 @@ const Quiz = () => {
     return <Layout>
     <Box sx={{ width: '100%', maxWidth: 920, mx: 'auto', p: { xs: 2, md: 4 }, borderRadius: 2, backgroundColor: "background.paper" }} component="form" method="POST" action="">
         { !errorMessage ? <Box>
-        {showQuestions ? <><Box mb={3}>
-        <Typography variant="h4" mb={1}>{quiz.title}</Typography>
+        {showQuestions ? <><Box sx={{ mb: 3 }}>
+        <Typography variant="h4" sx={{ mb: 1 }}>{quiz.title}</Typography>
         </Box>
         <Box>
         <Typography sx={{ mb: 3, color: 'text.secondary' }}>
@@ -111,7 +111,7 @@ const Quiz = () => {
 
         {quiz.questions.map((question, index) => (
             <Box key={index} sx={{ mb: 2, py: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-                <Box mb={1}><Typography sx={{ fontWeight: 'bold', lineHeight: 1.5 }}>{question.text}</Typography></Box>
+                <Box sx={{ mb: 1 }}><Typography sx={{ fontWeight: 'bold', lineHeight: 1.5 }}>{question.text}</Typography></Box>
                 {question.answers.map((answer, cIndex) => (
                     <FormControlLabel control={<Checkbox onChange={(e) => { if (!e.target.checked) {
                         const newSelectedAnswers = [...selectedAnswers];
@@ -127,13 +127,13 @@ const Quiz = () => {
                 ))}
             </Box>
         ))}
-        <Box mt={3.5} textAlign="center">
+        <Box sx={{ mt: 3.5, textAlign: 'center' }}>
             <Button variant="contained" onClick={showSubmitDialog} sx={{px: 3, fontSize: '1.1rem'}}>{localeMessages['submit']}</Button>
         </Box>
-        </Box></> : <Box textAlign="center">
+        </Box></> : <Box sx={{ textAlign: 'center' }}>
             {isPassed !== null && (isPassed ? <>{ !quizData && <CelebrationIcon sx={{mb: 2, color: 'primary.main', fontSize: '3rem'}}/> }<Alert severity={ score == 100 ? "success" : "info" } sx={{justifyContent: 'center', alignItems: 'center'}} ><Typography variant='h6'>{message} {localeMessages['your_score']}: {score}%</Typography></Alert></> :
             <><Alert severity="error" sx={{ justifyContent: 'center', alignItems: 'center' }} ><Typography variant="h6">{message} {localeMessages['your_score']}: {score}%</Typography></Alert>
-            {!isInvalidated && <Box mt={3} textAlign="center"><Button onClick={() => window.location.reload()} variant="contained">{localeMessages['try_again']}</Button></Box>}
+            {!isInvalidated && <Box sx={{ mt: 3, textAlign: 'center' }}><Button onClick={() => window.location.reload()} variant="contained">{localeMessages['try_again']}</Button></Box>}
             </>)}
             {quizData && (
                 <Box sx={{ mt: 3, textAlign: direction === 'rtl' ? 'right' : 'left', border: '1px solid', borderColor: 'divider', borderRadius: 2, p: { xs: 2, md: 3 }, backgroundColor: 'background.default' }}>
@@ -182,11 +182,11 @@ const Quiz = () => {
         </Box>}
         </Box> : <Alert severity="error"><Typography variant="h6">{localeMessages['error']}: {errorMessage} {ref && `(Ref: ${ref})`}</Typography></Alert>}
         <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
-            <Box p={4}>
-                <Typography variant="h6" mb={2}>{localeMessages['ready_to_submit']}</Typography>
+            <Box sx={{ p: 4 }}>
+                <Typography variant="h6" sx={{ mb: 2 }}>{localeMessages['ready_to_submit']}</Typography>
                 {warning ? <Alert severity="warning" sx={{ mb: 2 }}><Typography>{warning}</Typography></Alert> :
                 <Typography>{localeMessages['submit_quiz_note']}</Typography>}
-                <Box mt={4} textAlign="right">
+                <Box sx={{ mt: 4, textAlign: 'right' }}>
                     <Button variant="text" onClick={() => setDialogOpen(false)} sx={{ mr: 2 }}>{localeMessages['cancel']}</Button>
                     <Button variant="contained" onClick={submitQuiz}>{localeMessages['submit']}</Button>
                 </Box>

@@ -8,9 +8,9 @@ const CommandResult = () => {
     return <Layout>
     { !errorMessage && !confirmationMessage ?<Alert severity='success' sx={{ maxWidth: 800, margin: '0 auto', backgroundColor: "background.light" }}>
        {successMessage}
-    </Alert> : confirmationMessage ? <Box sx={{my: 6}}><Typography variant='h6' align='center' sx={{ mt: 4, color: 'text.primary' }}>
+    </Alert> : confirmationMessage ? <Box sx={{ my: 6 }}><Typography variant='h6' align='center' sx={{ mt: 4, color: 'text.primary' }}>
        {confirmationMessage}
-    </Typography> <Box mt={6} sx={{ textAlign: 'center' }}><Button href={confirmUrl} variant='contained' mt={2} sx={{ mx: 'auto', px: 3, fontSize: '1rem'}}>{localeMessages["Confirm"]}</Button></Box></Box>: <Alert severity="error" sx={{ maxWidth: 800, margin: '20px auto' }}>
+    </Typography> <Box sx={{ mt: 6, textAlign: 'center' }}><Button href={confirmUrl} variant='contained' sx={{ mt: 2, mx: 'auto', px: 3, fontSize: '1rem' }}>{localeMessages["Confirm"]}</Button></Box></Box>: <Alert severity="error" sx={{ maxWidth: 800, margin: '20px auto' }}>
        {errorMessage} (ref: {ref})
     </Alert>}
     </Layout>

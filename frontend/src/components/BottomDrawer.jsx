@@ -12,9 +12,10 @@ function BottomDrawer({icon, children}) {
             <Fab size="small" color="primary" aria-label="Filter list" sx={{ position: 'fixed', bottom: 16, right: 16, display: {md: "none"}, boxShadow: "1px 1px 5px rgba(0, 0, 0, 0.2)" }} onClick={toggleDrawer(true)}>
                 {icon}
             </Fab>
-            <Drawer open={drawerOpen} onClose={toggleDrawer(false)} display={{md: "none" }} anchor='bottom'
+            <Drawer open={drawerOpen} onClose={toggleDrawer(false)} anchor='bottom'
+                sx={{ display: { md: 'none' } }}
                 slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(251, 251, 255, 0.01)' }}, paper: { sx: { boxShadow: '2px 0px 8px rgba(0, 0, 0, 0.1)'}}}}>
-                <Box p={2}>
+                <Box sx={{ p: 2 }}>
                 {children}
                 </Box>
             </Drawer>

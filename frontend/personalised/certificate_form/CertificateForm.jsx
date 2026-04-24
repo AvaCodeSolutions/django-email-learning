@@ -63,7 +63,7 @@ const CertificateForm = () => {
                 bgcolor: "background.paper",
             }}
         >
-        <Box display="flex" alignItems="center" my={4} justifyContent="center">
+        <Box sx={{ display: 'flex', alignItems: 'center', my: 4, justifyContent: 'center' }}>
             <WorkspacePremiumIcon color="secondary" sx={{ fontSize: 50, mr: 1 }} />
             <Typography variant="h4" component="h1">
                 {localeMessages['form_title']}

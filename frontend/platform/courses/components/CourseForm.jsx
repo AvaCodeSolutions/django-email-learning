@@ -364,12 +364,12 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
         });
     };
 
-    return (<Box p={2}>
+    return (<Box sx={{ p: 2 }}>
               { (!createMode && courseTitle=="") ? <LinearProgress /> : <>
               { errorMessage && <Alert severity="error" sx={{ marginBottom: "10px" }}>{errorMessage}</Alert> }
               <RequiredTextField label={localeMessages["course_title"]} helperText={titleHelperText} fullWidth margin="normal" value={courseTitle} onChange={(e) => setCourseTitle(e.target.value)} />
               <Tooltip title={createMode ? localeMessages["slug_tooltip"] : ""}>
-                                <RequiredTextField label={localeMessages["course_slug"]} helperText={slugHelperText} fullWidth margin="normal" value={courseSlug} onChange={(e) => setCourseSlug(e.target.value)} inputProps={{ pattern: '^\\S+$', title: localeMessages['slug_no_space'] }} {...(!createMode ? { disabled: true } : {})} />
+                                <RequiredTextField label={localeMessages["course_slug"]} helperText={slugHelperText} fullWidth margin="normal" value={courseSlug} onChange={(e) => setCourseSlug(e.target.value)} slotProps={{ htmlInput: { pattern: '^\\S+$', title: localeMessages['slug_no_space'] } }} {...(!createMode ? { disabled: true } : {})} />
               </Tooltip>
                             <RequiredTextField
                                 label={localeMessages["course_language"]}
@@ -398,7 +398,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 dir={direction}
               />
               <Divider sx={{ my: 2 }} />
-              <Box mt={1}>
+              <Box sx={{ mt: 1 }}>
                     <FormControlLabel
                             control={<Switch checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} dir={direction} />}
                             label={localeMessages["course_is_public"]}
@@ -409,8 +409,8 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     </Typography>
               </Box>
               <Divider sx={{ my: 2 }} />
-              <Box mt={2}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                            <Box sx={{ mt: 2 }}>
+                                <Stack direction="row" sx={{ mb: 1, justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="subtitle1">{localeMessages["external_references"]}</Typography>
                     <Button
                         onClick={handleAddExternalReference}
@@ -487,7 +487,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 </Tooltip>
 
 
-              { addImapConnection && <Box py={2}>
+              { addImapConnection && <Box sx={{ py: 2 }}>
                     <AddImapConnectionForm
                         onChangeCallback={(id) => setImapConnectionId(id)}
                         activeOrganizationId={activeOrganizationId}
@@ -500,7 +500,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     setImageServerPath(data.file_path);
                 }} />
               </Box>
-              <Box mt={2} textAlign="right">
+                            <Box sx={{ mt: 2, textAlign: 'right' }}>
                 <Button onClick={cancelCallback} sx={{ mr: 1 }}>Cancel</Button>
                 { createMode && <Button variant="contained" onClick={() => handleCreateCourse()} sx={{ boxShadow: 'none' }}>{localeMessages["create"]}</Button> }
                 { !createMode && <Button variant="contained" onClick={() => handleUpdateCourse()} sx={{ boxShadow: 'none' }}>{localeMessages["update"]}</Button> }

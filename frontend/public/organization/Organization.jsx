@@ -71,8 +71,7 @@ function Organization() {
                         spacing={2.5}
                         useFlexGap
                         flexWrap="wrap"
-                        alignItems="center"
-                        sx={{ pt: 1 }}
+                        sx={{ pt: 1, alignItems: 'center' }}
                     >
                         {organization.website && (
                             <Link
@@ -127,14 +126,14 @@ function Organization() {
             </Alert>
         )}
 
-        <Box my={4}>
+        <Box sx={{ my: 4 }}>
             <Typography variant="h2" sx={{ mb: 2 }}>{localeMessages['courses']}</Typography>
             { courses.length > 0 ? (
-                <Grid container columnSpacing={2} rowSpacing={3} alignItems="stretch">
+                <Grid container columnSpacing={2} rowSpacing={3} sx={{ alignItems: 'stretch' }}>
                 { courses.map((course) => {
                     const courseDirection = course.is_rtl ? 'rtl' : 'ltr';
                     return (
-                    <Grid size={{ xs: 12, sm: 6, md: 4 }} key={course["id"]} display="flex" >
+                    <Grid size={{ xs: 12, sm: 6, md: 4 }} key={course["id"]} sx={{ display: 'flex' }}>
                         <Card
                             key={course["id"]}
                             sx={{
@@ -169,7 +168,7 @@ function Organization() {
                                     <Link href={`courses/${course["slug"]}/`} underline="none">
                                         <Typography variant="h3" sx={{ textAlign: courseDirection === 'rtl' ? 'right' : 'left' }}>{course["title"]}</Typography>
                                     </Link>
-                                    <Stack direction={courseDirection === 'rtl' ? 'rtl' : 'ltr'} alignItems="center" spacing={0.5} sx={{ mt: 0.25 }}>
+                                    <Stack direction={courseDirection === 'rtl' ? 'rtl' : 'ltr'} spacing={0.5} sx={{ mt: 0.25, alignItems: 'center' }}>
                                         <LanguageIcon
                                             sx={(theme) => ({
                                                 fontSize: '1rem',

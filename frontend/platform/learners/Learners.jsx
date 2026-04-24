@@ -68,7 +68,7 @@ function Learners(initialQs="") {
             </Box>
             <Chip label={`ID: ${data.id}`} size="small" variant="outlined" sx={{ flexShrink: 0, fontFamily: 'monospace' }} />
           </Box>
-          <Box px={2}>
+          <Box sx={{ px: 2 }}>
           <Timeline>
             {data.events.map((event, index) => (
             <TimelineItem key={index}>
@@ -194,7 +194,7 @@ function Learners(initialQs="") {
             </Avatar>
             <Typography variant="subtitle1" sx={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{learner.email}</Typography>
           </Box>
-          <Box p={2}>
+          <Box sx={{ p: 2 }}>
           <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
             <EnrollentList enrollments={enrollments} selectHandler={showEnrollmentStatus} />
           </Suspense>
@@ -222,8 +222,8 @@ function Learners(initialQs="") {
           breadCrumbList={[{label: localeMessages["learners"], href: '#'}]}
           organizationIdRefreshCallback={setOrganizationId}
         >
-      <Grid size={{xs: 12}} py={2} pl={2}>
-        <Box p={2} sx={{ marginBottom: 2, border: '1px solid', borderColor: 'border.main', borderRadius: 2, minHeight: 300, backgroundColor: 'background.box' }}>
+      <Grid size={{xs: 12}} sx={{ py: 2, pl: 2 }}>
+        <Box sx={{ p: 2, marginBottom: 2, border: '1px solid', borderColor: 'border.main', borderRadius: 2, minHeight: 300, backgroundColor: 'background.box' }}>
 
           <Paper
             sx={{ mb: '10px', p: '2px 4px', display: 'flex', alignItems: 'center', width: 400 }}

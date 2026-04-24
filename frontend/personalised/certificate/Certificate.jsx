@@ -133,25 +133,25 @@ const CertificateContent = () => {
                 <Typography
                     variant="h3"
                     align="center"
-                    mt={4}
                     sx={{
+                        mt: 4,
                         fontWeight: 500,
                         maxWidth: '80%',
                     }}
                     dangerouslySetInnerHTML={{ __html: localeMessages['description'].replace(name, "<div style='font-size: 2em; padding: 0.5em; font-weight: 700;'>" + name + "</div>") }}
                 >
                 </Typography>
-                <Grid container spacing={2} sx={{pt: 2, mt: 4, width: '100%', minHeight: '100px' }} alignItems="flex-end">
-                    <Grid item size={4} sx={{ textAlign: 'center' }} >
+                <Grid container spacing={2} sx={{ pt: 2, mt: 4, width: '100%', minHeight: '100px', alignItems: 'flex-end' }}>
+                    <Grid size={4} sx={{ textAlign: 'center' }} >
                         <Typography variant="body2">
                             { logoUrl && <><img src={logoUrl} alt="Organization Logo" style={{ width: 80, height: 80, objectFit: 'contain' }} /><br /></> }
                             <b>{localeMessages['organization_team']}</b><br />
                             {localeMessages['issue_date']}: {issueDate}
                         </Typography>
                     </Grid>
-                    <Grid item size={4} sx={{ textAlign: 'center' }} >
+                    <Grid size={4} sx={{ textAlign: 'center' }} >
                     </Grid>
-                    <Grid item size={4} sx={{ textAlign: 'center' }} >
+                    <Grid size={4} sx={{ textAlign: 'center' }} >
                         <Typography variant="body2">
                             <img src={qrcodeUrl} alt="QR Code" style={{ width: 80, height: 80 }} />
                             <br />

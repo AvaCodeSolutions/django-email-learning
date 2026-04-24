@@ -63,7 +63,7 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
     <MenuBar activeOrganizationId={activeOrganizationId} changeOrganizationCallback={setActiveOrganizationId} showOrganizationSwitcher={showOrganizationSwitcher} drawerWidth={drawerWidth} />
     <Box component="main"
       sx={{ flexGrow: 1, padding: {sm: 3, xs: 1, md: 5}, width: { md: `calc(100% - ${drawerWidth}px)` }, float: { md: direction === 'rtl' ? 'left' : 'right' } }}>
-    <Grid container spacing={0} mt={{ xs: 10, md: 6 }} px={4}>
+    <Grid container spacing={0} sx={{ mt: { xs: 10, md: 6 }, px: 4 }}>
       <Grid size={{xs: 12}}>
       <Breadcrumbs
         aria-label="breadcrumb"

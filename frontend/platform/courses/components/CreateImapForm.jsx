@@ -133,7 +133,7 @@ const CreateImapForm = ({ onSuccess, activeOrganizationId }) => {
         <RequiredTextField label={localeMessages["password"]} helperText={passwordHelperText} type="password" fullWidth sx={{ marginTop: 2 }} value={password} onChange={(e) => setPassword(e.target.value)} />
         <RequiredTextField label={localeMessages["server"]} helperText={serverHelperText} fullWidth sx={{ marginTop: 2 }} value={server} onChange={(e) => setServer(e.target.value)} />
         <RequiredTextField label={localeMessages["port"]} helperText={portHelperText} fullWidth sx={{ marginTop: 2 }} value={port} onChange={(e) => setPort(e.target.value)} />
-        <Box mt={2}>
+        <Box sx={{ mt: 2 }}>
             <Stack direction="row" spacing={1}>
                 <Tooltip title={localeMessages["add_folder_helper_text"]}>
                 <TextField
@@ -172,7 +172,7 @@ const CreateImapForm = ({ onSuccess, activeOrganizationId }) => {
                 ))}
             </Stack>
         </Box>
-        <Box mt={2} textAlign="right">
+        <Box sx={{ mt: 2, textAlign: 'right' }}>
             <Button variant="contained" onClick={() => handleCreateImap()} sx={{ boxShadow: 'none' }}>
                 {localeMessages["add"]}
             </Button>

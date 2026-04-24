@@ -440,7 +440,7 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
                 setSuccessMessage("");
             }}
             sx={{ width: '200px', mr: 2 }}
-            inputProps={{ min: 1 }}
+            slotProps={{ htmlInput: { min: 1 } }}
             disabled={userRole === 'viewer'}
         />
         <Select size="small" value={waitingPeriodUnit} onChange={(e) => {
@@ -451,7 +451,7 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
             <MenuItem value="hours">{localeMessages["hours"]}</MenuItem>
         </Select>
         </Tooltip>
-        <Box mt={2} textAlign="right" sx={{ position: 'sticky', bottom: 0, p: 1, pt: 2, backgroundColor: 'background.default', borderTop: '1px solid', borderColor: 'divider', zIndex: 2, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+        <Box sx={{ mt: 2, textAlign: 'right', position: 'sticky', bottom: 0, p: 1, pt: 2, backgroundColor: 'background.default', borderTop: '1px solid', borderColor: 'divider', zIndex: 2, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mr: 'auto' }}>
             {successMessage && (
                 <Alert severity="success" sx={{ py: 0 }}>

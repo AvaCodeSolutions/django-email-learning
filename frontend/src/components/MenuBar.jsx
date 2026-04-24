@@ -171,13 +171,13 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     return (
         <Box component="nav"sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
         <AppBar sx={{boxShadow: 0, backgroundColor: 'background.nav', borderBottom: {xs: '1px solid'}, borderColor: {xs: 'border.main', md: 'none'} }}>
-            <Box my={1} ml={5} sx={{ height: {xs: "57px", md: "30px"}, display: 'flex', justifyContent: direction === 'rtl' ? 'flex-end' : 'flex-start', alignItems: 'center' }}>
+            <Box sx={{ my: 1, ml: 5, height: { xs: "57px", md: "30px" }, display: 'flex', justifyContent: direction === 'rtl' ? 'flex-end' : 'flex-start', alignItems: 'center' }}>
                 <img src={logoHorizontalUrl} alt="Logo" style={{maxHeight: "57px", height: "100%"}} />
             </Box>
             <Box sx={{ position: "absolute", left: direction === 'rtl' ? 'auto' : '270px', right: direction === 'rtl' ? '270px' : 'auto', top: '10px', display: {xs: 'none', md: 'flex' }}}>
                 {deliverContentsJobStatus && isPlatformAdmin && (
                     <Tooltip title={localeMessages["content_delivery_tooltip"]}>
-                        <Stack direction="row" alignItems="center" spacing={1}>
+                        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                             <Chip
                                 size="small"
                                 icon={statusConfig.icon}
@@ -203,7 +203,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
             </Box>
             <Box sx={{display: { xs: 'flex'}, right: direction === 'rtl' ? 'auto' : '0', left: direction === 'rtl' ? '0' : 'auto', position: "absolute", direction: direction, alignItems: 'center'}}>
                 <ThemeSwitcher />
-                <Box m={1} paddingTop="7px">
+                <Box sx={{ m: 1, pt: '7px' }}>
                 <IconButton
                     aria-controls="menu-appbar"
                     onClick={toggleMenuDrawer(true)}
@@ -230,9 +230,9 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                 </Box>
             </Box>
         </AppBar>
-        <Drawer anchor={direction === 'rtl' ? 'right' : 'left'} variant={drawerVariant} onClose={toggleMenuDrawer(false)} display={{md: "none" }} open={menuOpen} sx={{ '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth } }}
+        <Drawer anchor={direction === 'rtl' ? 'right' : 'left'} variant={drawerVariant} onClose={toggleMenuDrawer(false)} open={menuOpen} sx={{ '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth } }}
             slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(251, 251, 255, 0.57)', backdropFilter: 'blur(5px)' }}, paper: { sx: { borderRadius: 0}}}}>
-            <Box my={2} textAlign="center">
+            <Box sx={{ my: 2, textAlign: 'center' }}>
                 <img src={logoVerticalUrl} alt="Logo" style={{ width: "50%" }} />
             </Box>
             {
@@ -266,8 +266,10 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                         </ListItemIcon>
                         <ListItemText
                             primary={page.name}
-                            primaryTypographyProps={{
-                                fontSize: '0.95rem',
+                            slotProps={{
+                                primary: {
+                                    fontSize: '0.95rem',
+                                },
                             }}
                         />
                         </Link>
@@ -290,8 +292,10 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                         </ListItemIcon>
                         <ListItemText
                             primary={localeMessages["settings"] || 'Settings'}
-                            primaryTypographyProps={{
-                                fontSize: '0.95rem',
+                            slotProps={{
+                                primary: {
+                                    fontSize: '0.95rem',
+                                },
                             }}
                         />
                         {settingsOpen ? <ExpandLess /> : <ExpandMore />}
@@ -328,8 +332,10 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                                             </ListItemIcon>
                                             <ListItemText
                                                 primary={page.name}
-                                                primaryTypographyProps={{
-                                                    fontSize: '0.95rem',
+                                                slotProps={{
+                                                    primary: {
+                                                        fontSize: '0.95rem',
+                                                    },
                                                 }}
                                             />
                                         </Link>
