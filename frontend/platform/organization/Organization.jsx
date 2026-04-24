@@ -79,7 +79,7 @@ function Organization() {
     return (<Base breadCrumbList={[
         {label: localeMessages["organizations"], href: `${platformBaseUrl}/organizations`, index: 0},
         {label: organization ? organization.name : '', href: '#', index: 1}]} showOrganizationSwitcher={false}>
-        <Grid size={12} py={2} px={4}>
+        <Grid size={12} sx={{ py: 2, px: 4 }}>
             <Box sx={{ p: 2, border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: 2, minHeight: 300 }}>
                 <Button variant="contained" color="secondary" onClick={() => {setDialogContent(
                     <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>

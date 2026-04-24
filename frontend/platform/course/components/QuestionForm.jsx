@@ -3,7 +3,7 @@ import { Box, Grid, Typography, Button, Switch, Table, TableHead, TableBody, Tab
 import RuleIcon from '@mui/icons-material/Rule';
 import EditIcon from '@mui/icons-material/Edit';
 import ClearIcon from '@mui/icons-material/Clear';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import AddCircleOutlinedIcon from '@mui/icons-material/AddCircleOutlined';
 import { useAppContext } from '../../../src/render';
 
 
@@ -63,7 +63,7 @@ const QuestionForm = ({question, index, eventHandler}) => {
 
     return (
        <Box key={index} sx={{ mb: 1, p: 2, border: '1px solid', borderColor: 'grey.300', borderRadius: 1 }}>
-            <Grid container spacing={2} alignItems="center">
+            <Grid container spacing={2} sx={{ alignItems: 'center' }}>
                 <Grid size={{ xs: 12, md: 9 }}>
                     {userRole !== 'viewer' && <EditIcon sx={{borderRadius: "50%", display: "inline-block", float: "left", mr: 1, fontSize: "0.9rem", border: 1, borderColor: "grey.200", color: "grey.400", padding: "4px", cursor: "pointer", ':hover': { backgroundColor: "secondary.main", color: "white", borderColor: "secondary.main" } }} onClick={editQuestion}/>}
                     {!editMode ? (
@@ -106,14 +106,14 @@ const QuestionForm = ({question, index, eventHandler}) => {
                             }}
                         />
                     </Grid>
-                    <Grid size={{ xs: 3 }} sx={{ textAlign: 'left' }} alignItems={"center"}>
+                    <Grid size={{ xs: 3 }} sx={{ textAlign: 'left', alignItems: 'center' }}>
                         <Button variant="outlined" sx={{ mt: 1, mr: 1 }} onClick={() => {
                             if (optionInputRef.current) {
                                 console.log(optionInputRef.current);
                                 addToOptions(optionInputRef.current.value);
                             }
                         }}>
-                            <AddCircleOutlineIcon sx={{ mr: 1 }} />
+                            <AddCircleOutlinedIcon sx={{ mr: 1 }} />
                             { localeMessages["add"] }
                         </Button>
                         <Button variant="outlined" sx={{ mt: 1 }} onClick={() => setAddingOption(false)}>

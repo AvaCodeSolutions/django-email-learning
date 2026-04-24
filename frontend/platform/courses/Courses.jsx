@@ -124,8 +124,8 @@ function Courses() {
       breadCrumbList={[{label: localeMessages.course_management, href: '#'}]}
       organizationIdRefreshCallback={setOrganizationId}
     >
-      <Grid size={{xs: 12}} py={2} pl={2}>
-        <Box p={2} sx={{ border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: 2, minHeight: 300 }}>
+      <Grid size={{xs: 12}} sx={{ py: 2, pl: 2 }}>
+        <Box sx={{ p: 2, border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: 2, minHeight: 300 }}>
         {userRole !== 'viewer' && <Button variant="contained" startIcon={<SchoolIcon sx={{ marginLeft: direction === 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
           setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><CourseForm
             successCallback={handleCourseCreated}

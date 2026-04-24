@@ -311,7 +311,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                 <QuizIcon sx={{ mr: 1 }} /> {localeMessages["add_question"]}</Button>}
             { showQuestionField && (
                 <Box sx={{ mb: 2, border: '1px solid', borderColor: 'grey.300', borderRadius: 1, p: 2 }}>
-                    <Grid container spacing={2} alignItems="center">
+                    <Grid container spacing={2} sx={{ alignItems: 'center' }}>
                         <Grid size={{ xs: 12, md: 8 }}>
                             <RequiredTextField inputRef={questionInputRef} label="Question" value={newQuestion} onChange={(e) => setNewQuestion(e.target.value)} sx={{ width: '100%' }} onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
@@ -338,7 +338,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                 )) }
             </Box>
             {/* Quiz Settings Section */}
-            <Box mt={3} mb={3}>
+            <Box sx={{ mt: 3, mb: 3 }}>
                 <Typography variant="h6" sx={{ mb: 2, fontSize: '1.1rem', color: 'secondary.main' }}>
                     {localeMessages["quiz_settings"]}
                 </Typography>
@@ -380,7 +380,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                                 value={requiredScore}
                                 onChange={(e) => setRequiredScore(e.target.value)}
                                 sx={{ width: '100%' }}
-                                inputProps={{ min: 0, max: 100 }}
+                                slotProps={{ htmlInput: { min: 0, max: 100 } }}
                                 disabled={userRole === 'viewer' || !isBlocking}
                             />
                         </Tooltip>
@@ -402,7 +402,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                                         value={waitingPeriod}
                                         onChange={(e) => setWaitingPeriod(e.target.value)}
                                         sx={{ flex: 1 }}
-                                        inputProps={{ min: 1 }}
+                                        slotProps={{ htmlInput: { min: 1 } }}
                                         disabled={userRole === 'viewer'}
                                     />
                                     <Select
@@ -461,7 +461,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                                         }
                                     }}
                                     sx={{ width: '100%' }}
-                                    inputProps={{ min: hasDeadline ? 1 : 0 }}
+                                    slotProps={{ htmlInput: { min: hasDeadline ? 1 : 0 } }}
                                     disabled={userRole === 'viewer' || !hasDeadline}
                                 />
                             </Tooltip>

@@ -17,14 +17,14 @@ const DeleteConfirmationDialog = ({apiKey, onCancel, onSuccess}) => {
     const { localeMessages, apiBaseUrl } = useAppContext();
 
     return (
-        <Box p={2}>
+        <Box sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom>
                 {localeMessages["confirm_deletion"]}
             </Typography>
             <Typography>
                 {localeMessages["are_you_sure_delete_key"]}
             </Typography>
-            <Box mt={2} display="flex" justifyContent="flex-end">
+            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
                 <Button onClick={onCancel} sx={{ mr: 1 }} variant="outlined">
                     {localeMessages["cancel"]}
                 </Button>
@@ -108,8 +108,8 @@ const ApiKeys = () => {
     }
 
     return (<Base breadCrumbList={[{label: localeMessages["api_keys"], href: '#'}]} showOrganizationSwitcher={false}>
-        <Grid size={12} py={2} pl={2}>
-        <Box p={2} sx={{ border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', minHeight: 300, width: { lg: '80%' } }}>
+        <Grid size={12} sx={{ py: 2, pl: 2 }}>
+        <Box sx={{ p: 2, border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', minHeight: 300, width: { lg: '80%' } }}>
         <Typography>{localeMessages["api_key_intro"]}</Typography>
                 <Button
                     variant="contained"

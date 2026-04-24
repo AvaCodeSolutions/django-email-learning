@@ -288,7 +288,7 @@ function Course() {
                     </Alert>
                 </Box>
             )}
-            <Grid size={{xs: 12}} px={2} pt={2} pb={3}>
+            <Grid size={{xs: 12}} sx={{ px: 2, pt: 2, pb: 3 }}>
                 <Box
                     sx={{
                         mb: 3,
@@ -320,7 +320,7 @@ function Course() {
                         </Grid>
                     </Grid>
                 </Box>
-                <Box p={3} sx={{ border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: 2, minHeight: 300 }}>
+                <Box sx={{ p: 3, border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: 2, minHeight: 300 }}>
                     {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
                         setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><LessonForm
                             header={localeMessages["new_lesson"]}
@@ -344,13 +344,13 @@ function Course() {
                 </Box>
                 <Grid container spacing={3}>
                 <Grid size={{xs: 12, lg: 6}}>
-                <Box py={3} sx={{ border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', height: '100%' }}>
+                <Box sx={{ py: 3, border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', height: '100%' }}>
                     <Typography variant="h6" align='center'>{localeMessages["enrollments_distribution"]}</Typography>
                     <Typography variant="body2" align='center' sx={{ mt: 1, mb: 2, color: 'text.secondary' }}>
                         {(localeMessages["total_enrollments"]) + ': ' + totalEnrollments}
                     </Typography>
                     {isEnrollmentsLoading ? (
-                        <Box px={2}>
+                        <Box sx={{ px: 2 }}>
                             <Skeleton variant="circular" width={180} height={180} sx={{ mx: 'auto', my: 2 }} />
                             <Skeleton variant="text" width="80%" sx={{ mx: 'auto' }} />
                             <Skeleton variant="text" width="60%" sx={{ mx: 'auto' }} />
@@ -391,10 +391,10 @@ function Course() {
                 </Box>
                 </Grid>
                 <Grid size={{xs: 12, lg: 6}}>
-                    <Box py={3} sx={{ border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', height: '100%' }}>
+                    <Box sx={{ py: 3, border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', height: '100%' }}>
                     <Typography variant="h6" align='center'>{localeMessages["weekly_enrollments"]}</Typography>
                     {isWeeklyStatsLoading ? (
-                        <Box px={2}>
+                        <Box sx={{ px: 2 }}>
                             <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 1, my: 2 }} />
                             <Skeleton variant="text" width="75%" sx={{ mx: 'auto' }} />
                         </Box>

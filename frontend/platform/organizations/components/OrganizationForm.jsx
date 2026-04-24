@@ -168,7 +168,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
     }
 
     return (
-        <Box p={2}>
+        <Box sx={{ p: 2 }}>
             { errorMessage && <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert> }
             <RequiredTextField label={localeMessages["name"]} helperText={nameHelperText} fullWidth margin="normal" value={name} onChange={(e) => setName(e.target.value)} />
             <RequiredTextField label={localeMessages["description"]} helperText={descriptionHelperText} fullWidth margin="normal" multiline rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
@@ -176,7 +176,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
             <TextField label="LinkedIn page" type="url" fullWidth margin="normal" value={linkedinPage} error={Boolean(linkedinPageHelperText)} helperText={linkedinPageHelperText} onChange={(e) => setLinkedinPage(e.target.value)} />
             <TextField label="YouTube channel" type="url" fullWidth margin="normal" value={youtubeChannel} error={Boolean(youtubeChannelHelperText)} helperText={youtubeChannelHelperText} onChange={(e) => setYoutubeChannel(e.target.value)} />
             <Divider sx={{ my: 2 }} />
-            <Box mt={1}>
+            <Box sx={{ mt: 1 }}>
                 <FormControlLabel
                     control={<Switch checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} dir={direction} />}
                     label={localeMessages["organization_is_public"]}

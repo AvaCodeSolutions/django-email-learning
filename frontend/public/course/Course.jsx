@@ -120,10 +120,10 @@ function Course() {
             >
                 <Stack
                     direction={courseDirection === 'rtl' ? 'row-reverse' : 'row'}
-                    justifyContent={{ xs: 'center', md: 'space-between' }}
-                    alignItems={{ xs: 'center', md: 'flex-end' }}
                     spacing={2}
                     sx={{
+                        justifyContent: { xs: 'center', md: 'space-between' },
+                        alignItems: { xs: 'center', md: 'flex-end' },
                         width: '100%',
                     }}
                 >
@@ -257,7 +257,7 @@ function Course() {
 
         {/* Topics/Lessons Section */}
         {course.lessons && course.lessons.length > 0 && (
-            <Box my={4}>
+            <Box sx={{ my: 4 }}>
                 <Typography variant="h2" sx={{ mb: 2, direction: courseDirection }}>
                     {localeMessages['topics_covered']}
                 </Typography>
@@ -297,11 +297,13 @@ function Course() {
                                 </ListItemIcon>
                                 <ListItemText
                                     primary={lesson}
-                                    primaryTypographyProps={{
-                                        variant: 'body2',
-                                        sx: {
-                                            textAlign: courseDirection === 'rtl' ? 'right' : 'left',
-                                        }
+                                    slotProps={{
+                                        primary: {
+                                            variant: 'body2',
+                                            sx: {
+                                                textAlign: courseDirection === 'rtl' ? 'right' : 'left',
+                                            },
+                                        },
                                     }}
                                 />
                             </ListItem>
@@ -312,7 +314,7 @@ function Course() {
         )}
 
         {course.external_references && course.external_references.length > 0 && (
-            <Box my={4}>
+            <Box sx={{ my: 4 }}>
                 <Typography variant="h2" sx={{ direction: courseDirection }}>
                     {localeMessages['external_references_title']}
                 </Typography>
@@ -341,20 +343,22 @@ function Course() {
                                         </Link>
                                     }
                                     secondary={reference.url}
-                                    primaryTypographyProps={{
-                                        variant: 'body1',
-                                        sx: {
-                                            textAlign: courseDirection === 'rtl' ? 'right' : 'left',
-                                            wordBreak: 'break-word',
+                                    slotProps={{
+                                        primary: {
+                                            variant: 'body1',
+                                            sx: {
+                                                textAlign: courseDirection === 'rtl' ? 'right' : 'left',
+                                                wordBreak: 'break-word',
+                                            },
                                         },
-                                    }}
-                                    secondaryTypographyProps={{
-                                        variant: 'body2',
-                                        sx: {
-                                            mt: 0.5,
-                                            color: 'text.secondary',
-                                            textAlign: courseDirection === 'rtl' ? 'right' : 'left',
-                                            wordBreak: 'break-word',
+                                        secondary: {
+                                            variant: 'body2',
+                                            sx: {
+                                                mt: 0.5,
+                                                color: 'text.secondary',
+                                                textAlign: courseDirection === 'rtl' ? 'right' : 'left',
+                                                wordBreak: 'break-word',
+                                            },
                                         },
                                     }}
                                 />
@@ -394,9 +398,8 @@ function Course() {
             <Container maxWidth="lg">
             <Stack
                 direction="row"
-                justifyContent="space-between"
-                alignItems="center"
                 spacing={2}
+                sx={{ justifyContent: 'space-between', alignItems: 'center' }}
             >
                 <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 500 }}>
                     {course.title}
