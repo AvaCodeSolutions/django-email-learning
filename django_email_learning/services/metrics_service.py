@@ -29,6 +29,11 @@ class MetricsService:
     def quiz_sent(self, course_slug: str, organization_id: int, quiz_id: int) -> None:
         self.metric_recorder.quiz_sent(course_slug, organization_id, quiz_id)
 
+    def quiz_reminder_sent(
+        self, course_slug: str, organization_id: int, quiz_id: int
+    ) -> None:
+        self.metric_recorder.quiz_reminder_sent(course_slug, organization_id, quiz_id)
+
     def lesson_sent(
         self, course_slug: str, organization_id: int, lesson_id: int
     ) -> None:
@@ -64,6 +69,9 @@ class MetricsService:
 
     def delivery_schedule_blocked(self, content_id: int) -> None:
         self.metric_recorder.delivery_schedule_blocked(content_id)
+
+    def reminder_schedule_blocked(self, content_id: int) -> None:
+        self.metric_recorder.reminder_schedule_blocked(content_id)
 
     def imap_command_handling_failed(
         self, imap_connection_id: int, organization_id: int

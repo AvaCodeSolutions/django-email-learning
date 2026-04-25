@@ -295,6 +295,10 @@ class SingleCourseContentView(View):
                 quiz.limited_attempts = quiz_serializer.limited_attempts
             if quiz_serializer.is_blocking is not None:
                 quiz.is_blocking = quiz_serializer.is_blocking
+            if "reminder_interval_days" in quiz_serializer.model_fields_set:
+                quiz.reminder_interval_days = (
+                    quiz_serializer.reminder_interval_days or 0
+                )
             if quiz_serializer.questions is not None:
                 question_ids = set()
                 for question_data in quiz_serializer.questions:

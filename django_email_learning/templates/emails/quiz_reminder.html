@@ -1,19 +1,20 @@
 {% extends "emails/base.html" %}
 {% load i18n %}
+{% load tz %}
 
 {% block content %}
-    <h2 class="email-title">{{ quiz.title }}</h2>
+    <h2 class="email-title">{% blocktranslate with quiz_title=quiz.title %}Reminder For Quiz: {{quiz_title}}{% endblocktranslate %}</h2>
 
     <p class="email-paragraph">{% translate "Hello there," %}</p>
 
     <div class="email-panel reminder-panel border-brand">
-        <p class="email-paragraph" style="margin-bottom: 10px;">{% translate "Your quiz is now available for completion." %}</p>
+        <p class="email-paragraph" style="margin-bottom: 10px;">{% translate "This is a friendly reminder to complete your quiz." %}</p>
 
-        {% if quiz.deadline_days > 0 %}
+        {% if deadline_time %}
             <p class="email-paragraph" style="margin-bottom: 0;">
-                {% blocktranslate %}Please submit your responses within:{% endblocktranslate %}
+                {% blocktranslate %}The quiz link is valid until:{% endblocktranslate %}
                 <br>
-                <span class="deadline-chip">{% blocktranslate with deadline_days=quiz.deadline_days %}{{ deadline_days }} days{% endblocktranslate %}</span>
+                <span class="deadline-chip">{{ deadline_time|timezone:"UTC"|date:"Y-m-d H:i e" }}</span>
             </p>
         {% endif %}
     </div>

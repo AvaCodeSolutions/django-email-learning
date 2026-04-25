@@ -85,8 +85,10 @@ class QuizSubmissionView(View):
             score=score,
             is_passed=passed,
         )
+        delivery.reminder_state = ContentDelivery.ReminderStatus.NOT_APPLICABLE
 
         if passed or not quiz.is_blocking:
+            delivery.save()
             if quiz.is_blocking:
                 delivery.update_hash()  # Invalidate the quiz link after successful submission
                 message = _("Congratulations! You have passed the quiz.")
@@ -110,7 +112,6 @@ class QuizSubmissionView(View):
 
             if quiz.limited_attempts:
                 delivery.update_hash()
-
                 # Check if it's the second attempt failing
 
                 if failed_submissions_count > 1:
@@ -121,6 +122,10 @@ class QuizSubmissionView(View):
                         f"Learner ID {enrollment.learner.id} has failed the quiz twice for Course {enrollment.course.title}. "
                         f"Marking enrollment as failed."
                     )
+                    delivery.remind_at = (
+                        None  # Clear remind_at to prevent further reminders
+                    )
+                    delivery.save()
                     enrollment.fail()
                 else:
                     message = _(
@@ -130,8 +135,15 @@ class QuizSubmissionView(View):
                         f"Learner ID {enrollment.learner.id} has failed the quiz for Course {enrollment.course.title}. "
                         f"Scheduling a retry for the next day."
                     )
+                    delivery.remind_at = delivery.calculate_remind_at()
+                    delivery.valid_until = delivery.calculate_valid_until()
+                    delivery.save()
                     delivery.repeat_delivery_in_days(1)
             else:
+                delivery.remind_at = (
+                    None  # Clear remind_at to prevent further reminders
+                )
+                delivery.save()
                 message = _(
                     f"You have failed the quiz with score {score}. Please review the material and try again."
                 )

@@ -252,6 +252,7 @@ class CourseView(BasePlatformView):
             "limitedAttempts": QUIZ_DEFAULTS.get("LIMITED_ATTEMPTS", True),
             "isBlocking": QUIZ_DEFAULTS.get("IS_BLOCKING", True),
             "hasDeadline": QUIZ_DEFAULTS.get("HAS_DEADLINE", True),
+            "reminderIntervalDays": QUIZ_DEFAULTS.get("REMINDER_INTERVAL_DAYS", 3),
         }
         context["appContext"]["direction"] = (
             "rtl" if get_language_info(course.language)["bidi"] else "ltr"
@@ -400,6 +401,11 @@ class CourseView(BasePlatformView):
             "deadline_cannot_be_zero": _(
                 "Deadline cannot be 0 when deadline is enabled. Set a positive number of days or disable the deadline."
             ),
+            "reminder_interval_days": _("Reminder Interval Days"),
+            "reminder_interval_days_tooltip": _(
+                "When a quiz does not have a deadline, you can define a reminder interval to specify "
+                "how often learners should receive reminder emails to complete the quiz. Setting to 0 means no reminder emails will be sent."
+            ),
         }
 
     def get_app_context(self) -> Dict[str, Any]:
@@ -526,6 +532,8 @@ class Learners(BasePlatformView):
             "blcoked": _("Blocked"),
             "inactive": _("Inactive"),
             "practice_attempt": _("Practice Attempt"),
+            "reminder_sent": _("Reminder Sent"),
+            "quiz_title": _("Quiz Title"),
         }
 
 

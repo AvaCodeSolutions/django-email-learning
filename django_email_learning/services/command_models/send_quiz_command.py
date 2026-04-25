@@ -1,12 +1,14 @@
 from django_email_learning.services.command_models.abstract_command import (
     AbstractCommand,
 )
-from django_email_learning.models import Quiz, CourseContent
+from django_email_learning.models import CourseContent
 from django_email_learning.services.email_sender_service import EmailSenderService
 from django_email_learning.services.metrics_service import MetricsService
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from typing import Literal
+
+from django_email_learning.services.utils import mask_email
 
 
 class QuizNotFoundError(Exception):
@@ -27,14 +29,10 @@ class SendQuizCommand(AbstractCommand):
                 f"CourseContent with ID {self.content_id} has no associated quiz"
             )
         self.logger.info(
-            f"Sending quiz with ID {content.quiz.id} to email {self.email}"
+            f"Sending quiz with ID {content.quiz.id} to email {mask_email(self.email)}"
         )
 
-        try:
-            quiz = Quiz.objects.get(id=content.quiz.id)
-        except Quiz.DoesNotExist:
-            raise QuizNotFoundError(f"Quiz with ID {content.quiz.id} not found")
-
+        quiz = content.quiz
         subject = quiz.title
         context = {
             "quiz": quiz,

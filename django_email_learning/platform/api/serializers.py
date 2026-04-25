@@ -12,6 +12,7 @@ from typing import Optional, Literal, Any, Callable
 from django.urls import reverse
 from django_email_learning.models import (
     ApiKey,
+    ContentDelivery,
     DeliveryStatus,
     Organization,
     ImapConnection,
@@ -562,6 +563,7 @@ class UpdateQuiz(BaseModel):
         ge=MIN_QUIZ_DEADLINE, examples=[14], default=None
     )
     is_blocking: Optional[bool] = None
+    reminder_interval_days: Optional[int] = Field(default=None, examples=[3])
 
     model_config = ConfigDict(extra="forbid")
 
@@ -575,6 +577,7 @@ class QuizCreate(BaseModel):
     type: Literal["quiz"] = "quiz"
     limited_attempts: bool = Field(default=True, examples=[True])
     is_blocking: bool = Field(default=True, examples=[True])
+    reminder_interval_days: Optional[int] = Field(default=None, examples=[3])
 
 
 class QuizResponse(BaseModel):
@@ -586,6 +589,7 @@ class QuizResponse(BaseModel):
     questions: Any  # Will be converted to list in field_serializer
     limited_attempts: bool
     is_blocking: bool
+    reminder_interval_days: Optional[int] = None
 
     @field_serializer("questions")
     def serialize_questions(self, questions: Any) -> list[dict]:
@@ -653,6 +657,7 @@ class EventType(enum.StrEnum):
     DEACTIVATED = "deactivated"
     QUIZ_SUBMITED = "quiz_submitted"
     CONTENT_SENT = "content_sent"
+    REMINDER_SENT = "reminder_sent"
     COURSE_COMPLETED = "course_completed"
 
 
@@ -675,6 +680,14 @@ class QuizSubmitedEvent(BaseModel):
     is_practice: bool
 
 
+class ReminderSentEvent(BaseModel):
+    type: Literal[EventType.REMINDER_SENT] = Field(
+        default=EventType.REMINDER_SENT, exclude=True
+    )
+    quiz_id: int
+    quiz_title: str
+
+
 class ContentSentEvent(BaseModel):
     type: Literal[EventType.CONTENT_SENT] = Field(
         default=EventType.CONTENT_SENT, exclude=True
@@ -687,7 +700,7 @@ class ContentSentEvent(BaseModel):
 class Event(BaseModel):
     type: EventType
     timestamp: datetime
-    event_data: DeactivatedEvent | QuizSubmitedEvent | ContentSentEvent | None = Field(
+    event_data: DeactivatedEvent | QuizSubmitedEvent | ContentSentEvent | ReminderSentEvent | None = Field(
         discriminator="type"
     )  # REGISTERED, VERIFIED, COURSE_COMPLETED have no additional data
 
@@ -736,6 +749,20 @@ class EnrollmentResponse(BaseModel):
                     )
                 )
                 if delivery.course_content.type == "quiz":
+                    if (
+                        delivery.reminder_state == ContentDelivery.ReminderStatus.SENT
+                        and delivery.remind_at
+                    ):
+                        events.append(
+                            Event(
+                                type=EventType.REMINDER_SENT,
+                                timestamp=delivery.remind_at,  # type: ignore[arg-type]
+                                event_data=ReminderSentEvent(
+                                    quiz_id=delivery.course_content.quiz.id,  # type: ignore[union-attr]
+                                    quiz_title=delivery.course_content.quiz.title,  # type: ignore[union-attr]
+                                ),
+                            )
+                        )
                     attempt_number = 0
                     quiz_attempts = delivery.quiz_submissions.all().order_by(
                         "submitted_at"
@@ -844,6 +871,7 @@ class CreateCourseContentRequest(BaseModel):
                 deadline_days=self.content.deadline_days,  # type: ignore[misc]
                 limited_attempts=self.content.limited_attempts,  # type: ignore[misc]
                 is_blocking=self.content.is_blocking,  # type: ignore[misc]
+                reminder_interval_days=self.content.reminder_interval_days,  # type: ignore[misc]
             )
             quiz.save()
             for question_data in self.content.questions:

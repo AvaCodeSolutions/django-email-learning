@@ -344,6 +344,12 @@ class Quiz(models.Model):
     )
     limited_attempts = models.BooleanField(default=True)
     is_blocking = models.BooleanField(default=True)
+    reminder_interval_days = models.IntegerField(
+        help_text="For quizzes without a deadline (deadline_days = 0), send reminder emails every N days.",
+        validators=[MinValueValidator(0)],
+        blank=True,
+        null=True,
+    )
 
     class Meta:
         verbose_name_plural = "Quizzes"
@@ -775,12 +781,26 @@ class Certificate(models.Model):
 
 
 class ContentDelivery(models.Model):
+    class ReminderStatus(models.TextChoices):
+        NOT_APPLICABLE = "not_applicable", "Not Applicable"
+        PENDING = "pending", "Pending"
+        PROCESSING = "processing", "Processing"
+        SENT = "sent", "Sent"
+        BLOCKED = "blocked", "Blocked"
+
     enrollment = models.ForeignKey(
         Enrollment, on_delete=models.CASCADE, related_name="content_deliveries"
     )
     course_content = models.ForeignKey(CourseContent, on_delete=models.CASCADE)
     hash_value = models.CharField(max_length=64, null=True, blank=True)
+    remind_at = models.DateTimeField(null=True, blank=True)
     valid_until = models.DateTimeField(null=True, blank=True)
+    reminder_state = models.CharField(
+        max_length=50,
+        choices=ReminderStatus.choices,
+        default=ReminderStatus.NOT_APPLICABLE,
+        db_index=True,
+    )
 
     class Meta:
         unique_together = [["enrollment", "course_content"]]
@@ -838,16 +858,45 @@ class ContentDelivery(models.Model):
         )
         return True
 
+    def calculate_remind_at(self) -> Optional[datetime]:
+        if self.course_content.quiz:
+            if self.course_content.quiz.deadline_days > 0:
+                if self.course_content.quiz.deadline_days > 1:
+                    return timezone.now() + timedelta(
+                        days=self.course_content.quiz.deadline_days - 1
+                    )
+                else:
+                    return timezone.now() + timedelta(
+                        hours=(self.course_content.quiz.deadline_days * 24) - 10
+                    )
+            else:
+                if self.course_content.quiz.reminder_interval_days:
+                    return timezone.now() + timedelta(
+                        days=self.course_content.quiz.reminder_interval_days
+                    )
+        return None
+
+    def calculate_valid_until(self) -> Optional[datetime]:
+        if self.course_content.quiz and self.course_content.quiz.deadline_days > 0:
+            return timezone.now() + timedelta(
+                days=self.course_content.quiz.deadline_days
+            )
+        return None
+
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self.full_clean()
         if not self.hash_value:
             self.hash_value = (
                 base64.urlsafe_b64encode(uuid.uuid4().bytes).decode().rstrip("=")
             )
-        if self.course_content.quiz and not self.valid_until:
-            self.valid_until = timezone.now() + timedelta(
-                days=self.course_content.quiz.deadline_days
-            )
+        if (
+            not self.pk
+        ):  # Only auto populate remind_at when the delivery is first created
+            self.remind_at = self.calculate_remind_at()
+            self.valid_until = self.calculate_valid_until()
+            if self.remind_at:
+                self.reminder_state = self.ReminderStatus.PENDING
+
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
@@ -967,7 +1016,9 @@ class ApiKey(EncryptionMixin):
 
 
 class JobName(StrEnum):
+    CHECK_IMAP = "check_imap"
     DELIVER_CONTENTS = "deliver_contents"
+    SEND_REMINDERS = "send_reminders"
 
 
 class JobStatus(StrEnum):

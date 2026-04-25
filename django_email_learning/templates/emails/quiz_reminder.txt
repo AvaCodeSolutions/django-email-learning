@@ -1,0 +1,16 @@
+{% load i18n %}
+{% load tz %}
+{{ quiz.title }}
+
+{% translate "Hello there," %}
+
+{% translate "This is a reminder to complete your quiz." %}{% if deadline_time %}{% blocktranslate with deadline=deadline_time|timezone:"UTC"|date:"Y-m-d H:i e" %}The quiz link is valid until {{ deadline }}.{% endblocktranslate %}{% endif %}
+
+{% if quiz.is_blocking %}{% blocktranslate with score=quiz.required_score %}To successfully pass this quiz, you must achieve a minimum score of {{ score }}.{% endblocktranslate %}
+
+{% endif %}{% translate "Please click the link below to access and submit your quiz:" %}
+{{ link }}
+
+{% translate "Best of luck!" %}
+
+{% translate "Unsubscribe link:" %} {{ unsubscribe_link }}

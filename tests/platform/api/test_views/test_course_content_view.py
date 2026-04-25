@@ -331,6 +331,7 @@ def test_list_course_content_with_existing_contents(superadmin_client, create_co
             "selection_strategy": "random",
             "deadline_days": 14,
             "is_blocking": False,
+            "reminder_interval_days": 2,
             "questions": [
                 {
                     "text": "What is Python?",
@@ -468,6 +469,7 @@ def test_update_course_content_valid_quiz_data(superadmin_client, course_quiz_co
             "deadline_days": 10,
             "limited_attempts": False,
             "is_blocking": False,
+            "reminder_interval_days": 3,
             "questions": [
                 {
                     "text": "What is Django?",
@@ -499,6 +501,30 @@ def test_update_course_content_valid_quiz_data(superadmin_client, course_quiz_co
     assert data["quiz"]["questions"][0]["answers"][0]["is_correct"] is True
     assert data["quiz"]["questions"][0]["answers"][1]["text"] == "A type of dance"
     assert data["quiz"]["questions"][0]["answers"][1]["is_correct"] is False
+    assert data["quiz"]["reminder_interval_days"] == 3
+
+
+def test_update_course_content_can_clear_quiz_reminder_interval(
+    superadmin_client, course_quiz_content
+):
+    course_quiz_content.quiz.reminder_interval_days = 3
+    course_quiz_content.quiz.save()
+
+    url = single_content_url(
+        course_content_id=course_quiz_content.id,
+        course_id=course_quiz_content.course.id,
+        organization_id=course_quiz_content.course.organization.id,
+    )
+    payload = {"quiz": {"reminder_interval_days": None}}
+
+    response = superadmin_client.post(
+        url, json.dumps(payload), content_type="application/json"
+    )
+
+    assert response.status_code == 200
+    course_quiz_content.quiz.refresh_from_db()
+    assert course_quiz_content.quiz.reminder_interval_days == 0
+    assert response.json()["quiz"]["reminder_interval_days"] == 0
 
 
 def test_update_course_content_waiting_period(superadmin_client, course_lesson_content):

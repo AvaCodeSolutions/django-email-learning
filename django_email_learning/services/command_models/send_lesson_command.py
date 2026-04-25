@@ -2,7 +2,6 @@ from django_email_learning.services.command_models.abstract_command import (
     AbstractCommand,
 )
 from django_email_learning.models import (
-    Lesson,
     CourseContent,
     Enrollment,
     EnrollmentStatus,
@@ -12,6 +11,8 @@ from django_email_learning.services.metrics_service import MetricsService
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from typing import Literal
+
+from django_email_learning.services.utils import mask_email
 
 
 class LessonNotFoundError(Exception):
@@ -31,13 +32,10 @@ class SendLessonCommand(AbstractCommand):
                 f"CourseContent with ID {self.content_id} has no associated lesson"
             )
         self.logger.info(
-            f"Sending lesson with ID {content.lesson.id} to email {self.email}"
+            f"Sending lesson with ID {content.lesson.id} to email {mask_email(self.email)}"
         )
 
-        try:
-            lesson = Lesson.objects.get(id=content.lesson.id)
-        except Lesson.DoesNotExist:
-            raise LessonNotFoundError(f"Lesson with ID {content.lesson.id} not found")
+        lesson = content.lesson
 
         subject = lesson.title
         enrollment = Enrollment.objects.filter(
