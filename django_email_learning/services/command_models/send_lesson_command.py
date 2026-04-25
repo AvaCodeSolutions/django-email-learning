@@ -55,6 +55,9 @@ class SendLessonCommand(AbstractCommand):
             "next_content": next_content,
             "course_slug": content.course.slug,
             "support_imap_interface": content.course.imap_connection is not None,
+            "imap_email_address": content.course.imap_connection.email
+            if content.course.imap_connection
+            else None,
         }
         payload = render_to_string("emails/lesson.txt", context)
 
