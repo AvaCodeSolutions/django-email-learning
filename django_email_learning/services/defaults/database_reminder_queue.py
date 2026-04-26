@@ -25,8 +25,7 @@ class DatabaseReminderQueue(DeliveryQueueProtocol):
                     delivery_schedules__status=DeliveryStatus.DELIVERED,
                     remind_at__lte=timezone.now(),
                     reminder_state=ContentDelivery.ReminderStatus.PENDING,
-                )
-                .distinct()[:limit]
+                )[:limit]
                 .values_list("id", flat=True)
             )
 
