@@ -889,9 +889,7 @@ class ContentDelivery(models.Model):
             self.hash_value = (
                 base64.urlsafe_b64encode(uuid.uuid4().bytes).decode().rstrip("=")
             )
-        if (
-            not self.pk
-        ):  # Only auto populate remind_at when the delivery is first created
+        if not self.pk:  # Only auto populate remind_at and valid_untill when the delivery is first created
             self.remind_at = self.calculate_remind_at()
             self.valid_until = self.calculate_valid_until()
             if self.remind_at:
@@ -1019,6 +1017,7 @@ class JobName(StrEnum):
     CHECK_IMAP = "check_imap"
     DELIVER_CONTENTS = "deliver_contents"
     SEND_REMINDERS = "send_reminders"
+    DEACTIVATE_ENROLLMENTS = "deactivate_enrollments"
 
 
 class JobStatus(StrEnum):

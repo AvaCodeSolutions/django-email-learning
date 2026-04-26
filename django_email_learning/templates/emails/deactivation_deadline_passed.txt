@@ -1,0 +1,11 @@
+{% load i18n %}
+{{ quiz.title }}
+
+{% translate "Hello," %}
+
+{% blocktranslate with quiz_title=quiz.title course_title=course_title %}Your deadline for the quiz {{quiz_title}} has passed, so your enrollment for {{course_title}} has been deactivated.{% endblocktranslate %}
+
+{% translate "Want to try again? You can re-enroll and restart the course from the beginning at any time." %}
+
+{% translate "Best regards," %}
+{% blocktranslate with organization_name=organization_name %}{{ organization_name }} Team{% endblocktranslate %}

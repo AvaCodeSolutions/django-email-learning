@@ -31,9 +31,11 @@ class EmailTemplatePreview(TemplateView):
             "password_reset",
             "quiz",
             "quiz_reminder",
+            "deactivation_deadline_passed",
         ]:
             raise ValueError(
-                "Invalid template name. Allowed values are: 'certificate_form', 'enrollment_verified', 'enrollment_verification', 'lesson', 'password_reset', 'quiz', 'quiz_reminder'."
+                "Invalid template name. Allowed values are: 'certificate_form', 'enrollment_verified', "
+                "'enrollment_verification', 'lesson', 'password_reset', 'quiz', 'quiz_reminder', 'deactivation_deadline_passed'."
             )
 
         return [f"emails/{template_name}.html"]

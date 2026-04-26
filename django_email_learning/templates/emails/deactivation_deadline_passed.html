@@ -1,0 +1,18 @@
+{% extends "emails/base.html" %}
+{% load i18n %}
+{% load tz %}
+
+{% block content %}
+    <h2 class="email-title">{% translate "Enrollment deactivated" %}</h2>
+
+    <p class="email-paragraph">{% translate "Hello," %}</p>
+
+    <p class="email-paragraph" style="margin-bottom: 20px;">{% blocktranslate with quiz_title=quiz.title course_title=course_title %}Your deadline for the quiz {{quiz_title}} has passed, so your enrollment for {{course_title}} has been deactivated.{% endblocktranslate %}</p>
+
+    <p class="email-paragraph">{% translate "Want to try again? You can re-enroll and restart the course from the beginning at any time." %}</p>
+
+    <p class="email-paragraph">
+        {% translate "Best regards," %}<br />
+        {% blocktranslate with organization_name=organization_name %}{{ organization_name }} Team{% endblocktranslate %}
+    </p>
+{% endblock %}
