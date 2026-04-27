@@ -19,6 +19,7 @@ class Session(models.Model):
         choices=SessionState.choices,
         default=SessionState.PENDING,
     )
+    access_token = models.TextField(blank=True, null=True)
 
     def save(self, *args, **kwargs):  # type: ignore[no-untyped-def]
         if not self.session_id:

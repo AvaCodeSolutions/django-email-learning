@@ -13,6 +13,7 @@ from django_email_learning.models import (
     DeliverySchedule,
     QuizSubmission,
 )
+from django_email_learning.oauth_integrations.models import Session
 
 
 class ImapConnectionAdminForm(forms.ModelForm):
@@ -45,6 +46,11 @@ class ImapConnectionAdmin(admin.ModelAdmin):
         return obj
 
 
+class SessionAdmin(admin.ModelAdmin):
+    list_display = ("id", "state")
+    list_filter = ("state", "created_at")
+
+
 admin.site.register(Course, CourseAdmin)
 admin.site.register(ImapConnection, ImapConnectionAdmin)
 admin.site.register(OrganizationUser)
@@ -56,3 +62,4 @@ admin.site.register(QuizSubmission)
 admin.site.register(InboxFolder)
 admin.site.register(Lesson)
 admin.site.register(Quiz)
+admin.site.register(Session, SessionAdmin)

@@ -17,6 +17,7 @@ from datetime import timedelta, datetime
 from urllib.parse import urlparse
 from pydantic import ValidationError
 from enum import StrEnum
+from django_email_learning.oauth_integrations.models import Session
 from django_email_learning.services.command_models.enroll_command import EnrollCommand
 from django_email_learning.services.command_models.send_lesson_command import (
     SendLessonCommand,
@@ -51,6 +52,8 @@ from django_email_learning.decorators import (
     is_an_organization_member,
     is_platform_admin,
 )
+from django_email_learning.oauth_integrations.serializers import CreateSessionRequest
+from django_email_learning.services import jwt_service
 from typing import Any
 import uuid
 import json
@@ -391,11 +394,106 @@ class SingleCourseView(View):
             return JsonResponse({"error": str(e)}, status=409)
 
 
-class GoogleAuthSession(View):
-    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
-        state = str(uuid.uuid4())
-        request.session["google_oauth_state"] = state
-        return JsonResponse({"state": state}, status=200)
+@method_decorator(accessible_for(roles={"admin"}), name="get")
+class OauthSessionView(View):
+    def get(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
+        try:
+            session = Session.objects.get(session_id=kwargs["session_id"])
+            return JsonResponse(
+                {"session_id": session.session_id, "state": session.state}, status=200
+            )
+        except Session.DoesNotExist:
+            return JsonResponse({"error": "Session not found"}, status=404)
+
+
+@method_decorator(accessible_for(roles={"admin"}), name="get")
+class OauthGetGroupListView(View):
+    def get(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
+        session = Session.objects.filter(session_id=kwargs["session_id"]).first()
+        if not session:
+            return JsonResponse({"error": "Session not found"}, status=404)
+
+        handler_payload = jwt_service.decode_jwt(session.jwt_token)
+        session_request = CreateSessionRequest(handler=handler_payload)
+        handler = session_request.model_validate(obj=session_request).handler
+
+        try:
+            groups = handler.get_groups()
+            if groups:
+                results = [group.model_dump() for group in groups]
+            else:
+                results = None
+            return JsonResponse({"groups": results}, status=200)
+        except Exception as e:
+            logger.error(
+                f"Error retrieving groups for session {session.session_id}: {str(e)}"
+            )
+            return JsonResponse({"error": "Failed to retrieve groups"}, status=500)
+
+
+@method_decorator(accessible_for(roles={"admin"}), name="post")
+class OauthGroupEnrollment(View):
+    def post(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
+        session = Session.objects.filter(session_id=kwargs["session_id"]).first()
+        if not session:
+            return JsonResponse({"error": "Session not found"}, status=404)
+
+        payload = json.loads(request.body)
+
+        try:
+            serializer = serializers.GroupEnrollmentRequest.model_validate(payload)
+        except ValidationError as e:
+            return JsonResponse({"error": e.json()}, status=400)
+        except ValueError as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+        handler_payload = jwt_service.decode_jwt(session.jwt_token)
+        session_request = CreateSessionRequest(handler=handler_payload)
+        handler = session_request.model_validate(obj=session_request).handler
+
+        try:
+            users = handler.get_users_to_enroll(groups=serializer.groups)
+            for user in users:
+                try:
+                    EnrollCommand(
+                        email=user.email,
+                        course_slug=Course.objects.get(id=handler.course_id).slug,
+                        organization_id=Course.objects.get(
+                            id=handler.course_id
+                        ).organization_id,
+                        no_verification=True,
+                    ).execute()
+                    enrollment = Enrollment.objects.get(
+                        learner__email=user.email,
+                        course_id=handler.course_id,
+                        status=EnrollmentStatus.UNVERIFIED,
+                    )
+                    if user.photo_path:
+                        learner = enrollment.learner
+                        learner.photo = user.photo_path
+                        learner.save(update_fields=["photo"])
+                    VerifyEnrollmentCommand(
+                        enrollment_id=enrollment.id,
+                        verification_code=enrollment.activation_code,  # type: ignore[arg-type]
+                    ).execute()
+                except EnrollmentAlreadyExistsError:
+                    logger.info(
+                        f"User {user.email} is already enrolled in course {handler.course_id}"
+                    )
+                except BlockedEmailError:
+                    logger.warning(
+                        f"User {user.email} is blocked from enrolling in course {handler.course_id}"
+                    )
+                except Exception as e:  # noqa: BLE001
+                    logger.error(
+                        f"Failed to enroll user {user.email} for session {session.session_id}: {str(e)}"
+                    )
+            return JsonResponse({"message": "Enrollment process initiated"}, status=200)
+        except Exception as e:
+            logger.error(
+                f"Error enrolling users for session {session.session_id}: {str(e)}"
+            )
+            return JsonResponse({"error": "Failed to enroll users"}, status=500)
 
 
 @method_decorator(accessible_for(roles={"admin", "editor"}), name="post")

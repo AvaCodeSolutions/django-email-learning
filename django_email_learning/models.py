@@ -539,6 +539,7 @@ class Learner(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     email = models.EmailField()
     created_at = models.DateTimeField(auto_now_add=True)
+    photo = models.ImageField(upload_to="learner_photos/", null=True, blank=True)
 
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self.email = self.email.lower()

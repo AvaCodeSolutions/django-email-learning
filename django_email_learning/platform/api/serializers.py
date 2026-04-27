@@ -648,7 +648,14 @@ class LearnerResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     email: str
+    photo: Optional[Any] = None
     enrollments_count: EnrollmentsCount
+
+    @field_serializer("photo")
+    def serialize_photo(self, photo: Optional[Any]) -> Optional[str]:
+        if photo:
+            return photo.url  # type: ignore[attr-defined]
+        return None
 
 
 class EventType(enum.StrEnum):
@@ -839,6 +846,12 @@ class LearnerDetailResponse(BaseModel):
     enrollments: list[EnrollmentSummaryResponse]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class GroupEnrollmentRequest(BaseModel):
+    groups: list[str] = Field(
+        min_length=1, default=["all"], examples=[["group1", "group2"]]
+    )
 
 
 class CreateCourseContentRequest(BaseModel):

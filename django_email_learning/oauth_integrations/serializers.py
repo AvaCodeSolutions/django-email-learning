@@ -1,7 +1,10 @@
-from pydantic import BaseModel
-
-from django_email_learning.services.command_models.command_request import CommandRequest
+from pydantic import BaseModel, Field
+from .group_enrollment.google_group_enrollment_handler import (
+    GoogleGroupEnrollmentHandler,
+)
 
 
 class CreateSessionRequest(BaseModel):
-    request: CommandRequest
+    handler: GoogleGroupEnrollmentHandler = Field(
+        ..., discriminator="provider_and_purpose"
+    )
