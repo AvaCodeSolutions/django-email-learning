@@ -4,7 +4,7 @@ import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import GoogleIcon from '@mui/icons-material/Google';
 import { getCookie } from '../../../src/utils.js';
-import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Menu, MenuItem, Alert, Typography } from '@mui/material';
+import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Menu, MenuItem, Alert, Typography, FormGroup, FormControlLabel, Checkbox } from '@mui/material';
 
 
 const EnrollMenu = ({successCallback}) => {
@@ -16,6 +16,10 @@ const EnrollMenu = ({successCallback}) => {
     const [googleAuthError, setGoogleAuthError] = useState('');
     const [googleAuthorizationUrl, setGoogleAuthorizationUrl] = useState('');
     const [googleAuthSessionId, setGoogleAuthSessionId] = useState(null);
+    const [googleGroupsDialogOpen, setGoogleGroupsDialogOpen] = useState(false);
+    const [googleGroups, setGoogleGroups] = useState([]);
+    const [selectedGroups, setSelectedGroups] = useState(['all']);
+    const [googleGroupsError, setGoogleGroupsError] = useState('');
     const [manualEnrollEmail, setManualEnrollEmail] = useState('');
     const [manualEnrollError, setManualEnrollError] = useState('');
     const [manualEnrollSubmitting, setManualEnrollSubmitting] = useState(false);
@@ -85,11 +89,9 @@ const EnrollMenu = ({successCallback}) => {
                     'X-CSRFToken': getCookie('csrftoken'),
                 },
                 body: JSON.stringify({
-                    request: {
-                        command: {
-                            command_name: 'enroll_from_google_directory',
-                            course_id: Number(courseId),
-                        },
+                    handler: {
+                        provider_and_purpose: 'google_group_enrollment',
+                        course_id: Number(courseId),
                     },
                 }),
             });
@@ -112,6 +114,10 @@ const EnrollMenu = ({successCallback}) => {
     const openGoogleWorkspaceDialog = async () => {
         closeEnrollMenu();
         setGoogleAuthError('');
+        setGoogleGroupsError('');
+        setGoogleGroups([]);
+        setSelectedGroups(['all']);
+        setGoogleGroupsDialogOpen(false);
         setGoogleWorkspaceDialogOpen(true);
         await createGoogleOAuthSession();
     }
@@ -128,11 +134,10 @@ const EnrollMenu = ({successCallback}) => {
     });
 
     const pollOAuthSessionUntilCompleted = async (sessionId) => {
-        const oauthBaseUrl = apiBaseUrl.replace(/\/api\/platform$/, '/oauth');
         const maxAttempts = 60;
 
         for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-            const response = await fetch(`${oauthBaseUrl}/sessions/${sessionId}/`);
+            const response = await fetch(`${apiBaseUrl}/organizations/${organizationId}/oauth-session/${sessionId}/`);
             const data = await response.json();
 
             if (!response.ok) {
@@ -144,13 +149,49 @@ const EnrollMenu = ({successCallback}) => {
             }
 
             if (data.state === 'FAILED') {
-                throw new Error(localeMessages['enrollment_failed'] || 'Google authorization failed.');
+                throw new Error(localeMessages['enrollment_failed'] || 'Authorization failed.');
             }
 
             await delay(2000);
         }
 
         throw new Error('Timed out waiting for Google authorization to complete.');
+    }
+
+    const fetchGroups = async (sessionId) => {
+        const response = await fetch(`${apiBaseUrl}/organizations/${organizationId}/oauth-session/${sessionId}/get_groups`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data?.error || 'Failed to fetch Google groups.');
+        }
+
+        const groups = Array.isArray(data?.groups) ? data.groups : [];
+        return groups
+            .filter((group) => group && group.id)
+            .map((group) => ({
+                id: String(group.id),
+                name: group.name || String(group.id),
+            }));
+    }
+
+    const enrollUsersByGroups = async (sessionId, groups) => {
+        const response = await fetch(`${apiBaseUrl}/organizations/${organizationId}/oauth-session/${sessionId}/enroll_users`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify({
+                groups,
+            }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data?.error || 'Failed to enroll users.');
+        }
     }
 
     const authorizeWithGoogle = async () => {
@@ -160,13 +201,77 @@ const EnrollMenu = ({successCallback}) => {
 
         setGoogleAuthSubmitting(true);
         setGoogleAuthError('');
+        setGoogleGroupsError('');
 
         try {
             await pollOAuthSessionUntilCompleted(googleAuthSessionId);
+
+            const groups = await fetchGroups(googleAuthSessionId);
+            setGoogleGroups(groups);
+
+            if (groups.length === 0) {
+                setSelectedGroups(['all']);
+                await enrollUsersByGroups(googleAuthSessionId, ['all']);
+                setGoogleWorkspaceDialogOpen(false);
+                successCallback(localeMessages['imported_from_google_success'] || 'Learners imported from Google Workspace successfully.');
+                return;
+            }
+
+            setSelectedGroups(['all']);
             setGoogleWorkspaceDialogOpen(false);
-            successCallback(localeMessages['imported_from_google_success'] || 'Learners imported from Google Workspace successfully.');
+            setGoogleGroupsDialogOpen(true);
         } catch (error) {
             setGoogleAuthError(error?.message || 'Failed to authorize with Google.');
+        } finally {
+            setGoogleAuthSubmitting(false);
+        }
+    }
+
+    const closeGoogleGroupsDialog = () => {
+        setGoogleGroupsDialogOpen(false);
+        setGoogleGroupsError('');
+    }
+
+    const toggleAllGroups = (checked) => {
+        if (checked) {
+            setSelectedGroups(['all']);
+            return;
+        }
+        setSelectedGroups([]);
+    }
+
+    const toggleSingleGroup = (groupId) => {
+        setSelectedGroups((previousSelectedGroups) => {
+            const withoutAll = previousSelectedGroups.filter((value) => value !== 'all');
+
+            if (withoutAll.includes(groupId)) {
+                return withoutAll.filter((value) => value !== groupId);
+            }
+
+            return [...withoutAll, groupId];
+        });
+    }
+
+    const submitSelectedGoogleGroups = async () => {
+        if (selectedGroups.length === 0) {
+            setGoogleGroupsError(localeMessages['group_required'] || 'Please select at least one group.');
+            return;
+        }
+
+        if (!googleAuthSessionId) {
+            setGoogleGroupsError(localeMessages['enrollment_failed'] || 'Failed to enroll users.');
+            return;
+        }
+
+        setGoogleAuthSubmitting(true);
+        setGoogleGroupsError('');
+
+        try {
+            await enrollUsersByGroups(googleAuthSessionId, selectedGroups);
+            setGoogleGroupsDialogOpen(false);
+            successCallback(localeMessages['imported_from_google_success'] || 'Learners imported from Google Workspace successfully.');
+        } catch (error) {
+            setGoogleGroupsError(error?.message || 'Failed to enroll users.');
         } finally {
             setGoogleAuthSubmitting(false);
         }
@@ -343,6 +448,54 @@ const EnrollMenu = ({successCallback}) => {
                         disabled={googleAuthSubmitting || !googleAuthorizationUrl || !googleAuthSessionId}
                     >
                         {localeMessages['authorize_button']}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog
+                open={googleGroupsDialogOpen}
+                onClose={closeGoogleGroupsDialog}
+                fullWidth
+                maxWidth="sm"
+            >
+                <DialogTitle sx={{ px: 3, pt: 3, pb: 1.5 }}>
+                    {localeMessages['select_google_groups'] || 'Choose groups to enroll'}
+                </DialogTitle>
+                <DialogContent sx={{ px: 3, py: 1.5 }}>
+                    <Typography variant="body2" sx={{ mb: 2 }}>
+                        {localeMessages['google_group_question'] || 'Which group of people do you want to enroll in this course?'}
+                    </Typography>
+                    <FormGroup>
+                        <FormControlLabel
+                            control={(
+                                <Checkbox
+                                    checked={selectedGroups.includes('all')}
+                                    onChange={(event) => toggleAllGroups(event.target.checked)}
+                                />
+                            )}
+                            label={localeMessages['all'] || 'All'}
+                        />
+                        {googleGroups.map((group) => (
+                            <FormControlLabel
+                                key={group.id}
+                                control={(
+                                    <Checkbox
+                                        checked={!selectedGroups.includes('all') && selectedGroups.includes(group.id)}
+                                        onChange={() => toggleSingleGroup(group.id)}
+                                    />
+                                )}
+                                label={group.name}
+                            />
+                        ))}
+                    </FormGroup>
+                    {googleGroupsError && <Alert severity="error" sx={{ mt: 2 }}>{googleGroupsError}</Alert>}
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 3, pt: 1.5 }}>
+                    <Button onClick={closeGoogleGroupsDialog} disabled={googleAuthSubmitting}>
+                        {localeMessages['cancel'] || 'Cancel'}
+                    </Button>
+                    <Button variant="contained" onClick={submitSelectedGoogleGroups} disabled={googleAuthSubmitting}>
+                        {localeMessages['enroll'] || 'Enroll'}
                     </Button>
                 </DialogActions>
             </Dialog>

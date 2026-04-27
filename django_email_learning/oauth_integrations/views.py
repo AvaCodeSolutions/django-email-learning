@@ -9,10 +9,6 @@ from pydantic import ValidationError
 
 from django_email_learning.apps import PLATFORM_ADMIN_GROUP_NAME
 from django_email_learning.models import Course, OrganizationUser
-from django_email_learning.services.command_models.enroll_from_google_directory_command import (
-    EnrollFromGoogleDirectoryCommand,
-)
-from django_email_learning.services.command_handler_service import CommandHandlerService
 from django_email_learning.services.jwt_service import (
     InvalidTokenException,
     decode_jwt,
@@ -74,24 +70,21 @@ class SessionsView(View):
         except ValidationError as ve:
             return JsonResponse({"error": ve.errors()}, status=400)
 
-        command = serializer.request.command
-        if not isinstance(command, EnrollFromGoogleDirectoryCommand):
-            return JsonResponse(
-                {"error": "Unsupported command for oauth session"}, status=400
-            )
+        handler = serializer.handler
 
-        try:
-            course = Course.objects.get(id=command.course_id)
-        except Course.DoesNotExist:
-            return JsonResponse({"error": "Course not found"}, status=404)
+        if hasattr(handler, "course_id") and handler.course_id is not None:
+            try:
+                course = Course.objects.get(id=handler.course_id)
+            except Course.DoesNotExist:
+                return JsonResponse({"error": "Course not found"}, status=404)
 
-        if not _has_oauth_session_access(request.user, course.organization_id):
-            return JsonResponse({"error": "Forbidden"}, status=403)
+            if not _has_oauth_session_access(request.user, course.organization_id):
+                return JsonResponse({"error": "Forbidden"}, status=403)
 
         temp_session = Session.objects.create(jwt_token="pending")
-        authorization_url = command.get_authorization_url(temp_session.session_id)
-        command_payload = serializer.request.model_dump(mode="json")
-        temp_session.jwt_token = generate_jwt(command_payload)
+        authorization_url = handler.get_authorization_url(temp_session.session_id)
+        handler_payload = serializer.handler.model_dump(mode="json")
+        temp_session.jwt_token = generate_jwt(handler_payload)
         temp_session.save(update_fields=["jwt_token"])
 
         return JsonResponse(
@@ -101,17 +94,6 @@ class SessionsView(View):
             },
             status=201,
         )
-
-
-class SessionView(View):
-    def get(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
-        try:
-            session = Session.objects.get(session_id=kwargs["session_id"])
-            return JsonResponse(
-                {"session_id": session.session_id, "state": session.state}, status=200
-            )
-        except Session.DoesNotExist:
-            return JsonResponse({"error": "Session not found"}, status=404)
 
 
 class RedirectView(View):
@@ -127,7 +109,9 @@ class RedirectView(View):
             )
 
         try:
-            session = Session.objects.get(session_id=session_id)
+            session = Session.objects.get(
+                session_id=session_id, state=SessionState.PENDING
+            )
         except Session.DoesNotExist:
             return _command_result_response(
                 request,
@@ -151,14 +135,15 @@ class RedirectView(View):
             session.save(update_fields=["state"])
 
             decoded_request = decode_jwt(session.jwt_token)
-            command_payload = decoded_request.get("command", {})
-            command_payload["code"] = code
-            command_payload["state"] = session_id
-            decoded_request["command"] = command_payload
-            command_handler = CommandHandlerService()
-            command_handler.handle_json_command(decoded_request)
+            # command_payload = decoded_request.get("handler", {})
+            decoded_request["code"] = code
+            decoded_request["state"] = session_id
+            session_request = CreateSessionRequest(handler=decoded_request)
+            handler = session_request.model_validate(obj=session_request).handler
+            access_token = handler.handle_redirect()
+            session.access_token = generate_jwt({"access_token": access_token})
             session.state = SessionState.COMPLETED
-            session.save(update_fields=["state"])
+            session.save(update_fields=["state", "access_token"])
             return _command_result_response(
                 request,
                 page_title=_("Authorization Complete"),
@@ -177,6 +162,7 @@ class RedirectView(View):
                 status_code=400,
             )
         except Exception as e:  # noqa: BLE001
+            print(f"Error processing OAuth redirect: {str(e)}")
             session.state = SessionState.FAILED
             session.save(update_fields=["state"])
             return _command_result_response(

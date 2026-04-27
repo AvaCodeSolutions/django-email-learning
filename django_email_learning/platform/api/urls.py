@@ -21,6 +21,9 @@ from django_email_learning.platform.api.views import (
     SingleCourseContentView,
     UpdateSessionView,
     LearnersView,
+    OauthSessionView,
+    OauthGetGroupListView,
+    OauthGroupEnrollment,
     SingleLearnerView,
     JobsStatus,
 )
@@ -108,6 +111,21 @@ urlpatterns = [
         "organizations/<int:organization_id>/",
         SingleOrganizationView.as_view(),
         name="single_organization_view",
+    ),
+    path(
+        "organizations/<int:organization_id>/oauth-session/<str:session_id>/",
+        OauthSessionView.as_view(),
+        name="oauth_session_view",
+    ),
+    path(
+        "organizations/<int:organization_id>/oauth-session/<str:session_id>/get_groups",
+        OauthGetGroupListView.as_view(),
+        name="oauth_get_group_list_view",
+    ),
+    path(
+        "organizations/<int:organization_id>/oauth-session/<str:session_id>/enroll_users",
+        OauthGroupEnrollment.as_view(),
+        name="oauth_group_enrollment_view",
     ),
     path("status/jobs/", JobsStatus.as_view(), name="jobs_status_view"),
     path("api_keys/", ApiKeyView.as_view(), name="api_key_view"),

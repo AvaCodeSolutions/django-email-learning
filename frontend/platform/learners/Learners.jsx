@@ -61,7 +61,7 @@ function Learners(initialQs="") {
       setDialogContent(
         <Box>
           <Box sx={{ px: 3, pt: 3, pb: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar sx={(theme) => ({ width: 44, height: 44, fontSize: '1.1rem', fontWeight: 700, color: '#fff', background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.deepPurple?.[400] ?? theme.palette.secondary.main} 100%)` })}>
+            <Avatar src={data.learner.photo || undefined} sx={(theme) => ({ width: 44, height: 44, fontSize: '1.1rem', fontWeight: 700, color: '#fff', background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.deepPurple?.[400] ?? theme.palette.secondary.main} 100%)` })}>
               {(data.learner.email?.[0] || '?').toUpperCase()}
             </Avatar>
             <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -137,6 +137,7 @@ function Learners(initialQs="") {
       setLearners(data.items.map(learner => ({
         id: learner.id,
         email: learner.email,
+        photo: learner.photo || null,
         enrollmentsCount: learner.enrollments_count || { total: 0, completed: 0 },
         enrollments: [],
         state: 0, // 0: not loaded, 1: loading, 2: loaded
@@ -194,7 +195,7 @@ function Learners(initialQs="") {
       setDialogContent(
         <Box>
           <Box sx={{ px: 3, pt: 3, pb: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar sx={(theme) => ({ width: 44, height: 44, fontSize: '1.1rem', fontWeight: 700, color: '#fff', background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.deepPurple?.[400] ?? theme.palette.secondary.main} 100%)` })}>
+            <Avatar src={learner.photo || undefined} sx={(theme) => ({ width: 44, height: 44, fontSize: '1.1rem', fontWeight: 700, color: '#fff', background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.deepPurple?.[400] ?? theme.palette.secondary.main} 100%)` })}>
               {(learner.email?.[0] || '?').toUpperCase()}
             </Avatar>
             <Typography variant="subtitle1" sx={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{learner.email}</Typography>
@@ -267,6 +268,7 @@ function Learners(initialQs="") {
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
                         <Avatar
+                          src={learner.photo || undefined}
                           sx={(theme) => ({
                             width: 30,
                             height: 30,
