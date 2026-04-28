@@ -23,19 +23,14 @@ class SendRemindersJob:
         self.reminder_queue: DeliveryQueueProtocol = self.get_reminder_queue()
 
     def run(self) -> None:
-        if JobExecution.objects.filter(
-            job_name=JobName.SEND_REMINDERS.value,
-            status=JobStatus.RUNNING.value,
-        ).exists():
+        job_execution = JobExecution.start_if_not_running(
+            job_name=JobName.SEND_REMINDERS.value
+        )
+        if job_execution is None:
             logger.warning(
                 "Another instance of SendRemindersJob is already running. Exiting this run."
             )
             return
-        job_execution = JobExecution.objects.create(
-            job_name=JobName.SEND_REMINDERS.value,
-            status=JobStatus.RUNNING.value,
-            started_at=timezone.now(),
-        )
         self._run_job(job_execution)
 
     @track_job_execution(

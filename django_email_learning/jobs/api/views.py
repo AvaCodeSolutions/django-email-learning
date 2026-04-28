@@ -8,6 +8,8 @@ from django_email_learning.jobs.deactivate_inactive_enrollments_job import (
 )
 from django.utils.decorators import method_decorator
 from django.http import JsonResponse
+from django.core.management import call_command
+from io import StringIO
 
 from django_email_learning.models import JobName
 from django_email_learning.services.metrics_service import MetricsService
@@ -74,6 +76,49 @@ class DeactivateInactiveEnrollmentsJobView(View):
             return JsonResponse(
                 {
                     "status": "DeactivateInactiveEnrollmentsJob failed",
+                    "error": str(e),
+                },
+                status=500,
+            )
+
+
+@method_decorator(check_api_key(), name="get")
+class CleanupJobExecutionsView(View):
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            days = request.GET.get("days")
+            dry_run = request.GET.get("dry_run", "false").lower() in {
+                "1",
+                "true",
+                "yes",
+            }
+
+            command_stdout = StringIO()
+            command_kwargs = {
+                "dry_run": dry_run,
+                "stdout": command_stdout,
+            }
+            if days is not None:
+                command_kwargs["days"] = int(days)
+
+            call_command("cleanup_job_executions", **command_kwargs)
+            return JsonResponse(
+                {
+                    "status": "CleanupJobExecutions command triggered",
+                    "output": command_stdout.getvalue().strip(),
+                },
+                status=202,
+            )
+        except ValueError:
+            return JsonResponse(
+                {"status": "CleanupJobExecutions failed", "error": "Invalid days"},
+                status=400,
+            )
+        except Exception as e:
+            metric_service.job_execution_failed(job_name="cleanup_job_executions")
+            return JsonResponse(
+                {
+                    "status": "CleanupJobExecutions failed",
                     "error": str(e),
                 },
                 status=500,
