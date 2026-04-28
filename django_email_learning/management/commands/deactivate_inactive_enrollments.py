@@ -5,6 +5,12 @@ from django_email_learning.jobs.deactivate_inactive_enrollments_job import (
 from django.core.management.base import CommandParser
 import logging
 
+from django_email_learning.models import JobName
+from django_email_learning.services.metrics_service import MetricsService
+
+
+metric_service = MetricsService()
+
 
 class Command(BaseCommand):
     help = "Run the deactivate inactive enrollments job to deactivate enrollments that have missed quiz deadlines"
@@ -53,6 +59,9 @@ class Command(BaseCommand):
             logger.warning("DeactivateInactiveEnrollmentsJob interrupted by user")
 
         except Exception as e:
+            metric_service.job_execution_failed(
+                job_name=JobName.DEACTIVATE_ENROLLMENTS.value
+            )
             self.stdout.write(
                 self.style.ERROR(
                     f"Deactivate inactive enrollments job failed: {str(e)}"

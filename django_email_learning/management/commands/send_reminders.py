@@ -3,6 +3,12 @@ from django_email_learning.jobs.send_reminders_job import SendRemindersJob
 from django.core.management.base import CommandParser
 import logging
 
+from django_email_learning.models import JobName
+from django_email_learning.services.metrics_service import MetricsService
+
+
+metric_service = MetricsService()
+
 
 class Command(BaseCommand):
     help = "Run the send reminders job to process scheduled reminders"
@@ -47,6 +53,7 @@ class Command(BaseCommand):
             logger.warning("SendRemindersJob interrupted by user")
 
         except Exception as e:
+            metric_service.job_execution_failed(job_name=JobName.SEND_REMINDERS.value)
             self.stdout.write(self.style.ERROR(f"Send reminders job failed: {str(e)}"))
             logger.error(f"SendRemindersJob failed: {str(e)}", exc_info=True)
             raise

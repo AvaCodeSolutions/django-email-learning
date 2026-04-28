@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, call, patch
 
 import django_email_learning.jobs.check_imap_job as check_imap_job_module
 from django_email_learning.jobs.check_imap_job import CheckIMAPJob
-from django_email_learning.models import InboxFolder
+from django_email_learning.models import InboxFolder, JobExecution, JobName, JobStatus
 
 
 def test_check_imap_job_processes_unseen_emails(db, course, imap_connection):
@@ -98,7 +98,7 @@ def test_check_imap_job_tracks_metric_when_processing_fails(
         "django_email_learning.jobs.check_imap_job.imaplib.IMAP4_SSL",
         return_value=account_mock,
     ), patch.object(
-        check_imap_job_module.metricc_service,
+        check_imap_job_module.metric_service,
         "imap_command_handling_failed",
     ) as metric_spy:
         job = CheckIMAPJob()
@@ -110,3 +110,53 @@ def test_check_imap_job_tracks_metric_when_processing_fails(
     )
     account_mock.store.assert_not_called()
     account_mock.logout.assert_called_once()
+
+
+def test_check_imap_job_triggers_started_metric(db):
+    with patch(
+        "django_email_learning.jobs.check_imap_job.imaplib.IMAP4_SSL",
+        side_effect=Exception("no connection"),
+    ), patch.object(
+        check_imap_job_module.metric_service,
+        "job_execution_started",
+    ) as metric_started_spy:
+        job = CheckIMAPJob()
+        job.run()
+
+    metric_started_spy.assert_called_once_with(job_name="check_imap")
+
+
+def test_check_imap_job_triggers_finished_metric(db):
+    with patch(
+        "django_email_learning.jobs.check_imap_job.imaplib.IMAP4_SSL",
+        side_effect=Exception("no connection"),
+    ), patch.object(
+        check_imap_job_module.metric_service,
+        "job_execution_finished",
+    ) as metric_finished_spy:
+        job = CheckIMAPJob()
+        job.run()
+
+    metric_finished_spy.assert_called_once()
+    call_kwargs = metric_finished_spy.call_args
+    assert call_kwargs.kwargs["job_name"] == "check_imap"
+    assert isinstance(call_kwargs.kwargs["execution_time"], int)
+
+
+def test_check_imap_job_does_not_emit_start_or_finish_metrics_when_already_running(db):
+    JobExecution.objects.create(
+        job_name=JobName.CHECK_IMAP.value,
+        status=JobStatus.RUNNING.value,
+    )
+
+    with patch.object(
+        check_imap_job_module.metric_service,
+        "job_execution_started",
+    ) as metric_started_spy, patch.object(
+        check_imap_job_module.metric_service,
+        "job_execution_finished",
+    ) as metric_finished_spy:
+        CheckIMAPJob().run()
+
+    metric_started_spy.assert_not_called()
+    metric_finished_spy.assert_not_called()

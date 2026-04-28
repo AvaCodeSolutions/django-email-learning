@@ -25,7 +25,15 @@ def test_deactivate_inactive_enrollments_job_exits_when_already_running(db):
         status=JobStatus.RUNNING.value,
     )
 
-    with patch.object(deactivate_job_module.logger, "warning") as warning_spy:
+    with patch.object(
+        deactivate_job_module.logger, "warning"
+    ) as warning_spy, patch.object(
+        deactivate_job_module.metric_service,
+        "job_execution_started",
+    ) as metric_started_spy, patch.object(
+        deactivate_job_module.metric_service,
+        "job_execution_finished",
+    ) as metric_finished_spy:
         DeactivateInactiveEnrollmentsJob().run()
 
     assert (
@@ -36,6 +44,8 @@ def test_deactivate_inactive_enrollments_job_exits_when_already_running(db):
         == 1
     )
     warning_spy.assert_called_once()
+    metric_started_spy.assert_not_called()
+    metric_finished_spy.assert_not_called()
 
 
 def test_deactivate_inactive_enrollments_job_deactivates_expired_quiz_delivery(
@@ -55,7 +65,7 @@ def test_deactivate_inactive_enrollments_job_deactivates_expired_quiz_delivery(
         DeactivateInactiveEnrollmentsJob,
         "send_deactivation_email",
     ) as send_email_spy, patch.object(
-        deactivate_job_module.metricc_service,
+        deactivate_job_module.metric_service,
         "user_enrollment_deactivated",
     ) as user_metric_spy:
         DeactivateInactiveEnrollmentsJob().run()
@@ -100,7 +110,7 @@ def test_deactivate_inactive_enrollments_job_skips_non_quiz_deliveries(
         DeactivateInactiveEnrollmentsJob,
         "send_deactivation_email",
     ) as send_email_spy, patch.object(
-        deactivate_job_module.metricc_service,
+        deactivate_job_module.metric_service,
         "user_enrollment_deactivated",
     ) as user_metric_spy:
         DeactivateInactiveEnrollmentsJob().run()
@@ -129,7 +139,7 @@ def test_deactivate_inactive_enrollments_job_does_not_deactivate_when_deadline_n
         DeactivateInactiveEnrollmentsJob,
         "send_deactivation_email",
     ) as send_email_spy, patch.object(
-        deactivate_job_module.metricc_service,
+        deactivate_job_module.metric_service,
         "user_enrollment_deactivated",
     ) as user_metric_spy:
         DeactivateInactiveEnrollmentsJob().run()
@@ -176,7 +186,7 @@ def test_deactivate_inactive_enrollments_job_non_blocking_quiz_should_not_deacti
         DeactivateInactiveEnrollmentsJob,
         "send_deactivation_email",
     ) as send_email_spy, patch.object(
-        deactivate_job_module.metricc_service,
+        deactivate_job_module.metric_service,
         "user_enrollment_deactivated",
     ) as user_metric_spy:
         DeactivateInactiveEnrollmentsJob().run()
@@ -190,3 +200,26 @@ def test_deactivate_inactive_enrollments_job_non_blocking_quiz_should_not_deacti
     ).exists()
     send_email_spy.assert_not_called()
     user_metric_spy.assert_not_called()
+
+
+def test_deactivate_inactive_enrollments_job_triggers_started_metric(db):
+    with patch.object(
+        deactivate_job_module.metric_service,
+        "job_execution_started",
+    ) as metric_started_spy:
+        DeactivateInactiveEnrollmentsJob().run()
+
+    metric_started_spy.assert_called_once_with(job_name="deactivate_enrollments")
+
+
+def test_deactivate_inactive_enrollments_job_triggers_finished_metric(db):
+    with patch.object(
+        deactivate_job_module.metric_service,
+        "job_execution_finished",
+    ) as metric_finished_spy:
+        DeactivateInactiveEnrollmentsJob().run()
+
+    metric_finished_spy.assert_called_once()
+    call_kwargs = metric_finished_spy.call_args
+    assert call_kwargs.kwargs["job_name"] == "deactivate_enrollments"
+    assert isinstance(call_kwargs.kwargs["execution_time"], int)

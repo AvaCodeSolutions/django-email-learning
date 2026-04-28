@@ -4,6 +4,7 @@ from django_email_learning.models import (
     JobName,
     JobStatus,
 )
+from django_email_learning.jobs.job_metrics import track_job_execution
 from django_email_learning.services.metrics_service import MetricsService
 from django_email_learning.ports.imap_interface_protocol import ImapInterfaceProtocol
 from django.utils.module_loading import import_string
@@ -15,7 +16,7 @@ from email.policy import default
 import logging
 
 logger = logging.getLogger(__name__)
-metricc_service = MetricsService()
+metric_service = MetricsService()
 
 
 class CheckIMAPJob:
@@ -54,6 +55,13 @@ class CheckIMAPJob:
             status=JobStatus.RUNNING.value,
             started_at=timezone.now(),
         )
+        self._run_job(job_execution)
+
+    @track_job_execution(
+        metric_service=metric_service,
+        job_name=JobName.CHECK_IMAP.value,
+    )
+    def _run_job(self, job_execution: JobExecution) -> None:
         imap_connections = ImapConnection.objects.filter(course__enabled=True)
 
         for imap_connection in imap_connections:
@@ -73,10 +81,11 @@ class CheckIMAPJob:
                 for folder in folders:
                     self._process_folder(account, folder, imap_connection)
             finally:
-                job_execution.status = JobStatus.COMPLETED.value
-                job_execution.finished_at = timezone.now()
-                job_execution.save()
                 self._logout_account(account, imap_connection)
+
+        job_execution.status = JobStatus.COMPLETED.value
+        job_execution.finished_at = timezone.now()
+        job_execution.save()
 
     def _connect_account(
         self, imap_connection: ImapConnection
@@ -145,7 +154,7 @@ class CheckIMAPJob:
                 f"Error processing email with ID {email_id} for connection {imap_connection.id}: {str(e)}",
                 exc_info=True,
             )
-            metricc_service.imap_command_handling_failed(
+            metric_service.imap_command_handling_failed(
                 imap_connection_id=imap_connection.id,
                 organization_id=imap_connection.organization.id,
             )

@@ -11,6 +11,9 @@ from django_email_learning.models import (
     ContentDelivery,
     DeliverySchedule,
     EnrollmentStatus,
+    JobExecution,
+    JobName,
+    JobStatus,
 )
 from tests.jobs.delivery_queue_mock import DeliveryQueueMock
 
@@ -82,6 +85,31 @@ def test_send_reminders_job_marks_not_applicable_when_quiz_not_found(
     assert delivery.reminder_state == ContentDelivery.ReminderStatus.NOT_APPLICABLE
 
 
+def test_send_reminders_job_triggers_started_metric(db, reminder_queue_mock):
+    with patch.object(
+        send_reminders_job_module.METRIC_SERVICE,
+        "job_execution_started",
+    ) as metric_started_spy:
+        job = SendRemindersJob()
+        job.run()
+
+    metric_started_spy.assert_called_once_with(job_name="send_reminders")
+
+
+def test_send_reminders_job_triggers_finished_metric(db, reminder_queue_mock):
+    with patch.object(
+        send_reminders_job_module.METRIC_SERVICE,
+        "job_execution_finished",
+    ) as metric_finished_spy:
+        job = SendRemindersJob()
+        job.run()
+
+    metric_finished_spy.assert_called_once()
+    call_kwargs = metric_finished_spy.call_args
+    assert call_kwargs.kwargs["job_name"] == "send_reminders"
+    assert isinstance(call_kwargs.kwargs["execution_time"], int)
+
+
 def test_send_reminders_job_blocks_on_unexpected_exception_and_tracks_metric(
     db, reminder_queue_mock, enrollment, course_quiz_content
 ):
@@ -113,3 +141,24 @@ def test_send_reminders_job_blocks_on_unexpected_exception_and_tracks_metric(
     metric_blocked_spy.assert_called_once_with(
         delivery_schedule.delivery.course_content.id
     )
+
+
+def test_send_reminders_job_does_not_emit_start_or_finish_metrics_when_already_running(
+    db, reminder_queue_mock
+):
+    JobExecution.objects.create(
+        job_name=JobName.SEND_REMINDERS.value,
+        status=JobStatus.RUNNING.value,
+    )
+
+    with patch.object(
+        send_reminders_job_module.METRIC_SERVICE,
+        "job_execution_started",
+    ) as metric_started_spy, patch.object(
+        send_reminders_job_module.METRIC_SERVICE,
+        "job_execution_finished",
+    ) as metric_finished_spy:
+        SendRemindersJob().run()
+
+    metric_started_spy.assert_not_called()
+    metric_finished_spy.assert_not_called()
