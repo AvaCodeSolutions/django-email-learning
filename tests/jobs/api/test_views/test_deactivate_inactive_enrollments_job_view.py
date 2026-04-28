@@ -69,3 +69,30 @@ def test_deactivate_inactive_enrollments_with_valid_api_key(
     assert response.status_code == 202
     assert response.json() == {"status": "DeactivateInactiveEnrollmentsJob triggered"}
     assert mock_run.called
+
+
+@mock.patch(
+    "django_email_learning.jobs.api.views.metric_service.job_execution_failed",
+)
+@mock.patch(
+    "django_email_learning.jobs.deactivate_inactive_enrollments_job.DeactivateInactiveEnrollmentsJob.run",
+    side_effect=Exception("boom"),
+)
+def test_deactivate_inactive_enrollments_failed_triggers_job_execution_failed_metric(
+    mock_run, mock_job_execution_failed, superadmin_client
+):
+    create_key_response = superadmin_client.post(
+        reverse("django_email_learning:api_platform:api_key_view")
+    )
+    response = superadmin_client.get(
+        URL,
+        HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['key']}",
+    )
+
+    assert response.status_code == 500
+    assert response.json() == {
+        "status": "DeactivateInactiveEnrollmentsJob failed",
+        "error": "boom",
+    }
+    mock_run.assert_called_once()
+    mock_job_execution_failed.assert_called_once_with(job_name="deactivate_enrollments")

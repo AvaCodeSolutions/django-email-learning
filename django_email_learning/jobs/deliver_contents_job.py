@@ -8,6 +8,7 @@ from django_email_learning.services.command_models.send_quiz_command import (
     SendQuizCommand,
     QuizNotFoundError,
 )
+from django_email_learning.jobs.job_metrics import track_job_execution
 from django_email_learning.services.metrics_service import MetricsService
 from django_email_learning.models import JobExecution, JobName, JobStatus
 from django.utils.module_loading import import_string
@@ -39,6 +40,13 @@ class DeliverContentsJob:
             status=JobStatus.RUNNING.value,
             started_at=timezone.now(),
         )
+        self._run_job(job_execution)
+
+    @track_job_execution(
+        metric_service=METRIC_SERVICE,
+        job_name=JobName.DELIVER_CONTENTS.value,
+    )
+    def _run_job(self, job_execution: JobExecution) -> None:
         should_check_next = True
         while should_check_next:
             delivery_schedule = self.delivery_queue.next_task()

@@ -79,3 +79,12 @@ class MetricsService:
         self.metric_recorder.imap_command_handling_failed(
             imap_connection_id, organization_id
         )
+
+    def job_execution_started(self, job_name: str) -> None:
+        self.metric_recorder.job_execution_started(job_name)
+
+    def job_execution_finished(self, job_name: str, execution_time: int) -> None:
+        self.metric_recorder.job_execution_finished(job_name, execution_time)
+
+    def job_execution_failed(self, job_name: str) -> None:
+        self.metric_recorder.job_execution_failed(job_name)

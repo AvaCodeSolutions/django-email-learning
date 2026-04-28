@@ -7,6 +7,7 @@ from django_email_learning.models import (
     JobStatus,
     Quiz,
 )
+from django_email_learning.jobs.job_metrics import track_job_execution
 from django_email_learning.services.metrics_service import MetricsService
 from django_email_learning.services.email_sender_service import EmailSenderService
 from django.core.mail import EmailMultiAlternatives
@@ -18,7 +19,7 @@ import logging
 from django_email_learning.services.utils import mask_email
 
 logger = logging.getLogger(__name__)
-metricc_service = MetricsService()
+metric_service = MetricsService()
 
 
 class DeactivateInactiveEnrollmentsJob:
@@ -37,6 +38,13 @@ class DeactivateInactiveEnrollmentsJob:
             status=JobStatus.RUNNING.value,
             started_at=timezone.now(),
         )
+        self._run_job(job_execution)
+
+    @track_job_execution(
+        metric_service=metric_service,
+        job_name=JobName.DEACTIVATE_ENROLLMENTS.value,
+    )
+    def _run_job(self, job_execution: JobExecution) -> None:
         deliveries = ContentDelivery.objects.filter(
             valid_until__lt=timezone.now(),
             enrollment__status=EnrollmentStatus.ACTIVE,
@@ -75,7 +83,7 @@ class DeactivateInactiveEnrollmentsJob:
                 course_title,
                 delivery.course_content.course.organization.name,
             )
-            metricc_service.user_enrollment_deactivated(
+            metric_service.user_enrollment_deactivated(
                 course_slug=delivery.course_content.course.slug,
                 organization_id=delivery.course_content.course.organization.id,
                 reason=DeactivationReason.INACTIVE.value,

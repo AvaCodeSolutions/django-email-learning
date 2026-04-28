@@ -1,5 +1,6 @@
 from django_email_learning.ports.delivery_queue_protocol import DeliveryQueueProtocol
 from django_email_learning.models import ContentDelivery, DeliverySchedule
+from django_email_learning.jobs.job_metrics import track_job_execution
 
 from django_email_learning.services.metrics_service import MetricsService
 from django_email_learning.models import JobExecution, JobName, JobStatus
@@ -35,6 +36,13 @@ class SendRemindersJob:
             status=JobStatus.RUNNING.value,
             started_at=timezone.now(),
         )
+        self._run_job(job_execution)
+
+    @track_job_execution(
+        metric_service=METRIC_SERVICE,
+        job_name=JobName.SEND_REMINDERS.value,
+    )
+    def _run_job(self, job_execution: JobExecution) -> None:
         should_check_next = True
         while should_check_next:
             delivery_schedule = self.reminder_queue.next_task()

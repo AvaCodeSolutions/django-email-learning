@@ -8,6 +8,9 @@ from django_email_learning.models import (
     EnrollmentStatus,
     Enrollment,
     DeliveryStatus,
+    JobExecution,
+    JobName,
+    JobStatus,
 )
 from tests.jobs.delivery_queue_mock import DeliveryQueueMock
 from unittest.mock import patch
@@ -217,3 +220,47 @@ def test_unhandled_exception_during_delivery_processing(
     # After running the job, the delivery schedule should be in BLOCKED status due to unhandled exception
     delivery_schedule.refresh_from_db()
     assert delivery_schedule.status == DeliveryStatus.BLOCKED
+
+
+def test_deliver_contents_job_triggers_started_metric(db, delivery_queue_mock):
+    with patch.object(
+        deliver_contents_job_module.METRIC_SERVICE,
+        "job_execution_started",
+    ) as metric_started_spy:
+        DeliverContentsJob().run()
+
+    metric_started_spy.assert_called_once_with(job_name="deliver_contents")
+
+
+def test_deliver_contents_job_triggers_finished_metric(db, delivery_queue_mock):
+    with patch.object(
+        deliver_contents_job_module.METRIC_SERVICE,
+        "job_execution_finished",
+    ) as metric_finished_spy:
+        DeliverContentsJob().run()
+
+    metric_finished_spy.assert_called_once()
+    call_kwargs = metric_finished_spy.call_args
+    assert call_kwargs.kwargs["job_name"] == "deliver_contents"
+    assert isinstance(call_kwargs.kwargs["execution_time"], int)
+
+
+def test_deliver_contents_job_does_not_emit_start_or_finish_metrics_when_already_running(
+    db, delivery_queue_mock
+):
+    JobExecution.objects.create(
+        job_name=JobName.DELIVER_CONTENTS.value,
+        status=JobStatus.RUNNING.value,
+    )
+
+    with patch.object(
+        deliver_contents_job_module.METRIC_SERVICE,
+        "job_execution_started",
+    ) as metric_started_spy, patch.object(
+        deliver_contents_job_module.METRIC_SERVICE,
+        "job_execution_finished",
+    ) as metric_finished_spy:
+        DeliverContentsJob().run()
+
+    metric_started_spy.assert_not_called()
+    metric_finished_spy.assert_not_called()

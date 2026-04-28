@@ -145,3 +145,31 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
                 "organization_id": organization_id,
             },
         )
+
+    def job_execution_started(self, job_name: str) -> None:
+        logger.info(
+            "Job execution started",
+            extra={
+                "metric": "job_execution_started",
+                "job_name": job_name,
+            },
+        )
+
+    def job_execution_finished(self, job_name: str, execution_time: int) -> None:
+        logger.info(
+            "Job execution finished",
+            extra={
+                "metric": "job_execution_finished",
+                "job_name": job_name,
+                "execution_time": execution_time,
+            },
+        )
+
+    def job_execution_failed(self, job_name: str) -> None:
+        logger.error(
+            "Job execution failed",
+            extra={
+                "metric": "job_execution_failed",
+                "job_name": job_name,
+            },
+        )
