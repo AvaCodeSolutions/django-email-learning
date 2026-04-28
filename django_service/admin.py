@@ -12,6 +12,7 @@ from django_email_learning.models import (
     Learner,
     DeliverySchedule,
     QuizSubmission,
+    JobExecution,
 )
 from django_email_learning.oauth_integrations.models import Session
 
@@ -51,6 +52,13 @@ class SessionAdmin(admin.ModelAdmin):
     list_filter = ("state", "created_at")
 
 
+class JobExecutionAdmin(admin.ModelAdmin):
+    list_display = ("id", "job_name", "status", "started_at")
+    search_fields = ("job_name", "status")
+    list_filter = ("job_name", "status", "started_at")
+
+
+admin.site.register(JobExecution, JobExecutionAdmin)
 admin.site.register(Course, CourseAdmin)
 admin.site.register(ImapConnection, ImapConnectionAdmin)
 admin.site.register(OrganizationUser)
