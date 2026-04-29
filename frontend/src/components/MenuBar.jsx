@@ -56,7 +56,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     const [menuOpen, setMenuOpen] = useState(false)
     const [organizations, setOrganizations] = useState([])
     const [deliverContentsJobStatus, setDeliverContentsJobStatus] = useState(null)
-    const { localeMessages, isPlatformAdmin, isOrganizationAdmin, direction, apiBaseUrl, platformBaseUrl, sidebarCustomComponent, customLogo } = useAppContext();
+    const { localeMessages, isPlatformAdmin, isOrganizationAdmin, isInstructor, direction, apiBaseUrl, platformBaseUrl, sidebarCustomComponent, customLogo } = useAppContext();
 
     const theme = useTheme();
     const isMdUpScreen = useMediaQuery(theme.breakpoints.up('md'));
@@ -137,7 +137,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     }
 
     pages.push({ name: localeMessages["course_management"], icon: <SchoolOutlinedIcon fontSize="small" />, href: platformBaseUrl + '/courses/' });
-    if (isOrganizationAdmin || isPlatformAdmin) {
+    if (isOrganizationAdmin || isPlatformAdmin || isInstructor) {
         pages.push({ name: localeMessages["learners"], icon: <PeopleOutlinedIcon fontSize="small" />, href: platformBaseUrl + '/learners/' });
     }
     // pages.push({ name: 'Analytics', icon: <BarChartIcon fontSize="small" />, href: platformBaseUrl + '/analytics/' });

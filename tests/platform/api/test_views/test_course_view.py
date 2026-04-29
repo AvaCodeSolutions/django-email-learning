@@ -423,20 +423,21 @@ def test_viewer_not_allowed_to_delete_course(sample_course, viewer_client):
     assert delete_response.status_code == 403
 
 
-def test_editor_can_delete_course(sample_course, editor_client):
+@pytest.mark.parametrize("client", ["editor", "instructor"], indirect=["client"])
+def test_editor_can_delete_course(sample_course, client):
     # Check that we have one course before the delete
-    courses = editor_client.get(get_url(1))
+    courses = client.get(get_url(1))
     assert len(courses.json().get("courses")) == 1
 
     url = reverse(
         "django_email_learning:api_platform:single_course_view",
         kwargs={"organization_id": 1, "course_id": sample_course["id"]},
     )
-    delete_response = editor_client.delete(url)
+    delete_response = client.delete(url)
     assert delete_response.status_code == 200
 
     # Check that we don't have any course after the delete
-    courses = editor_client.get(get_url(1))
+    courses = client.get(get_url(1))
     assert len(courses.json().get("courses")) == 0
 
 

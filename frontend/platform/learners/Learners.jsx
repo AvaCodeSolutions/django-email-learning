@@ -202,7 +202,7 @@ function Learners(initialQs="") {
           </Box>
           <Box sx={{ p: 2 }}>
           <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
-            <EnrollentList enrollments={enrollments} selectHandler={showEnrollmentStatus} />
+            { enrollments && <EnrollentList enrollments={enrollments} selectHandler={showEnrollmentStatus} /> }
           </Suspense>
           </Box>
         </Box>

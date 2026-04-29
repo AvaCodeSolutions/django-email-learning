@@ -1,4 +1,5 @@
 from django.urls import reverse
+import pytest
 
 URL = reverse("django_email_learning:api_platform:api_key_view")
 
@@ -21,8 +22,11 @@ def test_create_api_key(superadmin_client):
     assert any(api_key["key"] == created_key for api_key in api_keys)
 
 
-def test_organization_user_cannot_create_api_key(editor_client):
-    response = editor_client.post(URL)
+@pytest.mark.parametrize(
+    "client", ["editor", "viewer", "instructor"], indirect=["client"]
+)
+def test_organization_user_cannot_create_api_key(client):
+    response = client.post(URL)
     assert response.status_code == 403
 
 

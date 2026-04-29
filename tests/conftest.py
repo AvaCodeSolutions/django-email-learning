@@ -51,6 +51,12 @@ def users(db):
         email="orgadmin@example.com",
         password="orgadminpass",
     )
+    instructor_user = User(
+        id=6,
+        username="instructor",
+        email="instructor@example.com",
+        password="instructorpass",
+    )
     User.objects.bulk_create(
         [
             superadmin,
@@ -58,11 +64,15 @@ def users(db):
             platform_admin_user,
             viewer_user,
             organization_admin_user,
+            instructor_user,
         ]
     )
     group = Group.objects.get(name=PLATFORM_ADMIN_GROUP_NAME)
     platform_admin_user.groups.add(group)
     editor = OrganizationUser(user=editor_user, organization_id=1, role="editor")
+    instructor = OrganizationUser(
+        user=instructor_user, organization_id=1, role="instructor"
+    )
     platform_admin = OrganizationUser(
         user=platform_admin_user, organization_id=1, role="admin"
     )
@@ -71,11 +81,12 @@ def users(db):
     )
     viewer = OrganizationUser(user=viewer_user, organization_id=1, role="viewer")
     OrganizationUser.objects.bulk_create(
-        [editor, platform_admin, organization_admin, viewer]
+        [editor, instructor, platform_admin, organization_admin, viewer]
     )
     return {
         "superadmin": superadmin,
         "editor_user": editor_user,
+        "instructor_user": instructor_user,
         "platform_admin": platform_admin_user,
         "organization_admin": organization_admin_user,
         "viewer_user": viewer_user,
@@ -98,6 +109,13 @@ def superadmin_client(users):
 def editor_client(users):
     client = Client()
     client.force_login(users["editor_user"])
+    return client
+
+
+@pytest.fixture()
+def instructor_client(users):
+    client = Client()
+    client.force_login(users["instructor_user"])
     return client
 
 
@@ -127,6 +145,7 @@ def client(
     request,
     superadmin_client,
     editor_client,
+    instructor_client,
     platform_admin_client,
     viewer_client,
     anonymous_client,
@@ -140,6 +159,7 @@ def client(
             "platform_admin": platform_admin_client,
             "viewer": viewer_client,
             "org_admin": org_admin_client,
+            "instructor": instructor_client,
         }
         return role_map.get(role_name)
 

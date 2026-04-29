@@ -67,8 +67,10 @@ DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING"
 
 
 @method_decorator(ensure_csrf_cookie, name="get")
-@method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
-@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
+@method_decorator(accessible_for(roles={"admin", "editor", "instructor"}), name="post")
+@method_decorator(
+    accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get"
+)
 class CourseView(View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         payload = json.loads(request.body)
@@ -114,8 +116,10 @@ class CourseView(View):
         return JsonResponse({"courses": response_list}, status=200)
 
 
-@method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
-@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
+@method_decorator(accessible_for(roles={"admin", "editor", "instructor"}), name="post")
+@method_decorator(
+    accessible_for(roles={"admin", "editor", "viewer", "instructor"}), name="get"
+)
 class CourseContentView(View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         payload = json.loads(request.body)
@@ -161,7 +165,7 @@ class CourseContentView(View):
             return JsonResponse({"error": "Course not found"}, status=404)
 
 
-@method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
+@method_decorator(accessible_for(roles={"admin", "editor", "instructor"}), name="post")
 class ReorderCourseContentView(View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         payload = json.loads(request.body)
@@ -207,9 +211,13 @@ class ReorderCourseContentView(View):
             return JsonResponse({"error": str(e)}, status=409)
 
 
-@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
-@method_decorator(accessible_for(roles={"admin", "editor"}), name="delete")
-@method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
+@method_decorator(
+    accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get"
+)
+@method_decorator(
+    accessible_for(roles={"admin", "editor", "instructor"}), name="delete"
+)
+@method_decorator(accessible_for(roles={"admin", "editor", "instructor"}), name="post")
 class SingleCourseContentView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
@@ -344,9 +352,13 @@ class SingleCourseContentView(View):
         )
 
 
-@method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
-@method_decorator(accessible_for(roles={"admin", "editor"}), name="delete")
-@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
+@method_decorator(accessible_for(roles={"admin", "editor", "instructor"}), name="post")
+@method_decorator(
+    accessible_for(roles={"admin", "editor", "instructor"}), name="delete"
+)
+@method_decorator(
+    accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get"
+)
 class SingleCourseView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
@@ -496,8 +508,10 @@ class OauthGroupEnrollment(View):
             return JsonResponse({"error": "Failed to enroll users"}, status=500)
 
 
-@method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
-@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
+@method_decorator(accessible_for(roles={"admin", "editor", "instructor"}), name="post")
+@method_decorator(
+    accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get"
+)
 class ImapConnectionView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         response_list = []
@@ -661,7 +675,9 @@ class SingleOrganizationUserView(View):
 
 @method_decorator(is_platform_admin(), name="post")
 @method_decorator(is_platform_admin(), name="delete")
-@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
+@method_decorator(
+    accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get"
+)
 class SingleOrganizationView(View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
@@ -771,7 +787,7 @@ class GetOrCreateUserByEmail(View):
             return JsonResponse({"error": str(e)}, status=409)
 
 
-@method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
+@method_decorator(accessible_for(roles={"admin", "editor", "instructor"}), name="post")
 class SendLessonToPlatformUser(View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         if not request.user.email:
@@ -802,8 +818,10 @@ class SendLessonToPlatformUser(View):
         )
 
 
-@method_decorator(accessible_for(roles={"admin", "editor"}), name="post")
-@method_decorator(accessible_for(roles={"admin", "editor"}), name="delete")
+@method_decorator(accessible_for(roles={"admin", "editor", "instructor"}), name="post")
+@method_decorator(
+    accessible_for(roles={"admin", "editor", "instructor"}), name="delete"
+)
 class FileView(View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         uploaded_file = request.FILES.get("file")
@@ -891,7 +909,7 @@ class UpdateSessionView(View):
         return JsonResponse(response_serializer.model_dump(), status=200)
 
 
-@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
+@method_decorator(accessible_for(roles={"admin", "instructor"}), name="get")
 class LearnersView(PaginatedApiMixin, View):
     def get_query_set(self, request: Any) -> models.QuerySet:
         organization_id = self.kwargs["organization_id"]
@@ -913,7 +931,9 @@ class LearnersView(PaginatedApiMixin, View):
         return serializers.LearnerResponse
 
 
-@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
+@method_decorator(
+    accessible_for(roles={"admin", "editor", "viewer", "instructor"}), name="get"
+)
 class SingleLearnerView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
@@ -954,7 +974,7 @@ class SingleLearnerView(View):
             return JsonResponse({"error": "An internal error occurred."}, status=500)
 
 
-@method_decorator(accessible_for(roles={"admin"}), name="post")
+@method_decorator(accessible_for(roles={"admin", "instructor"}), name="post")
 class EnrollmentsView(PaginatedApiMixin, View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         payload = json.loads(request.body)
@@ -998,7 +1018,9 @@ class EnrollmentsView(PaginatedApiMixin, View):
             return JsonResponse({"error": e.json()}, status=400)
 
 
-@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
+@method_decorator(
+    accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get"
+)
 class EnrollmentView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
@@ -1015,7 +1037,9 @@ class EnrollmentView(View):
             return JsonResponse({"error": e.json()}, status=400)
 
 
-@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
+@method_decorator(
+    accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get"
+)
 class EnrollmentsStatisticsView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         course_id = kwargs["course_id"]

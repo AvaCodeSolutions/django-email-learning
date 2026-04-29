@@ -1,15 +1,16 @@
 from django.urls import reverse
+import pytest
 
 URL = reverse("django_email_learning:platform:learners_view")
 
 
-def test_learners_accesible_to_org_admin(org_admin_client):
-    response = org_admin_client.get(URL)
+@pytest.mark.parametrize("client", ["org_admin", "instructor"], indirect=["client"])
+def test_learners_accesible_to_org_admin_and_instructor(client):
+    response = client.get(URL)
     assert response.status_code == 200
 
 
-def test_learners_inaccessible_to_editor_and_viewer(editor_client, viewer_client):
-    response = editor_client.get(URL)
-    assert response.status_code == 403
-    response = viewer_client.get(URL)
-    assert response.status_code == 403
+def test_learners_view_redirects_anonymous(anonymous_client):
+    response = anonymous_client.get(URL)
+    assert response.status_code == 302
+    assert response.url.startswith("/accounts/login/")

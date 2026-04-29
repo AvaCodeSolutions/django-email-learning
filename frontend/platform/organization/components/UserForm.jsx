@@ -17,6 +17,15 @@ const UserForm = ({ onClose, organizationId, refreshUsers, user = null }) => {
     const [role, setRole] = useState(user ? user.role : 'viewer');
     const [error, setError] = useState('');
 
+    const roleDescriptionByRole = {
+        viewer: localeMessages["viewer_role_description"],
+        editor: localeMessages["editor_role_description"],
+        instructor: localeMessages["instructor_role_description"],
+        admin: localeMessages["admin_role_description"],
+    };
+
+    const selectedRoleDescription = roleDescriptionByRole[role] || '';
+
     const createUser = (id) => {
         fetch(`${apiBaseUrl}/organizations/${organizationId}/users/`, {
             method: 'POST',
@@ -123,9 +132,15 @@ const UserForm = ({ onClose, organizationId, refreshUsers, user = null }) => {
                 >
                     <MenuItem value="viewer">{localeMessages["viewer"]}</MenuItem>
                     <MenuItem value="editor">{localeMessages["editor"]}</MenuItem>
+                    <MenuItem value="instructor">{localeMessages["instructor"]}</MenuItem>
                     <MenuItem value="admin">{localeMessages["admin"]}</MenuItem>
                 </Select>
             </FormControl>
+            {selectedRoleDescription && (
+                <Typography variant="body2" color="text.secondary">
+                    {selectedRoleDescription}
+                </Typography>
+            )}
             {error && <Typography color="error">{error}</Typography>}
             <Button type="submit" variant="contained" color="secondary">
                 {  user ? localeMessages["edit_user"] : localeMessages["add_user"]}

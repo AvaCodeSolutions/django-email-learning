@@ -68,6 +68,14 @@ class BasePlatformView(TemplateView):
                         and getattr(self.request.user, "has_platform_admin_role", False)
                     )
                 ),
+                "isInstructor": (
+                    self.request.user.is_superuser
+                    or (
+                        OrganizationUser.objects.filter(
+                            user=self.request.user, role="instructor"
+                        ).exists()  # type: ignore[misc]
+                    )
+                ),
                 "aiTextEditingModel": AI_CONFIGURATIONS.get("TEXT_EDITING_MODEL"),
                 "customLogo": {
                     "horizontalLight": DJANGO_EMAIL_LEARNING_SETTINGS.get("LOGO", {})
@@ -478,7 +486,16 @@ class SingleOrganization(BasePlatformView):
             "role": _("Role"),
             "admin": _("Admin"),
             "editor": _("Editor"),
+            "instructor": _("Instructor"),
             "viewer": _("Viewer"),
+            "viewer_role_description": _("Read-only access to course content."),
+            "editor_role_description": _("Can create and edit course content."),
+            "instructor_role_description": _(
+                "All editor permissions, plus access to learners and assignment review and approval."
+            ),
+            "admin_role_description": _(
+                "Full access, including creating users and organizations."
+            ),
             "email": _("Email"),
             "delete_user_with_email": _("Deleting USER_EMAIL"),
             "user_delete_confirmation": _(
@@ -494,7 +511,7 @@ class SingleOrganization(BasePlatformView):
 
 
 @method_decorator(login_required, name="dispatch")
-@method_decorator(is_an_organization_member(only_admin=True), name="dispatch")
+@method_decorator(is_an_organization_member(), name="dispatch")
 class Learners(BasePlatformView):
     template_name = "platform/learners.html"
 
