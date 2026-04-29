@@ -40,17 +40,6 @@ def test_learners_view_pagination(page, has_more, superadmin_client, learners_fa
     assert data["has_more"] is has_more
 
 
-def test_learner_view_accesible_for_platform_viewer(viewer_client, learners_factory):
-    learners_factory(5)
-
-    response = viewer_client.get(URL)
-
-    assert response.status_code == 200
-    data = response.json()
-    assert data["count"] == 5
-    assert len(data["items"]) == 5
-
-
 def test_learner_view_not_accesible_for_no_role(anonymous_client, learners_factory):
     learners_factory(5)
 

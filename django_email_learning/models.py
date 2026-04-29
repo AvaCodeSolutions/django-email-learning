@@ -124,6 +124,7 @@ class OrganizationUser(models.Model):
         choices=[
             ("admin", "Admin"),
             ("editor", "Editor"),
+            ("instructor", "Instructor"),
             ("viewer", "Viewer"),
         ],
         db_index=True,

@@ -9,7 +9,7 @@ from django_email_learning.oauth_integrations.group_enrollment.base_group_enroll
     Group,
     User,
 )
-
+import pytest
 
 SESSIONS_URL = reverse("django_email_learning:oauth_integrations:sessions_view")
 REDIRECT_URL = reverse("django_email_learning:oauth_integrations:redirect_view")
@@ -66,8 +66,11 @@ def test_create_session_unauthorized(anonymous_client, course):
     assert response.json() == {"error": "Unauthorized"}
 
 
-def test_create_session_forbidden_for_editor(editor_client, course):
-    response = editor_client.post(
+@pytest.mark.parametrize(
+    "client", ["editor", "viewer", "instructor"], indirect=["client"]
+)
+def test_create_session_forbidden_for_editor(client, course):
+    response = client.post(
         SESSIONS_URL,
         json.dumps(oauth_payload(course.id)),
         content_type="application/json",
@@ -282,8 +285,11 @@ def test_enroll_users_unauthorized(db, anonymous_client):
     assert response.json() == {"error": "Unauthorized"}
 
 
-def test_enroll_users_forbidden_for_editor(db, editor_client):
-    response = editor_client.post(
+@pytest.mark.parametrize(
+    "client", ["editor", "viewer", "instructor"], indirect=["client"]
+)
+def test_enroll_users_forbidden_for_editor(db, client):
+    response = client.post(
         oauth_enroll_users_url("any-session"),
         json.dumps({"groups": ["all"]}),
         content_type="application/json",

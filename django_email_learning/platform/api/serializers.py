@@ -430,6 +430,7 @@ class UpdateOrganizationRequest(BaseModel):
 class UserRole(enum.StrEnum):
     ADMIN = "admin"
     EDITOR = "editor"
+    INSTRUCTOR = "instructor"
     VIEWER = "viewer"
 
 
