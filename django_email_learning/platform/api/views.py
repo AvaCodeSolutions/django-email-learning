@@ -626,11 +626,13 @@ class OrganizationUsersView(View):
                 user_id=serializer.user_id,
                 organization=organization,
                 role=serializer.role,
+                display_name=serializer.display_name,
+                photo=serializer.photo,
             )
             org_user.save()
             return JsonResponse(
                 serializers.OrganizationUserResponse.from_django_model(
-                    org_user
+                    org_user, request
                 ).model_dump(),
                 status=201,
             )
@@ -649,7 +651,7 @@ class OrganizationUsersView(View):
         for org_user in organization_users:
             response_list.append(
                 serializers.OrganizationUserResponse.from_django_model(
-                    org_user
+                    org_user, request
                 ).model_dump()
             )
         return JsonResponse({"organization_users": response_list}, status=200)
@@ -674,17 +676,19 @@ class SingleOrganizationUserView(View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
             payload = json.loads(request.body)
-            serializer = serializers.UpdateOrganizationUserRoleRequest.model_validate(
+            serializer = serializers.UpdateOrganizationUserRequest.model_validate(
                 payload
             )
             org_user = OrganizationUser.objects.get(
                 organization_id=kwargs["organization_id"], user_id=kwargs["user_id"]
             )
             org_user.role = serializer.role
+            org_user.display_name = serializer.display_name
+            org_user.photo = serializer.photo
             org_user.save()
             return JsonResponse(
                 serializers.OrganizationUserResponse.from_django_model(
-                    org_user
+                    org_user, request
                 ).model_dump(),
                 status=200,
             )

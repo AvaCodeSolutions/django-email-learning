@@ -72,7 +72,10 @@ def users(db):
     platform_admin_user.groups.add(group)
     editor = OrganizationUser(user=editor_user, organization_id=1, role="editor")
     instructor = OrganizationUser(
-        user=instructor_user, organization_id=1, role="instructor"
+        user=instructor_user,
+        organization_id=1,
+        role="instructor",
+        display_name="Instructor Name",
     )
     platform_admin = OrganizationUser(
         user=platform_admin_user, organization_id=1, role="admin"

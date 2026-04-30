@@ -3,6 +3,7 @@ import {
     Accordion,
     AccordionDetails,
     AccordionSummary,
+    Avatar,
     Box,
     Chip,
     FormControl,
@@ -81,8 +82,13 @@ function AddInstructorsSection({ onChangeCallback, activeOrganizationId, initial
                                     return instructor ? (
                                         <Chip
                                             key={id}
-                                            label={instructor.email}
+                                            label={instructor.display_name || instructor.email}
                                             size="small"
+                                            avatar={
+                                                instructor.photo
+                                                    ? <Avatar src={instructor.photo_url} />
+                                                    : <Avatar>{(instructor.display_name || instructor.email)[0].toUpperCase()}</Avatar>
+                                            }
                                             onDelete={(e) => {
                                                 e.stopPropagation();
                                                 const updatedIds = selectedIds.filter((i) => i !== id);
@@ -98,7 +104,22 @@ function AddInstructorsSection({ onChangeCallback, activeOrganizationId, initial
                     >
                         {orgInstructors.map((instructor) => (
                             <MenuItem key={instructor.id} value={instructor.id}>
-                                {instructor.email}
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    {instructor.photo
+                                        ? <Avatar src={instructor.photo_url} sx={{ width: 28, height: 28 }} />
+                                        : <Avatar sx={{ width: 28, height: 28, fontSize: 13 }}>{(instructor.display_name || instructor.email)[0].toUpperCase()}</Avatar>
+                                    }
+                                    <Box>
+                                        <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.2 }}>
+                                            {instructor.display_name || instructor.email}
+                                        </Typography>
+                                        {instructor.display_name && (
+                                            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1 }}>
+                                                {instructor.email}
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                </Box>
                             </MenuItem>
                         ))}
                     </Select>

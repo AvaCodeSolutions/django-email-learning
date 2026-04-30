@@ -168,3 +168,83 @@ def test_other_roles_cannot_delete_organization_user(superadmin_client, client):
 
     delete_response = client.delete(get_single_user_url(1, org_users[0]["id"]))
     assert delete_response.status_code == 403
+
+
+def test_create_organization_user_instructor_includes_display_name_and_photo(
+    superadmin_client, second_user
+):
+    response = superadmin_client.post(
+        URL,
+        data={
+            "user_id": second_user.id,
+            "role": "instructor",
+            "display_name": "Test Instructor",
+            "photo": "org_user_photos/test-instructor.png",
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["user_id"] == second_user.id
+    assert data["role"] == "instructor"
+    assert data["display_name"] == "Test Instructor"
+    assert data["photo"] == "org_user_photos/test-instructor.png"
+
+
+def test_update_organization_user_includes_display_name_and_photo(
+    superadmin_client, second_user
+):
+    create_response = superadmin_client.post(
+        URL,
+        data={
+            "user_id": second_user.id,
+            "role": "viewer",
+        },
+        content_type="application/json",
+    )
+    assert create_response.status_code == 201
+
+    update_response = superadmin_client.post(
+        get_single_user_url(1, second_user.id),
+        data={
+            "role": "instructor",
+            "display_name": "Updated Instructor",
+            "photo": "org_user_photos/updated-instructor.png",
+        },
+        content_type="application/json",
+    )
+
+    assert update_response.status_code == 200
+    data = update_response.json()
+    assert data["user_id"] == second_user.id
+    assert data["role"] == "instructor"
+    assert data["display_name"] == "Updated Instructor"
+    assert data["photo"] == "org_user_photos/updated-instructor.png"
+
+
+def test_list_organization_users_response_includes_display_name_and_photo(
+    superadmin_client, second_user
+):
+    create_response = superadmin_client.post(
+        URL,
+        data={
+            "user_id": second_user.id,
+            "role": "instructor",
+            "display_name": "List Instructor",
+            "photo": "org_user_photos/list-instructor.png",
+        },
+        content_type="application/json",
+    )
+    assert create_response.status_code == 201
+
+    list_response = superadmin_client.get(URL)
+    assert list_response.status_code == 200
+    users = list_response.json()["organization_users"]
+
+    org_user = next((user for user in users if user["user_id"] == second_user.id), None)
+    assert org_user is not None
+    assert "display_name" in org_user
+    assert "photo" in org_user
+    assert org_user["display_name"] == "List Instructor"
+    assert org_user["photo"] == "org_user_photos/list-instructor.png"

@@ -498,10 +498,30 @@ class UserRole(enum.StrEnum):
 class AddOrganizationUserRequest(BaseModel):
     user_id: int = Field(gt=0, examples=[1])
     role: UserRole = Field(min_length=1, examples=[UserRole.ADMIN])
+    display_name: Optional[str] = Field(None, examples=["John Doe"])
+    photo: Optional[str] = Field(None, examples=["/path/to/photo.png"])
+
+    @model_validator(mode="before")
+    def validate_instructor_display_name(cls, values: dict) -> dict:
+        role = values.get("role")
+        display_name = values.get("display_name")
+        if role == UserRole.INSTRUCTOR and not display_name:
+            raise ValueError("Instructor role requires a display name.")
+        return values
 
 
-class UpdateOrganizationUserRoleRequest(BaseModel):
+class UpdateOrganizationUserRequest(BaseModel):
     role: UserRole = Field(min_length=1, examples=[UserRole.ADMIN])
+    display_name: Optional[str] = Field(None, examples=["John Doe"])
+    photo: Optional[str] = Field(None, examples=["/path/to/photo.png"])
+
+    @model_validator(mode="before")
+    def validate_instructor_display_name(cls, values: dict) -> dict:
+        role = values.get("role")
+        display_name = values.get("display_name")
+        if role == UserRole.INSTRUCTOR and not display_name:
+            raise ValueError("Instructor role requires a display name.")
+        return values
 
 
 class OrganizationUserResponse(BaseModel):
@@ -511,9 +531,14 @@ class OrganizationUserResponse(BaseModel):
     email: str
     role: UserRole
     can_act_as_instructor: bool
+    display_name: Optional[str] = None
+    photo: Optional[str] = None
+    photo_url: Optional[str] = None
 
     @staticmethod
-    def from_django_model(org_user: OrganizationUser) -> "OrganizationUserResponse":
+    def from_django_model(
+        org_user: OrganizationUser, request: Any
+    ) -> "OrganizationUserResponse":
         return OrganizationUserResponse(
             id=org_user.id,
             user_id=org_user.user.id,
@@ -521,6 +546,11 @@ class OrganizationUserResponse(BaseModel):
             email=org_user.user.email,
             role=UserRole(org_user.role),
             can_act_as_instructor=org_user.can_act_as_instructor(),
+            display_name=org_user.display_name,
+            photo=org_user.photo.name if org_user.photo else None,
+            photo_url=request.build_absolute_uri(org_user.photo.url)
+            if org_user.photo
+            else None,
         )
 
 
