@@ -291,6 +291,29 @@ class SingleCourseContentView(View):
                 lesson.content = lesson_serializer.content
             lesson.save()
 
+        if serializer.assignment is not None and course_content.assignment is not None:
+            assignment_serializer = serializer.assignment
+            assignment = course_content.assignment
+            if assignment_serializer.title is not None:
+                assignment.title = assignment_serializer.title
+            if assignment_serializer.description is not None:
+                assignment.description = assignment_serializer.description
+            if assignment_serializer.deadline_days is not None:
+                assignment.deadline_days = assignment_serializer.deadline_days
+            if assignment_serializer.requires_text_submission is not None:
+                assignment.requires_text_submission = (
+                    assignment_serializer.requires_text_submission
+                )
+            if assignment_serializer.requires_file_submission is not None:
+                assignment.requires_file_submission = (
+                    assignment_serializer.requires_file_submission
+                )
+            if assignment_serializer.reminder_interval_days is not None:
+                assignment.reminder_interval_days = (
+                    assignment_serializer.reminder_interval_days
+                )
+            assignment.save()
+
         if serializer.quiz is not None and course_content.quiz is not None:
             quiz_serializer = serializer.quiz
             quiz = course_content.quiz

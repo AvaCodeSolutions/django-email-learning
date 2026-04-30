@@ -214,6 +214,41 @@ def test_create_quiz_content(superadmin_client, create_course):
     assert len(data["quiz"]["questions"][1]["answers"]) == 2
 
 
+def test_create_assignment_content(superadmin_client, create_course):
+    url = get_url()
+    payload = {
+        "content": {
+            "type": "assignment",
+            "title": "Assignment 1",
+            "description": "Submit your first project draft.",
+            "is_blocking": True,
+            "deadline_days": 10,
+            "requires_text_submission": True,
+            "requires_file_submission": True,
+        },
+        "priority": 3,
+        "waiting_period": {"period": 6, "type": "hours"},
+    }
+    response = superadmin_client.post(
+        url, json.dumps(payload), content_type="application/json"
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["id"] is not None
+    assert data["type"] == "assignment"
+    assert data["priority"] == 3
+    assert data["waiting_period"] == {"period": 6, "type": "hours"}
+    assert data["is_published"] is False
+    assert data["assignment"]["id"] is not None
+    assert data["assignment"]["title"] == "Assignment 1"
+    assert data["assignment"]["description"] == "Submit your first project draft."
+    assert data["assignment"]["is_blocking"] is True
+    assert data["assignment"]["deadline_days"] == 10
+    assert data["assignment"]["requires_text_submission"] is True
+    assert data["assignment"]["requires_file_submission"] is True
+
+
 def test_invalid_quiz_content_missing_questions(superadmin_client, create_course):
     url = get_url()
     payload = {
@@ -455,6 +490,46 @@ def test_get_course_content(viewer_client, course_lesson_content):
     assert get_data["lesson"]["content"] == course_lesson_content.lesson.content
 
 
+def test_get_course_content_assignment_response_check(
+    viewer_client, course_assignment_content
+):
+    url = single_content_url(
+        course_content_id=course_assignment_content.id,
+        course_id=course_assignment_content.course.id,
+        organization_id=course_assignment_content.course.organization.id,
+    )
+    response = viewer_client.get(url)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == course_assignment_content.id
+    assert data["type"] == "assignment"
+    assert data["priority"] == course_assignment_content.priority
+    assert data["waiting_period"] == {"period": 2, "type": "hours"}
+    assert data["assignment"]["id"] == course_assignment_content.assignment.id
+    assert data["assignment"]["title"] == course_assignment_content.assignment.title
+    assert (
+        data["assignment"]["description"]
+        == course_assignment_content.assignment.description
+    )
+    assert (
+        data["assignment"]["is_blocking"]
+        == course_assignment_content.assignment.is_blocking
+    )
+    assert (
+        data["assignment"]["deadline_days"]
+        == course_assignment_content.assignment.deadline_days
+    )
+    assert (
+        data["assignment"]["requires_text_submission"]
+        == course_assignment_content.assignment.requires_text_submission
+    )
+    assert (
+        data["assignment"]["requires_file_submission"]
+        == course_assignment_content.assignment.requires_file_submission
+    )
+
+
 def test_update_course_content_valid_quiz_data(superadmin_client, course_quiz_content):
     url = single_content_url(
         course_content_id=course_quiz_content.id,
@@ -678,6 +753,38 @@ def test_update_course_content_with_valid_lesson_data(
     assert data["id"] == course_lesson_content.id
     assert data["lesson"]["title"] == "Updated Lesson Title"
     assert data["lesson"]["content"] == "Updated lesson content"
+
+
+def test_update_course_content_with_valid_assignment_data(
+    superadmin_client, course_assignment_content
+):
+    url = single_content_url(
+        course_content_id=course_assignment_content.id,
+        course_id=course_assignment_content.course.id,
+        organization_id=course_assignment_content.course.organization.id,
+    )
+    payload = {
+        "assignment": {
+            "title": "Updated Assignment Title",
+            "description": "Updated assignment details",
+            "deadline_days": 14,
+            "requires_text_submission": False,
+            "requires_file_submission": True,
+        }
+    }
+    response = superadmin_client.post(
+        url, json.dumps(payload), content_type="application/json"
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == course_assignment_content.id
+    assert data["type"] == "assignment"
+    assert data["assignment"]["title"] == "Updated Assignment Title"
+    assert data["assignment"]["description"] == "Updated assignment details"
+    assert data["assignment"]["deadline_days"] == 14
+    assert data["assignment"]["requires_text_submission"] is False
+    assert data["assignment"]["requires_file_submission"] is True
 
 
 def test_update_course_content_with_invalid_lesson_data(

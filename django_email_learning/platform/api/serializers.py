@@ -17,6 +17,7 @@ from django_email_learning.models import (
     Organization,
     ImapConnection,
     InboxFolder,
+    Assignment,
     Lesson,
     Quiz,
     Question,
@@ -477,6 +478,41 @@ class SessionInfo(BaseModel):
         )
 
 
+class AssignmentCreate(BaseModel):
+    title: str
+    description: str
+    is_blocking: bool
+    deadline_days: int = Field(ge=0, examples=[14])
+    requires_text_submission: bool
+    requires_file_submission: bool
+    type: Literal["assignment"] = "assignment"
+    reminder_interval_days: Optional[int] = Field(default=None, examples=[3])
+
+
+class AssignmentUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    is_blocking: Optional[bool] = None
+    deadline_days: Optional[int] = Field(ge=0, examples=[14], default=None)
+    requires_text_submission: Optional[bool] = None
+    requires_file_submission: Optional[bool] = None
+    reminder_interval_days: Optional[int] = Field(default=None, examples=[3])
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class AssignmentResponse(BaseModel):
+    id: int
+    title: str
+    description: str
+    is_blocking: bool
+    deadline_days: int
+    requires_text_submission: bool
+    requires_file_submission: bool
+    reminder_interval_days: Optional[int] = None
+    model_config = ConfigDict(from_attributes=True)
+
+
 class LessonCreate(BaseModel):
     title: str
     content: str
@@ -692,8 +728,8 @@ class ReminderSentEvent(BaseModel):
     type: Literal[EventType.REMINDER_SENT] = Field(
         default=EventType.REMINDER_SENT, exclude=True
     )
-    quiz_id: int
-    quiz_title: str
+    content_id: int
+    content_title: str
 
 
 class ContentSentEvent(BaseModel):
@@ -749,13 +785,28 @@ class EnrollmentResponse(BaseModel):
                         timestamp=schedule.delivered_at,  # type: ignore[arg-type]
                         event_data=ContentSentEvent(
                             course_content_id=delivery.course_content.id,
-                            course_content_title=delivery.course_content.lesson.title
-                            if delivery.course_content.lesson
-                            else delivery.course_content.quiz.title,  # type: ignore[union-attr]
+                            course_content_title=delivery.course_content.title,  # type: ignore[union-attr]
                             course_content_type=delivery.course_content.type,
                         ),
                     )
                 )
+                if delivery.course_content.type == "assignment":
+                    if (
+                        delivery.reminder_state == ContentDelivery.ReminderStatus.SENT
+                        and delivery.remind_at
+                    ):
+                        events.append(
+                            Event(
+                                type=EventType.REMINDER_SENT,
+                                timestamp=delivery.remind_at,  # type: ignore[arg-type]
+                                event_data=ReminderSentEvent(
+                                    content_id=delivery.course_content.id,  # type: ignore[union-attr]
+                                    content_title=delivery.course_content.title,  # type: ignore[union-attr]
+                                ),
+                            )
+                        )
+                    # TODO:events for reminders and submissions for assignments
+
                 if delivery.course_content.type == "quiz":
                     if (
                         delivery.reminder_state == ContentDelivery.ReminderStatus.SENT
@@ -766,8 +817,8 @@ class EnrollmentResponse(BaseModel):
                                 type=EventType.REMINDER_SENT,
                                 timestamp=delivery.remind_at,  # type: ignore[arg-type]
                                 event_data=ReminderSentEvent(
-                                    quiz_id=delivery.course_content.quiz.id,  # type: ignore[union-attr]
-                                    quiz_title=delivery.course_content.quiz.title,  # type: ignore[union-attr]
+                                    content_id=delivery.course_content.id,  # type: ignore[union-attr]
+                                    content_title=delivery.course_content.title,  # type: ignore[union-attr]
                                 ),
                             )
                         )
@@ -858,7 +909,7 @@ class GroupEnrollmentRequest(BaseModel):
 class CreateCourseContentRequest(BaseModel):
     priority: int | None = Field(gt=0, examples=[1], default=None)
     waiting_period: WaitingPeriod
-    content: LessonCreate | QuizCreate = Field(discriminator="type")
+    content: LessonCreate | QuizCreate | AssignmentCreate = Field(discriminator="type")
 
     @property
     def required_priority(self) -> int:
@@ -870,6 +921,7 @@ class CreateCourseContentRequest(BaseModel):
     def to_django_model(self, course: Course) -> CourseContent:
         lesson = None
         quiz = None
+        assignment = None
         if isinstance(self.content, LessonCreate):
             lesson = Lesson(
                 title=self.content.title,
@@ -877,6 +929,20 @@ class CreateCourseContentRequest(BaseModel):
             )
             lesson.save()
             content_type = "lesson"
+
+        elif isinstance(self.content, AssignmentCreate):
+            assignment = Assignment(
+                title=self.content.title,
+                description=self.content.description,
+                is_blocking=self.content.is_blocking,  # type: ignore[misc]
+                deadline_days=self.content.deadline_days,  # type: ignore[misc]
+                requires_text_submission=self.content.requires_text_submission,  # type: ignore[misc]
+                requires_file_submission=self.content.requires_file_submission,  # type: ignore[misc]
+                reminder_interval_days=self.content.reminder_interval_days,  # type: ignore[misc]
+            )
+            assignment.save()
+            content_type = "assignment"
+
         elif isinstance(self.content, QuizCreate):
             quiz = Quiz(
                 title=self.content.title,
@@ -903,10 +969,12 @@ class CreateCourseContentRequest(BaseModel):
                     )
                     answer.save()
             content_type = "quiz"
+
         course_content = CourseContent.objects.create(
             course=course,
             priority=self.required_priority,
             waiting_period=self.waiting_period.to_seconds(),
+            assignment=assignment,
             lesson=lesson,
             quiz=quiz,
             type=content_type,
@@ -920,6 +988,7 @@ class UpdateCourseContentRequest(BaseModel):
     waiting_period: Optional[WaitingPeriod] = None
     lesson: Optional[LessonUpdate] = None
     quiz: Optional[UpdateQuiz] = None
+    assignment: Optional[AssignmentUpdate] = None
     is_published: Optional[bool] = None
 
     model_config = ConfigDict(extra="forbid")
@@ -932,11 +1001,12 @@ class UpdateCourseContentRequest(BaseModel):
             self.waiting_period,
             self.lesson,
             self.quiz,
+            self.assignment,
             self.is_published,
         ]
         if not any(f is not None for f in fields):
             raise ValueError(
-                "At least one of 'priority', 'waiting_period', 'lesson', 'quiz', or 'is_published' must be provided."
+                "At least one of 'priority', 'waiting_period', 'lesson', 'quiz', 'assignment', or 'is_published' must be provided."
             )
         return self
 
@@ -948,6 +1018,7 @@ class CourseContentResponse(BaseModel):
     type: str
     lesson: Optional[LessonResponse] = None
     quiz: Optional[QuizResponse] = None
+    assignment: Optional[AssignmentResponse] = None
     is_published: bool
 
     @field_serializer("waiting_period")

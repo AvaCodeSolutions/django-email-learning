@@ -6,6 +6,7 @@ import Base from '../../src/components/Base.jsx'
 import EnrollMenu from './components/EnrollMenu.jsx';
 import DescriptionIcon from '@mui/icons-material/Description';
 import BallotIcon from '@mui/icons-material/Ballot';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 import { useState, useEffect } from 'react';
 import { Box, Grid, Button, Dialog, LinearProgress, Typography, Alert, Divider, Skeleton } from '@mui/material'
 import { useTheme } from '@mui/material/styles';
@@ -17,6 +18,7 @@ import { lazy, Suspense } from "react";
 
 const QuizForm = lazy(() => import("./components/QuizForm.jsx"));
 const LessonForm = lazy(() => import("./components/LessonForm.jsx"));
+const AssignmentForm = lazy(() => import("./components/AssignmentForm.jsx"));
 const DeleteContentForm = lazy(() => import("./components/DeleteContentForm.jsx"));
 
 
@@ -237,6 +239,25 @@ function Course() {
                                 initialIsBlocking={content.quiz.is_blocking}
                                 initialReminderIntervalDays={content.quiz.reminder_interval_days}
                                  /></Suspense>);
+            } else if (content.type == 'assignment') {
+                console.log("Opening assignment editor for content:", content);
+                setDialogOpen(true);
+                setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><AssignmentForm
+                                header={localeMessages["update_assignment"]}
+                                cancelCallback={() => setDialogOpen(false)}
+                                successCallback={resetDialog}
+                                courseId={courseId}
+                                assignmentId={content.assignment.id}
+                                contentId={content.id}
+                                initialTitle={content.assignment.title}
+                                initialDescription={content.assignment.description}
+                                initialIsBlocking={content.assignment.is_blocking}
+                                initialDeadlineDays={content.assignment.deadline_days}
+                                initialRequiresTextSubmission={content.assignment.requires_text_submission}
+                                initialRequiresFileSubmission={content.assignment.requires_file_submission}
+                                initialReminderIntervalDays={content.assignment.reminder_interval_days}
+                                initialWaitingPeriod={content.waiting_period}
+                                /></Suspense>);
             }
         }
         if (event.type === 'content_reordered') {
@@ -335,6 +356,13 @@ function Course() {
                             successCallback={resetDialog}
                             courseId={courseId} /></Suspense>);
                         setDialogOpen(true);}}>{localeMessages["add_quiz"]}</Button>
+                    <Button variant="contained" startIcon={<AssignmentIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2, marginLeft: 1, marginRight: 1 }} onClick={() => {
+                        setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><AssignmentForm
+                            header={localeMessages["new_assignment"]}
+                            cancelCallback={() => setDialogOpen(false)}
+                            successCallback={resetDialog}
+                            courseId={courseId} /></Suspense>);
+                        setDialogOpen(true);}}>{localeMessages["add_assignment"]}</Button>
                     {userRole === 'admin' && <EnrollMenu successCallback={handleEnrollMenuSuccess} />}
                     </> }
                     {customComponent && <Box className="custom-component-wrapper" sx={{ display: customComponent.container_display }} dangerouslySetInnerHTML={{ __html: customComponent.html }}></Box>}
@@ -343,9 +371,9 @@ function Course() {
                 <Box sx={{ mt: 3, mb: 3 }}>
                     <Divider />
                 </Box>
-                <Grid container spacing={3}>
-                <Grid size={{xs: 12, lg: 6}}>
-                <Box sx={{ py: 3, border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', height: '100%' }}>
+                <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
+                <Grid size={{xs: 12, lg: 6}} sx={{ display: 'flex', flexDirection: 'column' }}>
+                <Box sx={{ py: 3, border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', flex: 1 }}>
                     <Typography variant="h6" align='center'>{localeMessages["enrollments_distribution"]}</Typography>
                     <Typography variant="body2" align='center' sx={{ mt: 1, mb: 2, color: 'text.secondary' }}>
                         {(localeMessages["total_enrollments"]) + ': ' + totalEnrollments}
@@ -391,8 +419,8 @@ function Course() {
                     )}
                 </Box>
                 </Grid>
-                <Grid size={{xs: 12, lg: 6}}>
-                    <Box sx={{ py: 3, border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', height: '100%' }}>
+                <Grid size={{xs: 12, lg: 6}} sx={{ display: 'flex', flexDirection: 'column' }}>
+                    <Box sx={{ py: 3, border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', flex: 1 }}>
                     <Typography variant="h6" align='center'>{localeMessages["weekly_enrollments"]}</Typography>
                     {isWeeklyStatsLoading ? (
                         <Box sx={{ px: 2 }}>
