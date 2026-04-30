@@ -248,6 +248,11 @@ class Courses(BasePlatformView):
             "select_instructors": _("Select Instructors"),
             "new_instructor": _("New Instructor"),
             "instructor_email": _("Instructor Email"),
+            "instructor_display_name": _("Display Name"),
+            "instructor_display_name_required": _(
+                "Display name is required for instructors."
+            ),
+            "instructor_photo": _("Instructor Photo"),
             "add_instructor": _("Add Instructor"),
             "instructor_add_failed": _("Failed to add instructor. Please try again."),
         }
@@ -522,6 +527,9 @@ class SingleOrganization(BasePlatformView):
             "change_user_role": _("Change User Role"),
             "user": _("User"),
             "role": _("Role"),
+            "display_name": _("Display Name"),
+            "display_name_required": _("Display name is required for instructors."),
+            "photo": _("Photo"),
             "admin": _("Admin"),
             "editor": _("Editor"),
             "instructor": _("Instructor"),
@@ -545,6 +553,9 @@ class SingleOrganization(BasePlatformView):
             ),
             "cancel": _("Cancel"),
             "delete": _("Delete"),
+            "upload_button_label": _("Upload Image"),
+            "remove_image": _("Remove Image"),
+            "uploaded_image_alt": _("User Photo"),
         }
 
 

@@ -7,6 +7,7 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import ImageUpload from '../../../src/components/ImageUpload.jsx';
 import { getCookie } from '../../../src/utils.js';
 import { useAppContext } from '../../../src/render.jsx';
 
@@ -15,6 +16,10 @@ const UserForm = ({ onClose, organizationId, refreshUsers, user = null }) => {
     const { localeMessages, apiBaseUrl } = useAppContext();
     const [email, setEmail] = useState(user ? user.email : '');
     const [role, setRole] = useState(user ? user.role : 'viewer');
+    const [displayName, setDisplayName] = useState(user ? (user.display_name || '') : '');
+    const [displayNameError, setDisplayNameError] = useState('');
+    const [photoUrl, setPhotoUrl] = useState(user? user.photo_url : null);
+    const [photoPath, setPhotoPath] = useState(user ? (user.photo || null) : null);
     const [error, setError] = useState('');
 
     const roleDescriptionByRole = {
@@ -26,6 +31,18 @@ const UserForm = ({ onClose, organizationId, refreshUsers, user = null }) => {
 
     const selectedRoleDescription = roleDescriptionByRole[role] || '';
 
+    const validateForm = () => {
+        setError('');
+
+        if (role === 'instructor' && !displayName.trim()) {
+            setDisplayNameError(localeMessages['display_name_required']);
+            return false;
+        }
+
+        setDisplayNameError('');
+        return true;
+    };
+
     const createUser = (id) => {
         fetch(`${apiBaseUrl}/organizations/${organizationId}/users/`, {
             method: 'POST',
@@ -33,7 +50,12 @@ const UserForm = ({ onClose, organizationId, refreshUsers, user = null }) => {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken'),
             },
-            body: JSON.stringify({ 'user_id': id, 'role': role }),
+            body: JSON.stringify({
+                'user_id': id,
+                'role': role,
+                'display_name': displayName.trim() || null,
+                'photo': photoPath,
+            }),
         })
         .then(response => {
             if (!response.ok) {
@@ -53,6 +75,9 @@ const UserForm = ({ onClose, organizationId, refreshUsers, user = null }) => {
 
     const handleSubmit = (event) => {
         event.preventDefault();
+        if (!validateForm()) {
+            return;
+        }
         if (user) {
             updateUser();
         } else {
@@ -88,13 +113,19 @@ const UserForm = ({ onClose, organizationId, refreshUsers, user = null }) => {
 
     const updateUser = () => {
         console.log('Updating user:', user);
+        const payload = {
+            'role': role ,
+            display_name: displayName.trim() || null,
+            photo: photoPath,
+        };
+
         fetch(`${apiBaseUrl}/organizations/${organizationId}/users/${user.user_id}/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': getCookie('csrftoken'),
             },
-            body: JSON.stringify({ 'role': role }),
+            body: JSON.stringify(payload),
         })
         .then(response => {
             if (!response.ok) {
@@ -122,13 +153,31 @@ const UserForm = ({ onClose, organizationId, refreshUsers, user = null }) => {
                 required
                 disabled={!!user}
             />
+            <TextField
+                label={localeMessages["display_name"]}
+                value={displayName}
+                onChange={(e) => {
+                    setDisplayName(e.target.value);
+                    if (displayNameError) {
+                        setDisplayNameError('');
+                    }
+                }}
+                required={role === 'instructor'}
+                error={Boolean(displayNameError)}
+                helperText={displayNameError}
+            />
             <FormControl fullWidth>
                 <InputLabel id="role-label">{localeMessages["role"]}</InputLabel>
                 <Select
                     labelId="role-label"
                     value={role}
                     label={localeMessages["role"]}
-                    onChange={(e) => setRole(e.target.value)}
+                    onChange={(e) => {
+                        setRole(e.target.value);
+                        if (e.target.value !== 'instructor') {
+                            setDisplayNameError('');
+                        }
+                    }}
                 >
                     <MenuItem value="viewer">{localeMessages["viewer"]}</MenuItem>
                     <MenuItem value="editor">{localeMessages["editor"]}</MenuItem>
@@ -141,6 +190,22 @@ const UserForm = ({ onClose, organizationId, refreshUsers, user = null }) => {
                     {selectedRoleDescription}
                 </Typography>
             )}
+            <Box>
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                    {localeMessages["photo"]}
+                </Typography>
+                <ImageUpload
+                    initialUrl={photoUrl}
+                    onUploadSuccess={(data) => {
+                        setPhotoUrl(data.file_url);
+                        setPhotoPath(data.file_path);
+                    }}
+                    onUploadError={() => {
+                        setError(localeMessages["failed_to_add_user"]);
+                    }}
+                />
+            </Box>
+
             {error && <Typography color="error">{error}</Typography>}
             <Button type="submit" variant="contained" color="secondary">
                 {  user ? localeMessages["edit_user"] : localeMessages["add_user"]}

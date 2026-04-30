@@ -129,16 +129,23 @@ class OrganizationUser(models.Model):
         ],
         db_index=True,
     )
+    display_name = models.CharField(max_length=200, null=True, blank=True)
+    photo = models.ImageField(upload_to="org_user_photos/", null=True, blank=True)
 
     def __str__(self) -> str:
         return f"{self.user.username} - {self.organization.name}"
 
     def can_act_as_instructor(self) -> bool:
-        # TODO: When we add display name for org user we can also accept admin role as instructor
-        # if they have display name set, for now only users with instructor role can be course instructors
         if self.role == "instructor":
             return True
+        if self.role == "admin" and self.display_name:
+            return True
         return False
+
+    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        if self.role == "instructor" and not self.display_name:
+            raise ValidationError("Instructor role requires a display name.")
+        super().save(*args, **kwargs)
 
     class Meta:
         unique_together = [["user", "organization"]]

@@ -558,7 +558,10 @@ def test_create_course_with_multiple_instructors(users, superadmin_client):
         username="instructor2", email="instructor2@example.com", password="pass"
     )
     second_org_user = OrganizationUser.objects.create(
-        user=second_instructor_user, organization_id=1, role="instructor"
+        user=second_instructor_user,
+        organization_id=1,
+        role="instructor",
+        display_name="Instructor 2",
     )
     instructor_org_user_id = _org_user_id("instructor")
 
@@ -652,7 +655,10 @@ def test_update_course_removes_instructor_when_not_in_list(users, superadmin_cli
         username="instructor_remove", email="instr_remove@example.com", password="pass"
     )
     second_org_user = OrganizationUser.objects.create(
-        user=second_user, organization_id=1, role="instructor"
+        user=second_user,
+        organization_id=1,
+        role="instructor",
+        display_name="Instructor Remove",
     )
     instructor_org_user_id = _org_user_id("instructor")
 

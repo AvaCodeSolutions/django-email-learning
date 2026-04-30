@@ -40,7 +40,10 @@ def org_instructor_different_org() -> OrganizationUser:
     )
     different_org = Organization.objects.create(name="Different Org")
     instructor = OrganizationUser.objects.create(
-        user=instructor_user, organization=different_org, role="instructor"
+        user=instructor_user,
+        organization=different_org,
+        role="instructor",
+        display_name="Instructor Different Org",
     )
     return instructor
 
@@ -180,6 +183,7 @@ class TestCourseInstructorUniqueness:
             user=instructor_user2,
             organization=organization,
             role="instructor",
+            display_name="Instructor 2",
         )
 
         instructor_user3 = User.objects.create_user(
@@ -191,6 +195,7 @@ class TestCourseInstructorUniqueness:
             user=instructor_user3,
             organization=organization,
             role="instructor",
+            display_name="Instructor 3",
         )
 
         course_instr1 = CourseInstructor.objects.create(
@@ -237,11 +242,13 @@ class TestCourseInstructorRelationships:
             user=instructor_user1,
             organization=organization,
             role="instructor",
+            display_name="Instructor 1",
         )
         org_instructor2 = OrganizationUser.objects.create(
             user=instructor_user2,
             organization=organization,
             role="instructor",
+            display_name="Instructor 2",
         )
 
         CourseInstructor.objects.create(course=course, org_user=org_instructor1)
