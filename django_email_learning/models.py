@@ -133,6 +133,13 @@ class OrganizationUser(models.Model):
     def __str__(self) -> str:
         return f"{self.user.username} - {self.organization.name}"
 
+    def can_act_as_instructor(self) -> bool:
+        # TODO: When we add display name for org user we can also accept admin role as instructor
+        # if they have display name set, for now only users with instructor role can be course instructors
+        if self.role == "instructor":
+            return True
+        return False
+
     class Meta:
         unique_together = [["user", "organization"]]
 
@@ -303,6 +310,28 @@ class Course(models.Model):
             return final_path
         else:
             raise ValueError("Image file does not exist.")
+
+
+class CourseInstructor(models.Model):
+    course = models.ForeignKey(
+        Course, on_delete=models.CASCADE, related_name="instructors"
+    )
+    org_user = models.ForeignKey(OrganizationUser, on_delete=models.CASCADE)
+
+    def __str__(self) -> str:
+        return f"{self.course.title} - {self.org_user.user.email}"
+
+    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        if self.org_user.organization != self.course.organization:
+            raise ValidationError(
+                "Instructor must belong to the same organization as the course."
+            )
+        if not self.org_user.can_act_as_instructor():
+            raise ValidationError("Organization user doesn't have instructor role.")
+        super().save(*args, **kwargs)
+
+    class Meta:
+        unique_together = [["course", "org_user"]]
 
 
 class ExternalReference(models.Model):

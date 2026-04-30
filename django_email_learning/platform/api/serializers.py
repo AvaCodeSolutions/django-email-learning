@@ -13,6 +13,7 @@ from django.urls import reverse
 from django_email_learning.models import (
     ApiKey,
     ContentDelivery,
+    CourseInstructor,
     DeliveryStatus,
     Organization,
     ImapConnection,
@@ -118,6 +119,11 @@ class CreateCourseRequest(BaseModel):
         ],
     )
     is_public: bool = Field(default=True, examples=[True])
+    instructors: Optional[list[int]] = Field(
+        None,
+        examples=[[1, 2, 3]],
+        description="List of organization user IDs to be assigned as instructors for this course.",
+    )
 
     def to_django_model(self, organization_id: int) -> Course:
         organization = Organization.objects.get(id=organization_id)
@@ -146,6 +152,22 @@ class CreateCourseRequest(BaseModel):
         )
         if imap_connection:
             course.imap_connection = imap_connection
+        if self.instructors:
+            course.save()  # Save course before adding instructors
+            for instructor_id in self.instructors:
+                try:
+                    org_user = OrganizationUser.objects.get(
+                        id=instructor_id, organization=organization
+                    )
+                except OrganizationUser.DoesNotExist:
+                    raise ValueError(
+                        f"OrganizationUser with id {instructor_id} does not exist in organization {organization.name}."
+                    )
+                if not org_user.can_act_as_instructor():
+                    raise ValueError(
+                        f"OrganizationUser with id {instructor_id} does not have instructor role."
+                    )
+                CourseInstructor.objects.create(course=course, org_user=org_user)
         if self.image:
             course.replace_image(self.image)
         if self.target_audience:
@@ -189,6 +211,7 @@ class UpdateCourseRequest(BaseModel):
         ],
     )
     is_public: Optional[bool] = Field(None, examples=[True])
+    instructors: Optional[list[int]] = Field(None, examples=[1, 2, 3])
 
     def to_django_model(self, course_id: int) -> Course:
         try:
@@ -227,7 +250,37 @@ class UpdateCourseRequest(BaseModel):
                 course.external_references.create(name=ref["name"], url=ref["url"])
         if self.is_public is not None:
             course.is_public = self.is_public
+        if self.instructors is not None:
+            instructors_to_remove = course.instructors.exclude(
+                org_user_id__in=self.instructors
+            )
+            for instructor in instructors_to_remove:
+                instructor.delete()
+            instructors_to_add = set(self.instructors) - set(
+                course.instructors.values_list("org_user_id", flat=True)
+            )
+            for instructor_id in instructors_to_add:
+                try:
+                    org_user = OrganizationUser.objects.get(
+                        id=instructor_id, organization=course.organization
+                    )
+                except OrganizationUser.DoesNotExist:
+                    raise ValueError(
+                        f"OrganizationUser with id {instructor_id} does not exist in organization {course.organization.name}."
+                    )
+                if not org_user.can_act_as_instructor():
+                    raise ValueError(
+                        f"OrganizationUser with id {instructor_id} does not have instructor role."
+                    )
+                CourseInstructor.objects.create(course=course, org_user=org_user)
         return course
+
+
+class InstructorResponse(BaseModel):
+    id: int
+    email: str
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class CourseResponse(BaseModel):
@@ -246,6 +299,7 @@ class CourseResponse(BaseModel):
     target_audience: Optional[str] = None
     external_references: Optional[list[dict[str, str]]] = None
     is_public: bool
+    instructors: Optional[list[InstructorResponse]] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -278,6 +332,12 @@ class CourseResponse(BaseModel):
                 if course.external_references.exists()
                 else None,
                 "is_public": course.is_public,
+                "instructors": [
+                    InstructorResponse(
+                        id=instructor.org_user.id, email=instructor.org_user.user.email
+                    )
+                    for instructor in course.instructors.all()
+                ],
             }
         )
 
@@ -450,6 +510,7 @@ class OrganizationUserResponse(BaseModel):
     organization_id: int
     email: str
     role: UserRole
+    can_act_as_instructor: bool
 
     @staticmethod
     def from_django_model(org_user: OrganizationUser) -> "OrganizationUserResponse":
@@ -459,6 +520,7 @@ class OrganizationUserResponse(BaseModel):
             organization_id=org_user.organization.id,
             email=org_user.user.email,
             role=UserRole(org_user.role),
+            can_act_as_instructor=org_user.can_act_as_instructor(),
         )
 
 

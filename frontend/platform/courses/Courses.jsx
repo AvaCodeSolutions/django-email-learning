@@ -191,7 +191,7 @@ function Courses() {
         </Box>
       </Grid>
 
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm">
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="md">
         {dialogContent}
       </Dialog>
 
