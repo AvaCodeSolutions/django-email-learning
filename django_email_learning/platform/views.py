@@ -293,10 +293,12 @@ class CourseView(BasePlatformView):
             "waiting_time": _("Waiting Time"),
             "title": _("Title"),
             "add_quiz": _("Add Quiz"),
+            "add_assignment": _("Add Assignment"),
             "send_lesson_to_yourself": _("Send it to yourself"),
             "add_lesson": _("Add Lesson"),
             "lesson": _("Lesson"),
             "quiz": _("Quiz"),
+            "assignment": _("Assignment"),
             "add": _("Add"),
             "new_lesson": _("New Lesson"),
             "update_lesson": _("Update Lesson"),
@@ -306,9 +308,13 @@ class CourseView(BasePlatformView):
             "edit_with_ai": _("Edit with AI"),
             "lesson_title": _("Lesson Title"),
             "blocking_quiz": _("Blocking Quiz"),
+            "blocking_assignment": _("Blocking Assignment"),
             "blocking_quiz_tooltip": _(
                 "If enabled, learners must pass the quiz to continue receiving course content. For practice quizzes that don't gate content, "
                 "you can disable this option so learners can continue with the course regardless of their quiz performance."
+            ),
+            "blocking_assignment_tooltip": _(
+                "If enabled, learners must submit the assignment, and the assignment must be approved by an instructor before they can continue receiving course content."
             ),
             "lesson_waiting_tooltip": _(
                 "Set the amount of time that we should wait after the previous lesson or quiz submission before sending this lesson"
@@ -337,6 +343,12 @@ class CourseView(BasePlatformView):
             "lesson_unsaved_changes_hint": _("You have unsaved changes."),
             "save_quiz": _("Save Quiz"),
             "quiz_title": _("Quiz Title"),
+            "assignment_title": _("Assignment Title"),
+            "new_assignment": _("New Assignment"),
+            "update_assignment": _("Update Assignment"),
+            "assignment_submission_required": _(
+                "At least one type of submission is required for the assignment. Please enable text submission, file submission, or both."
+            ),
             "add_question": _("Add Question"),
             "quiz_settings": _("Quiz Settings"),
             "waiting_period": _("Waiting Period"),
@@ -366,7 +378,10 @@ class CourseView(BasePlatformView):
             ),
             "percentage": _("Percentage"),
             "quiz_deadline": _("Deadline to Complete Quiz"),
-            "deadline_tooltip": _("Maximum time allowed to complete the quiz"),
+            "assignment_deadline": _("Deadline to Complete Assignment"),
+            "deadline_tooltip": _(
+                "Maximum time allowed to complete the quiz or assignment"
+            ),
             "question_selection_strategy": _("Selection Strategy"),
             "question_selection_strategy_tooltip": _(
                 "Choose how questions are selected for each quiz attempt. If the total number of questions is fewer than 6, all questions will be used even if 'Random Questions' is selected."
@@ -414,6 +429,18 @@ class CourseView(BasePlatformView):
                 "When a quiz does not have a deadline, you can define a reminder interval to specify "
                 "how often learners should receive reminder emails to complete the quiz. Setting to 0 means no reminder emails will be sent."
             ),
+            "assignment_description": _("Assignment Description"),
+            "assignment_description_required": _("Assignment description is required."),
+            "assignment_title_required": _("Assignment title is required."),
+            "save_assignment": _("Save Assignment"),
+            "assignment_saved_success": _("Assignment saved successfully."),
+            "assignment_waiting_tooltip": _(
+                "Set the amount of time to wait after the previous content delivery before sending this assignment."
+            ),
+            "no_deadline": _("No Deadline"),
+            "requires_text_submission": _("Requires Text Submission"),
+            "requires_file_submission": _("Requires File Submission"),
+            "save_failed": _("Unable to save. Please try again."),
         }
 
     def get_app_context(self) -> Dict[str, Any]:
@@ -452,6 +479,8 @@ class Organizations(BasePlatformView):
             "organization_is_public_helper_text": _(
                 "Public organizations are visible on your public pages. Turn this off to keep the organization private."
             ),
+            "requires_text_submission": _("Requires Text Submission"),
+            "requires_file_submission": _("Requires File Submission"),
             "uploaded_image_alt": _("Organization Logo"),
             "private": _("Private"),
             "are_you_sure_delete_org": _(

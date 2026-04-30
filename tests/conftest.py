@@ -6,6 +6,7 @@ from django_email_learning.models import (
     ImapConnection,
     Quiz,
     Lesson,
+    Assignment,
     Course,
     BlockedEmail,
     Learner,
@@ -199,6 +200,20 @@ def lesson(db) -> Lesson:
 
 
 @pytest.fixture()
+def assignment(db) -> Assignment:
+    assignment = Assignment(
+        title="Sample Assignment",
+        description="Assignment description",
+        is_blocking=True,
+        deadline_days=7,
+        requires_text_submission=True,
+        requires_file_submission=False,
+    )
+    assignment.save()
+    return assignment
+
+
+@pytest.fixture()
 def course(db, imap_connection) -> Course:
     course = Course(
         title="Sample Course",
@@ -252,6 +267,19 @@ def course_quiz_content(db, course, quiz) -> CourseContent:
         type="quiz",
         quiz=quiz,
         waiting_period=3600,
+    )
+    return content
+
+
+@pytest.fixture
+def course_assignment_content(db, course, assignment) -> CourseContent:
+    content = CourseContent.objects.create(
+        course=course,
+        priority=3,
+        type="assignment",
+        assignment=assignment,
+        waiting_period=7200,
+        is_published=False,
     )
     return content
 

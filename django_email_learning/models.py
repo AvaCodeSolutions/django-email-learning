@@ -414,6 +414,34 @@ class Answer(models.Model):
         return super().delete(*args, **kwargs)
 
 
+class Assignment(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    is_blocking = models.BooleanField(
+        default=True,
+        help_text="Whether the learner is required to submit the assignment to proceed to the next content.",
+    )
+    deadline_days = models.IntegerField(
+        help_text="Time limit to complete the assignment in days. 0 indicates no deadline.",
+        validators=[MinValueValidator(0)],
+    )
+    requires_text_submission = models.BooleanField(
+        help_text="Whether the assignment requires text submission."
+    )
+    requires_file_submission = models.BooleanField(
+        help_text="Whether the assignment requires file submission."
+    )
+    reminder_interval_days = models.IntegerField(
+        help_text="For assignments without a deadline (deadline_days = 0), send reminder emails every N days.",
+        validators=[MinValueValidator(0)],
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self) -> str:
+        return self.title
+
+
 class CourseContent(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     priority = models.IntegerField()
@@ -422,10 +450,14 @@ class CourseContent(models.Model):
         choices=[
             ("lesson", "Lesson"),
             ("quiz", "Quiz"),
+            ("assignment", "Assignment"),
         ],
     )
     lesson = models.ForeignKey(Lesson, null=True, blank=True, on_delete=models.CASCADE)
     quiz = models.ForeignKey(Quiz, null=True, blank=True, on_delete=models.CASCADE)
+    assignment = models.ForeignKey(
+        Assignment, null=True, blank=True, on_delete=models.CASCADE
+    )
     waiting_period = models.IntegerField(
         help_text="Waiting period in seconds after previous content is sent or submited."
     )
@@ -436,7 +468,25 @@ class CourseContent(models.Model):
             return f"{self.priority} - Lesson: {self.lesson.title}"
         elif self.type == "quiz" and self.quiz:
             return f"{self.priority} - Quiz: {self.quiz.title}"
+        elif self.type == "assignment" and self.assignment:
+            return f"{self.priority} - Assignment: {self.assignment.title}"
         return f"{self.course.title} content #{self.priority}"
+
+    @property
+    def deadline_days(self) -> Optional[int]:
+        if self.type == "quiz" and self.quiz:
+            return self.quiz.deadline_days
+        elif self.type == "assignment" and self.assignment:
+            return self.assignment.deadline_days
+        return None
+
+    @property
+    def reminder_interval_days(self) -> Optional[int]:
+        if self.type == "quiz" and self.quiz:
+            return self.quiz.reminder_interval_days
+        elif self.type == "assignment" and self.assignment:
+            return self.assignment.reminder_interval_days
+        return None
 
     @property
     def title(self) -> str:
@@ -444,6 +494,8 @@ class CourseContent(models.Model):
             return self.lesson.title
         elif self.type == "quiz" and self.quiz:
             return self.quiz.title
+        elif self.type == "assignment" and self.assignment:
+            return self.assignment.title
         return "Untitled Content"
 
     @property
@@ -456,6 +508,8 @@ class CourseContent(models.Model):
     def is_blocking(self) -> Optional[bool]:
         if self.type == "quiz" and self.quiz:
             return self.quiz.is_blocking
+        elif self.type == "assignment" and self.assignment:
+            return self.assignment.is_blocking
         return None
 
     def human_readable_waiting_period(self) -> str:
@@ -482,10 +536,14 @@ class CourseContent(models.Model):
             raise ValidationError("Lesson must be provided for lesson content.")
         if self.type == "quiz" and not self.quiz:
             raise ValidationError("Quiz must be provided for quiz content.")
+        if self.type == "assignment" and not self.assignment:
+            raise ValidationError("Assignment must be provided for assignment content.")
         if self.type == "lesson" and self.lesson:
             self.lesson.full_clean()
         elif self.type == "quiz" and self.quiz:
             self.quiz.full_clean()
+        elif self.type == "assignment" and self.assignment:
+            self.assignment.full_clean()
 
     def full_clean(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self._validate_content()
@@ -516,6 +574,11 @@ class CourseContent(models.Model):
                 fields=["course", "lesson"],
                 condition=models.Q(lesson__isnull=False),
                 name="unique_lesson_per_course",
+            ),
+            models.UniqueConstraint(
+                fields=["course", "assignment"],
+                condition=models.Q(assignment__isnull=False),
+                name="unique_assignment_per_course",
             ),
             models.UniqueConstraint(
                 fields=["course", "priority"],
@@ -861,28 +924,29 @@ class ContentDelivery(models.Model):
         return True
 
     def calculate_remind_at(self) -> Optional[datetime]:
-        if self.course_content.quiz:
-            if self.course_content.quiz.deadline_days > 0:
-                if self.course_content.quiz.deadline_days > 1:
+        if self.course_content.quiz or self.course_content.assignment:
+            if (
+                self.course_content.deadline_days
+                and self.course_content.deadline_days > 0
+            ):
+                if self.course_content.deadline_days > 1:
                     return timezone.now() + timedelta(
-                        days=self.course_content.quiz.deadline_days - 1
+                        days=self.course_content.deadline_days - 1
                     )
                 else:
                     return timezone.now() + timedelta(
-                        hours=(self.course_content.quiz.deadline_days * 24) - 10
+                        hours=(self.course_content.deadline_days * 24) - 10
                     )
             else:
-                if self.course_content.quiz.reminder_interval_days:
+                if self.course_content.reminder_interval_days:
                     return timezone.now() + timedelta(
-                        days=self.course_content.quiz.reminder_interval_days
+                        days=self.course_content.reminder_interval_days
                     )
         return None
 
     def calculate_valid_until(self) -> Optional[datetime]:
-        if self.course_content.quiz and self.course_content.quiz.deadline_days > 0:
-            return timezone.now() + timedelta(
-                days=self.course_content.quiz.deadline_days
-            )
+        if self.course_content.deadline_days and self.course_content.deadline_days > 0:
+            return timezone.now() + timedelta(days=self.course_content.deadline_days)
         return None
 
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
@@ -947,6 +1011,9 @@ class DeliverySchedule(models.Model):
             self.link = link
             self.save()
             return link
+        elif self.delivery.course_content.assignment:
+            # TODO: Implement assignment link generation
+            return ""
         else:
             # TODO: Implement lesson link generation
             return ""
