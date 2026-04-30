@@ -2,6 +2,7 @@ import { Alert, Box, Button, Divider, IconButton, MenuItem, Stack, TextField, To
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import RequiredTextField  from '../../../src/components/RequiredTextField.jsx';
 import AddImapConnectionForm from '../components/AddImapConnectionForm.jsx';
+import AddInstructorsSection from '../components/AddInstructorsSection.jsx';
 import { useAppContext } from '../../../src/render.jsx';
 import ImageUpload from '../../../src/components/ImageUpload.jsx';
 import { useEffect, useState } from 'react';
@@ -39,6 +40,8 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     const [isPublic, setIsPublic] = useState(createMode)
     const [addImapConnection, setAddImapConnection] = useState(false)
     const [imapConnectionId, setImapConnectionId] = useState(null)
+    const [addInstructors, setAddInstructors] = useState(false)
+    const [selectedInstructorIds, setSelectedInstructorIds] = useState([])
     const [titleHelperText, setTitleHelperText] = useState("")
     const [slugHelperText, setSlugHelperText] = useState("")
     const [descriptionHelperText, setDescriptionHelperText] = useState("")
@@ -57,6 +60,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
         isPublic: true,
         imapConnectionId: null,
         imageServerPath: null,
+        instructors: [],
     })
 
     const switchImapConnection = () => {
@@ -106,6 +110,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     isPublic: data.is_public ?? true,
                     imapConnectionId: data.imap_connection_id ?? null,
                     imageServerPath: data.image_path ?? null,
+                    instructors: (data.instructors || []).map((i) => i.id),
                 });
                 const initialExternalReferences = (data.external_references || []).map((reference) => ({
                     name: reference.name || '',
@@ -116,6 +121,11 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 if (data.imap_connection_id) {
                     setImapConnectionId(data.imap_connection_id);
                     setAddImapConnection(true);
+                }
+                const initialInstructors = (data.instructors || []).map((i) => i.id);
+                setSelectedInstructorIds(initialInstructors);
+                if (initialInstructors.length > 0) {
+                    setAddInstructors(true);
                 }
             })
             .catch((error) => {
@@ -262,6 +272,13 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             updatePayload.external_references = normalizedExternalReferences;
         }
 
+        const currentInstructors = addInstructors ? selectedInstructorIds : [];
+        const sortedCurrent = [...currentInstructors].sort((a, b) => a - b);
+        const sortedInitial = [...(initialValues.instructors || [])].sort((a, b) => a - b);
+        if (JSON.stringify(sortedCurrent) !== JSON.stringify(sortedInitial)) {
+            updatePayload.instructors = currentInstructors;
+        }
+
         fetch(apiBaseUrl + '/organizations/' + activeOrganizationId + '/courses/' + courseId + '/', {
         method: 'POST',
         headers: {
@@ -327,7 +344,8 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             is_public: isPublic,
             imap_connection_id: imapConnectionId ? parseInt(imapConnectionId) : null,
             external_references: normalizedExternalReferences.length > 0 ? normalizedExternalReferences : null,
-            image: imageServerPath ? imageServerPath : null
+            image: imageServerPath ? imageServerPath : null,
+            instructors: addInstructors && selectedInstructorIds.length > 0 ? selectedInstructorIds : null,
         }),
         })
         .then(response => {
@@ -493,6 +511,26 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                         activeOrganizationId={activeOrganizationId}
                         initialImapConnectionId={imapConnectionId}
                     />
+              </Box>}
+              <Divider sx={{ my: 2 }} />
+              <Box sx={{ mt: 1 }}>
+                <FormControlLabel
+                    control={<Switch onChange={() => setAddInstructors(!addInstructors)} checked={addInstructors} dir={direction} />}
+                    label={localeMessages["add_instructors"]}
+                    sx={{ m: 0 }}
+                />
+                <Tooltip title={localeMessages["instructors_tooltip"]}>
+                    <IconButton size="small">
+                        <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                </Tooltip>
+              </Box>
+              {addInstructors && <Box sx={{ py: 2 }}>
+                <AddInstructorsSection
+                    onChangeCallback={(ids) => setSelectedInstructorIds(ids)}
+                    activeOrganizationId={activeOrganizationId}
+                    initialInstructorIds={selectedInstructorIds}
+                />
               </Box>}
               <Box>
                 <ImageUpload initialUrl={imageUrl} onUploadSuccess={(data) => {

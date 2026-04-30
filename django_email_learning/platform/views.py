@@ -241,6 +241,15 @@ class Courses(BasePlatformView):
             "add_folder_helper_text": _(
                 "Add folders to fetch emails from. The 'inbox' folder is required and will always be included."
             ),  # noqa: E501
+            "add_instructors": _("Add Instructors"),
+            "instructors_tooltip": _(
+                "Assign instructors from your organization to this course. Instructors can review and approve learner assignment submissions."
+            ),
+            "select_instructors": _("Select Instructors"),
+            "new_instructor": _("New Instructor"),
+            "instructor_email": _("Instructor Email"),
+            "add_instructor": _("Add Instructor"),
+            "instructor_add_failed": _("Failed to add instructor. Please try again."),
         }
 
 

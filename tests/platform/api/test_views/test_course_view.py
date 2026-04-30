@@ -1,5 +1,9 @@
 from django.urls import reverse
-from django_email_learning.models import Organization
+from django_email_learning.models import (
+    Organization,
+    OrganizationUser,
+    CourseInstructor,
+)
 from django_email_learning.models import Course
 import json
 import uuid
@@ -469,3 +473,308 @@ def valid_update_course_payload(
         "enabled": enabled,
         "reset_imap_connection": reset_imap_connection,
     }
+
+
+# ---------------------------------------------------------------------------
+# Helper: get the OrganizationUser id for a given role (relies on users fixture)
+# ---------------------------------------------------------------------------
+
+
+def _org_user_id(role: str) -> int:
+    return OrganizationUser.objects.filter(organization_id=1, role=role).first().id
+
+
+# ---------------------------------------------------------------------------
+# Instructor — create
+# ---------------------------------------------------------------------------
+
+
+def test_create_course_with_instructor_succeeds(users, superadmin_client):
+    instructor_org_user_id = _org_user_id("instructor")
+    payload = valid_create_course_payload()
+    payload["instructors"] = [instructor_org_user_id]
+
+    response = superadmin_client.post(
+        get_url(1), json.dumps(payload), content_type="application/json"
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert "instructors" in data
+    assert len(data["instructors"]) == 1
+    assert data["instructors"][0]["id"] == instructor_org_user_id
+    assert data["instructors"][0]["email"] == "instructor@example.com"
+
+
+def test_create_course_response_has_empty_instructors_list_when_none_assigned(
+    users, superadmin_client
+):
+    payload = valid_create_course_payload()
+    # No instructors key in payload
+
+    response = superadmin_client.post(
+        get_url(1), json.dumps(payload), content_type="application/json"
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert "instructors" in data
+    # Serializer returns [] when no instructors exist (from_django_model always populates the list)
+    assert data["instructors"] == [] or data["instructors"] is None
+
+
+def test_create_course_with_non_instructor_org_user_fails(users, superadmin_client):
+    editor_org_user_id = _org_user_id("editor")
+    payload = valid_create_course_payload(slug=uuid.uuid4().hex)
+    payload["instructors"] = [editor_org_user_id]
+
+    response = superadmin_client.post(
+        get_url(1), json.dumps(payload), content_type="application/json"
+    )
+
+    assert response.status_code == 409
+    assert "error" in response.json()
+    assert "instructor role" in response.json()["error"]
+
+
+def test_create_course_with_nonexistent_org_user_fails(users, superadmin_client):
+    payload = valid_create_course_payload(slug=uuid.uuid4().hex)
+    payload["instructors"] = [99999]  # does not exist
+
+    response = superadmin_client.post(
+        get_url(1), json.dumps(payload), content_type="application/json"
+    )
+
+    assert response.status_code == 409
+    assert "error" in response.json()
+    assert "does not exist" in response.json()["error"]
+
+
+def test_create_course_with_multiple_instructors(users, superadmin_client):
+    """Only org users with instructor role are valid; add a second instructor org user first."""
+    from django.contrib.auth.models import User as DjangoUser
+
+    second_instructor_user = DjangoUser.objects.create_user(
+        username="instructor2", email="instructor2@example.com", password="pass"
+    )
+    second_org_user = OrganizationUser.objects.create(
+        user=second_instructor_user, organization_id=1, role="instructor"
+    )
+    instructor_org_user_id = _org_user_id("instructor")
+
+    payload = valid_create_course_payload(slug=uuid.uuid4().hex)
+    payload["instructors"] = [instructor_org_user_id, second_org_user.id]
+
+    response = superadmin_client.post(
+        get_url(1), json.dumps(payload), content_type="application/json"
+    )
+
+    assert response.status_code == 201
+    data = response.json()
+    assert len(data["instructors"]) == 2
+    returned_ids = {i["id"] for i in data["instructors"]}
+    assert instructor_org_user_id in returned_ids
+    assert second_org_user.id in returned_ids
+
+
+# ---------------------------------------------------------------------------
+# Instructor — response check on GET single course
+# ---------------------------------------------------------------------------
+
+
+def test_get_single_course_response_includes_instructors(users, superadmin_client):
+    instructor_org_user_id = _org_user_id("instructor")
+    payload = valid_create_course_payload(slug=uuid.uuid4().hex)
+    payload["instructors"] = [instructor_org_user_id]
+
+    create_response = superadmin_client.post(
+        get_url(1), json.dumps(payload), content_type="application/json"
+    )
+    assert create_response.status_code == 201
+    course_id = create_response.json()["id"]
+
+    get_url_single = reverse(
+        "django_email_learning:api_platform:single_course_view",
+        kwargs={"organization_id": 1, "course_id": course_id},
+    )
+    get_response = superadmin_client.get(get_url_single)
+
+    assert get_response.status_code == 200
+    data = get_response.json()
+    assert "instructors" in data
+    assert len(data["instructors"]) == 1
+    assert data["instructors"][0]["id"] == instructor_org_user_id
+    assert data["instructors"][0]["email"] == "instructor@example.com"
+
+
+# ---------------------------------------------------------------------------
+# Instructor — update (add, replace, remove)
+# ---------------------------------------------------------------------------
+
+
+def _single_course_url(course_id: int) -> str:
+    return reverse(
+        "django_email_learning:api_platform:single_course_view",
+        kwargs={"organization_id": 1, "course_id": course_id},
+    )
+
+
+def test_update_course_adds_instructor(users, superadmin_client):
+    instructor_org_user_id = _org_user_id("instructor")
+
+    # Create course without instructors
+    create_response = superadmin_client.post(
+        get_url(1),
+        json.dumps(valid_create_course_payload(slug=uuid.uuid4().hex)),
+        content_type="application/json",
+    )
+    assert create_response.status_code == 201
+    course_id = create_response.json()["id"]
+
+    # Update to assign instructor
+    update_response = superadmin_client.post(
+        _single_course_url(course_id),
+        json.dumps({"instructors": [instructor_org_user_id]}),
+        content_type="application/json",
+    )
+
+    assert update_response.status_code == 200
+    data = update_response.json()
+    assert len(data["instructors"]) == 1
+    assert data["instructors"][0]["id"] == instructor_org_user_id
+
+
+def test_update_course_removes_instructor_when_not_in_list(users, superadmin_client):
+    from django.contrib.auth.models import User as DjangoUser
+
+    # Create a second instructor org user
+    second_user = DjangoUser.objects.create_user(
+        username="instructor_remove", email="instr_remove@example.com", password="pass"
+    )
+    second_org_user = OrganizationUser.objects.create(
+        user=second_user, organization_id=1, role="instructor"
+    )
+    instructor_org_user_id = _org_user_id("instructor")
+
+    # Create course with both instructors
+    payload = valid_create_course_payload(slug=uuid.uuid4().hex)
+    payload["instructors"] = [instructor_org_user_id, second_org_user.id]
+    create_response = superadmin_client.post(
+        get_url(1), json.dumps(payload), content_type="application/json"
+    )
+    assert create_response.status_code == 201
+    course_id = create_response.json()["id"]
+    assert len(create_response.json()["instructors"]) == 2
+
+    # Update: only keep the first instructor (remove second)
+    update_response = superadmin_client.post(
+        _single_course_url(course_id),
+        json.dumps({"instructors": [instructor_org_user_id]}),
+        content_type="application/json",
+    )
+
+    assert update_response.status_code == 200
+    data = update_response.json()
+
+    assert len(data["instructors"]) == 1
+    assert data["instructors"][0]["id"] == instructor_org_user_id
+    # Confirm DB record is gone
+    assert not CourseInstructor.objects.filter(
+        course_id=course_id, org_user=second_org_user
+    ).exists()
+
+
+def test_update_course_clears_all_instructors_with_empty_list(users, superadmin_client):
+    instructor_org_user_id = _org_user_id("instructor")
+
+    payload = valid_create_course_payload(slug=uuid.uuid4().hex)
+    payload["instructors"] = [instructor_org_user_id]
+    create_response = superadmin_client.post(
+        get_url(1), json.dumps(payload), content_type="application/json"
+    )
+    assert create_response.status_code == 201
+    course_id = create_response.json()["id"]
+
+    # Pass empty list to clear all instructors
+    update_response = superadmin_client.post(
+        _single_course_url(course_id),
+        json.dumps({"instructors": []}),
+        content_type="application/json",
+    )
+
+    assert update_response.status_code == 200
+    data = update_response.json()
+    assert data["instructors"] == []
+    assert not CourseInstructor.objects.filter(course_id=course_id).exists()
+
+
+def test_update_course_omitting_instructors_does_not_change_them(
+    users, superadmin_client
+):
+    """Passing no 'instructors' key should leave existing instructors untouched."""
+    instructor_org_user_id = _org_user_id("instructor")
+
+    payload = valid_create_course_payload(slug=uuid.uuid4().hex)
+    payload["instructors"] = [instructor_org_user_id]
+    create_response = superadmin_client.post(
+        get_url(1), json.dumps(payload), content_type="application/json"
+    )
+    assert create_response.status_code == 201
+    course_id = create_response.json()["id"]
+
+    # Update title only — no 'instructors' key
+    update_response = superadmin_client.post(
+        _single_course_url(course_id),
+        json.dumps({"title": "New Title"}),
+        content_type="application/json",
+    )
+
+    assert update_response.status_code == 200
+    data = update_response.json()
+    assert data["title"] == "New Title"
+    assert len(data["instructors"]) == 1
+    assert data["instructors"][0]["id"] == instructor_org_user_id
+
+
+def test_update_course_with_non_instructor_role_fails(users, superadmin_client):
+    editor_org_user_id = _org_user_id("editor")
+
+    create_response = superadmin_client.post(
+        get_url(1),
+        json.dumps(valid_create_course_payload(slug=uuid.uuid4().hex)),
+        content_type="application/json",
+    )
+    assert create_response.status_code == 201
+    course_id = create_response.json()["id"]
+
+    update_response = superadmin_client.post(
+        _single_course_url(course_id),
+        json.dumps({"instructors": [editor_org_user_id]}),
+        content_type="application/json",
+    )
+
+    assert update_response.status_code == 409
+    assert "error" in update_response.json()
+    assert "instructor role" in update_response.json()["error"]
+
+
+def test_update_course_with_nonexistent_instructor_org_user_fails(
+    users, superadmin_client
+):
+    create_response = superadmin_client.post(
+        get_url(1),
+        json.dumps(valid_create_course_payload(slug=uuid.uuid4().hex)),
+        content_type="application/json",
+    )
+    assert create_response.status_code == 201
+    course_id = create_response.json()["id"]
+
+    update_response = superadmin_client.post(
+        _single_course_url(course_id),
+        json.dumps({"instructors": [99999]}),
+        content_type="application/json",
+    )
+
+    assert update_response.status_code == 409
+    assert "error" in update_response.json()
+    assert "does not exist" in update_response.json()["error"]
