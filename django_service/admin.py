@@ -13,6 +13,7 @@ from django_email_learning.models import (
     DeliverySchedule,
     QuizSubmission,
     JobExecution,
+    AssignmentSubmission,
 )
 from django_email_learning.oauth_integrations.models import Session
 
@@ -71,3 +72,4 @@ admin.site.register(InboxFolder)
 admin.site.register(Lesson)
 admin.site.register(Quiz)
 admin.site.register(Session, SessionAdmin)
+admin.site.register(AssignmentSubmission)

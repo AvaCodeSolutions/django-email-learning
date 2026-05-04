@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from django.views import View
 from django.urls import reverse
+from django.utils import timezone
 from django_email_learning.personalised.api.serializers import (
     QuizSubmissionRequest,
     QuestionResponse,
@@ -9,6 +10,7 @@ from django_email_learning.services.metrics_service import MetricsService
 from django_email_learning.services import jwt_service
 from django.utils.translation import gettext as _
 from django_email_learning.models import (
+    AssignmentSubmission,
     ContentDelivery,
     Enrollment,
     Certificate,
@@ -19,10 +21,173 @@ from django_email_learning.models import (
 from pydantic import ValidationError
 import json
 import logging
+from django.core.files.storage import default_storage
 
 METRIC_SERVICE = MetricsService()
 
 logger = logging.getLogger(__name__)
+
+
+class FileUploadView(View):
+    def post(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
+        token = request.POST.get("token")
+        uploaded_file = request.FILES.get("file")
+
+        if not token:
+            return JsonResponse({"error": _("Token is required.")}, status=400)
+
+        if not uploaded_file:
+            return JsonResponse({"error": _("No file uploaded.")}, status=400)
+
+        try:
+            decoded = jwt_service.decode_jwt(token=token)
+        except jwt_service.InvalidTokenException as jde:
+            return JsonResponse({"error": str(jde)}, status=400)
+        except jwt_service.ExpiredTokenException as ete:
+            return JsonResponse({"error": str(ete)}, status=410)
+
+        try:
+            delivery = ContentDelivery.objects.get(
+                id=decoded["delivery_id"],
+                hash_value=decoded["delivery_hash"],
+            )
+        except ContentDelivery.DoesNotExist:
+            return JsonResponse(
+                {
+                    "error": "The content delivery associated with this token does not exist."
+                },
+                status=500,
+            )
+
+        if delivery.enrollment.status != EnrollmentStatus.ACTIVE:
+            return JsonResponse(
+                {"error": _("File upload is not valid anymore")}, status=400
+            )
+
+        date_prefix = timezone.now().strftime("%Y%m%d")
+        file_path = default_storage.save(
+            f"uploads/{date_prefix}/{delivery.enrollment.course.organization.id}/{delivery.id}/{uploaded_file.name}",
+            uploaded_file,
+        )
+
+        return JsonResponse(
+            {
+                "file_path": file_path,
+                "file_name": uploaded_file.name,
+            },
+            status=201,
+        )
+
+
+class AssignmentSubmissionView(View):
+    def post(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
+        payload = json.loads(request.body)
+        token = payload.get("token")
+        text_submission = payload.get("text_submission")
+        file_submission = payload.get("file_path")
+
+        if not text_submission and not file_submission:
+            return JsonResponse(
+                {
+                    "error": _(
+                        "At least one of text submission or file submission is required."
+                    )
+                },
+                status=400,
+            )
+
+        try:
+            decoded = jwt_service.decode_jwt(token=token)
+        except jwt_service.InvalidTokenException as jde:
+            return JsonResponse({"error": str(jde)}, status=400)
+        except jwt_service.ExpiredTokenException as ete:
+            return JsonResponse({"error": str(ete)}, status=410)
+
+        delivery_id = decoded["delivery_id"]
+        try:
+            delivery = ContentDelivery.objects.get(
+                id=delivery_id, hash_value=decoded["delivery_hash"]
+            )
+        except ContentDelivery.DoesNotExist:
+            return JsonResponse(
+                {
+                    "error": "The content delivery associated with this token does not exist."
+                },
+                status=500,
+            )
+
+        existing_submission = AssignmentSubmission.objects.filter(
+            delivery=delivery
+        ).first()
+        if (
+            existing_submission
+            and existing_submission.status
+            != AssignmentSubmission.SubmissionStatus.REQUESTING_CHANGES
+        ):
+            return JsonResponse(
+                {
+                    "error": _(
+                        "There is already a submission for this assignment. Please wait for it to be reviewed before submitting again."
+                    )
+                },
+                status=400,
+            )
+
+        enrollment = delivery.enrollment
+        if enrollment.status != EnrollmentStatus.ACTIVE:
+            return JsonResponse(
+                {"error": "Assignment submission is not valid anymore"}, status=400
+            )
+
+        assignment = delivery.course_content.assignment
+        if not assignment:
+            return JsonResponse(
+                {"error": "No assignment associated with this link"}, status=500
+            )
+
+        if assignment.requires_text_submission and not text_submission:
+            return JsonResponse(
+                {"error": _("Text submission is required for this assignment.")},
+                status=400,
+            )
+
+        if assignment.requires_file_submission and not file_submission:
+            return JsonResponse(
+                {"error": _("File submission is required for this assignment.")},
+                status=400,
+            )
+
+        file_path = None
+        if file_submission:
+            file_path = AssignmentSubmission.save_file(
+                file_path=file_submission,
+                delivery=delivery,
+            )
+
+        submission, created = AssignmentSubmission.objects.update_or_create(
+            delivery=delivery,
+            defaults={
+                "file_submission": file_path if file_submission else None,
+                "text_submission": text_submission if text_submission else None,
+            },
+        )
+        if not created:
+            submission.status = AssignmentSubmission.SubmissionStatus.PENDING_REVIEW
+            submission.save()
+
+        METRIC_SERVICE.assignment_submitted(
+            course_slug=enrollment.course.slug,
+            organization_id=enrollment.course.organization.id,
+            assignment_id=assignment.id,
+        )
+
+        return JsonResponse(
+            {
+                "message": _("Your assignment submission has been recorded."),
+                "status": submission.status,
+            },
+            status=200,
+        )
 
 
 class QuizSubmissionView(View):

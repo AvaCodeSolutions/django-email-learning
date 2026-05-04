@@ -31,6 +31,7 @@ from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
 from datetime import timedelta
 from django_email_learning.services import jwt_service
+from django_email_learning.services.utils import mask_email
 
 from PIL import Image
 from typing import Optional
@@ -1029,6 +1030,10 @@ class DeliverySchedule(models.Model):
             "delivery_id": self.delivery.id,
             "delivery_hash": self.delivery.hash_value,
         }
+        if self.delivery.course_content.deadline_days:
+            exp = self.time + timedelta(days=self.delivery.course_content.deadline_days)
+        else:
+            exp = datetime.max
 
         if self.delivery.course_content.quiz:
             if (
@@ -1038,9 +1043,7 @@ class DeliverySchedule(models.Model):
                 payload[
                     "question_ids"
                 ] = self.delivery.course_content.quiz.random_question_ids()  # type: ignore[assignment]
-            exp = self.time + timedelta(
-                days=self.delivery.course_content.quiz.deadline_days
-            )
+
             token = jwt_service.generate_jwt(payload=payload, exp=exp)
             quiz_path = reverse("django_email_learning:personalised:quiz_public_view")
             link = f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{quiz_path}?token={token}"
@@ -1048,8 +1051,14 @@ class DeliverySchedule(models.Model):
             self.save()
             return link
         elif self.delivery.course_content.assignment:
-            # TODO: Implement assignment link generation
-            return ""
+            token = jwt_service.generate_jwt(payload=payload, exp=exp)
+            assignment_path = reverse(
+                "django_email_learning:personalised:assignment_public_view"
+            )
+            link = f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{assignment_path}?token={token}"
+            self.link = link
+            self.save()
+            return link
         else:
             # TODO: Implement lesson link generation
             return ""
@@ -1089,6 +1098,86 @@ class QuizSubmission(models.Model):
 
     def __str__(self) -> str:
         return f"{self.delivery.course_content.quiz.title} | {self.delivery.enrollment.learner.email} | Score: {self.score} | Passed: {self.is_passed}"  # type: ignore[union-attr]
+
+
+class AssignmentSubmission(models.Model):
+    class SubmissionStatus(models.TextChoices):
+        PENDING_REVIEW = "pending_review", "Pending Review"
+        REQUESTING_CHANGES = "requesting_changes", "Requesting Changes"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+
+    delivery = models.OneToOneField(
+        ContentDelivery,
+        on_delete=models.CASCADE,
+        related_name="assignment_submissions",
+        unique=True,
+    )
+    text_submission = models.TextField(null=True, blank=True)
+    file_submission = models.FileField(
+        upload_to="assignment_submissions/", null=True, blank=True
+    )
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        max_length=50,
+        choices=SubmissionStatus.choices,
+        default=SubmissionStatus.PENDING_REVIEW,
+        db_index=True,
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewer = models.ForeignKey(
+        OrganizationUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_assignments",
+    )
+
+    @staticmethod
+    def save_file(file_path: str, delivery: ContentDelivery) -> str:
+        if default_storage.exists(file_path):
+            if default_storage.size(file_path) > 10 * 1024 * 1024:
+                raise ValueError(
+                    "File size exceeds the maximum allowed limit of 10 MB."
+                )
+            file = default_storage.open(file_path)
+            final_path = f"organizations/{delivery.enrollment.course.organization.id}/assignments/{delivery.id}/{file_path.split('/')[-1]}"
+            default_storage.save(final_path, file)
+            return final_path
+        else:
+            raise ValueError("File does not exist.")
+
+    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        if self.delivery.course_content.type != "assignment":
+            raise ValidationError(
+                "Sent item must be associated with an assignment content."
+            )
+        if not self.text_submission and not self.file_submission:
+            raise ValidationError(
+                "At least one of text submission or file submission must be provided."
+            )
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return f"{self.delivery.course_content.assignment.title} | {mask_email(self.delivery.enrollment.learner.email)} | Submitted at: {self.submitted_at}"  # type: ignore[union-attr]
+
+
+class AssignmentFeedback(models.Model):
+    submission = models.OneToOneField(
+        AssignmentSubmission, on_delete=models.CASCADE, related_name="feedback"
+    )
+    comments = models.TextField()
+    provided_at = models.DateTimeField(auto_now_add=True)
+    provided_by = models.ForeignKey(
+        OrganizationUser,
+        on_delete=models.SET_NULL,
+        related_name="provided_feedbacks",
+        null=True,
+    )
+
+    def __str__(self) -> str:
+        return f"Feedback for {self.submission}"
 
 
 class ApiKey(EncryptionMixin):
