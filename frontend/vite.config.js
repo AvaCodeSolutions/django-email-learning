@@ -34,7 +34,7 @@ export default defineConfig({
       '@emotion/styled',
     ],
     // Force pre-bundling for MPA entry pages.
-    entries: ['./platform/courses/Courses.jsx', './platform/course/Course.jsx', './platform/organizations/Organizations.jsx', './platform/learners/Learners.jsx', './platform/settings_api_keys/SettingsApiKeys.jsx', './public/organization/Organization.jsx', './personalised/quiz_public/QuizPublic.jsx', './personalised/command_result/CommandResult.jsx'],
+    entries: ['./platform/courses/Courses.jsx', './platform/course/Course.jsx', './platform/organizations/Organizations.jsx', './platform/learners/Learners.jsx', './platform/settings_api_keys/SettingsApiKeys.jsx', './public/organization/Organization.jsx', './personalised/quiz_public/QuizPublic.jsx', './personalised/assignment_public/Assignment.jsx', './personalised/command_result/CommandResult.jsx'],
   },
   build: {
     minify: 'terser',
@@ -55,6 +55,7 @@ export default defineConfig({
         organization: resolve(__dirname, 'public/organization/index.html'),
         public_course: resolve(__dirname, "public/course/index.html"),
         quiz_public: resolve(__dirname, "personalised/quiz_public/index.html"),
+        assignment_public: resolve(__dirname, "personalised/assignment_public/index.html"),
         certificate: resolve(__dirname, "personalised/certificate/index.html"),
         certtificate_form: resolve(__dirname, "personalised/certificate_form/index.html"),
         command_result: resolve(__dirname, "personalised/command_result/index.html"),

@@ -84,6 +84,12 @@ class BaseTemplateView(View, TemplateResponseMixin):
                 title=_("Expired Link"),
             )
 
+    def get_token_and_decoded_token(self, request) -> tuple[str, dict] | HttpResponse:  # type: ignore[no-untyped-def]
+        decoded_token = self.get_decoded_token(request)
+        if isinstance(decoded_token, HttpResponse):
+            return decoded_token
+        return request.GET.get("token", ""), decoded_token
+
     def get_app_context(self) -> dict:  # type: ignore[no-untyped-def]
         current_lang_code = get_language()
         lang_info = get_language_info(current_lang_code)
@@ -91,16 +97,133 @@ class BaseTemplateView(View, TemplateResponseMixin):
             "direction": "rtl" if lang_info["bidi"] else "ltr",
         }
 
+    def delivery_from_token(self, request) -> ContentDelivery | HttpResponse:  # type: ignore[no-untyped-def]
+        decoded_token = self.get_decoded_token(request)
+        if isinstance(decoded_token, HttpResponse):
+            return decoded_token  # Return error response if token is invalid
+        try:
+            delivery = ContentDelivery.objects.get(
+                id=decoded_token["delivery_id"],
+                hash_value=decoded_token["delivery_hash"],
+            )
+            return delivery
+        except ContentDelivery.DoesNotExist as e:
+            return self.error_response(
+                message=_("The delivery does not exist."),
+                exception=e,
+                status_code=404,
+                title=_("Invalid Delivery"),
+            )
+
+
+class AssignmentPublicView(BaseTemplateView):
+    template_name = "personalised/assignment_public.html"
+
+    def get(self, request, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
+        token_and_decoded = self.get_token_and_decoded_token(request)
+        if isinstance(token_and_decoded, HttpResponse):
+            return token_and_decoded
+
+        token, decoded_token = token_and_decoded
+        try:
+            delivery = ContentDelivery.objects.get(
+                id=decoded_token["delivery_id"],
+                hash_value=decoded_token["delivery_hash"],
+            )
+            enrollment = delivery.enrollment
+            if enrollment.status != EnrollmentStatus.ACTIVE:
+                return self.error_response(
+                    message=_("This assignment is no longer valid."),
+                    exception=ValueError("Enrollment is not active"),
+                    title=_("Invalid Assignment"),
+                )
+            assignment = delivery.course_content.assignment
+            if not assignment:
+                return self.error_response(
+                    message=_("There is no assignment associated with this link."),
+                    exception=None,
+                    title=_("Invalid Assignment"),
+                )
+            if not delivery.course_content.is_published:
+                return self.error_response(
+                    message=_(
+                        "There is no valid assignment associated with this link."
+                    ),
+                    exception=ValueError("Assignment is not published"),
+                    title=_("Invalid Assignment"),
+                )
+            assignment_data = {
+                "id": assignment.id,
+                "title": assignment.title,
+                "description": assignment.description,
+                "requires_file_submission": assignment.requires_file_submission,
+                "requires_text_submission": assignment.requires_text_submission,
+            }
+            return self.render_to_response(
+                context={
+                    "appContext": {
+                        "assignment": assignment_data,
+                        "token": token,
+                        "csrfToken": request.META.get("CSRF_COOKIE", ""),
+                        "apiEndpoint": reverse(
+                            "django_email_learning:api_personalised:assignment_submission"
+                        ),
+                        "fileUploadApiEndpoint": reverse(
+                            "django_email_learning:api_personalised:file_upload"
+                        ),
+                        "localeMessages": {
+                            "text_submission_label": _("Your Answer"),
+                            "file_submission_label": _("Upload Your File"),
+                            "submission_success": _(
+                                "Your assignment has been submitted successfully!"
+                            ),
+                            "submission_error": _(
+                                "An error occurred while submitting your assignment. Please try again later."
+                            ),
+                            "submit": _("Submit"),
+                            "close_window_message": _("You can now close this window!"),
+                        },
+                    }
+                    | self.get_app_context(),
+                }
+            )
+
+        except ContentDelivery.DoesNotExist as e:
+            if ContentDelivery.objects.filter(  # type: ignore[misc]
+                id=decoded_token.get("delivery_id")
+            ).exists():
+                return self.render_to_response(
+                    context={
+                        "appContext": {
+                            "errorMessage": _(
+                                "The assignment link has already been used and is not valid anymore."
+                            ),
+                            "localeMessages": {
+                                "close_window_message": _(
+                                    "You can now close this window!"
+                                ),
+                            },
+                        }
+                    }
+                )
+            return self.error_response(
+                message=_("An error occurred while retrieving the assignment"),
+                exception=e,
+                title=_("Error"),
+                status_code=410,
+            )
+
 
 class QuizPublicView(BaseTemplateView):
     template_name = "personalised/quiz_public.html"
 
     def get(self, request, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
+        token_and_decoded = self.get_token_and_decoded_token(request)
+        if isinstance(token_and_decoded, HttpResponse):
+            return token_and_decoded
+
+        token, decoded_token = token_and_decoded
         try:
-            token = request.GET["token"]
-            decoded_token = self.get_decoded_token(request)
-            if isinstance(decoded_token, HttpResponse):
-                return decoded_token  # Return error response if token is invalid
             question_ids = decoded_token.get("question_ids", [])
             delivery = ContentDelivery.objects.get(
                 id=decoded_token["delivery_id"],
@@ -192,27 +315,6 @@ class QuizPublicView(BaseTemplateView):
                 exception=e,
                 title=_("Error"),
                 status_code=410,
-            )
-        except KeyError as e:
-            return self.error_response(
-                message=_("The link is not valid"),
-                exception=e,
-                status_code=400,
-                title=_("Invalid Link"),
-            )
-        except jwt_service.InvalidTokenException as e:
-            return self.error_response(
-                message=_("The link is not valid"),
-                exception=e,
-                status_code=400,
-                title=_("Invalid Link"),
-            )
-        except jwt_service.ExpiredTokenException as e:
-            return self.error_response(
-                message=_("The link has expired"),
-                exception=e,
-                status_code=410,
-                title=_("Expired Link"),
             )
 
 

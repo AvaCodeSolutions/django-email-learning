@@ -52,6 +52,16 @@ class MetricsService:
     def user_completed_course(self, course_slug: str, organization_id: int) -> None:
         self.metric_recorder.user_completed_course(course_slug, organization_id)
 
+    def assignment_submitted(
+        self,
+        course_slug: str,
+        organization_id: int,
+        assignment_id: int,
+    ) -> None:
+        self.metric_recorder.assignment_submitted(
+            course_slug, organization_id, assignment_id
+        )
+
     def quiz_submitted(
         self,
         course_slug: str,

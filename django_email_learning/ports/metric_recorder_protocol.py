@@ -30,6 +30,14 @@ class MetricRecorderProtocol(Protocol):
     def user_completed_course(self, course_slug: str, organization_id: int) -> None:
         ...
 
+    def assignment_submitted(
+        self,
+        course_slug: str,
+        organization_id: int,
+        assignment_id: int,
+    ) -> None:
+        ...
+
     def quiz_submitted(
         self,
         course_slug: str,

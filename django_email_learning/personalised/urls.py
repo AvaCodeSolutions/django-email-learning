@@ -1,6 +1,7 @@
 from django.urls import path
 from django_email_learning.personalised.views import (
     QuizPublicView,
+    AssignmentPublicView,
     VerifyEnrollmentView,
     CertificateFormView,
     CertificateView,
@@ -11,6 +12,7 @@ app_name = "django_email_learning"
 
 urlpatterns = [
     path("quiz/", QuizPublicView.as_view(), name="quiz_public_view"),
+    path("assignment/", AssignmentPublicView.as_view(), name="assignment_public_view"),
     path(
         "verify-enrollment/", VerifyEnrollmentView.as_view(), name="verify_enrollment"
     ),
