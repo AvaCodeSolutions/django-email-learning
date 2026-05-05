@@ -47,9 +47,31 @@ vi.mock('../assets/logo-h-dark.png', () => ({ default: 'logo-h-dark.png' }));
 vi.mock('../assets/logo-v-light.png', () => ({ default: 'logo-v-light.png' }));
 vi.mock('../assets/logo-v-dark.png', () => ({ default: 'logo-v-dark.png' }));
 
+// Mock Vite-specific virtual module (not available in jsdom environment)
+vi.mock('vite/modulepreload-polyfill', () => ({}));
+
+// Mock ldrs animation library (uses custom elements / browser APIs unavailable in jsdom)
+vi.mock('ldrs/react', () => ({ ChaoticOrbit: () => null }));
+vi.mock('ldrs/react/ChaoticOrbit.css', () => ({}));
+
 // Reset mocks between tests
 beforeEach(() => {
   vi.clearAllMocks();
   localStorageMock.clear();
   global.fetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({}) });
 });
+
+// ProseMirror's scroll-to-selection requires getClientRects / getBoundingClientRect
+// on Text nodes and Range objects — neither is implemented by jsdom.
+// Use plain functions (not vi.fn) so vi.clearAllMocks() in beforeEach does not
+// reset the implementation and leave them returning undefined.
+const _emptyRects = Object.assign([], { item: () => null });
+if (typeof Text !== 'undefined') {
+  Text.prototype.getClientRects = () => _emptyRects;
+  Text.prototype.getBoundingClientRect = () => new DOMRect(0, 0, 0, 0);
+}
+if (typeof Range !== 'undefined' && !Range.prototype.getClientRects) {
+  Range.prototype.getClientRects = () => _emptyRects;
+}
+// Also patch Element in case jsdom's own stub is absent in some test envs
+Element.prototype.getClientRects = () => _emptyRects;
