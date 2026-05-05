@@ -167,4 +167,6 @@ const CertificateContent = () => {
 }
 
 
+export { Certificate };
+
 render({children: <Certificate />});

@@ -335,6 +335,7 @@ class CertificateFormView(BaseTemplateView):
                         "django_email_learning:api_personalised:submit_certificate_form"
                     ),
                     "localeMessages": {
+                        "form_title": _("Certificate of Completion"),
                         "form_intro": _(
                             "Congratulations on completing the course! To issue your certificate, please enter the name you would like displayed on it."
                         ),

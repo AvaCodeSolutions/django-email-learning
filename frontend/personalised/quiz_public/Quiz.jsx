@@ -196,4 +196,5 @@ const Quiz = () => {
     </Layout>
 }
 
+export { Quiz };
 render({children: <Quiz />});

@@ -211,4 +211,6 @@ const Assignment = () => {
 };
 
 
+export { Assignment };
+
 render({ children: <Assignment /> });
