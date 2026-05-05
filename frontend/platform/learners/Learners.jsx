@@ -6,6 +6,8 @@ import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import BallotIcon from '@mui/icons-material/Ballot';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import AssignmentReturnedIcon from '@mui/icons-material/AssignmentReturned';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -39,10 +41,13 @@ function Learners(initialQs="") {
     'verified': {icon: <HowToRegIcon />, color: "#66bb6a", title: localeMessages["learner_verified"]},
     'content_sent_lesson': {icon: <LibraryBooksIcon />, color: "#00acc1", title: localeMessages["lesson_sent"]},
     'content_sent_quiz': {icon: <BallotIcon />, color: "#26a69a", title: localeMessages["quiz_sent"]},
+    'content_sent_assignment': {icon: <AssignmentIcon />, color: "#336eb7", title: localeMessages["assignment_sent"]},
     'quiz_submitted': {icon: <AssignmentReturnedIcon />, color: "#26a69a", title: localeMessages["quiz_submitted"]},
     'course_completed': {icon: <SchoolIcon />, color: "#0097a7", title: localeMessages["course_completed"]},
     'deactivated': {icon: <BackspaceIcon />, color: "#b71c1c", title: localeMessages["learner_deactivated"]},
-    "reminder_sent": {icon: <NotificationsActiveIcon />, color: "#ae4ad6", title: localeMessages["reminder_sent"]},
+    'reminder_sent': {icon: <NotificationsActiveIcon />, color: "#ae4ad6", title: localeMessages["reminder_sent"]},
+    'assignment_submitted': {icon: <AssignmentReturnedIcon />, color: "#23bca8", title: localeMessages["assignment_submitted"]},
+    'assignment_reviewed': {icon: <AssignmentIndIcon />, color: "#336eb7", title: localeMessages["assignment_reviewed"]},
   };
 
 
@@ -96,6 +101,13 @@ function Learners(initialQs="") {
                 { event.type === "quiz_submitted" && <>
                   <Box><Typography>{localeMessages["score"]}: {event.event_data.score}</Typography></Box>
                   <Box><Typography sx={{ display: 'flex', alignItems: 'center' }}>{ event.event_data.is_practice ? <Chip label={localeMessages["practice_attempt"]} size="small"/> : <>{localeMessages["result"]}: {event.event_data.is_passed ? <>{localeMessages["passed"]}<CheckCircleIcon sx={{color: "#4caf50", marginX: "4px"}} /></> : <> {localeMessages["failed"]}<CancelIcon sx={{color: "#f44336", marginX: "4px"}} /></>}</>}</Typography></Box>
+                </>}
+                { event.type === "assignment_reviewed" && <>
+                  <Box><Typography>{localeMessages["result"]}: {event.event_data.review_result === "approved" ? <><Typography component="span" sx={{color: "#4caf50"}}>{localeMessages["approved"]}</Typography><CheckCircleIcon sx={{color: "#4caf50", marginX: "4px"}} /></> : event.event_data.review_result === "rejected" ? <><Typography component="span" sx={{color: "#f44336"}}>{localeMessages["rejected"]}</Typography><CancelIcon sx={{color: "#f44336", marginX: "4px"}} /></> : <Typography component="span" sx={{color: "#ff9800"}}>{localeMessages["requesting_changes"]}</Typography>}</Typography></Box>
+                  <Box><Typography>{localeMessages["reviewed_by"]}: {event.event_data.reviewed_by}</Typography></Box>
+                </>}
+                { event.type === "assignment_submitted" && <>
+                  <Box><Typography>{localeMessages["assignment_title"]}: {event.event_data.assignment_title}</Typography></Box>
                 </>}
                 { event.type === "content_sent" && <>
                   <Box><Typography>{event.event_data.course_content_title}</Typography></Box>
