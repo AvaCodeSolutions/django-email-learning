@@ -198,4 +198,6 @@ const ApiKeys = () => {
     </Base>)
 }
 
+export default ApiKeys;
+
 render({children: <ApiKeys />});

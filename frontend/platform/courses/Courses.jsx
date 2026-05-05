@@ -199,4 +199,6 @@ function Courses() {
   )
 }
 
+export default Courses;
+
 render({children: <Courses />});
