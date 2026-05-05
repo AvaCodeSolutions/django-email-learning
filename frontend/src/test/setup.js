@@ -61,7 +61,16 @@ beforeEach(() => {
   global.fetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({}) });
 });
 
-// ProseMirror calls Element.getClientRects() when scrolling to selection.
-// jsdom does not implement this method, which causes unhandled errors during
-// ContentEditor tests.  Provide a minimal stub so ProseMirror exits cleanly.
-Element.prototype.getClientRects = vi.fn(() => []);
+// ProseMirror's scroll-to-selection requires getClientRects / getBoundingClientRect
+// on Text nodes and Range objects — neither is implemented by jsdom.
+// Provide minimal stubs so the EditorView exits cleanly instead of throwing.
+const _emptyRects = [];
+if (typeof Text !== 'undefined') {
+  Text.prototype.getClientRects = vi.fn(() => _emptyRects);
+  Text.prototype.getBoundingClientRect = vi.fn(() => new DOMRect(0, 0, 0, 0));
+}
+if (typeof Range !== 'undefined' && !Range.prototype.getClientRects) {
+  Range.prototype.getClientRects = vi.fn(() => _emptyRects);
+}
+// Also patch Element in case jsdom's own stub is absent in some test envs
+Element.prototype.getClientRects = vi.fn(() => _emptyRects);
