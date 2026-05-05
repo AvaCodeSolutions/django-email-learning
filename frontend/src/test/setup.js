@@ -47,9 +47,21 @@ vi.mock('../assets/logo-h-dark.png', () => ({ default: 'logo-h-dark.png' }));
 vi.mock('../assets/logo-v-light.png', () => ({ default: 'logo-v-light.png' }));
 vi.mock('../assets/logo-v-dark.png', () => ({ default: 'logo-v-dark.png' }));
 
+// Mock Vite-specific virtual module (not available in jsdom environment)
+vi.mock('vite/modulepreload-polyfill', () => ({}));
+
+// Mock ldrs animation library (uses custom elements / browser APIs unavailable in jsdom)
+vi.mock('ldrs/react', () => ({ ChaoticOrbit: () => null }));
+vi.mock('ldrs/react/ChaoticOrbit.css', () => ({}));
+
 // Reset mocks between tests
 beforeEach(() => {
   vi.clearAllMocks();
   localStorageMock.clear();
   global.fetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({}) });
 });
+
+// ProseMirror calls Element.getClientRects() when scrolling to selection.
+// jsdom does not implement this method, which causes unhandled errors during
+// ContentEditor tests.  Provide a minimal stub so ProseMirror exits cleanly.
+Element.prototype.getClientRects = vi.fn(() => []);
