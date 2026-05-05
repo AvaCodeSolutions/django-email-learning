@@ -176,4 +176,6 @@ function Organizations() {
     </Base>)
 }
 
+export default Organizations;
+
 render({children: <Organizations />});
