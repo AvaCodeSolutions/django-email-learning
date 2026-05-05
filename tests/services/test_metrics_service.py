@@ -89,6 +89,8 @@ def test_metrics_service_uses_configured_recorder_object_as_is(settings):
         ("user_completed_course", ("course-1", 11)),
         ("quiz_submitted", ("course-1", 11, 7, True, False)),
         ("method_executed", ("deliver_contents", 123)),
+        ("assignment_sent", ("course-1", 11, 5)),
+        ("assignment_submitted", ("course-1", 11, 5)),
     ],
 )
 def test_metrics_service_delegates_all_calls(method_name, args):

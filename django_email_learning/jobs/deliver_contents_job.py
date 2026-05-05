@@ -8,6 +8,10 @@ from django_email_learning.services.command_models.send_quiz_command import (
     SendQuizCommand,
     QuizNotFoundError,
 )
+from django_email_learning.services.command_models.send_assignment_command import (
+    SendAssignmentCommand,
+    AssignmentNotFoundError,
+)
 from django_email_learning.jobs.job_metrics import track_job_execution
 from django_email_learning.services.metrics_service import MetricsService
 from django_email_learning.models import JobExecution, JobName, JobStatus
@@ -121,6 +125,24 @@ class DeliverContentsJob:
                 logger.info(
                     f"Quiz content delivered for DeliverySchedule ID {delivery_schedule.id}. Next content scheduling is deferred until quiz completion."
                 )
+        elif (
+            course_content.type == "assignment"
+            and course_content.assignment is not None
+        ):
+            is_delivered = self.send_assignment_content(delivery_schedule)
+
+            # For assignment we don't schedule next content automatically, because the scheduling should be done after assignment completion.
+            if is_delivered:
+                if not course_content.assignment.is_blocking:
+                    # reschedule next content immediately for non-blocking assignments, For blocking assignments, the next content will be scheduled after the submission approval.
+                    logger.info(
+                        f"Non-blocking assignment content delivered for DeliverySchedule ID {delivery_schedule.id}. Scheduling next content."
+                    )
+                    next_delivery = delivery_schedule.delivery.schedule_next_delivery()
+                    if next_delivery:
+                        logger.info(
+                            f"Scheduled next delivery {next_delivery.id} for enrollment {delivery_schedule.delivery.enrollment.id}"
+                        )
 
     def send_lesson_content(self, delivery_schedule: DeliverySchedule) -> bool:
         if not delivery_schedule.delivery.course_content.lesson:
@@ -188,6 +210,44 @@ class DeliverContentsJob:
         except Exception as e:
             logger.exception(
                 f"Failed to send quiz content for DeliverySchedule ID {delivery_schedule.id}: {str(e)}"
+            )
+            self.handle_failed_delivery(delivery_schedule)
+        return False
+
+    def send_assignment_content(self, delivery_schedule: DeliverySchedule) -> bool:
+        if not delivery_schedule.delivery.course_content.assignment:
+            delivery_schedule.status = DeliveryStatus.CANCELED
+            delivery_schedule.save()
+            logger.error(
+                f"DeliverySchedule ID {delivery_schedule.id} has no associated assignment. Canceling the delivery."
+            )
+            return False
+
+        try:
+            if not delivery_schedule.link:
+                link = delivery_schedule.generate_link()
+                delivery_schedule.link = link
+                delivery_schedule.save()
+
+            command = SendAssignmentCommand(
+                content_id=delivery_schedule.delivery.course_content.id,
+                email=delivery_schedule.delivery.enrollment.learner.email,
+                link=delivery_schedule.link,
+            )
+            command.execute()
+            delivery_schedule.status = DeliveryStatus.DELIVERED
+            delivery_schedule.save()
+
+            return True
+        except AssignmentNotFoundError:
+            logger.error(
+                f"Assignment with ID {delivery_schedule.delivery.course_content.assignment.id} not found. Canceling the delivery."
+            )
+            delivery_schedule.status = DeliveryStatus.CANCELED
+            delivery_schedule.save()
+        except Exception as e:
+            logger.exception(
+                f"Failed to send assignment content for DeliverySchedule ID {delivery_schedule.id}: {str(e)}"
             )
             self.handle_failed_delivery(delivery_schedule)
         return False

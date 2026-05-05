@@ -1,5 +1,5 @@
 from django.views.generic import TemplateView
-from django_email_learning.models import Lesson, Quiz, CourseContent
+from django_email_learning.models import Assignment, Lesson, Quiz, CourseContent
 from django_email_learning.platform.views import CourseView
 from django_email_learning.platform.serializers import WebComponent
 from django.utils import timezone
@@ -30,12 +30,13 @@ class EmailTemplatePreview(TemplateView):
             "lesson",
             "password_reset",
             "quiz",
+            "assignment",
             "quiz_reminder",
             "deactivation_deadline_passed",
         ]:
             raise ValueError(
                 "Invalid template name. Allowed values are: 'certificate_form', 'enrollment_verified', "
-                "'enrollment_verification', 'lesson', 'password_reset', 'quiz', 'quiz_reminder', 'deactivation_deadline_passed'."
+                "'enrollment_verification', 'lesson', 'password_reset', 'quiz', 'assignment', 'quiz_reminder', 'deactivation_deadline_passed'."
             )
 
         return [f"emails/{template_name}.html"]
@@ -43,6 +44,7 @@ class EmailTemplatePreview(TemplateView):
     def get_context_data(self, **kwargs):  # type: ignore[no-untyped-def]
         lesson = Lesson.objects.first()
         quiz = Quiz.objects.first()
+        assignment = Assignment.objects.first()
         content = (
             CourseContent.objects.filter(lesson=lesson).first() if lesson else None
         )
@@ -64,5 +66,6 @@ class EmailTemplatePreview(TemplateView):
             "token": "sampletoken",
             "progress": 40,
             "deadline_time": timezone.now(),
+            "assignment": assignment,
             "next_content": content.get_next() if content else None,
         }

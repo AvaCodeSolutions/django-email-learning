@@ -1,0 +1,30 @@
+{% extends "emails/base.html" %}
+{% load i18n %}
+
+{% block content %}
+    <h2 class="email-title">{{ assignment.title }}</h2>
+
+    <div class="email-panel reminder-panel">
+        <p class="email-paragraph" style="margin-bottom: 10px;">{{ assignment.description }}</p>
+
+        {% if assignment.deadline_days > 0 %}
+            <p class="email-paragraph" style="margin-bottom: 0;">
+                {% blocktranslate %}Please submit your responses within:{% endblocktranslate %}
+                <br>
+                <span class="deadline-chip">{% blocktranslate with deadline_days=assignment.deadline_days %}{{ deadline_days }} days{% endblocktranslate %}</span>
+            </p>
+        {% endif %}
+    </div>
+
+    <p class="email-paragraph">{% translate "Please click the link below to access and submit your assignment:" %}</p>
+
+    <div class="email-cta-wrap assignment-cta-wrap">
+        <a href="{{ link }}" class="email-cta assignment-cta bg-brand">
+            {% translate "Submit Your Assignment" %}
+        </a>
+    </div>
+
+    <p class="email-muted-note">
+        {% blocktranslate %}If you wish to unsubscribe from this course, please <a href="{{ unsubscribe_link }}" class="color-brand" style="text-decoration: none;">click here</a>{% endblocktranslate %}.
+    </p>
+{% endblock %}

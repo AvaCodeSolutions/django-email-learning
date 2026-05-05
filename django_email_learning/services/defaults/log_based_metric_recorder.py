@@ -27,6 +27,19 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
             },
         )
 
+    def assignment_sent(
+        self, course_slug: str, organization_id: int, assignment_id: int
+    ) -> None:
+        logger.info(
+            "Assignment sent",
+            extra={
+                "metric": "assignment_sent",
+                "course_slug": course_slug,
+                "organization_id": organization_id,
+                "assignment_id": assignment_id,
+            },
+        )
+
     def quiz_reminder_sent(
         self, course_slug: str, organization_id: int, quiz_id: int
     ) -> None:
