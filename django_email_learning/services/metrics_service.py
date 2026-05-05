@@ -41,6 +41,13 @@ class MetricsService:
     ) -> None:
         self.metric_recorder.quiz_reminder_sent(course_slug, organization_id, quiz_id)
 
+    def assignment_reminder_sent(
+        self, course_slug: str, organization_id: int, assignment_id: int
+    ) -> None:
+        self.metric_recorder.assignment_reminder_sent(
+            course_slug, organization_id, assignment_id
+        )
+
     def lesson_sent(
         self, course_slug: str, organization_id: int, lesson_id: int
     ) -> None:

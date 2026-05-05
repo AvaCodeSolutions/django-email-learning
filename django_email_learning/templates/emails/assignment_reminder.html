@@ -1,0 +1,33 @@
+{% extends "emails/base.html" %}
+{% load i18n %}
+{% load tz %}
+
+{% block content %}
+    <h2 class="email-title">{% blocktranslate with assignment_title=assignment.title %}Reminder For Assignment: {{assignment_title}}{% endblocktranslate %}</h2>
+
+    <p class="email-paragraph">{% translate "Hello there," %}</p>
+
+    <div class="email-panel reminder-panel">
+        <p class="email-paragraph" style="margin-bottom: 10px;">{% translate "This is a friendly reminder to complete your assignment." %}</p>
+
+        {% if deadline_time %}
+            <p class="email-paragraph" style="margin-bottom: 0;">
+                {% blocktranslate %}The assignment link is valid until:{% endblocktranslate %}
+                <br>
+                <span class="deadline-chip">{{ deadline_time|timezone:"UTC"|date:"Y-m-d H:i e" }}</span>
+            </p>
+        {% endif %}
+    </div>
+
+    <p class="email-paragraph">{% translate "Please click the link below to access and submit your assignment:" %}</p>
+
+    <div class="email-cta-wrap assignment-cta-wrap">
+        <a href="{{ link }}" class="email-cta assignment-cta bg-brand">
+            {% translate "Submit Your Assignment" %}
+        </a>
+    </div>
+
+    <p class="email-muted-note">
+        {% blocktranslate %}If you wish to unsubscribe from this course, please <a href="{{ unsubscribe_link }}" class="color-brand" style="text-decoration: none;">click here</a>{% endblocktranslate %}.
+    </p>
+{% endblock %}

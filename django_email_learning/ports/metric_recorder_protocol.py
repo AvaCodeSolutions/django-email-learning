@@ -19,6 +19,11 @@ class MetricRecorderProtocol(Protocol):
     ) -> None:
         ...
 
+    def assignment_reminder_sent(
+        self, course_slug: str, organization_id: int, assignment_id: int
+    ) -> None:
+        ...
+
     def lesson_sent(
         self, course_slug: str, organization_id: int, lesson_id: int
     ) -> None:

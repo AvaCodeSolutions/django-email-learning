@@ -12,6 +12,7 @@ from typing import Optional, Literal, Any, Callable
 from django.urls import reverse
 from django_email_learning.models import (
     ApiKey,
+    AssignmentSubmission,
     ContentDelivery,
     CourseInstructor,
     DeliveryStatus,
@@ -792,9 +793,17 @@ class EventType(enum.StrEnum):
     VERIFIED = "verified"
     DEACTIVATED = "deactivated"
     QUIZ_SUBMITED = "quiz_submitted"
+    ASSIGNMENT_SUBMITTED = "assignment_submitted"
+    ASSIGNMENT_REVIEWED = "assignment_reviewed"
     CONTENT_SENT = "content_sent"
     REMINDER_SENT = "reminder_sent"
     COURSE_COMPLETED = "course_completed"
+
+
+class ReviewResult(enum.StrEnum):
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    REQUESTING_CHANGES = "requesting_changes"
 
 
 class DeactivatedEvent(BaseModel):
@@ -814,6 +823,24 @@ class QuizSubmitedEvent(BaseModel):
     is_passed: bool
     attempt_number: int
     is_practice: bool
+
+
+class AssignmentSubmitedEvent(BaseModel):
+    type: Literal[EventType.ASSIGNMENT_SUBMITTED] = Field(
+        default=EventType.ASSIGNMENT_SUBMITTED, exclude=True
+    )
+    assignment_id: int
+    assignment_title: str
+
+
+class AssignmentReviewdEvent(BaseModel):
+    type: Literal[EventType.ASSIGNMENT_REVIEWED] = Field(
+        default=EventType.ASSIGNMENT_REVIEWED, exclude=True
+    )
+    assignment_id: int
+    assignment_title: str
+    review_result: ReviewResult
+    reviewed_by: str
 
 
 class ReminderSentEvent(BaseModel):
@@ -836,7 +863,7 @@ class ContentSentEvent(BaseModel):
 class Event(BaseModel):
     type: EventType
     timestamp: datetime
-    event_data: DeactivatedEvent | QuizSubmitedEvent | ContentSentEvent | ReminderSentEvent | None = Field(
+    event_data: DeactivatedEvent | QuizSubmitedEvent | ContentSentEvent | AssignmentSubmitedEvent | AssignmentReviewdEvent | ReminderSentEvent | None = Field(
         discriminator="type"
     )  # REGISTERED, VERIFIED, COURSE_COMPLETED have no additional data
 
@@ -897,6 +924,35 @@ class EnrollmentResponse(BaseModel):
                                 ),
                             )
                         )
+                    submission = delivery.assignment_submission  # type: ignore[attr-defined]
+                    if submission:
+                        events.append(
+                            Event(
+                                type=EventType.ASSIGNMENT_SUBMITTED,
+                                timestamp=submission.submitted_at,  # type: ignore[arg-type]
+                                event_data=AssignmentSubmitedEvent(
+                                    assignment_id=delivery.course_content.assignment.id,  # type: ignore[union-attr]
+                                    assignment_title=delivery.course_content.assignment.title,  # type: ignore[union-attr]
+                                ),
+                            )
+                        )
+                        if (
+                            submission.reviewed_at
+                            and submission.status
+                            != AssignmentSubmission.SubmissionStatus.PENDING_REVIEW
+                        ):
+                            events.append(
+                                Event(
+                                    type=EventType.ASSIGNMENT_REVIEWED,
+                                    timestamp=submission.reviewed_at,  # type: ignore[arg-type]
+                                    event_data=AssignmentReviewdEvent(
+                                        assignment_id=delivery.course_content.assignment.id,  # type: ignore[union-attr]
+                                        assignment_title=delivery.course_content.assignment.title,  # type: ignore[union-attr]
+                                        review_result=ReviewResult(submission.status),  # type: ignore[union-attr]
+                                        reviewed_by=submission.reviewer.display_name,  # type: ignore[union-attr, arg-type]
+                                    ),
+                                )
+                            )
                     # TODO:events for reminders and submissions for assignments
 
                 if delivery.course_content.type == "quiz":

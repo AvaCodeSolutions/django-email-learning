@@ -7,6 +7,9 @@ from django_email_learning.jobs.send_reminders_job import (
     SendQuizReminderCommand,
     QuizNotFoundError,
 )
+from django_email_learning.services.command_models.send_assignment_reminder_command import (
+    SendAssignmentReminderCommand,
+)
 from django_email_learning.models import (
     ContentDelivery,
     DeliverySchedule,
@@ -162,3 +165,59 @@ def test_send_reminders_job_does_not_emit_start_or_finish_metrics_when_already_r
 
     metric_started_spy.assert_not_called()
     metric_finished_spy.assert_not_called()
+
+
+def test_send_reminders_job_uses_quiz_reminder_command_for_quiz_content(
+    db, reminder_queue_mock, enrollment, course_quiz_content
+):
+    enrollment.status = EnrollmentStatus.ACTIVE
+    enrollment.save()
+
+    delivery = ContentDelivery.objects.create(
+        enrollment=enrollment,
+        course_content=course_quiz_content,
+        reminder_state=ContentDelivery.ReminderStatus.PENDING,
+    )
+    delivery_schedule = DeliverySchedule.objects.create(delivery=delivery)
+
+    reminder_queue_mock.add_task(delivery_schedule)
+
+    with patch.object(
+        SendQuizReminderCommand, "execute", return_value=None
+    ) as quiz_execute, patch.object(
+        SendAssignmentReminderCommand, "execute", return_value=None
+    ) as assignment_execute:
+        job = SendRemindersJob()
+        job.run()
+
+    quiz_execute.assert_called_once()
+    assignment_execute.assert_not_called()
+
+
+def test_send_reminders_job_uses_assignment_reminder_command_for_assignment_content(
+    db, reminder_queue_mock, enrollment, course_assignment_content
+):
+    enrollment.status = EnrollmentStatus.ACTIVE
+    enrollment.save()
+
+    delivery = ContentDelivery.objects.create(
+        enrollment=enrollment,
+        course_content=course_assignment_content,
+        reminder_state=ContentDelivery.ReminderStatus.PENDING,
+    )
+    delivery_schedule = DeliverySchedule.objects.create(delivery=delivery)
+
+    reminder_queue_mock.add_task(delivery_schedule)
+
+    with patch.object(
+        SendAssignmentReminderCommand, "execute", return_value=None
+    ) as assignment_execute, patch.object(
+        SendQuizReminderCommand, "execute", return_value=None
+    ) as quiz_execute:
+        job = SendRemindersJob()
+        job.run()
+
+    assignment_execute.assert_called_once()
+    quiz_execute.assert_not_called()
+    delivery.refresh_from_db()
+    assert delivery.reminder_state == ContentDelivery.ReminderStatus.SENT

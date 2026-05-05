@@ -1110,7 +1110,7 @@ class AssignmentSubmission(models.Model):
     delivery = models.OneToOneField(
         ContentDelivery,
         on_delete=models.CASCADE,
-        related_name="assignment_submissions",
+        related_name="assignment_submission",
         unique=True,
     )
     text_submission = models.TextField(null=True, blank=True)
