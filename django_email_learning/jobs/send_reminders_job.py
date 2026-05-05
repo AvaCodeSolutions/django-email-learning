@@ -2,6 +2,9 @@ from django_email_learning.ports.delivery_queue_protocol import DeliveryQueuePro
 from django_email_learning.models import ContentDelivery, DeliverySchedule
 from django_email_learning.jobs.job_metrics import track_job_execution
 
+from django_email_learning.services.command_models.send_assignment_reminder_command import (
+    SendAssignmentReminderCommand,
+)
 from django_email_learning.services.metrics_service import MetricsService
 from django_email_learning.models import JobExecution, JobName, JobStatus
 from django_email_learning.services.command_models.send_quiz_reminder_command import (
@@ -71,9 +74,23 @@ class SendRemindersJob:
 
     def process_reminder(self, delivery_schedule: DeliverySchedule) -> None:
         try:
-            command = SendQuizReminderCommand(
-                delivery_schedule=delivery_schedule,
-            )
+            if delivery_schedule.delivery.course_content.quiz:
+                command = SendQuizReminderCommand(
+                    delivery_schedule=delivery_schedule,
+                )
+            elif delivery_schedule.delivery.course_content.assignment:
+                command = SendAssignmentReminderCommand(  # type: ignore[assignment]
+                    delivery_schedule=delivery_schedule,
+                )
+            else:
+                logger.error(
+                    f"Delivery with ID {delivery_schedule.delivery.id} has no associated quiz or assignment. Marking reminder as not applicable."
+                )
+                delivery_schedule.delivery.reminder_state = (
+                    ContentDelivery.ReminderStatus.NOT_APPLICABLE
+                )
+                delivery_schedule.delivery.save()
+                return
             command.execute()
             delivery_schedule.delivery.reminder_state = (
                 ContentDelivery.ReminderStatus.SENT

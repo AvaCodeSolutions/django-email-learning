@@ -31,6 +31,7 @@ class EmailTemplatePreview(TemplateView):
             "password_reset",
             "quiz",
             "assignment",
+            "assignment_reminder",
             "quiz_reminder",
             "deactivation_deadline_passed",
         ]:

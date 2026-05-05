@@ -171,6 +171,10 @@ class AssignmentSubmissionView(View):
                 "text_submission": text_submission if text_submission else None,
             },
         )
+        delivery.reminder_state = ContentDelivery.ReminderStatus.NOT_APPLICABLE
+        delivery.valid_until = None
+        delivery.remind_at = None
+        delivery.save()
         if not created:
             submission.status = AssignmentSubmission.SubmissionStatus.PENDING_REVIEW
             submission.save()
