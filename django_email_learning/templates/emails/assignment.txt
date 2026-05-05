@@ -1,0 +1,12 @@
+{% load i18n %}
+{{ assignment.title }}
+
+{{ assignment.description }}
+
+{% if deadline_days > 0 %}{% blocktranslate with deadline_days=assignment.deadline_days %} You have {{ deadline_days }} days from today to submit your assignment.{% endblocktranslate %}{% endif %}
+
+
+{% translate "Please click the link below to access and submit your assignment:" %}
+{{ link }}
+
+{% translate "Unsubscribe link:" %} {{ unsubscribe_link }}

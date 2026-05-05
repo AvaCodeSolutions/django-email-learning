@@ -1,13 +1,5 @@
 {% extends "personalised/base.html" %}
-
+{% load django_vite %}
 {% block head_script %}
-    <link rel="modulepreload" crossorigin href="/static/assets/render-Hdkk0lMj.js">
-    <link rel="modulepreload" crossorigin href="/static/assets/modulepreload-polyfill-C2klXQaA.js">
-    <link rel="modulepreload" crossorigin href="/static/assets/CloudUpload-BcCKN_9D.js">
-    <link rel="modulepreload" crossorigin href="/static/assets/Alert-DubzxodY.js">
-    <link rel="modulepreload" crossorigin href="/static/assets/Box-B0Gps-B6.js">
-    <link rel="modulepreload" crossorigin href="/static/assets/Button-DeO-gBXX.js">
-    <link rel="modulepreload" crossorigin href="/static/assets/TextField-DzRDLqD_.js">
-    <link rel="modulepreload" crossorigin href="/static/assets/Layout-CQiSh1XG.js">
-    <script type="module" crossorigin src="/static/assets/assignment_public-BLhlfYWp.js"></script>
+    {% vite_asset 'personalised/assignment_public/Assignment.jsx' %}
 {% endblock %}
