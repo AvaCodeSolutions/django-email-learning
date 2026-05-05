@@ -63,14 +63,15 @@ beforeEach(() => {
 
 // ProseMirror's scroll-to-selection requires getClientRects / getBoundingClientRect
 // on Text nodes and Range objects — neither is implemented by jsdom.
-// Provide minimal stubs so the EditorView exits cleanly instead of throwing.
-const _emptyRects = [];
+// Use plain functions (not vi.fn) so vi.clearAllMocks() in beforeEach does not
+// reset the implementation and leave them returning undefined.
+const _emptyRects = Object.assign([], { item: () => null });
 if (typeof Text !== 'undefined') {
-  Text.prototype.getClientRects = vi.fn(() => _emptyRects);
-  Text.prototype.getBoundingClientRect = vi.fn(() => new DOMRect(0, 0, 0, 0));
+  Text.prototype.getClientRects = () => _emptyRects;
+  Text.prototype.getBoundingClientRect = () => new DOMRect(0, 0, 0, 0);
 }
 if (typeof Range !== 'undefined' && !Range.prototype.getClientRects) {
-  Range.prototype.getClientRects = vi.fn(() => _emptyRects);
+  Range.prototype.getClientRects = () => _emptyRects;
 }
 // Also patch Element in case jsdom's own stub is absent in some test envs
-Element.prototype.getClientRects = vi.fn(() => _emptyRects);
+Element.prototype.getClientRects = () => _emptyRects;
