@@ -1,7 +1,8 @@
 import logging
 from django.apps import apps
 from django.conf.global_settings import LANGUAGES
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, View
+from django.http import FileResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.utils.translation import get_language_info, get_language
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -12,6 +13,8 @@ from django_email_learning.decorators import (
     is_platform_admin,
     is_an_organization_member,
 )
+from django_email_learning.services.utils import PRIVATE_FILE_STORAGE
+from django_email_learning.services import jwt_service
 from typing import Dict, Any
 from django.conf import settings
 
@@ -428,6 +431,30 @@ class CourseView(BasePlatformView):
             "completed": _("Completed"),
             "enrollments_distribution": _("Enrollments Distribution"),
             "weekly_enrollments": _("Weekly Enrollments"),
+            "tab_manage_course_content": _("Manage Course Content"),
+            "tab_submitted_assignments": _("Submitted Assignments"),
+            "tab_course_analytics": _("Course Analytics"),
+            "submitted_assignments_tab_info": _(
+                "Submitted assignments will be available in this section."
+            ),
+            "pending_filter_chip": _("Pending Review"),
+            "show_pending_only": _("Show Pending Only"),
+            "submitted_at": _("Submitted At"),
+            "reviewed_at": _("Reviewed At"),
+            "reviewed_by": _("Reviewed By"),
+            "status": _("Status"),
+            "pending_review": _("Pending Review"),
+            "approved": _("Approved"),
+            "rejected": _("Rejected"),
+            "requesting_changes": _("Requesting Changes"),
+            "no_submitted_assignments": _("No submitted assignments found."),
+            "submitted_assignment_details": _("Submitted Assignment Details"),
+            "feedbacks": _("Feedbacks"),
+            "no_feedbacks_yet": _("No feedbacks yet."),
+            "unable_to_load_submission_details": _(
+                "Unable to load submission details."
+            ),
+            "course_analytics_tab_info": _("Course analytics are shown below."),
             "unsaved_changes_warning": _(
                 "You have unsaved changes. Are you sure you want to leave without saving?"
             ),
@@ -642,3 +669,49 @@ class ApiKeys(BasePlatformView):
                 "API keys allow external applications to interact with the platform and execute jobs. This is ideal for using cloud scheduling or third-party integrations instead of managing local cron jobs. You can create, view, and manage your keys below."
             ),
         }
+
+
+@method_decorator(login_required, name="dispatch")
+@method_decorator(is_an_organization_member(), name="dispatch")
+class PrivateFileView(View):
+    """
+    A view to serve private files stored in the location defined by PRIVATE_FILE_STORAGE.
+    The file path is expected to be passed as a query parameter named 'file_path'.
+    """
+
+    def get(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
+        token = request.GET.get("token")
+
+        if not token:
+            return HttpResponseBadRequest("Missing 'token' query parameter.")
+
+        try:
+            decoded_token = jwt_service.decode_jwt(token)
+        except (jwt_service.InvalidTokenException, jwt_service.ExpiredTokenException):
+            return HttpResponseBadRequest("Invalid or expired token.")
+
+        org_id = decoded_token.get("org_id")
+        file_path = decoded_token.get("file_path")
+
+        if not file_path or not org_id:
+            logging.error(
+                "Token is missing required fields. Decoded token: %s", decoded_token
+            )
+            return HttpResponseBadRequest("Missing 'file_path' or 'org_id' in token.")
+
+        if (
+            not request.user.is_superuser
+            and not OrganizationUser.objects.filter(
+                user=request.user,
+                organization_id=org_id,
+                role__in=["admin", "instructor"],
+            ).exists()
+        ):  # type: ignore[misc]
+            return HttpResponseNotFound("File not found.")
+
+        if not PRIVATE_FILE_STORAGE.exists(file_path):
+            return HttpResponseNotFound("File not found.")
+
+        file = PRIVATE_FILE_STORAGE.open(file_path)
+        response = FileResponse(file)
+        return response

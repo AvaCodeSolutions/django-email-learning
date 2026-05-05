@@ -7,10 +7,14 @@ import EnrollMenu from './components/EnrollMenu.jsx';
 import DescriptionIcon from '@mui/icons-material/Description';
 import BallotIcon from '@mui/icons-material/Ballot';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import ViewListIcon from '@mui/icons-material/ViewList';
+import TaskAltIcon from '@mui/icons-material/TaskAlt';
+import InsightsIcon from '@mui/icons-material/Insights';
 import { useState, useEffect } from 'react';
-import { Box, Grid, Button, Dialog, LinearProgress, Typography, Alert, Divider, Skeleton } from '@mui/material'
+import { Box, Grid, Button, Dialog, LinearProgress, Typography, Alert, Skeleton, Tabs, Tab, Badge } from '@mui/material'
 import { useTheme } from '@mui/material/styles';
 import ContentTable from './components/ContentTable.jsx';
+import SubmittedAssignmentsSection from './components/SubmittedAssignmentsSection.jsx';
 import { PieChart } from '@mui/x-charts/PieChart'
 import { BarChart } from '@mui/x-charts/BarChart';
 import { getCookie } from '../../src/utils.js';
@@ -23,7 +27,7 @@ const DeleteContentForm = lazy(() => import("./components/DeleteContentForm.jsx"
 
 
 function Course() {
-    const { courseTitle, courseId, localeMessages, direction, userRole, apiBaseUrl, platformBaseUrl, customComponent } = useAppContext();
+    const { courseTitle, courseId, localeMessages, direction, userRole, isInstructor, isInstructore, apiBaseUrl, platformBaseUrl, customComponent } = useAppContext();
     const [dialogOpen, setDialogOpen] = useState(false)
     const [dialogContent, setDialogContent] = useState(null)
     const [contentLoaded, setContentLoaded] = useState(false)
@@ -33,6 +37,8 @@ function Course() {
     const [isEnrollmentsLoading, setIsEnrollmentsLoading] = useState(true);
     const [isWeeklyStatsLoading, setIsWeeklyStatsLoading] = useState(true);
     const [dialogCloseOnBackdropClick, setDialogCloseOnBackdropClick] = useState(false);
+    const [activeTab, setActiveTab] = useState('content');
+    const [pendingAssignmentsCount, setPendingAssignmentsCount] = useState(0);
 
     const [pageSuccessMessage, setPageSuccessMessage] = useState('');
 
@@ -69,6 +75,9 @@ function Course() {
 
     const hasEnrollmentsChartData = !!(enrollmentsPieData && totalEnrollments > 0);
     const hasWeeklyChartData = !!(weeklyStats && weeklyStats.some((stat) => stat.count > 0));
+    const canSeeSubmittedAssignments = Boolean(
+        isInstructore ?? isInstructor
+    );
 
 
     const resetDialog = () => {
@@ -112,8 +121,29 @@ function Course() {
             .finally(() => setIsWeeklyStatsLoading(false));
     }
 
+    const refreshPendingAssignmentsCount = () => {
+        const endpoint = `${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/submitted_assignments/?status=pending_review`;
+        fetch(endpoint, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+        })
+            .then(response => response.json())
+            .then(data => {
+                setPendingAssignmentsCount((data.submissions || []).length);
+            })
+            .catch(error => {
+                console.error('Error fetching pending assignments count:', error);
+                setPendingAssignmentsCount(0);
+            });
+    }
+
     useEffect(() => {
         refreshEnrollmentAnalytics();
+        if (canSeeSubmittedAssignments) {
+            refreshPendingAssignmentsCount();
+        }
         window.ContentListAPI = {
             refresh: () => setContentLoaded(false)
         }
@@ -128,6 +158,18 @@ function Course() {
             getDialogBackdropClickSetting: () => dialogCloseOnBackdropClick,
         }
     }, []);
+
+    useEffect(() => {
+        if (canSeeSubmittedAssignments) {
+            refreshPendingAssignmentsCount();
+        }
+    }, [canSeeSubmittedAssignments, organizationId, courseId]);
+
+    useEffect(() => {
+        if (!canSeeSubmittedAssignments && activeTab === 'submitted_assignments') {
+            setActiveTab('content');
+        }
+    }, [canSeeSubmittedAssignments, activeTab]);
 
     const handleEnrollMenuSuccess = (msg) => {
         setPageSuccessMessage(msg);
@@ -343,109 +385,176 @@ function Course() {
                     </Grid>
                 </Box>
                 <Box sx={{ p: 3, border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: 2, minHeight: 300 }}>
-                    {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
-                        setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><LessonForm
-                            header={localeMessages["new_lesson"]}
-                            cancelCallback={() => setDialogOpen(false)}
-                            successCallback={() => setContentLoaded(false)}
-                            courseId={courseId} /></Suspense>);
-                        setDialogOpen(true);}}>{localeMessages["add_lesson"]}</Button>
-                    <Button variant="contained" startIcon={<BallotIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2, marginLeft: 1, marginRight: 1 }} onClick={() => {
-                        setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><QuizForm
-                            cancelCallback={() => setDialogOpen(false)}
-                            successCallback={resetDialog}
-                            courseId={courseId} /></Suspense>);
-                        setDialogOpen(true);}}>{localeMessages["add_quiz"]}</Button>
-                    <Button variant="contained" startIcon={<AssignmentIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2, marginLeft: 1, marginRight: 1 }} onClick={() => {
-                        setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><AssignmentForm
-                            header={localeMessages["new_assignment"]}
-                            cancelCallback={() => setDialogOpen(false)}
-                            successCallback={resetDialog}
-                            courseId={courseId} /></Suspense>);
-                        setDialogOpen(true);}}>{localeMessages["add_assignment"]}</Button>
-                    {userRole === 'admin' && <EnrollMenu successCallback={handleEnrollMenuSuccess} />}
-                    </> }
-                    {customComponent && <Box className="custom-component-wrapper" sx={{ display: customComponent.container_display }} dangerouslySetInnerHTML={{ __html: customComponent.html }}></Box>}
-                    <ContentTable courseId={courseId} loaded={contentLoaded} eventHandler={(event) => tableEventHandler(event)} />
-                </Box>
-                <Box sx={{ mt: 3, mb: 3 }}>
-                    <Divider />
-                </Box>
-                <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
-                <Grid size={{xs: 12, lg: 6}} sx={{ display: 'flex', flexDirection: 'column' }}>
-                <Box sx={{ py: 3, border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', flex: 1 }}>
-                    <Typography variant="h6" align='center'>{localeMessages["enrollments_distribution"]}</Typography>
-                    <Typography variant="body2" align='center' sx={{ mt: 1, mb: 2, color: 'text.secondary' }}>
-                        {(localeMessages["total_enrollments"]) + ': ' + totalEnrollments}
-                    </Typography>
-                    {isEnrollmentsLoading ? (
-                        <Box sx={{ px: 2 }}>
-                            <Skeleton variant="circular" width={180} height={180} sx={{ mx: 'auto', my: 2 }} />
-                            <Skeleton variant="text" width="80%" sx={{ mx: 'auto' }} />
-                            <Skeleton variant="text" width="60%" sx={{ mx: 'auto' }} />
-                        </Box>
-                    ) : hasEnrollmentsChartData ? (
-                        <PieChart
-                            height={300}
-                            series={[
-                            {
-                                data: enrollmentsPieData,
-                                innerRadius: '50%',
-                                arcLabelMinAngle: 20,
-                                highlightScope: { fade: 'global', highlight: 'item' },
-                            },
-                            ]}
-                            skipAnimation={false}
-                            margin={{
-                                bottom: 20,
-                                top: 20,
-                                left: 5,
-                                right: 5,
-                            }}
-                            slotProps={{
-                                legend: {
-                                direction: 'row',
-                                position: { vertical: 'bottom', horizontal: 'middle' },
-                                padding: 0,
-                                },
-                            }}
+                    <Tabs
+                        value={activeTab}
+                        onChange={(_, value) => {
+                            setActiveTab(value);
+                            if (value === 'content') {
+                                setContentLoaded(false);
+                            }
+                        }}
+                        sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
+                    >
+                        <Tab
+                            value="content"
+                            icon={<ViewListIcon fontSize="small" />}
+                            iconPosition="start"
+                            label={localeMessages["tab_manage_course_content"] || 'Manage Course Content'}
                         />
-                    ) : (
-                        <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2 }}>
-                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                {localeMessages['no_data_yet'] || 'No data yet'}
-                            </Typography>
-                        </Box>
+                        {canSeeSubmittedAssignments && (
+                            <Tab
+                                value="submitted_assignments"
+                                icon={<TaskAltIcon fontSize="small" />}
+                                iconPosition="start"
+                                label={
+                                    <Badge
+                                        color="primary"
+                                        badgeContent={pendingAssignmentsCount}
+                                        max={99}
+                                        overlap="rectangular"
+                                        sx={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            '& .MuiBadge-badge': {
+                                                position: 'static',
+                                                transform: 'none',
+                                                marginInlineStart: 0.75,
+                                            },
+                                        }}
+                                    >
+                                        <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                                            {localeMessages["tab_submitted_assignments"] || 'Submitted Assignments'}
+                                        </Box>
+                                    </Badge>
+                                }
+                            />
+                        )}
+                        <Tab
+                            value="analytics"
+                            icon={<InsightsIcon fontSize="small" />}
+                            iconPosition="start"
+                            label={localeMessages["tab_course_analytics"] || 'Course Analytics'}
+                        />
+                    </Tabs>
+
+                    {activeTab === 'content' && (
+                        <>
+                            {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
+                                setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><LessonForm
+                                    header={localeMessages["new_lesson"]}
+                                    cancelCallback={() => setDialogOpen(false)}
+                                    successCallback={() => setContentLoaded(false)}
+                                    courseId={courseId} /></Suspense>);
+                                setDialogOpen(true);}}>{localeMessages["add_lesson"]}</Button>
+                            <Button variant="contained" startIcon={<BallotIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2, marginLeft: 1, marginRight: 1 }} onClick={() => {
+                                setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><QuizForm
+                                    cancelCallback={() => setDialogOpen(false)}
+                                    successCallback={resetDialog}
+                                    courseId={courseId} /></Suspense>);
+                                setDialogOpen(true);}}>{localeMessages["add_quiz"]}</Button>
+                            <Button variant="contained" startIcon={<AssignmentIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2, marginLeft: 1, marginRight: 1 }} onClick={() => {
+                                setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><AssignmentForm
+                                    header={localeMessages["new_assignment"]}
+                                    cancelCallback={() => setDialogOpen(false)}
+                                    successCallback={resetDialog}
+                                    courseId={courseId} /></Suspense>);
+                                setDialogOpen(true);}}>{localeMessages["add_assignment"]}</Button>
+                            {userRole === 'admin' && <EnrollMenu successCallback={handleEnrollMenuSuccess} />}
+                            </> }
+                            {customComponent && <Box className="custom-component-wrapper" sx={{ display: customComponent.container_display }} dangerouslySetInnerHTML={{ __html: customComponent.html }}></Box>}
+                            <ContentTable courseId={courseId} loaded={contentLoaded} eventHandler={(event) => tableEventHandler(event)} />
+                        </>
+                    )}
+
+                    {canSeeSubmittedAssignments && activeTab === 'submitted_assignments' && (
+                        <SubmittedAssignmentsSection
+                            onPendingCountChange={(count) => setPendingAssignmentsCount(count)}
+                        />
+                    )}
+
+                    {activeTab === 'analytics' && (
+                        <>
+                            <Alert severity="info" sx={{ mb: 2 }}>
+                                {localeMessages["course_analytics_tab_info"] || 'Course analytics are shown below.'}
+                            </Alert>
+                            <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
+                                <Grid size={{xs: 12, lg: 6}} sx={{ display: 'flex', flexDirection: 'column' }}>
+                                    <Box sx={{ py: 3, border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', flex: 1 }}>
+                                        <Typography variant="h6" align='center'>{localeMessages["enrollments_distribution"]}</Typography>
+                                        <Typography variant="body2" align='center' sx={{ mt: 1, mb: 2, color: 'text.secondary' }}>
+                                            {(localeMessages["total_enrollments"]) + ': ' + totalEnrollments}
+                                        </Typography>
+                                        {isEnrollmentsLoading ? (
+                                            <Box sx={{ px: 2 }}>
+                                                <Skeleton variant="circular" width={180} height={180} sx={{ mx: 'auto', my: 2 }} />
+                                                <Skeleton variant="text" width="80%" sx={{ mx: 'auto' }} />
+                                                <Skeleton variant="text" width="60%" sx={{ mx: 'auto' }} />
+                                            </Box>
+                                        ) : hasEnrollmentsChartData ? (
+                                            <PieChart
+                                                height={300}
+                                                series={[
+                                                {
+                                                    data: enrollmentsPieData,
+                                                    innerRadius: '50%',
+                                                    arcLabelMinAngle: 20,
+                                                    highlightScope: { fade: 'global', highlight: 'item' },
+                                                },
+                                                ]}
+                                                skipAnimation={false}
+                                                margin={{
+                                                    bottom: 20,
+                                                    top: 20,
+                                                    left: 5,
+                                                    right: 5,
+                                                }}
+                                                slotProps={{
+                                                    legend: {
+                                                    direction: 'row',
+                                                    position: { vertical: 'bottom', horizontal: 'middle' },
+                                                    padding: 0,
+                                                    },
+                                                }}
+                                            />
+                                        ) : (
+                                            <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2 }}>
+                                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                    {localeMessages['no_data_yet'] || 'No data yet'}
+                                                </Typography>
+                                            </Box>
+                                        )}
+                                    </Box>
+                                </Grid>
+                                <Grid size={{xs: 12, lg: 6}} sx={{ display: 'flex', flexDirection: 'column' }}>
+                                    <Box sx={{ py: 3, border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', flex: 1 }}>
+                                        <Typography variant="h6" align='center'>{localeMessages["weekly_enrollments"]}</Typography>
+                                        {isWeeklyStatsLoading ? (
+                                            <Box sx={{ px: 2 }}>
+                                                <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 1, my: 2 }} />
+                                                <Skeleton variant="text" width="75%" sx={{ mx: 'auto' }} />
+                                            </Box>
+                                        ) : hasWeeklyChartData ? (
+                                            <BarChart
+                                                margin={{
+                                                    top: 60,
+                                                }}
+                                                xAxis={[{data: weeklyStats.map((stat) => stat.date)}]}
+                                                series={[{ data: weeklyStats.map((stat) => stat.count), color: theme.palette.secondary.main }]}
+                                                height={300}
+                                            />
+                                        ) : (
+                                            <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2 }}>
+                                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                    {localeMessages['no_data_yet'] || 'No data yet'}
+                                                </Typography>
+                                            </Box>
+                                        )}
+                                    </Box>
+                                </Grid>
+                            </Grid>
+                        </>
                     )}
                 </Box>
-                </Grid>
-                <Grid size={{xs: 12, lg: 6}} sx={{ display: 'flex', flexDirection: 'column' }}>
-                    <Box sx={{ py: 3, border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', flex: 1 }}>
-                    <Typography variant="h6" align='center'>{localeMessages["weekly_enrollments"]}</Typography>
-                    {isWeeklyStatsLoading ? (
-                        <Box sx={{ px: 2 }}>
-                            <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 1, my: 2 }} />
-                            <Skeleton variant="text" width="75%" sx={{ mx: 'auto' }} />
-                        </Box>
-                    ) : hasWeeklyChartData ? (
-                        <BarChart
-                            margin={{
-                                top: 60,
-                            }}
-                            xAxis={[{data: weeklyStats.map((stat) => stat.date)}]}
-                            series={[{ data: weeklyStats.map((stat) => stat.count), color: theme.palette.secondary.main }]}
-                            height={300}
-                        />
-                    ) : (
-                        <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2 }}>
-                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                {localeMessages['no_data_yet'] || 'No data yet'}
-                            </Typography>
-                        </Box>
-                    )}
-                    </Box>
-                </Grid>
-                </Grid>
             </Grid>
 
             <Dialog open={dialogOpen} onClose={handleClose} fullWidth maxWidth={dialogMaxWidth}>

@@ -5,6 +5,7 @@ from django_email_learning.platform.views import (
     Courses,
     Organizations,
     SingleOrganization,
+    PrivateFileView,
     Learners,
     ApiKeys,
 )
@@ -20,6 +21,7 @@ urlpatterns = [
         SingleOrganization.as_view(),
         name="organization_detail_view",
     ),
+    path("private_file/", PrivateFileView.as_view(), name="private_file_view"),
     path("learners/", Learners.as_view(), name="learners_view"),
     path("settings/api_keys/", ApiKeys.as_view(), name="api_keys_view"),
     path(

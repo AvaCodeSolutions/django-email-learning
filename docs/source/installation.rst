@@ -221,6 +221,24 @@ Optional configuration for branding assets in the platform header.
         },
     }
 
+**PRIVATE_FILE_STORAGE_LOCATION**
+
+The filesystem path where privately uploaded files will be stored. Unlike media files served via Django's ``MEDIA_URL`` which are publicly accessible, files stored here are **not** served publicly. They are only accessible through an authenticated endpoint, ensuring that sensitive files (such as assignment submissions or certificates) are protected and only available to authorised users.
+
+If not specified, a default location will be used.
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'PRIVATE_FILE_STORAGE_LOCATION': '/path/to/private/storage/',
+    }
+
+.. note::
+   Ensure the directory exists and that the Django process has read/write permissions for the specified path.
+   Do **not** place this directory inside your web server's publicly served document root, as doing so would defeat the purpose of private storage.
+
 **AI**
 
 Optional configuration for AI-powered text editing features.

@@ -4,6 +4,8 @@ __pycache__/
 .venv/
 venv/
 
+django_email_learning/private_files/*
+
 # Django
 db.sqlite3
 .env

@@ -18,10 +18,11 @@ from django_email_learning.models import (
     Quiz,
     EnrollmentStatus,
 )
+from django_email_learning.services.utils import PRIVATE_FILE_STORAGE
 from pydantic import ValidationError
 import json
 import logging
-from django.core.files.storage import default_storage
+
 
 METRIC_SERVICE = MetricsService()
 
@@ -65,7 +66,7 @@ class FileUploadView(View):
             )
 
         date_prefix = timezone.now().strftime("%Y%m%d")
-        file_path = default_storage.save(
+        file_path = PRIVATE_FILE_STORAGE.save(
             f"uploads/{date_prefix}/{delivery.enrollment.course.organization.id}/{delivery.id}/{uploaded_file.name}",
             uploaded_file,
         )

@@ -41,7 +41,6 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
     useEffect(() => {
         if (!loaded) {
             getContets();
-            loaded = true;
         }
     }, [loaded]);
 

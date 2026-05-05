@@ -5,7 +5,6 @@ from django_email_learning.models import (
     JobExecution,
     JobName,
     JobStatus,
-    Quiz,
 )
 from django_email_learning.jobs.job_metrics import track_job_execution
 from django_email_learning.services.metrics_service import MetricsService
@@ -45,15 +44,15 @@ class DeactivateInactiveEnrollmentsJob:
         )
 
         for delivery in deliveries:
-            if not delivery.course_content.quiz:
+            if delivery.course_content.lesson:
                 continue
 
-            if not delivery.course_content.quiz.is_blocking:
+            if not delivery.course_content.is_blocking:
                 # If the quiz is non-blocking, we do not want to deactivate the enrollment.
                 # Instead, we simply skip to the next delivery.
                 logger.info(
                     f"Skipping deactivation for enrollment {delivery.enrollment.id} because \
-                     quiz {delivery.course_content.quiz.title} is non-blocking."
+                    {delivery.course_content.title} is non-blocking."
                 )
                 delivery.schedule_next_delivery()
                 delivery.valid_until = None  # Clear the valid_until since we've scheduled the next delivery
@@ -64,16 +63,16 @@ class DeactivateInactiveEnrollmentsJob:
             enrollment.status = EnrollmentStatus.DEACTIVATED
             enrollment.deactivation_reason = DeactivationReason.INACTIVE
             enrollment.save()
-            quiz = delivery.course_content.quiz
+
             course_title = delivery.course_content.course.title
             logger.info(
                 f"Deactivated enrollment {enrollment.id} for learner {mask_email(enrollment.learner.email)} due to \
-                missed deadline for quiz {quiz.title} in course {course_title}."
+                missed deadline for assignment {delivery.course_content.title} in course {course_title}."
             )
 
             self.send_deactivation_email(
                 enrollment.learner.email,
-                quiz,
+                delivery,
                 course_title,
                 delivery.course_content.course.organization.name,
             )
@@ -88,12 +87,16 @@ class DeactivateInactiveEnrollmentsJob:
         job_execution.save()
 
     def send_deactivation_email(
-        self, email: str, quiz: Quiz, course_title: str, organization_name: str
+        self,
+        email: str,
+        delivery: ContentDelivery,
+        course_title: str,
+        organization_name: str,
     ) -> None:
         email_service = EmailSenderService()
-        subject = _("Your quiz deadline has passed — enrollment deactivated")
+        subject = _("Your deadline has passed — enrollment deactivated")
         context = {
-            "quiz": quiz,
+            "content_title": f"{delivery.course_content.type} {delivery.course_content.title}",
             "course_title": course_title,
             "organization_name": organization_name,
         }
