@@ -105,4 +105,6 @@ const CertificateForm = () => {
     </Box>);
 };
 
+export { CertificateForm };
+
 render({children: <CertificateForm />});
