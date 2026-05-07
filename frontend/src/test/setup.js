@@ -66,12 +66,25 @@ beforeEach(() => {
 // Use plain functions (not vi.fn) so vi.clearAllMocks() in beforeEach does not
 // reset the implementation and leave them returning undefined.
 const _emptyRects = Object.assign([], { item: () => null });
+const _emptyRect = {
+  x: 0,
+  y: 0,
+  top: 0,
+  right: 0,
+  bottom: 0,
+  left: 0,
+  width: 0,
+  height: 0,
+  toJSON: () => ({}),
+};
 if (typeof Text !== 'undefined') {
   Text.prototype.getClientRects = () => _emptyRects;
-  Text.prototype.getBoundingClientRect = () => new DOMRect(0, 0, 0, 0);
+  Text.prototype.getBoundingClientRect = () => _emptyRect;
 }
-if (typeof Range !== 'undefined' && !Range.prototype.getClientRects) {
+if (typeof Range !== 'undefined') {
   Range.prototype.getClientRects = () => _emptyRects;
+  Range.prototype.getBoundingClientRect = () => _emptyRect;
 }
 // Also patch Element in case jsdom's own stub is absent in some test envs
 Element.prototype.getClientRects = () => _emptyRects;
+Element.prototype.getBoundingClientRect = () => _emptyRect;

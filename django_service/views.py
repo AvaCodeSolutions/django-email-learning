@@ -69,4 +69,5 @@ class EmailTemplatePreview(TemplateView):
             "deadline_time": timezone.now(),
             "assignment": assignment,
             "next_content": content.get_next() if content else None,
+            "content_title": "assignment programming exercise",
         }

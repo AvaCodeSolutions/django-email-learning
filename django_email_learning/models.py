@@ -31,7 +31,7 @@ from django.utils.translation import gettext as _
 from django.utils.translation import ngettext
 from datetime import timedelta
 from django_email_learning.services import jwt_service
-from django_email_learning.services.utils import mask_email
+from django_email_learning.services.utils import PRIVATE_FILE_STORAGE, mask_email
 
 from PIL import Image
 from typing import Optional
@@ -1115,7 +1115,10 @@ class AssignmentSubmission(models.Model):
     )
     text_submission = models.TextField(null=True, blank=True)
     file_submission = models.FileField(
-        upload_to="assignment_submissions/", null=True, blank=True
+        storage=PRIVATE_FILE_STORAGE,
+        upload_to="assignment_submissions/",
+        null=True,
+        blank=True,
     )
     submitted_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
@@ -1135,20 +1138,44 @@ class AssignmentSubmission(models.Model):
 
     @staticmethod
     def save_file(file_path: str, delivery: ContentDelivery) -> str:
-        if default_storage.exists(file_path):
-            if default_storage.size(file_path) > 10 * 1024 * 1024:
+        if PRIVATE_FILE_STORAGE.exists(file_path):
+            if PRIVATE_FILE_STORAGE.size(file_path) > 10 * 1024 * 1024:
                 raise ValueError(
                     "File size exceeds the maximum allowed limit of 10 MB."
                 )
-            file = default_storage.open(file_path)
+            file = PRIVATE_FILE_STORAGE.open(file_path)
             final_path = f"organizations/{delivery.enrollment.course.organization.id}/assignments/{delivery.id}/{file_path.split('/')[-1]}"
-            default_storage.save(final_path, file)
+            PRIVATE_FILE_STORAGE.save(final_path, file)
+            PRIVATE_FILE_STORAGE.delete(file_path)
             return final_path
         else:
             raise ValueError("File does not exist.")
 
+    def private_file_url(self) -> Optional[str]:
+        if self.file_submission:
+            org_id = self.delivery.enrollment.course.organization.id
+            payload = {
+                "org_id": org_id,
+                "file_path": self.file_submission.path,
+            }
+            token = jwt_service.generate_jwt(
+                payload=payload, exp=datetime.now() + timedelta(hours=3)
+            )
+            url = (
+                reverse("django_email_learning:platform:private_file_view")
+                + f"?token={token}"
+            )
+            return url
+        return None
+
+    @property
+    def assignment(self) -> Assignment:
+        if self.delivery.course_content.assignment:
+            return self.delivery.course_content.assignment  # type: ignore[assignment]
+        raise ValueError("Associated content is not an assignment.")
+
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
-        if self.delivery.course_content.type != "assignment":
+        if not self.delivery.course_content.assignment:
             raise ValidationError(
                 "Sent item must be associated with an assignment content."
             )
@@ -1157,6 +1184,17 @@ class AssignmentSubmission(models.Model):
                 "At least one of text submission or file submission must be provided."
             )
         self.full_clean()
+        if not self.pk and self.status != self.SubmissionStatus.PENDING_REVIEW:
+            raise ValidationError("New submissions must have status 'pending_review'.")
+        if (
+            self.assignment.is_blocking
+            and self.status == self.SubmissionStatus.APPROVED
+        ):
+            current_state = (
+                AssignmentSubmission.objects.get(pk=self.pk).status if self.pk else None
+            )
+            if current_state != self.SubmissionStatus.APPROVED:
+                self.delivery.schedule_next_delivery()
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
@@ -1164,10 +1202,10 @@ class AssignmentSubmission(models.Model):
 
 
 class AssignmentFeedback(models.Model):
-    submission = models.OneToOneField(
-        AssignmentSubmission, on_delete=models.CASCADE, related_name="feedback"
+    submission = models.ForeignKey(
+        AssignmentSubmission, on_delete=models.CASCADE, related_name="feedbacks"
     )
-    comments = models.TextField()
+    comment = models.TextField()
     provided_at = models.DateTimeField(auto_now_add=True)
     provided_by = models.ForeignKey(
         OrganizationUser,

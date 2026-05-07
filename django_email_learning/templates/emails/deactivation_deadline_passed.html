@@ -7,7 +7,7 @@
 
     <p class="email-paragraph">{% translate "Hello," %}</p>
 
-    <p class="email-paragraph" style="margin-bottom: 20px;">{% blocktranslate with quiz_title=quiz.title course_title=course_title %}Your deadline for the quiz {{quiz_title}} has passed, so your enrollment for {{course_title}} has been deactivated.{% endblocktranslate %}</p>
+    <p class="email-paragraph" style="margin-bottom: 20px;">{% blocktranslate with content_title=content_title course_title=course_title %}Your deadline for the {{content_title}} has passed, so your enrollment for {{course_title}} has been deactivated.{% endblocktranslate %}</p>
 
     <p class="email-paragraph">{% translate "Want to try again? You can re-enroll and restart the course from the beginning at any time." %}</p>
 

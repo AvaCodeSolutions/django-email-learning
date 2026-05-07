@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django import forms
 from django_email_learning.models import (
+    AssignmentFeedback,
     Lesson,
     Quiz,
     Course,
@@ -73,3 +74,4 @@ admin.site.register(Lesson)
 admin.site.register(Quiz)
 admin.site.register(Session, SessionAdmin)
 admin.site.register(AssignmentSubmission)
+admin.site.register(AssignmentFeedback)

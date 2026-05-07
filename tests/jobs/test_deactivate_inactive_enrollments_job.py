@@ -76,7 +76,7 @@ def test_deactivate_inactive_enrollments_job_deactivates_expired_quiz_delivery(
 
     send_email_spy.assert_called_once_with(
         enrollment.learner.email,
-        course_quiz_content.quiz,
+        delivery,
         course_quiz_content.course.title,
         course_quiz_content.course.organization.name,
     )

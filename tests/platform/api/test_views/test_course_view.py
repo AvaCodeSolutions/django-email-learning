@@ -502,8 +502,8 @@ def test_create_course_with_instructor_succeeds(users, superadmin_client):
     data = response.json()
     assert "instructors" in data
     assert len(data["instructors"]) == 1
-    assert data["instructors"][0]["id"] == instructor_org_user_id
-    assert data["instructors"][0]["email"] == "instructor@example.com"
+    assert data["instructors"][0]["display_name"] == "Instructor Name"
+    assert data["instructors"][0]["photo"] is None
 
 
 def test_create_course_response_has_empty_instructors_list_when_none_assigned(
@@ -575,9 +575,9 @@ def test_create_course_with_multiple_instructors(users, superadmin_client):
     assert response.status_code == 201
     data = response.json()
     assert len(data["instructors"]) == 2
-    returned_ids = {i["id"] for i in data["instructors"]}
-    assert instructor_org_user_id in returned_ids
-    assert second_org_user.id in returned_ids
+    returned_names = {i["display_name"] for i in data["instructors"]}
+    assert "Instructor Name" in returned_names
+    assert "Instructor 2" in returned_names
 
 
 # ---------------------------------------------------------------------------
@@ -606,8 +606,8 @@ def test_get_single_course_response_includes_instructors(users, superadmin_clien
     data = get_response.json()
     assert "instructors" in data
     assert len(data["instructors"]) == 1
-    assert data["instructors"][0]["id"] == instructor_org_user_id
-    assert data["instructors"][0]["email"] == "instructor@example.com"
+    assert data["instructors"][0]["display_name"] == "Instructor Name"
+    assert data["instructors"][0]["photo"] is None
 
 
 # ---------------------------------------------------------------------------
@@ -644,7 +644,8 @@ def test_update_course_adds_instructor(users, superadmin_client):
     assert update_response.status_code == 200
     data = update_response.json()
     assert len(data["instructors"]) == 1
-    assert data["instructors"][0]["id"] == instructor_org_user_id
+    assert data["instructors"][0]["display_name"] == "Instructor Name"
+    assert data["instructors"][0]["photo"] is None
 
 
 def test_update_course_removes_instructor_when_not_in_list(users, superadmin_client):
@@ -683,7 +684,8 @@ def test_update_course_removes_instructor_when_not_in_list(users, superadmin_cli
     data = update_response.json()
 
     assert len(data["instructors"]) == 1
-    assert data["instructors"][0]["id"] == instructor_org_user_id
+    assert data["instructors"][0]["display_name"] == "Instructor Name"
+    assert data["instructors"][0]["photo"] is None
     # Confirm DB record is gone
     assert not CourseInstructor.objects.filter(
         course_id=course_id, org_user=second_org_user
@@ -739,7 +741,8 @@ def test_update_course_omitting_instructors_does_not_change_them(
     data = update_response.json()
     assert data["title"] == "New Title"
     assert len(data["instructors"]) == 1
-    assert data["instructors"][0]["id"] == instructor_org_user_id
+    assert data["instructors"][0]["display_name"] == "Instructor Name"
+    assert data["instructors"][0]["photo"] is None
 
 
 def test_update_course_with_non_instructor_role_fails(users, superadmin_client):
