@@ -115,11 +115,21 @@ Same as all other sensitive configurations, it's a good practice to load this fr
    Changing this key after data has been created will prevent access to previously encrypted data. Chaning requires re-encrypting all existing data with the new key.
 
 
+**JWT_SECRET_KEY**
+
+A dedicated secret key used for signing and verifying JSON Web Tokens (JWTs). It should be a long, random string, independent of Django's ``SECRET_KEY`` and ``ENCRYPTION_SECRET_KEY``.
+
+Using a separate key ensures that a JWT secret compromise does not affect other parts of your application.
+
+Same as all other sensitive configurations, it's a good practice to load this from an environment variable or a secure vault.
+
+
 .. code-block:: python
 
     DJANGO_EMAIL_LEARNING = {
         'SITE_BASE_URL': 'https://yourdomain.com',
         'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
     }
 
 
@@ -135,6 +145,7 @@ The default email address for outgoing course emails. If not specified, falls ba
     DJANGO_EMAIL_LEARNING = {
         'SITE_BASE_URL': 'https://yourdomain.com',
         'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
         'FROM_EMAIL': 'courses@yourdomain.com',
     }
 
@@ -147,6 +158,7 @@ Optional link to your terms of service. When provided, this link is displayed in
     DJANGO_EMAIL_LEARNING = {
         'SITE_BASE_URL': 'https://yourdomain.com',
         'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
         'TERMS_OF_SERVICE_URL': 'https://yourdomain.com/terms',
     }
 
@@ -165,6 +177,7 @@ All values are boolean.
     DJANGO_EMAIL_LEARNING = {
         'SITE_BASE_URL': 'https://yourdomain.com',
         'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
         'QUIZ_DEFAULTS': {
             'LIMITED_ATTEMPTS': True,
             'IS_BLOCKING': True,
@@ -185,6 +198,7 @@ Optional configuration for injecting a custom component in the platform sidebar.
     DJANGO_EMAIL_LEARNING = {
         'SITE_BASE_URL': 'https://yourdomain.com',
         'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
         'SIDEBAR': {
             'CUSTOM_COMPONENT': {
                 'SCRIPT_URL': 'url/path-to-your-component.js',
@@ -209,6 +223,7 @@ Optional configuration for branding assets in the platform header.
     DJANGO_EMAIL_LEARNING = {
         'SITE_BASE_URL': 'https://yourdomain.com',
         'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
         'LOGO': {
             'HORIZONTAL_LOCKUP': {
                 'LIGHT_BACKGROUND': 'url/path-to-horizontal-logo-for-light-background.png',
@@ -232,6 +247,7 @@ If not specified, a default location will be used.
     DJANGO_EMAIL_LEARNING = {
         'SITE_BASE_URL': 'https://yourdomain.com',
         'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
         'PRIVATE_FILE_STORAGE_LOCATION': '/path/to/private/storage/',
     }
 
@@ -275,6 +291,7 @@ Currently supported built-in models are:
     DJANGO_EMAIL_LEARNING = {
         'SITE_BASE_URL': 'https://yourdomain.com',
         'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
         'AI': {
             'OPENAI_API_KEY': os.environ.get('OPENAI_API_KEY'),
             'TEXT_EDITING_MODEL': LanguageModel.GPT_4O_MINI.model_name,

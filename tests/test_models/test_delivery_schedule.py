@@ -58,7 +58,7 @@ def test_generate_link_assignment_with_zero_deadline_uses_datetime_max_exp(
     token = parse_qs(urlparse(link).query)["token"][0]
     decoded_token = jwt.decode(
         token,
-        settings.SECRET_KEY,
+        settings.DJANGO_EMAIL_LEARNING["JWT_SECRET_KEY"],
         algorithms=["HS256"],
         options={"verify_exp": False},
     )
@@ -69,7 +69,7 @@ def test_generate_link_assignment_with_zero_deadline_uses_datetime_max_exp(
     )
     expected_decoded = jwt.decode(
         expected_token,
-        settings.SECRET_KEY,
+        settings.DJANGO_EMAIL_LEARNING["JWT_SECRET_KEY"],
         algorithms=["HS256"],
         options={"verify_exp": False},
     )

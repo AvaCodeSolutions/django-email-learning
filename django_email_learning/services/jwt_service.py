@@ -3,7 +3,8 @@ from django.utils import timezone
 import datetime
 import jwt
 
-SECRET = settings.SECRET_KEY
+
+SECRET = settings.DJANGO_EMAIL_LEARNING["JWT_SECRET_KEY"]
 ALGORITHM = "HS256"
 
 
@@ -24,13 +25,13 @@ def generate_jwt(
     if not exp:
         exp = timezone.now() + datetime.timedelta(seconds=expiration_seconds)
     payload_copy["exp"] = exp
-    token = jwt.encode(payload_copy, SECRET, algorithm=ALGORITHM)
+    token = jwt.encode(payload_copy, SECRET, algorithm=ALGORITHM)  # type: ignore[arg-type]
     return token
 
 
 def decode_jwt(token: str) -> dict:
     try:
-        decoded = jwt.decode(token, SECRET, algorithms=[ALGORITHM])
+        decoded = jwt.decode(token, SECRET, algorithms=[ALGORITHM])  # type: ignore[arg-type]
         return decoded
     except (jwt.InvalidSignatureError, jwt.DecodeError, jwt.InvalidAlgorithmError):
         raise InvalidTokenException("The signature is invalid")
