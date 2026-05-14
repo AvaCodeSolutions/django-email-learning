@@ -32,6 +32,10 @@ from django_email_learning.models import (
     OrganizationUser,
 )
 from django_email_learning.services.jwt_service import generate_jwt
+from django_email_learning.services.storage_tools import (
+    move_file,
+    FileDoesNotExistError,
+)
 from django.utils.translation import get_language_info
 import enum
 
@@ -468,7 +472,22 @@ class CreateOrganizationRequest(BaseModel):
         organization.save()
         organization.refresh_from_db()
         if self.logo:
-            organization.replace_logo(self.logo)
+            try:
+                allowed_extensions = [".jpg", ".jpeg", ".png", ".svg"]
+                if not any(
+                    self.logo.lower().endswith(ext) for ext in allowed_extensions
+                ):
+                    raise ValueError(
+                        "Logo must be an image file with a valid extension."
+                    )
+                final_path = move_file(
+                    self.logo,
+                    f"organization_logos/{organization.id}/{self.logo.split('/')[-1]}",
+                )
+                organization.logo = final_path
+                organization.save()
+            except FileDoesNotExistError:
+                raise ValueError("Logo file does not exist.")
 
         return organization
 

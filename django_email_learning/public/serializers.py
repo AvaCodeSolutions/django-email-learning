@@ -34,7 +34,7 @@ class OrganizationSerializer(BaseModel):
     logo_url: str | None = None
     description: str | None = None
     courses: list[PublicCourseSerializer] = []
-    public_url: str
+    public_url: str | None = None
     website: str | None = None
     youtube_channel: str | None = None
     linkedin_page: str | None = None

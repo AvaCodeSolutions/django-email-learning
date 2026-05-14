@@ -19,6 +19,15 @@ def mask_email(email_address: str) -> str:
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+def get_private_file_storage() -> FileSystemStorage:
+    return FileSystemStorage(
+        location=DJNAGO_EMAIL_LEARNING_CONFIGS.get(
+            "PRIVATE_FILE_STORAGE_LOCATION", f"{BASE_DIR}/private_files/"
+        )
+    )
+
+
 PRIVATE_FILE_STORAGE = FileSystemStorage(
     location=DJNAGO_EMAIL_LEARNING_CONFIGS.get(
         "PRIVATE_FILE_STORAGE_LOCATION", f"{BASE_DIR}/private_files/"

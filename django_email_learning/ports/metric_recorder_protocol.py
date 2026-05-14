@@ -1,5 +1,5 @@
 from typing import Protocol
-from django_email_learning.models import DeactivationReason
+from django_email_learning.models.enums.deactivation_reason import DeactivationReason
 
 
 class MetricRecorderProtocol(Protocol):
