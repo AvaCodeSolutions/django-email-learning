@@ -93,7 +93,7 @@ class DeliverContentsJob:
         course_content = delivery_schedule.delivery.course_content
         if not course_content.is_published:
             logger.warning(
-                f"CourseCcontent {course_content.id} is not published. Canceling the delivery."
+                f"CourseContent {course_content.id} is not published. Canceling the delivery."
             )
             delivery_schedule.status = DeliveryStatus.CANCELED
             delivery_schedule.save()
