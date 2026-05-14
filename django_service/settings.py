@@ -109,6 +109,7 @@ DJANGO_EMAIL_LEARNING = {
     "ENCRYPTION_SECRET_KEY": "your-very-asdasdasdasecure-and-random-jwt-secret-keym0824+s26vkron%(@whp&wyaw=26",
     "FROM_EMAIL": os.environ.get("FROM_EMAIL", "webmaster@localhost"),
     "TERMS_OF_SERVICE_URL": "https://www.example.com/terms",
+    "PRIVATE_FILE_STORAGE_LOCATION": os.path.join(BASE_DIR, "private_files"),
     "AI": {
         "OPENAI_API_KEY": os.environ.get("OPENAI_API_KEY"),
         "TEXT_EDITING_MODEL": LanguageModel.GPT_4O_MINI.model_name,

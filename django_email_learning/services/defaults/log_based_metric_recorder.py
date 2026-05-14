@@ -1,5 +1,5 @@
 from django_email_learning.ports.metric_recorder_protocol import MetricRecorderProtocol
-from django_email_learning.models import DeactivationReason
+from django_email_learning.models.enums.deactivation_reason import DeactivationReason
 import logging
 
 logger = logging.getLogger(__name__)
