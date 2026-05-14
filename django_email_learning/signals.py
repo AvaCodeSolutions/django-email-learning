@@ -4,6 +4,10 @@ from django.db.models.signals import post_migrate
 from django.dispatch import receiver
 from django_email_learning.apps import PLATFORM_ADMIN_GROUP_NAME
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 @receiver(post_migrate)
 def create_platform_admin_group(sender, **kwargs) -> None:  # type: ignore[no-untyped-def]
@@ -83,7 +87,7 @@ def create_platform_admin_group(sender, **kwargs) -> None:  # type: ignore[no-un
         name=PLATFORM_ADMIN_GROUP_NAME
     )
     platform_admin_group.permissions.set(perms)
-    print(f"{PLATFORM_ADMIN_GROUP_NAME} group created.")
+    logger.info(f"{PLATFORM_ADMIN_GROUP_NAME} group created.")
 
 
 @receiver(post_migrate)
@@ -95,4 +99,4 @@ def create_default_organization(sender, **kwargs):  # type: ignore[no-untyped-de
     if not Organization.objects.exists():
         organization = Organization.objects.create(name="My Organization")
         organization.save()
-        print("Default organization 'My Organization' created.")
+        logger.info("Default organization 'My Organization' created.")
