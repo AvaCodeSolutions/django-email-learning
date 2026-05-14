@@ -92,7 +92,7 @@ def create_default_organization(sender, **kwargs):  # type: ignore[no-untyped-de
         return
 
     Organization = sender.get_model("Organization")
-    if not Organization.objects.count():
+    if not Organization.objects.exists():
         organization = Organization.objects.create(name="My Organization")
         organization.save()
         print("Default organization 'My Organization' created.")
