@@ -1,5 +1,5 @@
 from typing import Optional
-from django.db import models
+from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 from datetime import datetime, timedelta
@@ -113,6 +113,7 @@ class AssignmentSubmission(models.Model):
             return self.delivery.course_content.assignment  # type: ignore[assignment]
         raise ValueError("Associated content is not an assignment.")
 
+    @transaction.atomic
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         if not self.delivery.course_content.assignment:
             raise ValidationError(
