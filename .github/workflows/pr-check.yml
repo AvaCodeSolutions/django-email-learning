@@ -6,6 +6,26 @@ on:
     types: [opened, synchronize, reopened, updated]
 
 jobs:
+  changes:
+    name: Detect Changed Paths
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'tests/**'
+              - 'django_email_learning/**'
+            frontend:
+              - 'frontend/**'
+
   pre-commit:
     runs-on: ubuntu-latest
 
@@ -36,6 +56,8 @@ jobs:
 
   frontend-test:
     name: Frontend Tests (Node 20)
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -58,6 +80,8 @@ jobs:
 
   test:
     name: Test (Python ${{ matrix.python-version }}, Django ${{ matrix.django-versions }})
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
