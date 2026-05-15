@@ -162,7 +162,7 @@ class Enrollment(models.Model):
                 f"Learner ID {self.learner.id} has completed the course {self.course.title}."
             )
             self.save()
-            self.send_certificate_form()
+        transaction.on_commit(self.send_certificate_form)
 
     def send_certificate_form(self) -> None:
         if self.status != EnrollmentStatus.COMPLETED:
