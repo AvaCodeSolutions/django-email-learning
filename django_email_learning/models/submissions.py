@@ -19,7 +19,7 @@ class QuizSubmission(models.Model):
     is_passed = models.BooleanField()
     submitted_at = models.DateTimeField(auto_now_add=True)
 
-    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+    def clean(self) -> None:
         if self.delivery.course_content.type != "quiz":
             raise ValidationError("Sent item must be associated with a quiz content.")
         already_submitted = QuizSubmission.objects.filter(
@@ -32,6 +32,8 @@ class QuizSubmission(models.Model):
             raise ValidationError(
                 "Quiz submission count exceeds the number of times the quiz was sent."
             )
+
+    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self.full_clean()
         super().save(*args, **kwargs)
 
@@ -113,8 +115,8 @@ class AssignmentSubmission(models.Model):
             return self.delivery.course_content.assignment  # type: ignore[assignment]
         raise ValueError("Associated content is not an assignment.")
 
-    @transaction.atomic
-    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+    def clean(self) -> None:
+        super().clean()
         if not self.delivery.course_content.assignment:
             raise ValidationError(
                 "Sent item must be associated with an assignment content."
@@ -123,6 +125,9 @@ class AssignmentSubmission(models.Model):
             raise ValidationError(
                 "At least one of text submission or file submission must be provided."
             )
+
+    @transaction.atomic
+    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self.full_clean()
         if not self.pk and self.status != self.SubmissionStatus.PENDING_REVIEW:
             raise ValidationError("New submissions must have status 'pending_review'.")
