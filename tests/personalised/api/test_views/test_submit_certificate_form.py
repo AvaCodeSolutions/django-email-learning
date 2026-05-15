@@ -1,6 +1,7 @@
 from django.urls import reverse
 from django_email_learning.models import EnrollmentStatus
 from django_email_learning.services import jwt_service
+from django.utils import timezone
 from datetime import datetime
 
 NAME_ON_CERTIFICATE = "John Doe"
@@ -17,7 +18,9 @@ def test_submit_certificate_form_view_valid_token(enrollment, anonymous_client):
     token_payload = {
         "enrollment_id": enrollment.id,
     }
-    token = jwt_service.generate_jwt(token_payload, exp=datetime.max)
+    token = jwt_service.generate_jwt(
+        token_payload, exp=datetime.max.replace(tzinfo=timezone.get_current_timezone())
+    )
     response = anonymous_client.post(
         URL,
         data={"name": NAME_ON_CERTIFICATE, "token": token},
@@ -68,7 +71,9 @@ def test_submit_certificate_for_enrollment_in_an_invalid_state(
     token_payload = {
         "enrollment_id": enrollment.id,
     }
-    token = jwt_service.generate_jwt(token_payload, exp=datetime.max)
+    token = jwt_service.generate_jwt(
+        token_payload, exp=datetime.max.replace(tzinfo=timezone.get_current_timezone())
+    )
     response = anonymous_client.post(
         URL,
         data={"name": NAME_ON_CERTIFICATE, "token": token},
