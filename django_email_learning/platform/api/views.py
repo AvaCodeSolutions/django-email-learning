@@ -490,14 +490,13 @@ class OauthGroupEnrollment(View):
 
         try:
             users = handler.get_users_to_enroll(groups=serializer.groups)
+            course = Course.objects.get(id=handler.course_id)
             for user in users:
                 try:
                     EnrollCommand(
                         email=user.email,
-                        course_slug=Course.objects.get(id=handler.course_id).slug,
-                        organization_id=Course.objects.get(
-                            id=handler.course_id
-                        ).organization_id,
+                        course_slug=course.slug,
+                        organization_id=course.organization_id,
                         no_verification=True,
                     ).execute()
                     enrollment = Enrollment.objects.get(
