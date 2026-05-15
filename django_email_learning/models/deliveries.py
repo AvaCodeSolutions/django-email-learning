@@ -168,7 +168,7 @@ class DeliverySchedule(models.Model):
         if self.delivery.course_content.deadline_days:
             exp = self.time + timedelta(days=self.delivery.course_content.deadline_days)
         else:
-            exp = datetime.max
+            exp = datetime.max.replace(tzinfo=timezone.get_current_timezone())
 
         if self.delivery.course_content.quiz:
             if (

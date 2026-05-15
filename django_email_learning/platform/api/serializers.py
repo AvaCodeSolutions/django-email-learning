@@ -8,6 +8,7 @@ from pydantic import (
     model_validator,
 )
 from datetime import datetime
+from django.utils import timezone
 from typing import Optional, Literal, Any, Callable
 from django.urls import reverse
 from django_email_learning.models import (
@@ -50,7 +51,10 @@ class ApiKeyResponse(BaseModel):
     def from_django_model(api_key: ApiKey) -> "ApiKeyResponse":
         decrypted_key = api_key.decrypt_password(api_key.key)
         salt = api_key.salt
-        jwt_key = generate_jwt({"key": decrypted_key, "salt": salt}, exp=datetime.max)
+        jwt_key = generate_jwt(
+            {"key": decrypted_key, "salt": salt},
+            exp=datetime.max.replace(tzinfo=timezone.get_current_timezone()),
+        )
 
         return ApiKeyResponse.model_validate(
             {

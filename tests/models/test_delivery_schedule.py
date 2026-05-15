@@ -2,6 +2,7 @@ from django_email_learning.models import DeliverySchedule, ContentDelivery
 from urllib.parse import urlparse, parse_qs
 from django_email_learning.services import jwt_service
 from django.conf import settings
+from django.utils import timezone
 import jwt
 from datetime import datetime
 
@@ -65,7 +66,7 @@ def test_generate_link_assignment_with_zero_deadline_uses_datetime_max_exp(
 
     expected_token = jwt_service.generate_jwt(
         payload={"placeholder": 1},
-        exp=datetime.max,
+        exp=datetime.max.replace(tzinfo=timezone.get_current_timezone()),
     )
     expected_decoded = jwt.decode(
         expected_token,

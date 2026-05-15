@@ -175,7 +175,10 @@ class Enrollment(models.Model):
         logging.info(
             f"Executing SendCertificateFormCommand for enrollment ID {self.id}"
         )
-        token = jwt_service.generate_jwt(token_payload, exp=datetime.max)
+        token = jwt_service.generate_jwt(
+            token_payload,
+            exp=datetime.max.replace(tzinfo=timezone.get_current_timezone()),
+        )
         certificate_path = reverse(
             "django_email_learning:personalised:certificate_form"
         )
