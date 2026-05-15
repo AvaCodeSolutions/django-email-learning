@@ -105,7 +105,7 @@ class Enrollment(models.Model):
     )
     activation_code = models.CharField(max_length=6, null=True, blank=True)
 
-    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+    def clean(self) -> None:
         if self.pk:
             old_status = Enrollment.objects.get(pk=self.pk).status
             old_status = EnrollmentStatus(old_status)
@@ -115,8 +115,6 @@ class Enrollment(models.Model):
                     raise ValidationError(
                         f"Invalid status transition from {old_status} to {self.status}."
                     )
-        else:
-            self.activation_code = "".join(random.choices("0123456789", k=6))
         if self.status != "deactivated" and self.deactivation_reason is not None:
             raise ValidationError(
                 "Deactivation reason must be null unless status is 'deactivated'."
@@ -125,6 +123,10 @@ class Enrollment(models.Model):
             raise ValidationError(
                 "Deactivation reason must be provided when status is 'deactivated'."
             )
+
+    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        if not self.pk:
+            self.activation_code = "".join(random.choices("0123456789", k=6))
         self.full_clean()
         if self.status == EnrollmentStatus.ACTIVE and self.activated_at is None:
             self.activated_at = timezone.now()

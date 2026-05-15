@@ -117,13 +117,17 @@ class CourseInstructor(models.Model):
     def __str__(self) -> str:
         return f"{self.course.title} - {self.org_user.user.email}"
 
-    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+    def clean(self) -> None:
+        super().clean()
         if self.org_user.organization != self.course.organization:
             raise ValidationError(
                 "Instructor must belong to the same organization as the course."
             )
         if not self.org_user.can_act_as_instructor():
             raise ValidationError("Organization user doesn't have instructor role.")
+
+    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        self.full_clean()
         super().save(*args, **kwargs)
 
     class Meta:

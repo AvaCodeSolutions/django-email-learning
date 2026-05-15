@@ -6,7 +6,6 @@ from django_email_learning.models import (
 )
 import pytest
 from django.core.exceptions import ValidationError
-from django.db import IntegrityError
 from django.contrib.auth.models import User
 
 
@@ -136,11 +135,14 @@ class TestCourseInstructorUniqueness:
             org_user=org_instructor,
         )
 
-        with pytest.raises(IntegrityError):
+        with pytest.raises(ValidationError) as exc_info:
             CourseInstructor.objects.create(
                 course=course,
                 org_user=org_instructor,
             )
+        assert "Course instructor with this Course and Org user already exists." in str(
+            exc_info.value
+        )
 
     def test_same_instructor_can_teach_multiple_courses(
         self, db, organization, org_instructor
