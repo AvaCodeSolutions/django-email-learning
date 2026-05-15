@@ -114,11 +114,6 @@ def check_api_key() -> typing.Callable:
                     {"error": "Json Web Token missing required fields"}, status=401
                 )
 
-            try:
-                api_key = ApiKey.objects.get(salt=key_data["salt"])
-            except ApiKey.DoesNotExist:
-                return JsonResponse({"error": "Invalid API key"}, status=401)
-
             return view_func(request, *view_args, **view_kwargs)
 
         return _wrapped_view
