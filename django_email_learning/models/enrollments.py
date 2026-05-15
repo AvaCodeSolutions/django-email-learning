@@ -65,6 +65,10 @@ class Learner(models.Model):
 
 
 class Enrollment(models.Model):
+    def __init__(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        super().__init__(*args, **kwargs)
+        self._last_saved_status = self.status
+
     state_transitions = {
         EnrollmentStatus.UNVERIFIED: [
             EnrollmentStatus.ACTIVE,
@@ -107,19 +111,24 @@ class Enrollment(models.Model):
 
     def clean(self) -> None:
         if self.pk:
-            old_status = Enrollment.objects.get(pk=self.pk).status
-            old_status = EnrollmentStatus(old_status)
+            old_status = EnrollmentStatus(self._last_saved_status)
             if old_status != self.status:
                 allowed_transitions = self.state_transitions.get(old_status, [])
                 if self.status not in allowed_transitions:
                     raise ValidationError(
                         f"Invalid status transition from {old_status} to {self.status}."
                     )
-        if self.status != "deactivated" and self.deactivation_reason is not None:
+        if (
+            self.status != EnrollmentStatus.DEACTIVATED.value
+            and self.deactivation_reason is not None
+        ):
             raise ValidationError(
                 "Deactivation reason must be null unless status is 'deactivated'."
             )
-        if self.status == "deactivated" and not self.deactivation_reason:
+        if (
+            self.status == EnrollmentStatus.DEACTIVATED.value
+            and not self.deactivation_reason
+        ):
             raise ValidationError(
                 "Deactivation reason must be provided when status is 'deactivated'."
             )
@@ -133,7 +142,7 @@ class Enrollment(models.Model):
         if self.status in [EnrollmentStatus.COMPLETED, EnrollmentStatus.DEACTIVATED]:
             if self.final_state_at is None:
                 self.final_state_at = timezone.now()
-
+        self._last_saved_status = self.status
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
@@ -143,7 +152,13 @@ class Enrollment(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["learner", "course"],
-                condition=models.Q(status__in=["unverified", "active", "completed"]),
+                condition=models.Q(
+                    status__in=[
+                        EnrollmentStatus.UNVERIFIED.value,
+                        EnrollmentStatus.ACTIVE.value,
+                        EnrollmentStatus.COMPLETED.value,
+                    ]
+                ),
                 name="unique_active_enrollment",
             )
         ]
