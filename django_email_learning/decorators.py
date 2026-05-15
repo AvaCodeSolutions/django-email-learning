@@ -2,7 +2,11 @@ from functools import wraps
 from django.http import JsonResponse
 from django_email_learning.models import OrganizationUser
 from django_email_learning.apps import PLATFORM_ADMIN_GROUP_NAME
-from django_email_learning.services.jwt_service import decode_jwt, InvalidTokenException
+from django_email_learning.services.jwt_service import (
+    decode_jwt,
+    InvalidTokenException,
+    ExpiredTokenException,
+)
 from django_email_learning.models import ApiKey
 import typing
 
@@ -107,6 +111,8 @@ def check_api_key() -> typing.Callable:
                         break
                 if not key_matched:
                     return JsonResponse({"error": "Invalid API key"}, status=401)
+            except ExpiredTokenException:
+                return JsonResponse({"error": "Expired Json Web Token"}, status=401)
             except InvalidTokenException:
                 return JsonResponse({"error": "Invalid Json Web Token"}, status=401)
             except KeyError:
