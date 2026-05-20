@@ -85,6 +85,7 @@ def test_submitted_assignments_view_returns_expected_list_fields(
         "status",
         "reviewed_at",
         "reviewed_by",
+        "learner",
     }
     assert item["id"] == submission.id
     assert item["assignment_title"] == course_assignment_content.assignment.title

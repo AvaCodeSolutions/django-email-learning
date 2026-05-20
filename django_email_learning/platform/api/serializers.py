@@ -804,7 +804,7 @@ class LearnerResponse(BaseModel):
     id: int
     email: str
     photo: Optional[Any] = None
-    enrollments_count: EnrollmentsCount
+    enrollments_count: EnrollmentsCount | None = None
 
     @field_serializer("photo")
     def serialize_photo(self, photo: Optional[Any]) -> Optional[str]:
@@ -1238,10 +1238,12 @@ class AssignmentSubmissionResponse(BaseModel):
     assignment_title: str
     submitted_at: datetime
     status: AssignmentSubmission.SubmissionStatus
+    learner: LearnerResponse
     reviewed_at: Optional[datetime] = None
     reviewed_by: Optional[InstructorResponse] = None
     file_submission: Optional[str] = None
     text_submission: Optional[str] = None
+    file_name: Optional[str] = None
     feedbacks: list[FeedbackResponse] = []
 
     @staticmethod
@@ -1253,6 +1255,11 @@ class AssignmentSubmissionResponse(BaseModel):
             id=submission.id,
             assignment_title=submission.delivery.course_content.assignment.title,  # type: ignore[union-attr]
             submitted_at=submission.submitted_at,
+            learner=LearnerResponse(
+                id=submission.delivery.enrollment.learner.id,  # type: ignore[union-attr]
+                email=submission.delivery.enrollment.learner.email,  # type: ignore[union-attr]
+                photo=submission.delivery.enrollment.learner.photo,
+            ),
             status=AssignmentSubmission.SubmissionStatus(submission.status),
             reviewed_at=submission.reviewed_at,
             reviewed_by=InstructorResponse(
@@ -1265,6 +1272,9 @@ class AssignmentSubmissionResponse(BaseModel):
             if submission.reviewer
             else None,  # type: ignore[union-attr]
             file_submission=submission.private_file_url(),
+            file_name=submission.file_submission.name.split("/")[-1]
+            if submission.file_submission and submission.file_submission.name
+            else None,
             text_submission=submission.text_submission,
             feedbacks=[
                 FeedbackResponse(
@@ -1287,6 +1297,7 @@ class AssignmentSubmissionResponse(BaseModel):
 class AssignmentSubmissionSummaryResponse(BaseModel):
     id: int
     assignment_title: str
+    learner: LearnerResponse
     submitted_at: datetime
     status: AssignmentSubmission.SubmissionStatus
     reviewed_at: Optional[datetime] = None
@@ -1299,6 +1310,11 @@ class AssignmentSubmissionSummaryResponse(BaseModel):
         return AssignmentSubmissionSummaryResponse(
             id=submission.id,
             assignment_title=submission.delivery.course_content.assignment.title,  # type: ignore[union-attr]
+            learner=LearnerResponse(
+                id=submission.delivery.enrollment.learner.id,  # type: ignore[union-attr]
+                email=submission.delivery.enrollment.learner.email,  # type: ignore[union-attr]
+                photo=submission.delivery.enrollment.learner.photo,
+            ),
             submitted_at=submission.submitted_at,
             status=AssignmentSubmission.SubmissionStatus(submission.status),
             reviewed_at=submission.reviewed_at,

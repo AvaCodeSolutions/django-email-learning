@@ -266,5 +266,7 @@ def test_submission_review_response_includes_expected_fields(
         "feedbacks",
         "file_submission",
         "text_submission",
+        "file_name",
+        "learner",
     }
     assert payload["status"] == AssignmentSubmission.SubmissionStatus.REJECTED

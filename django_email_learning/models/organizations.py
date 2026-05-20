@@ -59,15 +59,15 @@ class OrganizationUser(models.Model):
         return f"{self.user.username} - {self.organization.name}"
 
     def can_act_as_instructor(self) -> bool:
-        if self.role == self.Roles.INSTRUCTOR and self.display_name:
+        if self.role == OrganizationUser.Roles.INSTRUCTOR and self.display_name:
             return True
-        if self.role == self.Roles.ADMIN and self.display_name:
+        if self.role == OrganizationUser.Roles.ADMIN and self.display_name:
             return True
         return False
 
     def clean(self) -> None:
         super().clean()
-        if self.role == self.Roles.INSTRUCTOR and not self.display_name:
+        if self.role == OrganizationUser.Roles.INSTRUCTOR and not self.display_name:
             raise ValidationError("Instructor role requires a display name.")
 
     def save(

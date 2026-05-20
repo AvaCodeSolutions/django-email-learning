@@ -32,6 +32,10 @@ import AssignmentTurnedInOutlinedIcon from '@mui/icons-material/AssignmentTurned
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import FeedbackOutlinedIcon from '@mui/icons-material/FeedbackOutlined';
 import RateReviewOutlinedIcon from '@mui/icons-material/RateReviewOutlined';
+import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import AttachFileOutlinedIcon from '@mui/icons-material/AttachFileOutlined';
+import OpenInNewOutlinedIcon from '@mui/icons-material/OpenInNewOutlined';
 import { useAppContext } from '../../../src/render.jsx';
 import { getCookie } from '../../../src/utils.js';
 
@@ -167,6 +171,37 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
         );
     };
 
+    const renderReviewResultValue = (value) => {
+        if (!reviewResultOptions.includes(value)) {
+            return localeMessages['select_review_result'] || 'Select review result';
+        }
+
+        if (value === 'approved') {
+            return (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, lineHeight: 1.2 }}>
+                    <CheckCircleOutlineIcon color="success" fontSize="small" />
+                    <span>{localeMessages['approved'] || 'Approved'}</span>
+                </Box>
+            );
+        }
+
+        if (value === 'rejected') {
+            return (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, lineHeight: 1.2 }}>
+                    <CancelOutlinedIcon color="error" fontSize="small" />
+                    <span>{localeMessages['rejected'] || 'Rejected'}</span>
+                </Box>
+            );
+        }
+
+        return (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, lineHeight: 1.2 }}>
+                <AutorenewOutlinedIcon color="warning" fontSize="small" />
+                <span>{localeMessages['requesting_changes'] || 'Requesting Changes'}</span>
+            </Box>
+        );
+    };
+
     const formatDateTime = (value) => {
         if (!value) {
             return '-';
@@ -176,6 +211,24 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
             return value;
         }
         return date.toLocaleString();
+    };
+
+    const getFileNameFromUrl = (url) => {
+        if (!url) {
+            return '-';
+        }
+        try {
+            const pathname = new URL(url, window.location.origin).pathname;
+            const encodedName = pathname.split('/').filter(Boolean).pop();
+            if (!encodedName) {
+                return 'Attached file';
+            }
+            return decodeURIComponent(encodedName);
+        } catch {
+            const cleanUrl = url.split('?')[0].split('#')[0];
+            const fallbackName = cleanUrl.split('/').filter(Boolean).pop();
+            return fallbackName || 'Attached file';
+        }
     };
 
     const openSubmissionDetail = (submissionId) => {
@@ -356,7 +409,7 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
                 maxWidth="md"
             >
                 <DialogTitle>
-                    <Stack direction="row" spacing={1} alignItems="center">
+                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                         <AssignmentTurnedInOutlinedIcon fontSize="small" />
                         <Typography variant="h6" component="span" sx={{ fontWeight: 700 }}>
                             {localeMessages['submitted_assignment_details'] || 'Submitted Assignment Details'}
@@ -372,39 +425,105 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
                                 {submissionDetail.assignment_title}
                             </Typography>
                             <Paper variant="outlined" sx={{ p: 2 }}>
-                                <Stack spacing={1.25}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                                        {localeMessages['status'] || 'Status'}
-                                    </Typography>
-                                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                                        {renderStatusChip(submissionDetail.status)}
-                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                            {localeMessages['submitted_at'] || 'Submitted At'}: {formatDateTime(submissionDetail.submitted_at)}
+                                <Stack spacing={1.5}>
+                                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                                        <InfoOutlinedIcon fontSize="small" color="action" />
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                            {localeMessages['status'] || 'Status'}
                                         </Typography>
                                     </Stack>
-                                    <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
-                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                            {localeMessages['reviewed_at'] || 'Reviewed At'}: {formatDateTime(submissionDetail.reviewed_at)}
-                                        </Typography>
-                                        <Stack direction="row" spacing={1} alignItems="center">
-                                            {submissionDetail.reviewed_by?.photo ? (
-                                                <Avatar
-                                                    src={submissionDetail.reviewed_by.photo}
-                                                    alt={submissionDetail.reviewed_by.display_name || 'Reviewer'}
-                                                    sx={{ width: 28, height: 28 }}
-                                                />
-                                            ) : null}
-                                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                                {localeMessages['reviewed_by'] || 'Reviewed By'}: {submissionDetail.reviewed_by?.display_name || '-'}
-                                            </Typography>
+
+                                    <Box
+                                        sx={{
+                                            p: 1.5,
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            borderRadius: 1.25,
+                                            backgroundColor: 'background.default',
+                                        }}
+                                    >
+                                        <Stack spacing={1.25}>
+                                            <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+                                                {renderStatusChip(submissionDetail.status)}
+                                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                    {localeMessages['submitted_at'] || 'Submitted At'}: {formatDateTime(submissionDetail.submitted_at)}
+                                                </Typography>
+                                            </Stack>
+                                            <Stack direction="row" spacing={2} useFlexGap sx={{ pt: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                    {localeMessages['reviewed_at'] || 'Reviewed At'}: {formatDateTime(submissionDetail.reviewed_at)}
+                                                </Typography>
+                                                <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                                                    {submissionDetail.reviewed_by?.photo ? (
+                                                        <Avatar
+                                                            src={submissionDetail.reviewed_by.photo}
+                                                            alt={submissionDetail.reviewed_by.display_name || 'Reviewer'}
+                                                            sx={{ width: 26, height: 26 }}
+                                                        />
+                                                    ) : null}
+                                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                        {localeMessages['reviewed_by'] || 'Reviewed By'}: {submissionDetail.reviewed_by?.display_name || '-'}
+                                                    </Typography>
+                                                </Stack>
+                                            </Stack>
                                         </Stack>
+                                    </Box>
+                                </Stack>
+                            </Paper>
+
+                            <Paper variant="outlined" sx={{ p: 2 }}>
+                                <Stack spacing={1.5}>
+                                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+                                        <PersonOutlineOutlinedIcon fontSize="small" color="action" />
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                            {localeMessages['learner_information'] || 'Learner Information'}
+                                        </Typography>
                                     </Stack>
+
+                                    {submissionDetail.learner ? (
+                                        <Box
+                                            sx={{
+                                                p: 1.5,
+                                                border: '1px solid',
+                                                borderColor: 'divider',
+                                                borderRadius: 1.25,
+                                                backgroundColor: 'background.default',
+                                            }}
+                                        >
+                                            <Stack spacing={1.25}>
+                                                <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexWrap: 'nowrap' }}>
+                                                    <Avatar
+                                                        src={submissionDetail.learner.photo || undefined}
+                                                        alt={submissionDetail.learner.email || 'Learner'}
+                                                        sx={{ width: 36, height: 36 }}
+                                                    >
+                                                        {submissionDetail.learner.email?.charAt(0)?.toUpperCase() || 'L'}
+                                                    </Avatar>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', minHeight: 36 }}>
+                                                        <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+                                                            {submissionDetail.learner.email || '-'}
+                                                        </Typography>
+                                                    </Box>
+                                                </Stack>
+
+                                                <Stack direction="row" spacing={2} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+                                                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                                        {localeMessages['learner_id'] || 'Learner ID'}: {submissionDetail.learner.id ?? '-'}
+                                                    </Typography>
+                                                </Stack>
+                                            </Stack>
+                                        </Box>
+                                    ) : (
+                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                            {localeMessages['learner_not_available'] || 'Learner information is not available.'}
+                                        </Typography>
+                                    )}
                                 </Stack>
                             </Paper>
 
                             <Paper variant="outlined" sx={{ p: 2 }}>
                                 <Stack spacing={1.25}>
-                                    <Stack direction="row" spacing={1} alignItems="center">
+                                    <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                                         <DescriptionOutlinedIcon fontSize="small" color="action" />
                                         <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                                             {localeMessages['submission_content'] || 'Submission Content'}
@@ -433,21 +552,62 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
                                             {localeMessages['no_text_submission'] || 'No text submission.'}
                                         </Typography>
                                     )}
-                                    <Stack direction="row" spacing={1} alignItems="center" sx={{ pt: 0.5 }}>
+                                    <Stack spacing={0.75} sx={{ pt: 0.5 }}>
                                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                            {localeMessages['file_submission'] || 'File Submission'}:
+                                            {localeMessages['file_submission'] || 'File Submission'}
                                         </Typography>
                                         {submissionDetail.file_submission ? (
-                                            <Typography
-                                                component="a"
-                                                href={submissionDetail.file_submission}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                variant="body2"
-                                                sx={{ color: 'primary.main', textDecoration: 'underline' }}
+                                            <Box
+                                                sx={{
+                                                    p: 1,
+                                                    border: '1px solid',
+                                                    borderColor: 'divider',
+                                                    borderRadius: 1,
+                                                    backgroundColor: 'background.paper',
+                                                }}
                                             >
-                                                {localeMessages['open_file'] || 'Open file'}
-                                            </Typography>
+                                                <Stack
+                                                    direction="row"
+                                                    spacing={1}
+                                                    useFlexGap
+                                                    sx={{
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                        flexWrap: 'wrap',
+                                                    }}
+                                                >
+                                                    <Stack direction="row" spacing={0.75} sx={{ minWidth: 0, alignItems: 'center' }}>
+                                                        <AttachFileOutlinedIcon fontSize="small" color="action" />
+                                                        <Typography
+                                                            variant="body2"
+                                                            sx={{
+                                                                color: 'text.secondary',
+                                                                wordBreak: 'break-all',
+                                                            }}
+                                                        >
+                                                            {getFileNameFromUrl(submissionDetail.file_name)}
+                                                        </Typography>
+                                                    </Stack>
+                                                    <Typography
+                                                        component="a"
+                                                        href={submissionDetail.file_submission}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        variant="body2"
+                                                        sx={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: 0.5,
+                                                            color: 'primary.main',
+                                                            fontWeight: 600,
+                                                            textDecoration: 'none',
+                                                        }}
+                                                    >
+                                                        {localeMessages['open_file'] || 'Open file'}
+                                                        <OpenInNewOutlinedIcon fontSize="inherit" />
+                                                    </Typography>
+                                                </Stack>
+                                            </Box>
                                         ) : (
                                             <Typography component="span" variant="body2" sx={{ color: 'text.secondary' }}>
                                                 {localeMessages['no_file_submission'] || 'No file submission.'}
@@ -458,7 +618,7 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
                             </Paper>
 
                             <Paper variant="outlined" sx={{ p: 2 }}>
-                                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
+                                <Stack direction="row" spacing={1} sx={{ mb: 1.5, alignItems: 'center' }}>
                                     <FeedbackOutlinedIcon fontSize="small" color="action" />
                                     <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                                         {localeMessages['feedbacks'] || 'Feedbacks'}
@@ -477,10 +637,7 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
                                             mb: 1,
                                         }}
                                     >
-                                        <Typography variant="body2" sx={{ mb: 0.5 }}>
-                                            {feedback.comment}
-                                        </Typography>
-                                        <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
+                                        <Stack direction="row" spacing={1.25} sx={{ mt: 1, alignItems: 'center' }}>
                                             {feedback.provided_by?.photo ? (
                                                 <Avatar
                                                     src={feedback.provided_by.photo}
@@ -488,10 +645,23 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
                                                     sx={{ width: 24, height: 24 }}
                                                 />
                                             ) : null}
-                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    color: 'text.secondary',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    minHeight: 24,
+                                                    lineHeight: 1.2,
+                                                }}
+                                            >
                                                 {(feedback.provided_by?.display_name || '-') + ' • ' + formatDateTime(feedback.provided_at)}
                                             </Typography>
                                         </Stack>
+                                        <Typography variant="body2" sx={{ my: 1 }}>
+                                            {feedback.comment}
+                                        </Typography>
+
                                     </Box>
                                 ))
                             ) : (
@@ -502,7 +672,7 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
                             </Paper>
 
                             <Paper variant="outlined" sx={{ p: 2 }}>
-                                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
+                                <Stack direction="row" spacing={1} sx={{ mb: 1.5, alignItems: 'center' }}>
                                     <RateReviewOutlinedIcon fontSize="small" color="action" />
                                     <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                                         {localeMessages['review_assignment'] || 'Review Assignment'}
@@ -518,19 +688,30 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
                                 value={reviewResult}
                                 onChange={(e) => setReviewResult(e.target.value)}
                                 sx={{ mt: 1 }}
+                                slotProps={{
+                                    select: {
+                                        renderValue: renderReviewResultValue,
+                                        sx: {
+                                            '& .MuiSelect-select': {
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                            },
+                                        },
+                                    },
+                                }}
                             >
                                 <MenuItem value="" disabled>
                                     {localeMessages['select_review_result'] || 'Select review result'}
                                 </MenuItem>
-                                <MenuItem value="approved" sx={{ gap: 1 }}>
+                                <MenuItem value="approved" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <CheckCircleOutlineIcon color="success" fontSize="small" />
                                     {localeMessages['approved'] || 'Approved'}
                                 </MenuItem>
-                                <MenuItem value="rejected" sx={{ gap: 1 }}>
+                                <MenuItem value="rejected" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <CancelOutlinedIcon color="error" fontSize="small" />
                                     {localeMessages['rejected'] || 'Rejected'}
                                 </MenuItem>
-                                <MenuItem value="requesting_changes" sx={{ gap: 1 }}>
+                                <MenuItem value="requesting_changes" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <AutorenewOutlinedIcon color="warning" fontSize="small" />
                                     {localeMessages['requesting_changes'] || 'Requesting Changes'}
                                 </MenuItem>
