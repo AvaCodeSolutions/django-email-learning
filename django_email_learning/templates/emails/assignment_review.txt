@@ -1,0 +1,19 @@
+{% load i18n %}
+{% load tz %}
+{% blocktranslate with assignment_title=assignment.title title_prefix=title_prefix %}{{ title_prefix }}: {{ assignment_title }}{% endblocktranslate %}
+
+{% translate "Hello there," %}
+
+{{ message }}
+
+{% if feedback %}
+{% blocktranslate with provider_name=feedback.provider.name %}Feedback from {{ provider_name }}:{% endblocktranslate %}
+{{ feedback.comment }}
+{% endif %}
+
+{% if change_requested %}
+{% translate "Please click the link below to access and update your assignment:" %}
+{{ link }}
+{% endif %}
+
+{% translate "Unsubscribe link:" %} {{ unsubscribe_link }}

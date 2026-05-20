@@ -1,0 +1,71 @@
+{% extends "emails/base.html" %}
+{% load i18n %}
+{% load tz %}
+
+{% block extra_styles %}
+        .provider-photo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50% !important;
+            margin-right: 10px;
+            display: inline-block;
+        }
+        .provider-name {
+            font-weight: bold;
+            display: inline-block;
+            vertical-align: top;
+            padding-top: 10px;
+        }
+        .feedback-comment {
+            display: inline-block;
+            vertical-align: top;
+            max-width: calc(100% - 50px);
+            font-style: italic;
+            color: #555;
+        }
+        .feedback-panel {
+            background-color: #f9f9f9;
+            border-left: 4px solid #ddd;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+{% endblock %}
+
+{% block content %}
+    <h2 class="email-title">{% blocktranslate with assignment_title=assignment.title title_prefix=title_prefix %}{{ title_prefix }}: {{ assignment_title }}{% endblocktranslate %}</h2>
+
+    <p class="email-paragraph">{% translate "Hello there," %}</p>
+
+    <p class="email-paragraph" style="margin-bottom: 10px;">{{ message }}</p>
+
+    <div class="feedback-panel">
+
+
+        {% if feedback %}
+            <p class="email-paragraph" style="margin-bottom: 0;">
+                {% if feedback.provider.photo %}
+                    <img src="{{ feedback.provider.photo }}" alt="{{ feedback.provider.name }}" class="provider-photo">
+                {% endif %}
+                <span class="provider-name">{{ feedback.provider.name }}</span>
+                <br>
+                <p class="feedback-comment">
+                    {{ feedback.comment }}
+                </p>
+            </p>
+        {% endif %}
+    </div>
+    {% if change_requested %}
+        <p class="email-paragraph">{% translate "Please click the link below to access and update your assignment:" %}</p>
+
+        <div class="email-cta-wrap assignment-cta-wrap">
+            <a href="{{ link }}" class="email-cta assignment-cta bg-brand">
+                {% translate "Update Your Assignment" %}
+            </a>
+        </div>
+    {% endif %}
+
+    <p class="email-muted-note">
+        {% blocktranslate %}If you wish to unsubscribe from this course, please <a href="{{ unsubscribe_link }}" class="color-brand" style="text-decoration: none;">click here</a>{% endblocktranslate %}.
+    </p>
+{% endblock %}

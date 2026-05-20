@@ -43,6 +43,13 @@ class ContentDelivery(models.Model):
         unique_together = [["enrollment", "course_content"]]
 
     @property
+    def link(self) -> Optional[str]:
+        latest_schedule = self.delivery_schedules.order_by("-time").first()
+        if latest_schedule and latest_schedule.link:
+            return latest_schedule.link
+        return None
+
+    @property
     def times_delivered(self) -> int:
         return self.delivery_schedules.filter(status=DeliveryStatus.DELIVERED).count()  # type: ignore[misc]
 
