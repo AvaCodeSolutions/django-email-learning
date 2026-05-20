@@ -116,7 +116,7 @@ function Learners(initialQs="") {
                   <Box><Typography>{localeMessages["reason"]}: {event.event_data.reason}</Typography></Box>
                 </>}
                 { event.type === "reminder_sent" && <>
-                  <Box><Typography>{localeMessages["quiz_title"]}: {event.event_data.quiz_title}</Typography></Box>
+                  <Box><Typography>{localeMessages["quiz_title"]}: {event.event_data.content_title}</Typography></Box>
                 </>}
               </TimelineContent>
             </TimelineItem>
