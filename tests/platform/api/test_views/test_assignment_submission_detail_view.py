@@ -79,6 +79,8 @@ def test_assignment_submission_detail_view_returns_expected_fields(
         "feedbacks",
         "text_submission",
         "file_submission",
+        "file_name",
+        "learner",
     }
     assert payload["id"] == submission.id
     assert payload["assignment_title"] == course_assignment_content.assignment.title
