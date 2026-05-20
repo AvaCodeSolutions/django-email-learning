@@ -76,6 +76,16 @@ class MetricsService:
             course_slug, organization_id, assignment_id
         )
 
+    def assignment_review_sent(
+        self,
+        course_slug: str,
+        organization_id: int,
+        assignment_id: int,
+    ) -> None:
+        self.metric_recorder.assignment_review_sent(
+            course_slug, organization_id, assignment_id
+        )
+
     def quiz_submitted(
         self,
         course_slug: str,

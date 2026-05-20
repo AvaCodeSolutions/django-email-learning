@@ -22,6 +22,9 @@ from django_email_learning.services.command_models.enroll_command import EnrollC
 from django_email_learning.services.command_models.send_lesson_command import (
     SendLessonCommand,
 )
+from django_email_learning.services.command_models.send_assignment_review_command import (
+    SendAssignmentReviewCommand,
+)
 from django_email_learning.services.command_models.verify_enrollment_command import (
     VerifyEnrollmentCommand,
 )
@@ -732,6 +735,7 @@ class SubmissionReview(View):
         try:
             serializer = serializers.ReviewRquest.model_validate(payload)
             submission = AssignmentSubmission.objects.get(id=kwargs["submission_id"])
+            initial_status = submission.status
             if (
                 submission.delivery.course_content.course.organization_id
                 != kwargs["organization_id"]
@@ -758,6 +762,19 @@ class SubmissionReview(View):
                     logger.warning(
                         f"User {request.user.id} can not act as instructor, feedback not saved for submission {submission.id}, but status was updated to {submission.status}"
                     )
+
+            # Send assignment review email
+            if submission.status != initial_status or serializer.comment is not None:
+                try:
+                    SendAssignmentReviewCommand(
+                        submission=submission,
+                        include_last_feedback=serializer.comment is not None,
+                    ).execute()
+                except Exception as e:
+                    logger.error(
+                        f"Failed to send assignment review email for submission {submission.id}: {str(e)}"
+                    )
+
             return JsonResponse(
                 serializers.AssignmentSubmissionResponse.from_django_model(
                     submission,

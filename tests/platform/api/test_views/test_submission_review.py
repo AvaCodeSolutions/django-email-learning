@@ -1,4 +1,5 @@
 import json
+from unittest.mock import patch
 
 from django.urls import reverse
 from django_email_learning.models import (
@@ -270,3 +271,82 @@ def test_submission_review_response_includes_expected_fields(
         "learner",
     }
     assert payload["status"] == AssignmentSubmission.SubmissionStatus.REJECTED
+
+
+@patch("django_email_learning.platform.api.views.SendAssignmentReviewCommand")
+def test_submission_review_calls_review_command_when_status_changes(
+    mock_send_assignment_review_command,
+    instructor_client,
+    submission,
+    course_assignment_content,
+):
+    response = instructor_client.post(
+        get_url(
+            organization_id=course_assignment_content.course.organization_id,
+            course_id=course_assignment_content.course_id,
+            submission_id=submission.id,
+        ),
+        data=json.dumps({"review_result": "approved"}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    mock_send_assignment_review_command.assert_called_once()
+    call_kwargs = mock_send_assignment_review_command.call_args.kwargs
+    assert call_kwargs["submission"].id == submission.id
+    assert call_kwargs["include_last_feedback"] is False
+    mock_send_assignment_review_command.return_value.execute.assert_called_once_with()
+
+
+@patch("django_email_learning.platform.api.views.SendAssignmentReviewCommand")
+def test_submission_review_does_not_call_review_command_when_status_unchanged_and_no_comment(
+    mock_send_assignment_review_command,
+    instructor_client,
+    submission,
+    course_assignment_content,
+):
+    submission.status = AssignmentSubmission.SubmissionStatus.REJECTED
+    submission.save(update_fields=["status"])
+
+    response = instructor_client.post(
+        get_url(
+            organization_id=course_assignment_content.course.organization_id,
+            course_id=course_assignment_content.course_id,
+            submission_id=submission.id,
+        ),
+        data=json.dumps({"review_result": "rejected"}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    mock_send_assignment_review_command.assert_not_called()
+
+
+@patch("django_email_learning.platform.api.views.SendAssignmentReviewCommand")
+def test_submission_review_calls_review_command_when_comment_is_provided_even_if_status_unchanged(
+    mock_send_assignment_review_command,
+    instructor_client,
+    submission,
+    course_assignment_content,
+):
+    submission.status = AssignmentSubmission.SubmissionStatus.REJECTED
+    submission.save(update_fields=["status"])
+
+    response = instructor_client.post(
+        get_url(
+            organization_id=course_assignment_content.course.organization_id,
+            course_id=course_assignment_content.course_id,
+            submission_id=submission.id,
+        ),
+        data=json.dumps(
+            {"review_result": "rejected", "comment": "Needs more details."}
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    mock_send_assignment_review_command.assert_called_once()
+    call_kwargs = mock_send_assignment_review_command.call_args.kwargs
+    assert call_kwargs["submission"].id == submission.id
+    assert call_kwargs["include_last_feedback"] is True
+    mock_send_assignment_review_command.return_value.execute.assert_called_once_with()

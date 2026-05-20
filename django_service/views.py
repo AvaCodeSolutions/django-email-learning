@@ -32,12 +32,14 @@ class EmailTemplatePreview(TemplateView):
             "quiz",
             "assignment",
             "assignment_reminder",
+            "assignment_review",
             "quiz_reminder",
             "deactivation_deadline_passed",
         ]:
             raise ValueError(
                 "Invalid template name. Allowed values are: 'certificate_form', 'enrollment_verified', "
-                "'enrollment_verification', 'lesson', 'password_reset', 'quiz', 'assignment', 'quiz_reminder', 'deactivation_deadline_passed'."
+                "'enrollment_verification', 'lesson', 'password_reset', 'quiz', 'assignment', "
+                "'assignment_reminder', 'assignment_review', 'quiz_reminder', 'deactivation_deadline_passed'."
             )
 
         return [f"emails/{template_name}.html"]
@@ -66,6 +68,17 @@ class EmailTemplatePreview(TemplateView):
             "uid": "sampleuid",
             "token": "sampletoken",
             "progress": 40,
+            "message": "Your assignment has been reviewed and changes have been requested. Please review the feedback and update your submission accordingly.",
+            "change_requested": True,
+            "title_prefix": "Change Requested",
+            "feedback": {
+                "provider": {
+                    "name": "John Doe",
+                    "photo": "https://i.pravatar.cc/50?img=12",  # Replace with a mock photo object if needed
+                },
+                "comment": "Please update your code to handle edge cases.",
+            },
+            "link": "https://example.com/assignment/1",
             "deadline_time": timezone.now(),
             "assignment": assignment,
             "next_content": content.get_next() if content else None,
