@@ -23,6 +23,8 @@ jobs:
             backend:
               - 'tests/**'
               - 'django_email_learning/**'
+              - 'poetry.lock'
+              - 'pyproject.toml'
             frontend:
               - 'frontend/**'
 
