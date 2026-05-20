@@ -55,26 +55,20 @@ class Course(models.Model):
 
     @property
     def enrollments_count(self) -> dict[str, int]:
-        unverified_count = self.enrollment_set.filter(
-            status=EnrollmentStatus.UNVERIFIED
-        ).count()
-        active_count = self.enrollment_set.filter(
-            status=EnrollmentStatus.ACTIVE
-        ).count()
-        completed_count = self.enrollment_set.filter(
-            status=EnrollmentStatus.COMPLETED
-        ).count()
-        deactivated_count = self.enrollment_set.filter(
-            status=EnrollmentStatus.DEACTIVATED
-        ).count()
-        total_count = self.enrollment_set.count()
-        return {
-            EnrollmentStatus.UNVERIFIED: unverified_count,
-            EnrollmentStatus.ACTIVE: active_count,
-            EnrollmentStatus.COMPLETED: completed_count,
-            EnrollmentStatus.DEACTIVATED: deactivated_count,
-            "total": total_count,
-        }
+        qs = self.enrollment_set.aggregate(
+            unverified=models.Count(
+                "id", filter=models.Q(status=EnrollmentStatus.UNVERIFIED)
+            ),
+            active=models.Count("id", filter=models.Q(status=EnrollmentStatus.ACTIVE)),
+            completed=models.Count(
+                "id", filter=models.Q(status=EnrollmentStatus.COMPLETED)
+            ),
+            deactivated=models.Count(
+                "id", filter=models.Q(status=EnrollmentStatus.DEACTIVATED)
+            ),
+            total=models.Count("id"),
+        )
+        return qs
 
     def generate_unsubscribe_link(self, email: str) -> str:
         payload = {
