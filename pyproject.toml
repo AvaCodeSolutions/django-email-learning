@@ -1,6 +1,6 @@
 [project]
 name = "django-email-learning"
-version = "0.4.3"
+version = "0.4.4"
 description = "A platform for creating and delivering  learning materials via email within a Django application. It provides tools for content management, user role-based administration, and scheduler integration for automated content delivery."
 authors = [
     {name = "Payam Najafizadeh",email = "payam.nj@gmail.com"}
@@ -25,7 +25,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: BSD License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
