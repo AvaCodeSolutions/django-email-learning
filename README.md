@@ -1,16 +1,21 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/AvaCodeSolutions/django-email-learning/master/assets/Django2@2x.png" alt="Django Email Learning Logo" width="300">
+  <br><br>
+  <a href="https://opensource.org/licenses/BSD-3-Clause"><img src="https://img.shields.io/badge/License-BSD%203--Clause-blue.svg"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.12+-blue.svg"></a>
+  <a href="https://www.djangoproject.com/"><img src="https://img.shields.io/badge/django-5.0+-green.svg"></a>
+  <img src="https://github.com/AvaCodeSolutions/django-email-learning/actions/workflows/pr-check.yml/badge.svg">
 </p>
 
 # Django Email Learning
 
 A Django package for creating email-based learning platforms with IMAP integration and React frontend components.
 
-[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
-[![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Django](https://img.shields.io/badge/django-5.0+-green.svg)](https://www.djangoproject.com/)
-![Tests](https://github.com/AvaCodeSolutions/django-email-learning/actions/workflows/pr-check.yml/badge.svg)
+## Sponsorship
 
+Support our open-source work and community projects by sponsoring us through [GitHub Sponsors](https://github.com/sponsors/AvaCodeSolutions) or [Open Collective](https://opencollective.com/django-email-learning). Depending on your sponsorship tier, we can feature your logo and link on the project’s README and documentation.
+
+[![Sponsor us](https://img.shields.io/badge/Sponsor_our_project-white?style=for-the-badge&logo=githubsponsors)](https://opencollective.com/django-email-learning)
 
 ## What is django-email-learning?
 
@@ -44,17 +49,6 @@ While modern e-learning platforms often rely heavily on video content and comple
 
 - **Simplicity:** Email is universal, familiar, and works on virtually any device.
 
-## UI Preview
-
-A quick look at the platform interface:
-
-| Course Dashboard | Public Organization Page |
-| --- | --- |
-| ![Course Dashboard](https://raw.githubusercontent.com/AvaCodeSolutions/django-email-learning/refs/heads/master/assets/screenshots/course-dashboard.jpeg) | ![Public Organization Page](https://raw.githubusercontent.com/AvaCodeSolutions/django-email-learning/refs/heads/master/assets/screenshots/public-org.jpeg) |
-| Learner Progress | Certificate |
-| ![Learner Progress](https://raw.githubusercontent.com/AvaCodeSolutions/django-email-learning/master/assets/screenshots/learner-progress.jpeg) | ![Certificate](https://raw.githubusercontent.com/AvaCodeSolutions/django-email-learning/refs/heads/master/assets/screenshots/certificate.jpeg) |
-
-
 ## Documentation
 
 Comprehensive documentation is available at [django-email-learning.readthedocs.io](https://django-email-learning.readthedocs.io), including:
@@ -63,12 +57,6 @@ Comprehensive documentation is available at [django-email-learning.readthedocs.i
 - **Platform Management**: Creating organizations, courses, and managing learners
 - **Technical Reference**: Management commands and configuration
 - **Usage Examples**: Real-world implementation scenarios
-
-## Try It as a Learner
-
-Want to experience the platform from a learner perspective? Enroll in a public course at:
-
-- [InboxAcademy: Django Email Learning - Build Your Own Email-Based Learning Platform](https://inboxacademy.io/learning/public/organizations/1/)
 
 ## Installation
 
@@ -159,13 +147,6 @@ This endpoint requires an API key. You can generate and manage API keys from Pla
 ## Contributing
 
 We welcome contributions! Please read our [Contributing Guide](https://github.com/AvaCodeSolutions/django-email-learning/blob/master/CONTRIBUTING.md) to learn about our development process, how to set up the development environment, and how to submit pull requests.
-
-## Sponsorship
-
-Support our open-source work and community projects by sponsoring us through [GitHub Sponsors](https://github.com/sponsors/AvaCodeSolutions) or [Open Collective](https://opencollective.com/django-email-learning). Depending on your sponsorship tier, we can feature your logo and link on the project’s README and documentation.
-
-[![Sponsor us](https://img.shields.io/badge/Sponsor_our_project-white?style=for-the-badge&logo=githubsponsors)](https://opencollective.com/django-email-learning)
-
 
 ## License
 

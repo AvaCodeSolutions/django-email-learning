@@ -50,10 +50,8 @@ Course Fields
   A URL-friendly identifier that must be unique within your organization. This is used in enrollment URLs and should be descriptive but concise (e.g., "intro-python-programming").
 
 **IMAP Connection** (Optional)
-  Currently not utilized by the platform but reserved for future. You may leave this blank for now.
-
-.. note::
-   **Future Feature**: The IMAP connection field will be used in upcoming releases to provide email based command operations. You can safely ignore this field for the current version.
+  If you want your learners to be able to interact with the course via email, you can set up an IMAP connection.
+  This allows learners to enroll or unsubscribe from the course via email without visiting the platform.
 
 Course Status Management
 ------------------------
