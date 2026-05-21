@@ -9,6 +9,7 @@ from django.template.loader import render_to_string
 from typing import Literal, Optional
 from pydantic import ConfigDict
 from django.utils.translation import gettext as _
+from django.conf import settings
 from django_email_learning.services.utils import mask_email
 
 
@@ -78,6 +79,7 @@ class SendAssignmentReviewCommand(AbstractCommand):
             raise ValueError(f"Invalid submission status: {self.submission.status}")
 
         course = self.submission.delivery.enrollment.course
+        site_base_url = settings.DJANGO_EMAIL_LEARNING["SITE_BASE_URL"]
 
         context = {
             "message": message,
@@ -88,7 +90,7 @@ class SendAssignmentReviewCommand(AbstractCommand):
                     "name": feedback.provided_by.display_name
                     if feedback.provided_by.display_name
                     else _("Instructor"),
-                    "photo": feedback.provided_by.photo.url
+                    "photo": f"{site_base_url}{feedback.provided_by.photo.url}"
                     if feedback.provided_by.photo
                     else None,
                 }
