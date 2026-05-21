@@ -28,13 +28,24 @@ exclude_patterns = []
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "alabaster"
+html_theme = "furo"
 
 html_theme_options = {
-    "description": "A Django app for email-based learning management systems.",
-    "logo": "logo.png",
-    "github_user": "AvaCodeSolutions",
-    "github_repo": "django-email-learning",
-    "github_banner": True,
+    "light_css_variables": {
+        "font-stack": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+        "font-stack--monospace": "JetBrains Mono, Fira Code, monospace",
+        "font-size--normal": "17px",
+        "content-padding": "3em",
+        "content-padding--small": "1.5em",
+    },
+    "dark_css_variables": {
+        "font-stack": "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+        "font-stack--monospace": "JetBrains Mono, Fira Code, monospace",
+    },
+    "source_repository": "https://github.com/AvaCodeSolutions/django-email-learning",
+    "source_branch": "master",
+    "source_directory": "docs/source/",
 }
+
+html_css_files = ["css/custom.css"]
 html_static_path = ["_static"]

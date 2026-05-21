@@ -1,0 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* Increase paragraph and list spacing */
+.rst-content p,
+article p {
+    line-height: 1.8;
+    margin-bottom: 1.2em;
+}
+
+article li {
+    margin-bottom: 0.4em;
+}
