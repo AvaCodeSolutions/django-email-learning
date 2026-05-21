@@ -90,7 +90,7 @@ def test_send_reminders_job_marks_not_applicable_when_quiz_not_found(
 
 def test_send_reminders_job_triggers_started_metric(db, reminder_queue_mock):
     with patch.object(
-        send_reminders_job_module.METRIC_SERVICE,
+        send_reminders_job_module.metric_service,
         "job_execution_started",
     ) as metric_started_spy:
         job = SendRemindersJob()
@@ -101,7 +101,7 @@ def test_send_reminders_job_triggers_started_metric(db, reminder_queue_mock):
 
 def test_send_reminders_job_triggers_finished_metric(db, reminder_queue_mock):
     with patch.object(
-        send_reminders_job_module.METRIC_SERVICE,
+        send_reminders_job_module.metric_service,
         "job_execution_finished",
     ) as metric_finished_spy:
         job = SendRemindersJob()
@@ -133,7 +133,7 @@ def test_send_reminders_job_blocks_on_unexpected_exception_and_tracks_metric(
         "execute",
         side_effect=Exception("Simulated reminder failure"),
     ), patch.object(
-        send_reminders_job_module.METRIC_SERVICE,
+        send_reminders_job_module.metric_service,
         "reminder_schedule_blocked",
     ) as metric_blocked_spy:
         job = SendRemindersJob()
@@ -155,10 +155,10 @@ def test_send_reminders_job_does_not_emit_start_or_finish_metrics_when_already_r
     )
 
     with patch.object(
-        send_reminders_job_module.METRIC_SERVICE,
+        send_reminders_job_module.metric_service,
         "job_execution_started",
     ) as metric_started_spy, patch.object(
-        send_reminders_job_module.METRIC_SERVICE,
+        send_reminders_job_module.metric_service,
         "job_execution_finished",
     ) as metric_finished_spy:
         SendRemindersJob().run()

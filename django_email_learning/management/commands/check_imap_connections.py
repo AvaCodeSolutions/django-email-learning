@@ -1,12 +1,9 @@
 from django.core.management.base import BaseCommand
 from django_email_learning.jobs.check_imap_job import CheckIMAPJob
 from django.core.management.base import CommandParser
-from django_email_learning.services.metrics_service import MetricsService
+from django_email_learning.services.metrics_service import metric_service
 from django_email_learning.models import JobName
 import logging
-
-
-metric_service = MetricsService()
 
 
 class Command(BaseCommand):

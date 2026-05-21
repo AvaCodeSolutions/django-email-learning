@@ -2,8 +2,8 @@ from django_email_learning.services.command_models.abstract_command import (
     AbstractCommand,
 )
 from django_email_learning.models import AssignmentSubmission
-from django_email_learning.services.email_sender_service import EmailSenderService
-from django_email_learning.services.metrics_service import MetricsService
+from django_email_learning.services.email_sender_service import email_sender_service
+from django_email_learning.services.metrics_service import metric_service
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from typing import Literal, Optional
@@ -24,8 +24,6 @@ class SendAssignmentReviewCommand(AbstractCommand):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def execute(self) -> None:
-        metric_service = MetricsService()
-
         if not self.submission.assignment:
             raise AssignmentSubmissionNotFoundError(
                 f"CourseContent with ID {self.submission.id} has no associated assignment"
@@ -106,11 +104,10 @@ class SendAssignmentReviewCommand(AbstractCommand):
         }
         payload = render_to_string("emails/assignment_review.txt", context)
 
-        email_service = EmailSenderService()
         email_message = EmailMultiAlternatives(
             subject=subject,
             body=payload,
-            from_email=email_service.from_email,
+            from_email=email_sender_service.from_email,
             to=[email],
         )
         email_message.attach_alternative(
@@ -118,7 +115,7 @@ class SendAssignmentReviewCommand(AbstractCommand):
         )
 
         try:
-            email_service.send(email_message)
+            email_sender_service.send(email_message)
             metric_service.assignment_review_sent(
                 course_slug=course.slug,
                 organization_id=course.organization.id,

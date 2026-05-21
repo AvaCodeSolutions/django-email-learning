@@ -10,9 +10,9 @@ from .organizations import Organization
 from .courses import Course
 from .enums.enrollment_status import EnrollmentStatus
 from .enums.deactivation_reason import DeactivationReason
-from django_email_learning.services.email_sender_service import EmailSenderService
+from django_email_learning.services.email_sender_service import email_sender_service
 from django_email_learning.services import jwt_service
-from django_email_learning.services.metrics_service import MetricsService
+from django_email_learning.services.metrics_service import metric_service
 from django.utils.translation import gettext_lazy as _
 from django.template.loader import render_to_string
 from .enums.delivery_status import DeliveryStatus
@@ -21,8 +21,6 @@ from datetime import timedelta, datetime
 
 
 logger = logging.getLogger(__name__)
-
-METRIC_SERVICE = MetricsService()
 
 
 class BlockedEmail(models.Model):
@@ -171,7 +169,7 @@ class Enrollment(models.Model):
                 )
             self.status = EnrollmentStatus.COMPLETED
             self.final_state_at = timezone.now()
-            METRIC_SERVICE.user_completed_course(
+            metric_service.user_completed_course(
                 course_slug=self.course.slug,
                 organization_id=self.course.organization.id,
             )
@@ -210,18 +208,17 @@ class Enrollment(models.Model):
         }
         payload = render_to_string("emails/certificate_form.txt", context)
 
-        email_service = EmailSenderService()
         email_message = EmailMultiAlternatives(
             subject=subject,
             body=payload,
-            from_email=email_service.from_email,
+            from_email=email_sender_service.from_email,
             to=[self.learner.email],
         )
         email_message.attach_alternative(
             render_to_string("emails/certificate_form.html", context), "text/html"
         )
 
-        email_service.send(email_message)
+        email_sender_service.send(email_message)
         logging.info(f"Certificate form email sent for enrollment ID {self.id}")
 
     def fail(self) -> None:
@@ -230,7 +227,7 @@ class Enrollment(models.Model):
         self.status = EnrollmentStatus.DEACTIVATED
         self.deactivation_reason = DeactivationReason.FAILED
         self.final_state_at = timezone.now()
-        METRIC_SERVICE.user_enrollment_deactivated(
+        metric_service.user_enrollment_deactivated(
             course_slug=self.course.slug,
             organization_id=self.course.organization.id,
             reason=DeactivationReason.FAILED,

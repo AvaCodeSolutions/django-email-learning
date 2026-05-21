@@ -6,7 +6,7 @@ from django_email_learning.models import (
     Enrollment,
     EnrollmentStatus,
 )
-from django_email_learning.services.email_sender_service import EmailSenderService
+from django_email_learning.services.email_sender_service import email_sender_service
 from django_email_learning.services.metrics_service import MetricsService
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -61,19 +61,17 @@ class SendLessonCommand(AbstractCommand):
         }
         payload = render_to_string("emails/lesson.txt", context)
 
-        email_service = EmailSenderService()
-
         email_message = EmailMultiAlternatives(
             subject=subject,
             body=payload,
-            from_email=email_service.from_email,
+            from_email=email_sender_service.from_email,
             to=[self.email],
         )
         email_message.attach_alternative(
             render_to_string("emails/lesson.html", context), "text/html"
         )
 
-        email_service.send(email_message)
+        email_sender_service.send(email_message)
         metric_service.lesson_sent(
             course_slug=content.course.slug,
             organization_id=content.course.organization.id,

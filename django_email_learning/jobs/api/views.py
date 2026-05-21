@@ -12,10 +12,7 @@ from django.core.management import call_command
 from io import StringIO
 
 from django_email_learning.models import JobName
-from django_email_learning.services.metrics_service import MetricsService
-
-
-metric_service = MetricsService()
+from django_email_learning.services.metrics_service import metric_service
 
 
 @method_decorator(check_api_key(), name="get")

@@ -38,3 +38,6 @@ class EmailSenderService:
 
     def send(self, email: EmailMultiAlternatives) -> None:
         self.email_sender.send_email(email)
+
+
+email_sender_service = EmailSenderService()

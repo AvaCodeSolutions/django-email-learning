@@ -5,7 +5,7 @@ from django_email_learning.jobs.job_metrics import track_job_execution
 from django_email_learning.services.command_models.send_assignment_reminder_command import (
     SendAssignmentReminderCommand,
 )
-from django_email_learning.services.metrics_service import MetricsService
+from django_email_learning.services.metrics_service import metric_service
 from django_email_learning.models import JobExecution, JobName, JobStatus
 from django_email_learning.services.command_models.send_quiz_reminder_command import (
     SendQuizReminderCommand,
@@ -18,7 +18,6 @@ import logging
 
 
 logger = logging.getLogger(__name__)
-METRIC_SERVICE = MetricsService()
 
 
 class SendRemindersJob:
@@ -37,7 +36,7 @@ class SendRemindersJob:
         self._run_job(job_execution)
 
     @track_job_execution(
-        metric_service=METRIC_SERVICE,
+        metric_service=metric_service,
         job_name=JobName.SEND_REMINDERS.value,
     )
     def _run_job(self, job_execution: JobExecution) -> None:
@@ -112,6 +111,6 @@ class SendRemindersJob:
                 ContentDelivery.ReminderStatus.BLOCKED
             )
             delivery_schedule.delivery.save()
-            METRIC_SERVICE.reminder_schedule_blocked(
+            metric_service.reminder_schedule_blocked(
                 delivery_schedule.delivery.course_content.id
             )

@@ -18,9 +18,9 @@ from django_email_learning.models import (
     EnrollmentStatus,
 )
 from django_email_learning.services.utils import mask_email
-from django_email_learning.services.email_sender_service import EmailSenderService
+from django_email_learning.services.email_sender_service import email_sender_service
 from django_email_learning.services import jwt_service
-from django_email_learning.services.metrics_service import MetricsService
+from django_email_learning.services.metrics_service import metric_service
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.translation import gettext as _
@@ -38,7 +38,6 @@ class EnrollCommand(AbstractCommand):
     case_insensitive_course_slug: bool = False
 
     def execute(self) -> None:
-        metric_service = MetricsService()
         # Check if the email is blocked
         if BlockedEmail.objects.filter(email=self.email).exists():
             self.logger.info(
@@ -136,7 +135,6 @@ class EnrollCommand(AbstractCommand):
             if course.imap_connection
             else None,
         }
-        email_service = EmailSenderService()
         subject = _("Verify your enrollment")
         body = render_to_string(
             "emails/enrollment_verification.txt",
@@ -155,11 +153,11 @@ class EnrollCommand(AbstractCommand):
         email = EmailMultiAlternatives(
             subject=subject,
             body=body,
-            from_email=email_service.from_email,
+            from_email=email_sender_service.from_email,
             to=to_emails,
         )
         email.attach_alternative(html_content, "text/html")
-        email_service.send(email)
+        email_sender_service.send(email)
 
         self.logger.info(
             f"Verification email sent to {mask_email(self.email)} for Enrollment ID: {enrollment.id}"

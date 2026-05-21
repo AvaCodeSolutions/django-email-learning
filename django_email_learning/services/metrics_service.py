@@ -122,3 +122,6 @@ class MetricsService:
 
     def job_execution_failed(self, job_name: str) -> None:
         self.metric_recorder.job_execution_failed(job_name)
+
+
+metric_service = MetricsService()

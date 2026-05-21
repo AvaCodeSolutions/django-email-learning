@@ -10,11 +10,7 @@ from django_email_learning.models.imap_connections import ImapConnection
 from .organizations import Organization, OrganizationUser
 from .enums.enrollment_status import EnrollmentStatus
 from django_email_learning.services import jwt_service
-from django_email_learning.services.metrics_service import MetricsService
 from django.conf.global_settings import LANGUAGES
-
-
-METRIC_SERVICE = MetricsService()
 
 
 class Course(models.Model):
