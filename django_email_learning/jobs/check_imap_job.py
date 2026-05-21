@@ -5,7 +5,7 @@ from django_email_learning.models import (
     JobStatus,
 )
 from django_email_learning.jobs.job_metrics import track_job_execution
-from django_email_learning.services.metrics_service import MetricsService
+from django_email_learning.services.metrics_service import metric_service
 from django_email_learning.ports.imap_interface_protocol import ImapInterfaceProtocol
 from django.utils.module_loading import import_string
 from django.conf import settings
@@ -16,7 +16,6 @@ from email.policy import default
 import logging
 
 logger = logging.getLogger(__name__)
-metric_service = MetricsService()
 
 
 class CheckIMAPJob:

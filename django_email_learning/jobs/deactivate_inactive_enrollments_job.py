@@ -7,8 +7,8 @@ from django_email_learning.models import (
     JobStatus,
 )
 from django_email_learning.jobs.job_metrics import track_job_execution
-from django_email_learning.services.metrics_service import MetricsService
-from django_email_learning.services.email_sender_service import EmailSenderService
+from django_email_learning.services.metrics_service import metric_service
+from django_email_learning.services.email_sender_service import email_sender_service
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.translation import gettext as _
@@ -18,7 +18,6 @@ import logging
 from django_email_learning.services.utils import mask_email
 
 logger = logging.getLogger(__name__)
-metric_service = MetricsService()
 
 
 class DeactivateInactiveEnrollmentsJob:
@@ -93,7 +92,6 @@ class DeactivateInactiveEnrollmentsJob:
         course_title: str,
         organization_name: str,
     ) -> None:
-        email_service = EmailSenderService()
         subject = _("Your deadline has passed — enrollment deactivated")
         context = {
             "content_title": f"{delivery.course_content.type} {delivery.course_content.title}",
@@ -107,7 +105,7 @@ class DeactivateInactiveEnrollmentsJob:
         email_message = EmailMultiAlternatives(
             subject=subject,
             body=body,
-            from_email=email_service.from_email,
+            from_email=email_sender_service.from_email,
             to=[email],
         )
         email_message.attach_alternative(
@@ -115,4 +113,4 @@ class DeactivateInactiveEnrollmentsJob:
             "text/html",
         )
 
-        email_service.send(email_message)
+        email_sender_service.send(email_message)

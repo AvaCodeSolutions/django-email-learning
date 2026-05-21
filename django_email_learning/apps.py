@@ -55,5 +55,6 @@ class EmailLearningConfig(AppConfig):
 
     def ready(self) -> None:
         import django_email_learning.signals  # noqa
+        from django_email_learning.services.metrics_service import metric_service  # noqa
 
         checks.register(check_site_base_url_config)

@@ -13,7 +13,7 @@ from django_email_learning.services.command_models.send_assignment_command impor
     AssignmentNotFoundError,
 )
 from django_email_learning.jobs.job_metrics import track_job_execution
-from django_email_learning.services.metrics_service import MetricsService
+from django_email_learning.services.metrics_service import metric_service
 from django_email_learning.models import JobExecution, JobName, JobStatus
 from django.utils.module_loading import import_string
 from django.conf import settings
@@ -23,7 +23,6 @@ import datetime
 
 
 logger = logging.getLogger(__name__)
-METRIC_SERVICE = MetricsService()
 
 
 class DeliverContentsJob:
@@ -42,7 +41,7 @@ class DeliverContentsJob:
         self._run_job(job_execution)
 
     @track_job_execution(
-        metric_service=METRIC_SERVICE,
+        metric_service=metric_service,
         job_name=JobName.DELIVER_CONTENTS.value,
     )
     def _run_job(self, job_execution: JobExecution) -> None:
@@ -62,7 +61,7 @@ class DeliverContentsJob:
                     # We log the error and mark the delivery as blocked to prevent further attempts until manual intervention.
                     delivery_schedule.status = DeliveryStatus.BLOCKED
                     delivery_schedule.save()
-                    METRIC_SERVICE.delivery_schedule_blocked(
+                    metric_service.delivery_schedule_blocked(
                         delivery_schedule.delivery.course_content.id
                     )
                     logger.exception(
@@ -261,7 +260,7 @@ class DeliverContentsJob:
             )
             delivery_schedule.status = DeliveryStatus.BLOCKED
             delivery_schedule.save()
-            METRIC_SERVICE.delivery_schedule_blocked(
+            metric_service.delivery_schedule_blocked(
                 delivery_schedule.delivery.course_content.id
             )
         else:

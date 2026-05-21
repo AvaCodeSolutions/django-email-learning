@@ -72,8 +72,8 @@ def test_email_sender_service_send_delegates_to_sender(settings):
         "EMAIL_SENDER": "tests.services.test_email_sender_service.ConfiguredEmailSender",
         "FROM_EMAIL": "noreply@example.com",
     }
-    service = EmailSenderService.__new__(EmailSenderService)
     sender = Mock()
+    service = EmailSenderService()
     service.email_sender = sender
 
     email = Mock()

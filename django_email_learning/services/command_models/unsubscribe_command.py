@@ -8,7 +8,7 @@ from django_email_learning.models import (
     DeactivationReason,
 )
 from django.utils import timezone
-from django_email_learning.services.metrics_service import MetricsService
+from django_email_learning.services.metrics_service import metric_service
 from django_email_learning.services.command_models.abstract_command import (
     AbstractCommand,
 )
@@ -25,7 +25,6 @@ class UnsubscribeCommand(AbstractCommand):
     case_insensitive_course_slug: bool = False
 
     def execute(self) -> None:
-        metric_service = MetricsService()
         try:
             if self.case_insensitive_course_slug:
                 course = Course.objects.get(

@@ -6,7 +6,7 @@ from django_email_learning.personalised.api.serializers import (
     QuizSubmissionRequest,
     QuestionResponse,
 )
-from django_email_learning.services.metrics_service import MetricsService
+from django_email_learning.services.metrics_service import metric_service
 from django_email_learning.services import jwt_service
 from django.utils.translation import gettext as _
 from django_email_learning.models import (
@@ -23,8 +23,6 @@ from pydantic import ValidationError
 import json
 import logging
 
-
-METRIC_SERVICE = MetricsService()
 
 logger = logging.getLogger(__name__)
 
@@ -180,7 +178,7 @@ class AssignmentSubmissionView(View):
             submission.status = AssignmentSubmission.SubmissionStatus.PENDING_REVIEW
             submission.save()
 
-        METRIC_SERVICE.assignment_submitted(
+        metric_service.assignment_submitted(
             course_slug=enrollment.course.slug,
             organization_id=enrollment.course.organization.id,
             assignment_id=assignment.id,
@@ -323,7 +321,7 @@ class QuizSubmissionView(View):
                     f"You have failed the quiz with score {score}. Please review the material and try again."
                 )
 
-        METRIC_SERVICE.quiz_submitted(
+        metric_service.quiz_submitted(
             course_slug=enrollment.course.slug,
             organization_id=enrollment.course.organization.id,
             quiz_id=quiz.id,

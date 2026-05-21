@@ -140,7 +140,7 @@ def test_deliver_contents_job_blocks_after_3_failed_attempts(
         "execute",
         side_effect=Exception("Simulated sending failure"),
     ), patch.object(
-        deliver_contents_job_module.METRIC_SERVICE,
+        deliver_contents_job_module.metric_service,
         "delivery_schedule_blocked",
     ) as metric_blocked_spy:
         job.run()
@@ -224,7 +224,7 @@ def test_unhandled_exception_during_delivery_processing(
 
 def test_deliver_contents_job_triggers_started_metric(db, delivery_queue_mock):
     with patch.object(
-        deliver_contents_job_module.METRIC_SERVICE,
+        deliver_contents_job_module.metric_service,
         "job_execution_started",
     ) as metric_started_spy:
         DeliverContentsJob().run()
@@ -234,7 +234,7 @@ def test_deliver_contents_job_triggers_started_metric(db, delivery_queue_mock):
 
 def test_deliver_contents_job_triggers_finished_metric(db, delivery_queue_mock):
     with patch.object(
-        deliver_contents_job_module.METRIC_SERVICE,
+        deliver_contents_job_module.metric_service,
         "job_execution_finished",
     ) as metric_finished_spy:
         DeliverContentsJob().run()
@@ -254,10 +254,10 @@ def test_deliver_contents_job_does_not_emit_start_or_finish_metrics_when_already
     )
 
     with patch.object(
-        deliver_contents_job_module.METRIC_SERVICE,
+        deliver_contents_job_module.metric_service,
         "job_execution_started",
     ) as metric_started_spy, patch.object(
-        deliver_contents_job_module.METRIC_SERVICE,
+        deliver_contents_job_module.metric_service,
         "job_execution_finished",
     ) as metric_finished_spy:
         DeliverContentsJob().run()

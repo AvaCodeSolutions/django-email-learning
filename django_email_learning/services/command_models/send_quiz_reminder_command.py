@@ -2,8 +2,8 @@ from django_email_learning.services.command_models.abstract_command import (
     AbstractCommand,
 )
 from django_email_learning.models import ContentDelivery, DeliverySchedule
-from django_email_learning.services.email_sender_service import EmailSenderService
-from django_email_learning.services.metrics_service import MetricsService
+from django_email_learning.services.email_sender_service import email_sender_service
+from django_email_learning.services.metrics_service import metric_service
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from typing import Literal
@@ -24,7 +24,6 @@ class SendQuizReminderCommand(AbstractCommand):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def execute(self) -> None:
-        metric_service = MetricsService()
         content = self.delivery_schedule.delivery.course_content
         if not content.quiz:
             raise QuizNotFoundError(
@@ -48,11 +47,10 @@ class SendQuizReminderCommand(AbstractCommand):
         }
         payload = render_to_string("emails/quiz_reminder.txt", context)
 
-        email_service = EmailSenderService()
         email_message = EmailMultiAlternatives(
             subject=subject,
             body=payload,
-            from_email=email_service.from_email,
+            from_email=email_sender_service.from_email,
             to=[email],
         )
         email_message.attach_alternative(
@@ -60,7 +58,7 @@ class SendQuizReminderCommand(AbstractCommand):
         )
 
         try:
-            email_service.send(email_message)
+            email_sender_service.send(email_message)
             self.delivery_schedule.delivery.remind_at = timezone.now()
             self.delivery_schedule.delivery.reminder_state = (
                 ContentDelivery.ReminderStatus.SENT

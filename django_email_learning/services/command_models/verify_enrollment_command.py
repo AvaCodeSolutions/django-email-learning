@@ -10,8 +10,8 @@ from django_email_learning.services.command_models.exceptions.invalid_enrollment
 from django_email_learning.services.command_models.exceptions.invalid_verification_code_error import (
     InvalidVerificationCodeError,
 )
-from django_email_learning.services.email_sender_service import EmailSenderService
-from django_email_learning.services.metrics_service import MetricsService
+from django_email_learning.services.email_sender_service import email_sender_service
+from django_email_learning.services.metrics_service import metric_service
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.translation import gettext as _
@@ -25,7 +25,6 @@ class VerifyEnrollmentCommand(AbstractCommand):
     verification_code: str = Field(..., pattern=r"^\d{6}$")
 
     def execute(self) -> None:
-        metric_service = MetricsService()
         try:
             enrollment = Enrollment.objects.get(
                 id=self.enrollment_id, status=EnrollmentStatus.UNVERIFIED
@@ -65,7 +64,6 @@ class VerifyEnrollmentCommand(AbstractCommand):
         )
 
         # Send confirmation email
-        email_service = EmailSenderService()
         subject = _("Enrollment Verified")
         course_image_url = None
         if enrollment.course.image:
@@ -87,7 +85,7 @@ class VerifyEnrollmentCommand(AbstractCommand):
         email = EmailMultiAlternatives(
             subject=subject,
             body=body,
-            from_email=email_service.from_email,
+            from_email=email_sender_service.from_email,
             to=[enrollment.learner.email],
         )
         html_content = render_to_string(
@@ -100,4 +98,4 @@ class VerifyEnrollmentCommand(AbstractCommand):
         )
         email.attach_alternative(html_content, "text/html")
 
-        email_service.send(email=email)
+        email_sender_service.send(email=email)
