@@ -54,7 +54,8 @@ dev = [
     "python-json-logger (>=4.0.0,<5.0.0)",
     "python-dotenv[cli] (>=1.2.1,<2.0.0)",
     "types-qrcode (>=8.2.0.20250914,<9.0.0.0)",
-    "openai (>=2.26.0,<3.0.0)"
+    "openai (>=2.26.0,<3.0.0)",
+    "pytest-env (>=1.6.0,<2.0.0)"
 ]
 
 [build-system]
@@ -126,6 +127,8 @@ markers = [
 ]
 testpaths = ["tests"]
 
+[tool.pytest_env]
+SECRET_KEY = "test-secret-key"
 
 [tool.coverage.run]
 source = ["django_email_learning"]

@@ -187,9 +187,7 @@ class Enrollment(models.Model):
         token_payload = {
             "enrollment_id": self.id,
         }
-        logging.info(
-            f"Executing SendCertificateFormCommand for enrollment ID {self.id}"
-        )
+        logger.info(f"Executing SendCertificateFormCommand for enrollment ID {self.id}")
         token = jwt_service.generate_jwt(
             token_payload,
             exp=datetime.max.replace(tzinfo=timezone.get_current_timezone()),
@@ -219,7 +217,7 @@ class Enrollment(models.Model):
         )
 
         email_sender_service.send(email_message)
-        logging.info(f"Certificate form email sent for enrollment ID {self.id}")
+        logger.info(f"Certificate form email sent for enrollment ID {self.id}")
 
     def fail(self) -> None:
         if self.status != EnrollmentStatus.ACTIVE:
