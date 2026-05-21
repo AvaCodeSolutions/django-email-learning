@@ -1,102 +1,107 @@
-# Contributing to Django Email Learning
+# Contributing to django-email-learning
 
-Thank you for your interest in contributing!
+`django-email-learning` is a Django library for building email-based learning platforms — course delivery, IMAP-based response tracking, and React frontend components in one composable package. It powers [InboxAcademy](https://inboxacademy.io) in production.
 
-This project is in an early development stage, and the core architecture is still evolving. For this reason, we currently accept a limited set of contribution types to keep the foundation stable and maintainable.
+Contributions of all kinds are welcome. Whether you're fixing a bug, improving docs, or proposing a new feature — we're glad you're here.
 
-### At this stage, we only accept:
+---
 
-#### Discussions:
-- Sharing ideas and feedback in [Github Discussions](https://github.com/AvaCodeSolutions/django-email-learning/discussions)
-- Help in refining [the project](https://github.com/orgs/AvaCodeSolutions/projects/5/views/3) issues and roadmap
-- Comments on existing [issues](https://github.com/AvaCodeSolutions/django-email-learning/issues)
+## Where to Start
 
-#### Pull requests
+- Browse [good first issues](https://github.com/AvaCodeSolutions/django-email-learning/labels/good%20first%20issue) if you're new to the project
+- Check the [project roadmap](https://github.com/orgs/AvaCodeSolutions/projects/5/views/3) to see what's planned
+- Join a [Discussion](https://github.com/AvaCodeSolutions/django-email-learning/discussions) to propose ideas or ask questions before opening a PR
+- Comment on an existing [issue](https://github.com/AvaCodeSolutions/django-email-learning/issues) to share context or claim it
 
-- Small bug fixes
-- Typo fixes
-- Test improvement
+---
 
-When creating the PR, please follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) Specification for your commit message and make sure the commit message contains the issue number related to this change. If there is no issue for this change, please create an issue first.
+## Submitting a Pull Request
 
-> [!Important]
-> By contributing your code, documentation, or other resources to this project, you agree that your contribution will be licensed under the project's BSD 3-Clause License. This license allows for broad reuse, modification, and distribution, including the ability for others to incorporate your work into their own products, both open source and commercial.
+1. Open or find an issue for your change — if none exists, create one first
+2. Fork the repo and create a branch from `master`
+3. Make your changes, ensuring all checks pass (see [Quality Assurance](#quality-assurance))
+4. Submit a PR with a clear description referencing the issue number
+5. Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) for your commit messages
 
-### Setup development environment
-> [!Note]
-> The project is in early development stage and the features are incomplete.
+   Examples:
+   ```
+   fix(imap): handle timeout on reconnect #42
+   feat(courses): add support for multi-part email sequences #37
+   docs: update setup instructions for Python 3.12
+   ```
 
-#### Backend:
-For backend we are using Python>=3.11 and we use poetry for locking the dependencies.
+We aim to review pull requests within a few business days. You'll hear from a maintainer with feedback or approval.
 
-1. Setup development environment (installs dependencies, pre-commit hooks, and runs migrations)
-```shell
+---
+
+## Setting Up Your Development Environment
+
+### Backend
+
+Requires Python ≥ 3.11. Dependencies are managed with [Poetry](https://python-poetry.org/).
+
+```bash
+# One-command setup: installs deps, pre-commit hooks, and runs migrations
 make dev-init
-```
 
-2. Start the backend server:
-```shell
+# Start the backend server
 make runserver
 ```
 
-Alternatively, you can run individual commands:
-```shell
-# Install dependencies and setup pre-commit
-make dev-install
+Or run steps individually:
 
-# Run migrations
-make migrate
-
-# Start server
-make runserver
+```bash
+make dev-install   # Install dependencies and set up pre-commit
+make migrate       # Run migrations
+make runserver     # Start the server
 ```
 
-See all available commands with `make help`.
+Run `make help` to see all available commands.
 
-#### Frontend:
-For frontend we are using React with Vite as the build tool and npm for managing dependencies. The frontend source code is in the `/frontend` directory. During development, you need both frontend and backend servers running.
+### Frontend
 
-**Option 1: Use Makefile (recommended)**
-```shell
-# Start both servers concurrently
+React + Vite, with source in `/frontend`. Both servers need to run during development.
+
+```bash
+# Recommended: start both concurrently
 make -j start-dev
 ```
 
-**Option 2: Manual setup**
+Or manually:
 
-In a separate terminal, navigate to the frontend directory:
-```shell
+```bash
 cd frontend
-
-# Install node modules
 npm install
-
-# Run the development server
 npm run dev
 ```
 
-### Quality Assurance
+---
 
-Before submitting a pull request, ensure your code passes all checks:
+## Quality Assurance
 
-```shell
-# Run all linting checks
-make lint
+Before submitting, make sure your code passes all checks:
 
-# Run tests with coverage
-make test
-
-# Format code
-make format
-
-# Run pre-commit hooks manually
-make pre-commit
+```bash
+make lint        # Run Ruff linting
+make test        # Run tests with coverage (80% minimum)
+make format      # Auto-format code
+make pre-commit  # Run all pre-commit hooks
 ```
 
-### Code Standards
+---
 
-- **Type Safety**: All Python code must pass MyPy type checking
-- **Code Style**: Use Ruff for formatting and linting
-- **Test Coverage**: Maintain minimum 80% test coverage
-- **Security**: Code is scanned with Bandit for security issues
-- **Commit Messages**: Follow [Conventional Commits](https://www.conventionalcommits.org/) specification
+## Code Standards
+
+| Area             | Tool / Rule                                                              |
+|------------------|--------------------------------------------------------------------------|
+| Type safety      | MyPy — all code must pass                                                |
+| Linting & format | Ruff                                                                     |
+| Test coverage    | ≥ 80%                                                                    |
+| Security         | Bandit                                                                   |
+| Commit style     | [Conventional Commits](https://www.conventionalcommits.org/) with issue number |
+
+---
+
+## License
+
+By contributing, you agree that your work will be licensed under the project's [BSD 3-Clause License](./LICENSE). This allows broad reuse and redistribution, including commercial use.

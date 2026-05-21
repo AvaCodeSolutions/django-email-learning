@@ -28,11 +28,6 @@ To experience Django Email Learning from a learner perspective, enroll in a publ
 
 `InboxAcademy <https://inboxacademy.io/learning/public/organizations/1/>`_
 
-.. important::
-   The library is currently in its early stages of development. The current version is an beta release,
-   and while it includes core features, it may not yet be suitable for production use and future updates may introduce breaking changes.
-
-
 How It Works
 ------------
 
