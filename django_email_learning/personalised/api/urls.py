@@ -3,6 +3,7 @@ from django_email_learning.personalised.api.views import (
     FileUploadView,
     AssignmentSubmissionView,
     QuizSubmissionView,
+    AmpQuizSubmissionView,
     SubmitCertificateFormView,
 )
 
@@ -10,6 +11,7 @@ app_name = "django_email_learning"
 
 urlpatterns = [
     path("quiz/", QuizSubmissionView.as_view(), name="quiz_submission"),
+    path("quiz-amp/", AmpQuizSubmissionView.as_view(), name="quiz_amp_submission"),
     path(
         "assignment/",
         AssignmentSubmissionView.as_view(),
