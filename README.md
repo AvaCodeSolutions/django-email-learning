@@ -22,6 +22,8 @@ Support our open-source work and community projects by sponsoring us through [Gi
 **django-email-learning** is an open-source Django app, designed to provide a complete email-based learning platform.
 It is inspired by the Darsnameh email-learning service, which unfortunately shut down in July 2017. This library aims to revive that concept and make it accessible to anyone who wants to launch a similar service.
 
+If you find this project useful, a ⭐ on GitHub helps others discover it.
+
 ### Why an email learning platform?
 
 An email learning platform is a type of e-learning system where course content is delivered directly to learners’ inboxes. Platform admins can create courses, lessons, and quizzes, and configure the timing rules that determine when each next lesson or quiz is sent.
