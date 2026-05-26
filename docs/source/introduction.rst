@@ -5,11 +5,14 @@ Django Email Learning is an open-source Django application by `AvaCode Solutions
 mentors, and developers create and manage automated learning paths.
 
 .. _AvaCode Solutions: https://avacodesolutions.com/
+.. _GitHub: https://github.com/AvaCodeSolutions/django-email-learning
 
 Unlike traditional Learning Management Systems (LMS) that require students
 to log into a complex dashboard to find their content, Django Email Learning delivers
 lessons directly to the learner's inbox, ensuring high engagement where users
 already spend their time.
+
+If you find this project useful, a star on `GitHub`_ helps others discover it.
 
 
 Key Features

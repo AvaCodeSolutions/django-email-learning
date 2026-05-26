@@ -13,9 +13,9 @@ A Django package for creating email-based learning platforms with IMAP integrati
 
 ## Sponsorship
 
-Support our open-source work and community projects by sponsoring us through [GitHub Sponsors](https://github.com/sponsors/AvaCodeSolutions) or [Open Collective](https://opencollective.com/django-email-learning). Depending on your sponsorship tier, we can feature your logo and link on the project’s README and documentation.
+Support our open-source work and community projects by sponsoring us through [GitHub Sponsors](https://github.com/sponsors/AvaCodeSolutions). Depending on your sponsorship tier, we can feature your logo and link on the project’s README and documentation.
 
-[![Sponsor us](https://img.shields.io/badge/Sponsor_our_project-white?style=for-the-badge&logo=githubsponsors)](https://opencollective.com/django-email-learning)
+[![Sponsor us](https://img.shields.io/badge/Sponsor_our_project-white?style=for-the-badge&logo=githubsponsors)](https://github.com/sponsors/AvaCodeSolutions)
 
 ## What is django-email-learning?
 
