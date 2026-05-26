@@ -1,0 +1,96 @@
+{% extends "emails/base_amp.html" %}
+{% load i18n %}
+
+{% block extra_head %}
+    <script async custom-element="amp-bind" src="https://cdn.ampproject.org/v0/amp-bind-0.1.js"></script>
+    <script async custom-element="amp-form" src="https://cdn.ampproject.org/v0/amp-form-0.1.js"></script>
+    <script async custom-template="amp-mustache" src="https://cdn.ampproject.org/v0/amp-mustache-0.2.js"></script>
+    <script async custom-element="amp-selector" src="https://cdn.ampproject.org/v0/amp-selector-0.1.js"></script>
+{% endblock %}
+
+{% block extra_styles %}
+    label {
+        display: block;
+        margin-bottom: 8px;
+    }
+    hr {
+        background: #eee;
+        border: none;
+        height: 1px;
+        margin: 20px 0;
+    }
+    .question {
+        font-weight: 700;
+    }
+    .choice {
+        padding: 10px 20px;
+        border: 1px solid #eee;
+        border-radius: 6px;
+        cursor: pointer;
+        margin: 4px;
+    }
+    .choice[selected] {
+        border-color: #636eec;
+        background-color: #eef0fd;
+        color: #636eec;
+    }
+{% endblock %}
+
+{% block content %}
+<h2 class="email-title">{{ quiz.title }}</h2>
+
+<p [hidden]="formState.submitted">
+    {% translate "Please select all correct answers for each question. Note that some questions may have multiple correct answers. This quiz uses negative marking for incorrect choices; if you are unsure, it is better to leave the question unanswered." %}
+</p>
+
+<div class="paper">
+
+<form method="post" action-xhr="{{ amp_action_url }}" on="submit-success:AMP.setState({ formState: { submitted: true } })">
+<div [hidden]="formState.submitted">
+
+  {% for question in quiz.questions.all %}
+    <p class="question">{{ question.text }}</p>
+    <amp-selector name="{{ question.id }}" multiple layout="container">
+    {% for answer in question.answers.all %}
+        <div option="{{ answer.id }}" class="choice">{{ answer.text }}</div>
+    {% endfor %}
+    </amp-selector>
+    <hr>
+  {% endfor %}
+  <input
+    name="token"
+    type="hidden"
+    value="{{ token }}"
+    data-amp-replace="CANONICAL_URL RANDOM"
+  />
+  <p align="center">
+  <button class="button" type="submit">{% translate "Submit" %}</button>
+  </p>
+  </div>
+    <div [hidden]="!formState.submitted">
+    {% translate "Your answers have been submitted. Please wait while we calculate your score." %}
+    <div submit-success>
+        <template type="amp-mustache">
+        {% templatetag openvariable %}message{% templatetag closevariable %}<br />
+        {% templatetag openvariable %}^passed{% templatetag closevariable %}
+        {% templatetag openvariable %}^is_invalidated{% templatetag closevariable %}<br />
+        <p align="center">
+        <button type="button" class="button" on="tap:AMP.setState({formState: { submitted: false }})">Try again</button>
+        </p>
+        {% templatetag openvariable %}/is_invalidated{% templatetag closevariable %}
+        {% templatetag openvariable %}/passed{% templatetag closevariable %}
+        </template>
+    </div>
+    </div>
+
+    <div submit-error>
+        <p>
+        {% blocktranslate %}Something went wrong. You can try to submit this quiz from <a href='{{ link }}'>here</a> instead.{% endblocktranslate %}
+        </p>
+    </div>
+
+
+</form>
+</div>
+
+{% endblock %}

@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+from django.conf import settings
 from django.views import View
 from django.urls import reverse
 from django.utils import timezone
@@ -6,6 +7,8 @@ from django_email_learning.personalised.api.serializers import (
     QuizSubmissionRequest,
     QuestionResponse,
 )
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from django_email_learning.services.metrics_service import metric_service
 from django_email_learning.services import jwt_service
 from django.utils.translation import gettext as _
@@ -204,15 +207,28 @@ class QuizSubmissionView(View):
         token = serializer.token
         answers = serializer.answers
 
-        submited_question_ids = {response.id for response in answers}
+        response_payload, error_response = self.process_quiz_submission(
+            token=token,
+            answers=answers,
+        )
+        if error_response:
+            return error_response
+
+        return JsonResponse(response_payload, status=200)
+
+    @classmethod
+    def process_quiz_submission(
+        cls, token: str, answers: list[QuestionResponse]
+    ) -> tuple[dict | None, JsonResponse | None]:
+        submitted_question_ids = {response.id for response in answers}
         response_map = {response.id: response.answers for response in answers}
 
         try:
             decoded = jwt_service.decode_jwt(token=token)
         except jwt_service.InvalidTokenException as jde:
-            return JsonResponse({"error": str(jde)}, status=400)
+            return None, JsonResponse({"error": str(jde)}, status=400)
         except jwt_service.ExpiredTokenException as ete:
-            return JsonResponse({"error": str(ete)}, status=410)
+            return None, JsonResponse({"error": str(ete)}, status=410)
 
         delivery_id = decoded["delivery_id"]
 
@@ -221,7 +237,7 @@ class QuizSubmissionView(View):
                 id=delivery_id, hash_value=decoded["delivery_hash"]
             )
         except ContentDelivery.DoesNotExist:
-            return JsonResponse(
+            return None, JsonResponse(
                 {
                     "error": "The content delivery associated with this token does not exist."
                 },
@@ -230,23 +246,25 @@ class QuizSubmissionView(View):
 
         enrollment = delivery.enrollment
         if enrollment.status != EnrollmentStatus.ACTIVE:
-            return JsonResponse({"error": "Quiz is not valid anymore"}, status=400)
+            return None, JsonResponse(
+                {"error": "Quiz is not valid anymore"}, status=400
+            )
 
         quiz = delivery.course_content.quiz
         if not quiz:
-            return JsonResponse(
+            return None, JsonResponse(
                 {"error": "No quiz associated with this link"}, status=500
             )
 
         try:
-            score, passed = self.calculate_score_and_passed(
+            score, passed = cls.calculate_score_and_passed(
                 quiz, answers, decoded.get("question_ids")
             )
             logger.info(
                 f"Learner ID {enrollment.learner.id} submitted quiz for Course {enrollment.course.title} with score {score}. Passed: {passed}"
             )
         except ValueError as ve:
-            return JsonResponse({"error": str(ve)}, status=500)
+            return None, JsonResponse({"error": str(ve)}, status=500)
 
         QuizSubmission.objects.create(
             delivery=delivery,
@@ -271,9 +289,9 @@ class QuizSubmissionView(View):
             if (quiz.is_blocking and passed) or QuizSubmission.objects.filter(
                 delivery=delivery
             ).count() == 1:
-                delivery = delivery.schedule_next_delivery()
+                new_delivery = delivery.schedule_next_delivery()
 
-            if not delivery:
+            if not new_delivery:
                 enrollment.graduate()
         else:
             failed_submissions_count = QuizSubmission.objects.filter(
@@ -328,7 +346,7 @@ class QuizSubmissionView(View):
             is_passed=passed,
             is_blocking=quiz.is_blocking,
         )
-        return JsonResponse(
+        return (
             {
                 "score": score,
                 "passed": passed,
@@ -353,14 +371,14 @@ class QuizSubmissionView(View):
                             ],
                         }
                         for question in quiz.questions.filter(
-                            id__in=submited_question_ids
+                            id__in=submitted_question_ids
                         )
                     ],
                 }
                 if not quiz.is_blocking
                 else None,
             },
-            status=200,
+            None,
         )
 
     @staticmethod
@@ -418,6 +436,101 @@ class QuizSubmissionView(View):
         score = max(0, score)
         passed = score >= quiz.required_score
         return score, passed
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class AmpQuizSubmissionView(View):
+    @staticmethod
+    def _set_amp_headers(response: JsonResponse, source_origin: str) -> JsonResponse:
+        response["Access-Control-Allow-Origin"] = source_origin
+        response["AMP-Access-Control-Allow-Source-Origin"] = source_origin
+        response["Access-Control-Allow-Credentials"] = "true"
+        return response
+
+    def _amp_json_response(
+        self, payload: dict, status: int, source_origin: str
+    ) -> JsonResponse:
+        response = JsonResponse(payload, status=status)
+        return self._set_amp_headers(response=response, source_origin=source_origin)
+
+    def post(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
+        source_origin = request.GET.get("__amp_source_origin")
+        if not source_origin:
+            return JsonResponse(
+                {"error": _("Missing __amp_source_origin query parameter.")},
+                status=400,
+            )
+
+        trusted_origins = {
+            trusted_origin.rstrip("/")
+            for trusted_origin in settings.CSRF_TRUSTED_ORIGINS
+        }
+        normalized_source_origin = source_origin.rstrip("/")
+        if normalized_source_origin not in trusted_origins:
+            return JsonResponse(
+                {"error": _("Invalid __amp_source_origin. Origin is not trusted.")},
+                status=400,
+            )
+
+        token = request.POST.get("token")
+        if not token:
+            return self._amp_json_response(
+                {"error": _("Token is required.")},
+                status=400,
+                source_origin=normalized_source_origin,
+            )
+
+        answers_map: dict[int, set[int]] = {}
+
+        for key, values in request.POST.lists():
+            if key == "token":
+                continue
+
+            try:
+                question_id = int(key)
+            except (TypeError, ValueError):
+                return self._amp_json_response(
+                    {"error": _("Invalid question ID in form payload.")},
+                    status=400,
+                    source_origin=normalized_source_origin,
+                )
+
+            parsed_answers: set[int] = set()
+            for value in values:
+                if value in (None, ""):
+                    continue
+
+                try:
+                    parsed_answers.add(int(value))
+                except (TypeError, ValueError):
+                    return self._amp_json_response(
+                        {"error": _("Invalid answer ID in form payload.")},
+                        status=400,
+                        source_origin=normalized_source_origin,
+                    )
+
+            answers_map[question_id] = parsed_answers
+
+        answers = [
+            QuestionResponse(id=question_id, answers=answer_ids)
+            for question_id, answer_ids in answers_map.items()
+        ]
+
+        response_payload, error_response = QuizSubmissionView.process_quiz_submission(
+            token=token,
+            answers=answers,
+        )
+        if error_response:
+            return self._set_amp_headers(
+                response=error_response,
+                source_origin=normalized_source_origin,
+            )
+
+        return self._amp_json_response(
+            response_payload,
+            status=200,
+            source_origin=normalized_source_origin,
+        )
 
 
 class SubmitCertificateFormView(View):

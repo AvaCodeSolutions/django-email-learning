@@ -1,0 +1,71 @@
+{% load i18n %}
+{% with brand_color="#636eec" %}
+<!doctype html>
+<html amp4email data-css-strict>
+    <head>
+        <meta charset="utf-8">
+        <script async src="https://cdn.ampproject.org/v0.js"></script>
+        {% block extra_head %}{% endblock %}
+        <style amp4email-boilerplate>body{visibility:hidden}</style>
+        <style amp-custom>
+            .background {
+                padding: 10px;
+                width: 100%;
+                box-sizing: border-box;
+                font-family: Helvetica, Arial, sans-serif;
+                line-height: 1.8;
+                font-size: 15px;
+            }
+            .paper {
+                margin: 10px;
+                padding: 8px;
+                border-radius: 8px;
+                border: solid 1px #eee;
+            }
+            .button {
+                padding: 14px 30px;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: 600;
+                box-shadow: 0 4px 14px rgba(36, 48, 110, 0.16);
+                background-color: #636eec;
+                color: #fff;
+            }
+            .button:hover {
+                background-color: #6e00a5;
+                cursor: pointer;
+            }
+            .email-title {
+                margin: 10px;
+                text-align: center;
+                border-bottom: 2px solid #d8d9ee;
+                padding-bottom: 10px;
+                line-height: 1.35;
+                font-size: 19px;
+            }
+            .locale {
+                {% get_current_language_bidi as IS_RTL %}
+                {% if IS_RTL %}
+                    direction: rtl;
+                    text-align: right;
+                {% else %}
+                    direction: ltr;
+                    text-align: left;
+                {% endif %}
+            }
+            p {
+                padding: 0 15px;
+            }
+            {% block extra_styles %}{% endblock %}
+        </style>
+    </head>
+<body>
+    <div class="background">
+        <div class="locale">
+            {% block content %}{% endblock %}
+        </div>
+        {% block footer %}{% endblock %}
+    </div>
+</body>
+</html>
+{% endwith %}

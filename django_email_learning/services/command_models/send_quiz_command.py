@@ -6,6 +6,8 @@ from django_email_learning.services.email_sender_service import email_sender_ser
 from django_email_learning.services.metrics_service import metric_service
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
+from django.conf import settings
+from django.urls import reverse
 from typing import Literal
 
 from django_email_learning.services.utils import mask_email
@@ -13,6 +15,9 @@ from django_email_learning.services.utils import mask_email
 
 class QuizNotFoundError(Exception):
     pass
+
+
+DJANGO_EMAIL_LEARNING_CONF = settings.DJANGO_EMAIL_LEARNING
 
 
 class SendQuizCommand(AbstractCommand):
@@ -31,11 +36,17 @@ class SendQuizCommand(AbstractCommand):
             f"Sending quiz with ID {content.quiz.id} to email {mask_email(self.email)}"
         )
 
+        token = self.link.split("token=")[-1] if "token=" in self.link else None
+        if token:
+            token = token.split("&")[0]  # In case there are other query parameters
+
         quiz = content.quiz
         subject = quiz.title
         context = {
             "quiz": quiz,
             "link": self.link,
+            "amp_action_url": f"{DJANGO_EMAIL_LEARNING_CONF['SITE_BASE_URL']}{reverse('django_email_learning:api_personalised:quiz_amp_submission')}",
+            "token": token,
             "unsubscribe_link": content.course.generate_unsubscribe_link(self.email),
         }
         payload = render_to_string("emails/quiz.txt", context)
@@ -49,6 +60,10 @@ class SendQuizCommand(AbstractCommand):
         email_message.attach_alternative(
             render_to_string("emails/quiz.html", context), "text/html"
         )
+        if DJANGO_EMAIL_LEARNING_CONF.get("AMP_ENABLED"):
+            email_message.attach_alternative(
+                render_to_string("emails/quiz_amp.html", context), "text/x-amp-html"
+            )
 
         email_sender_service.send(email_message)
         metric_service.quiz_sent(

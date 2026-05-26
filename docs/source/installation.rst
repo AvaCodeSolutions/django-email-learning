@@ -295,6 +295,34 @@ Currently supported built-in models are:
 
 See `AI Configuration <technical/ai-configuration.html>`_ for full details.
 
+**AMP_ENABLED**
+
+Optional flag to enable AMP email rendering for supported clients.
+
+By default, AMP email support is disabled. Enable it only after your sending domain is registered as a dynamic email sender with Google:
+
+`Register dynamic email with Google <https://developers.google.com/workspace/gmail/ampemail/register>`_
+
+If AMP is enabled, you must also add trusted AMP mail client origins to Django's ``CSRF_TRUSTED_ORIGINS`` so AMP form submissions are accepted.
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
+        'AMP_ENABLED': True,
+    }
+
+    CSRF_TRUSTED_ORIGINS = [
+        'https://mail.google.com',
+        'https://playground.amp.dev', # ⚠️ Do not include this in production - it's only needed for testing with the AMP playground
+        # Add any other trusted AMP mail client origins you use
+    ]
+
+.. note::
+   Keep AMP disabled in environments where you have not completed sender registration and trusted-origin configuration.
+
 Email Backend Configuration
 ---------------------------
 
