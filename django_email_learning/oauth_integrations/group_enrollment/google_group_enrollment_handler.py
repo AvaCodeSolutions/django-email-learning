@@ -14,6 +14,7 @@ from urllib import error, parse, request as urlrequest
 from typing import Literal
 import json
 
+logger = logging.getLogger(__name__)
 
 DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
 
@@ -279,7 +280,7 @@ class GoogleGroupEnrollmentHandler(BaseGroupEnrollmentHandler):
                         f"uploads/{date_prefix}/{self.course_id}/{file_name}",
                         ContentFile(decoded_photo),
                     )
-                    print(file_path)
+                    logger.debug(file_path)
                     return User(email=email, photo_path=file_path)
         except error.HTTPError:
             logging.warning(

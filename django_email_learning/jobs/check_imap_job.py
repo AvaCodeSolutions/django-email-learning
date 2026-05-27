@@ -60,7 +60,7 @@ class CheckIMAPJob:
 
         for imap_connection in imap_connections:
             account = self._connect_account(imap_connection)
-            print(
+            logger.info(
                 f"Checking account {account} for IMAP connection {imap_connection.id}"
             )
             if not account:

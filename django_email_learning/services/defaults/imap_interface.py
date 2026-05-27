@@ -109,7 +109,7 @@ class ImapInterface(ImapInterfaceProtocol):
     ) -> None:
         # Implement your email handling logic here
 
-        print(
+        logger.info(
             f"Handling email from {email_message['From']} with subject {email_message['Subject']} for connection {imap_connection.email}"
         )
         subject = email_message["Subject"]
