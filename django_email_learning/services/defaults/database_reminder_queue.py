@@ -32,7 +32,9 @@ class DatabaseReminderQueue(DeliveryQueueProtocol):
                 .values_list("id", flat=True)
             )
 
-            logger.debug(f"DatabaseReminderQueue: Found {len(task_ids)} ready reminder tasks.")
+            logger.debug(
+                f"DatabaseReminderQueue: Found {len(task_ids)} ready reminder tasks."
+            )
 
             if not task_ids:
                 return iter([])
