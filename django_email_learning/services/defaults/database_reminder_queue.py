@@ -8,6 +8,9 @@ from django.db import transaction
 from django.db.models import OuterRef, Subquery
 from django.utils import timezone
 from typing import Iterator
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseReminderQueue(DeliveryQueueProtocol):
@@ -29,7 +32,7 @@ class DatabaseReminderQueue(DeliveryQueueProtocol):
                 .values_list("id", flat=True)
             )
 
-            print(f"DatabaseReminderQueue: Found {len(task_ids)} ready reminder tasks.")
+            logger.debug(f"DatabaseReminderQueue: Found {len(task_ids)} ready reminder tasks.")
 
             if not task_ids:
                 return iter([])

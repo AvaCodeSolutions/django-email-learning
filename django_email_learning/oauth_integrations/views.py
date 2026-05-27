@@ -17,6 +17,9 @@ from django_email_learning.services.jwt_service import (
 
 from .models import Session, SessionState
 from .serializers import CreateSessionRequest
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def _command_result_response(  # type: ignore[no-untyped-def]
@@ -162,7 +165,7 @@ class RedirectView(View):
                 status_code=400,
             )
         except Exception as e:  # noqa: BLE001
-            print(f"Error processing OAuth redirect: {str(e)}")
+            logger.error(f"Error processing OAuth redirect: {str(e)}")
             session.state = SessionState.FAILED
             session.save(update_fields=["state"])
             return _command_result_response(
