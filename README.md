@@ -88,6 +88,7 @@ Add the required configuration for the site base URL in your Django settings:
 DJANGO_EMAIL_LEARNING = {
     "SITE_BASE_URL": "<YOUR_SITE_BASE_URL_STARTING_WITH_HTTP>",
     "ENCRYPTION_SECRET_KEY": "<LONG_RANDOM_STRING>",
+    "JWT_SECRET_KEY": "<LONG_RANDOM_STRING>",
 }
 ```
 
