@@ -28,11 +28,26 @@
         border-radius: 6px;
         cursor: pointer;
         margin: 4px;
+        display: block;
     }
     .choice[selected] {
         border-color: #636eec;
         background-color: #eef0fd;
         color: #636eec;
+    }
+    .vertical-container {
+        display: block;
+        width: 100%;
+    }
+    .vertical-stack {
+        display: block; /* FIX: changed from flex column to plain block */
+        width: 100%;
+    }
+    .choices-wrap {
+        display: flex;
+        flex-wrap: wrap; /* wraps naturally, no scroll conflict */
+        gap: 8px;
+        padding: 4px;
     }
 {% endblock %}
 
@@ -48,15 +63,21 @@
 <form method="post" action-xhr="{{ amp_action_url }}" on="submit-success:AMP.setState({ formState: { submitted: true } })">
 <div [hidden]="formState.submitted">
 
+  <div class="vertical-container">
   {% for question in quiz.questions.all %}
-    <p class="question">{{ question.text }}</p>
-    <amp-selector name="{{ question.id }}" multiple layout="container">
-    {% for answer in question.answers.all %}
-        <div option="{{ answer.id }}" class="choice">{{ answer.text }}</div>
-    {% endfor %}
-    </amp-selector>
-    <hr>
+    <div class="vertical-stack">
+        <p class="question">{{ question.text }}</p>
+        <amp-selector name="{{ question.id }}" multiple layout="container">
+            <div class="choices-wrap">
+            {% for answer in question.answers.all %}
+                <div option="{{ answer.id }}" class="choice">{{ answer.text }}</div>
+            {% endfor %}
+            </div>
+        </amp-selector>
+        <hr>
+    </div>
   {% endfor %}
+  </div>
   <input
     name="token"
     type="hidden"
@@ -67,8 +88,9 @@
   <button class="button" type="submit">{% translate "Submit" %}</button>
   </p>
   </div>
-    <div [hidden]="!formState.submitted">
+    <div hidden [hidden]="!formState.submitted">
     {% translate "Your answers have been submitted. Please wait while we calculate your score." %}
+    </div>
     <div submit-success>
         <template type="amp-mustache">
         {% templatetag openvariable %}message{% templatetag closevariable %}<br />
@@ -81,7 +103,7 @@
         {% templatetag openvariable %}/passed{% templatetag closevariable %}
         </template>
     </div>
-    </div>
+
 
     <div submit-error>
         <p>
