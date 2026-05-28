@@ -1,8 +1,8 @@
 import datetime
-
 from django.conf import settings
 from django_email_learning.models import ContentDelivery
 from django_email_learning.services import jwt_service
+from django_email_learning.services.email_sender_service import email_sender_service
 from django_email_learning.personalised.api.views import QuizSubmissionView
 from django_email_learning.personalised.api.serializers import QuestionResponse
 from django.urls import reverse
@@ -10,7 +10,8 @@ import pytest
 
 URL = reverse("django_email_learning:api_personalised:quiz_submission")
 AMP_URL = reverse("django_email_learning:api_personalised:quiz_amp_submission")
-SOURCE_ORIGIN = settings.CSRF_TRUSTED_ORIGINS[0]
+SOURCE_ORIGIN = email_sender_service.from_email
+REQUEST_ORIGIN = settings.CSRF_TRUSTED_ORIGINS[0]
 
 
 def test_quiz_submission_api_valid_token(content_delivery, anonymous_client):
@@ -170,11 +171,14 @@ def test_amp_quiz_submission_invalid_token_returns_400_with_amp_headers(
         data={
             "token": "Invalid",
         },
+        headers={
+            "Origin": REQUEST_ORIGIN
+        },  # Set origin to a trusted origin to bypass origin check
     )
 
     assert response.status_code == 400
     assert "The signature is invalid" in response.json()["error"]
-    assert response["Access-Control-Allow-Origin"] == SOURCE_ORIGIN
+    assert response["Access-Control-Allow-Origin"] == REQUEST_ORIGIN
     assert response["AMP-Access-Control-Allow-Source-Origin"] == SOURCE_ORIGIN
     assert response["Access-Control-Allow-Credentials"] == "true"
 
@@ -195,11 +199,14 @@ def test_amp_quiz_submission_expired_token_returns_410_with_amp_headers(
         data={
             "token": token,
         },
+        headers={
+            "Origin": REQUEST_ORIGIN
+        },  # Set origin to a trusted origin to bypass origin check
     )
 
     assert response.status_code == 410
     assert "The token is not valid anymore" in response.json()["error"]
-    assert response["Access-Control-Allow-Origin"] == SOURCE_ORIGIN
+    assert response["Access-Control-Allow-Origin"] == REQUEST_ORIGIN
     assert response["AMP-Access-Control-Allow-Source-Origin"] == SOURCE_ORIGIN
     assert response["Access-Control-Allow-Credentials"] == "true"
 
@@ -222,11 +229,14 @@ def test_amp_quiz_submission_success_returns_200_with_amp_headers(
             "token": token,
             str(first_question.id): "",
         },
+        headers={
+            "Origin": REQUEST_ORIGIN
+        },  # Set origin to a trusted origin to bypass origin check
     )
 
     assert response.status_code == 200
     assert "score" in response.json()
     assert "passed" in response.json()
-    assert response["Access-Control-Allow-Origin"] == SOURCE_ORIGIN
+    assert response["Access-Control-Allow-Origin"] == REQUEST_ORIGIN
     assert response["AMP-Access-Control-Allow-Source-Origin"] == SOURCE_ORIGIN
     assert response["Access-Control-Allow-Credentials"] == "true"

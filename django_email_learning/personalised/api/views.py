@@ -11,6 +11,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django_email_learning.services.metrics_service import metric_service
 from django_email_learning.services import jwt_service
+from django_email_learning.services.email_sender_service import email_sender_service
 from django.utils.translation import gettext as _
 from django_email_learning.models import (
     AssignmentSubmission,
@@ -24,6 +25,7 @@ from django_email_learning.models import (
 from django_email_learning.services.utils import PRIVATE_FILE_STORAGE
 from pydantic import ValidationError
 import json
+import urllib.parse
 import logging
 
 
@@ -441,23 +443,36 @@ class QuizSubmissionView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class AmpQuizSubmissionView(View):
     @staticmethod
-    def _set_amp_headers(response: JsonResponse, source_origin: str) -> JsonResponse:
-        response["Access-Control-Allow-Origin"] = source_origin
+    def _set_amp_headers(
+        response: JsonResponse, source_origin: str, request_origin: str
+    ) -> JsonResponse:
+        response["Access-Control-Allow-Origin"] = request_origin
         response["AMP-Access-Control-Allow-Source-Origin"] = source_origin
         response["Access-Control-Allow-Credentials"] = "true"
         return response
 
     def _amp_json_response(
-        self, payload: dict, status: int, source_origin: str
+        self, payload: dict, status: int, source_origin: str, request_origin: str
     ) -> JsonResponse:
         response = JsonResponse(payload, status=status)
-        return self._set_amp_headers(response=response, source_origin=source_origin)
+        return self._set_amp_headers(
+            response=response,
+            source_origin=source_origin,
+            request_origin=request_origin,
+        )
 
     def post(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
         source_origin = request.GET.get("__amp_source_origin")
-        if not source_origin:
+        if (
+            not source_origin
+            or urllib.parse.unquote(source_origin) != email_sender_service.from_email
+        ):
             return JsonResponse(
-                {"error": _("Missing __amp_source_origin query parameter.")},
+                {
+                    "error": _(
+                        "Missing or untrusted __amp_source_origin query parameter."
+                    )
+                },
                 status=400,
             )
 
@@ -465,10 +480,22 @@ class AmpQuizSubmissionView(View):
             trusted_origin.rstrip("/")
             for trusted_origin in settings.CSRF_TRUSTED_ORIGINS
         }
-        normalized_source_origin = source_origin.rstrip("/")
-        if normalized_source_origin not in trusted_origins:
+        request_origin = (
+            request.headers.get("Origin")
+            or request.headers.get("X-Forwarded-Host")
+            or request.headers.get("Referer", "").split("/")[0:3]
+            and "/".join(request.headers.get("Referer", "").split("/")[:3])
+            or None
+        )
+        if not request_origin:
             return JsonResponse(
-                {"error": _("Invalid __amp_source_origin. Origin is not trusted.")},
+                {"error": _("Missing HTTP_ORIGIN header.")},
+                status=400,
+            )
+        normalized_origin = request_origin.rstrip("/")
+        if normalized_origin not in trusted_origins:
+            return JsonResponse(
+                {"error": _("Invalid origin. Untrusted source.")},
                 status=400,
             )
 
@@ -477,7 +504,8 @@ class AmpQuizSubmissionView(View):
             return self._amp_json_response(
                 {"error": _("Token is required.")},
                 status=400,
-                source_origin=normalized_source_origin,
+                source_origin=source_origin,
+                request_origin=normalized_origin,
             )
 
         answers_map: dict[int, set[int]] = {}
@@ -492,7 +520,8 @@ class AmpQuizSubmissionView(View):
                 return self._amp_json_response(
                     {"error": _("Invalid question ID in form payload.")},
                     status=400,
-                    source_origin=normalized_source_origin,
+                    source_origin=source_origin,
+                    request_origin=normalized_origin,
                 )
 
             parsed_answers: set[int] = set()
@@ -506,7 +535,8 @@ class AmpQuizSubmissionView(View):
                     return self._amp_json_response(
                         {"error": _("Invalid answer ID in form payload.")},
                         status=400,
-                        source_origin=normalized_source_origin,
+                        source_origin=source_origin,
+                        request_origin=normalized_origin,
                     )
 
             answers_map[question_id] = parsed_answers
@@ -523,13 +553,15 @@ class AmpQuizSubmissionView(View):
         if error_response:
             return self._set_amp_headers(
                 response=error_response,
-                source_origin=normalized_source_origin,
+                source_origin=source_origin,
+                request_origin=normalized_origin,
             )
 
         return self._amp_json_response(
             response_payload,
             status=200,
-            source_origin=normalized_source_origin,
+            source_origin=source_origin,
+            request_origin=normalized_origin,
         )
 
 
