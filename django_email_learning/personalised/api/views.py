@@ -489,7 +489,8 @@ class AmpQuizSubmissionView(View):
         )
         if (
             not source_origin
-            or urllib.parse.unquote(source_origin) != email_sender_service.from_email
+            or urllib.parse.unquote(source_origin).lower()
+            not in email_sender_service.from_email.lower()
         ):
             return JsonResponse(
                 {

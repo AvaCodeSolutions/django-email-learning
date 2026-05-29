@@ -45,6 +45,75 @@
         display: block;
         padding: 4px;
     }
+    .quiz-feedback {
+        margin-top: 20px;
+        padding: 16px;
+        border: 1px solid #e6e6e6;
+        border-radius: 8px;
+        background: #fafafa;
+    }
+    .quiz-feedback-title {
+        margin: 0 0 12px;
+        font-weight: 700;
+        font-size: 18px;
+    }
+    .quiz-feedback-question {
+        margin-bottom: 16px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #ececec;
+    }
+    .quiz-feedback-question:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    .quiz-feedback-answer {
+        display: block;
+        padding: 8px 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        margin: 6px 0;
+        line-height: 1.4;
+    }
+    .quiz-feedback-answer-icon {
+        display: inline-block;
+        width: 20px;
+        font-weight: 700;
+    }
+    .quiz-feedback-answer-text {
+        display: inline;
+    }
+    .quiz-feedback-chip {
+        display: inline-block;
+        margin-left: 8px;
+        padding: 1px 6px;
+        border-radius: 10px;
+        font-size: 12px;
+        line-height: 1.4;
+        border: 1px solid #3d8b40;
+        color: #2f6f33;
+        background: #e6f4ea;
+    }
+    .quiz-feedback-answer-correct-selected {
+        border-color: #4caf50;
+        background: #d9f2db;
+        color: #1f5f22;
+    }
+    .quiz-feedback-answer-correct {
+        border-color: #82c784;
+        background: #eef8ef;
+        color: #2f6f33;
+    }
+    .quiz-feedback-answer-selected-wrong {
+        border-color: #ef9a9a;
+        background: #fdecec;
+        color: #b71c1c;
+    }
+    .quiz-feedback-answer-neutral {
+        border-color: #ddd;
+        background: #f5f5f5;
+        color: #555;
+    }
 {% endblock %}
 
 {% block content %}
@@ -93,10 +162,6 @@
   </p>
 </div>
 
-    <div hidden [hidden]="!formState.submitted">
-    {% translate "Your answers have been submitted. Please wait while we calculate your score." %}
-    </div>
-
     <div submit-success>
         <template type="amp-mustache">
         {% templatetag openvariable %}message{% templatetag closevariable %}<br />
@@ -107,6 +172,53 @@
         </p>
         {% templatetag openvariable %}/is_invalidated{% templatetag closevariable %}
         {% templatetag openvariable %}/passed{% templatetag closevariable %}
+
+        {% templatetag openvariable %}#quiz_data{% templatetag closevariable %}
+        <div class="quiz-feedback">
+            <p class="quiz-feedback-title">{% templatetag openvariable %}title{% templatetag closevariable %}</p>
+            {% templatetag openvariable %}#questions{% templatetag closevariable %}
+            <div class="quiz-feedback-question">
+                <p class="question">{% templatetag openvariable %}text{% templatetag closevariable %}</p>
+
+                {% templatetag openvariable %}#answers{% templatetag closevariable %}
+                {% templatetag openvariable %}#is_correct{% templatetag closevariable %}
+                {% templatetag openvariable %}#user_selected{% templatetag closevariable %}
+                <div class="quiz-feedback-answer quiz-feedback-answer-correct-selected">
+                    <span class="quiz-feedback-answer-icon">&#10003;</span>
+                    <span class="quiz-feedback-answer-text">{% templatetag openvariable %}text{% templatetag closevariable %}</span>
+                    <span class="quiz-feedback-chip">{% translate "Correct answer" %}</span>
+                </div>
+                {% templatetag openvariable %}/user_selected{% templatetag closevariable %}
+
+                {% templatetag openvariable %}^user_selected{% templatetag closevariable %}
+                <div class="quiz-feedback-answer quiz-feedback-answer-correct">
+                    <span class="quiz-feedback-answer-icon">&#10003;</span>
+                    <span class="quiz-feedback-answer-text">{% templatetag openvariable %}text{% templatetag closevariable %}</span>
+                    <span class="quiz-feedback-chip">{% translate "Correct answer" %}</span>
+                </div>
+                {% templatetag openvariable %}/user_selected{% templatetag closevariable %}
+                {% templatetag openvariable %}/is_correct{% templatetag closevariable %}
+
+                {% templatetag openvariable %}^is_correct{% templatetag closevariable %}
+                {% templatetag openvariable %}#user_selected{% templatetag closevariable %}
+                <div class="quiz-feedback-answer quiz-feedback-answer-selected-wrong">
+                    <span class="quiz-feedback-answer-icon">&#10007;</span>
+                    <span class="quiz-feedback-answer-text">{% templatetag openvariable %}text{% templatetag closevariable %}</span>
+                </div>
+                {% templatetag openvariable %}/user_selected{% templatetag closevariable %}
+
+                {% templatetag openvariable %}^user_selected{% templatetag closevariable %}
+                <div class="quiz-feedback-answer quiz-feedback-answer-neutral">
+                    <span class="quiz-feedback-answer-icon">&#9675;</span>
+                    <span class="quiz-feedback-answer-text">{% templatetag openvariable %}text{% templatetag closevariable %}</span>
+                </div>
+                {% templatetag openvariable %}/user_selected{% templatetag closevariable %}
+                {% templatetag openvariable %}/is_correct{% templatetag closevariable %}
+                {% templatetag openvariable %}/answers{% templatetag closevariable %}
+            </div>
+            {% templatetag openvariable %}/questions{% templatetag closevariable %}
+        </div>
+        {% templatetag openvariable %}/quiz_data{% templatetag closevariable %}
         </template>
     </div>
 
