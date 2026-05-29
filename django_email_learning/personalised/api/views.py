@@ -464,8 +464,12 @@ class AmpQuizSubmissionView(View):
     def _set_amp_headers(
         response: JsonResponse, source_origin: str, request_origin: str
     ) -> JsonResponse:
+        response["AMP-Email-Allow-Sender"] = source_origin
         response["Access-Control-Allow-Origin"] = request_origin
         response["AMP-Access-Control-Allow-Source-Origin"] = source_origin
+        response[
+            "Access-Control-Expose-Headers"
+        ] = "AMP-Access-Control-Allow-Source-Origin"
         response["Access-Control-Allow-Credentials"] = "true"
         return response
 
@@ -480,7 +484,9 @@ class AmpQuizSubmissionView(View):
         )
 
     def post(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
-        source_origin = request.GET.get("__amp_source_origin")
+        source_origin = request.GET.get("__amp_source_origin") or request.headers.get(
+            "AMP-Email-Sender"
+        )
         if (
             not source_origin
             or urllib.parse.unquote(source_origin) != email_sender_service.from_email
