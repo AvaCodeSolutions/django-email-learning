@@ -79,7 +79,7 @@ def test_submit_certificate_for_enrollment_in_an_invalid_state(
         data={"name": NAME_ON_CERTIFICATE, "token": token},
         content_type="application/json",
     )
-    assert response.status_code == 400
+    assert response.status_code == 422
     assert (
         "The enrollment is not completed. Certificate cannot be issued."
         in response.json().get("error", "")
