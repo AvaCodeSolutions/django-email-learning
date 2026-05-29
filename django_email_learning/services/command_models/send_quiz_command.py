@@ -3,6 +3,7 @@ from django_email_learning.services.command_models.abstract_command import (
 )
 from django_email_learning.models import CourseContent
 from django_email_learning.services.email_sender_service import email_sender_service
+from django_email_learning.services import jwt_service
 from django_email_learning.services.metrics_service import metric_service
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -40,12 +41,18 @@ class SendQuizCommand(AbstractCommand):
         if token:
             token = token.split("&")[0]  # In case there are other query parameters
 
+        decoded_token = jwt_service.decode_jwt(token) if token else {}
+
         quiz = content.quiz
         subject = quiz.title
+        question_ids = decoded_token.get(
+            "question_ids", quiz.questions.values_list("id", flat=True)
+        )
         context = {
             "quiz": quiz,
             "link": self.link,
             "amp_action_url": f"{DJANGO_EMAIL_LEARNING_CONF['SITE_BASE_URL']}{reverse('django_email_learning:api_personalised:quiz_amp_submission')}",
+            "question_ids": question_ids,
             "token": token,
             "unsubscribe_link": content.course.generate_unsubscribe_link(self.email),
         }

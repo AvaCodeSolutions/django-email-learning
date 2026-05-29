@@ -61,6 +61,7 @@
 
   <div class="vertical-container">
   {% for question in quiz.questions.all %}
+    {% if question.id in question_ids %}
     <div class="vertical-stack">
         <p class="question">{{ question.text }}</p>
         <div class="choices-wrap">
@@ -77,6 +78,7 @@
         </div>
         <hr>
     </div>
+    {% endif %}
   {% endfor %}
   </div>
 
