@@ -5,14 +5,9 @@
     <script async custom-element="amp-bind" src="https://cdn.ampproject.org/v0/amp-bind-0.1.js"></script>
     <script async custom-element="amp-form" src="https://cdn.ampproject.org/v0/amp-form-0.1.js"></script>
     <script async custom-template="amp-mustache" src="https://cdn.ampproject.org/v0/amp-mustache-0.2.js"></script>
-    <script async custom-element="amp-selector" src="https://cdn.ampproject.org/v0/amp-selector-0.1.js"></script>
 {% endblock %}
 
 {% block extra_styles %}
-    label {
-        display: block;
-        margin-bottom: 8px;
-    }
     hr {
         background: #eee;
         border: none;
@@ -22,31 +17,32 @@
     .question {
         font-weight: 700;
     }
-    .choice {
+    .choice-label {
+        display: flex;
+        align-items: center;
         padding: 10px 20px;
         border: 1px solid #eee;
         border-radius: 6px;
         cursor: pointer;
-        margin: 4px;
-        display: block;
+        margin: 4px 0;
+        gap: 10px;
     }
-    .choice[selected] {
-        border-color: #636eec;
-        background-color: #eef0fd;
-        color: #636eec;
+    .choice-label input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        flex-shrink: 0;
     }
     .vertical-container {
         display: block;
         width: 100%;
     }
     .vertical-stack {
-        display: block; /* FIX: changed from flex column to plain block */
+        display: block;
         width: 100%;
     }
     .choices-wrap {
-        display: flex;
-        flex-wrap: wrap; /* wraps naturally, no scroll conflict */
-        gap: 8px;
+        display: block;
         padding: 4px;
     }
 {% endblock %}
@@ -67,17 +63,23 @@
   {% for question in quiz.questions.all %}
     <div class="vertical-stack">
         <p class="question">{{ question.text }}</p>
-        <amp-selector name="{{ question.id }}" multiple layout="container">
-            <div class="choices-wrap">
-            {% for answer in question.answers.all %}
-                <div option="{{ answer.id }}" class="choice">{{ answer.text }}</div>
-            {% endfor %}
-            </div>
-        </amp-selector>
+        <div class="choices-wrap">
+        {% for answer in question.answers.all %}
+            <label class="choice-label">
+                <input
+                    type="checkbox"
+                    name="{{ question.id }}"
+                    value="{{ answer.id }}"
+                >
+                {{ answer.text }}
+            </label>
+        {% endfor %}
+        </div>
         <hr>
     </div>
   {% endfor %}
   </div>
+
   <input
     name="token"
     type="hidden"
@@ -87,30 +89,30 @@
   <p align="center">
   <button class="button" type="submit">{% translate "Submit" %}</button>
   </p>
-  </div>
+</div>
+
     <div hidden [hidden]="!formState.submitted">
     {% translate "Your answers have been submitted. Please wait while we calculate your score." %}
     </div>
+
     <div submit-success>
         <template type="amp-mustache">
         {% templatetag openvariable %}message{% templatetag closevariable %}<br />
         {% templatetag openvariable %}^passed{% templatetag closevariable %}
         {% templatetag openvariable %}^is_invalidated{% templatetag closevariable %}<br />
         <p align="center">
-        <button type="button" class="button" on="tap:AMP.setState({formState: { submitted: false }})">Try again</button>
+        <button type="button" class="button" on="tap:AMP.setState({formState: { submitted: false }})">{% translate "Try again" %}</button>
         </p>
         {% templatetag openvariable %}/is_invalidated{% templatetag closevariable %}
         {% templatetag openvariable %}/passed{% templatetag closevariable %}
         </template>
     </div>
 
-
     <div submit-error>
         <p>
         {% blocktranslate %}Something went wrong. You can try to submit this quiz from <a href='{{ link }}'>here</a> instead.{% endblocktranslate %}
         </p>
     </div>
-
 
 </form>
 </div>

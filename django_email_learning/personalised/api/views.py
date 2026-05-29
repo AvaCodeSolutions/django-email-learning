@@ -56,11 +56,14 @@ class FileUploadView(View):
                 hash_value=decoded["delivery_hash"],
             )
         except ContentDelivery.DoesNotExist:
+            logger.error(
+                f"File upload failed: No content delivery found for ID {decoded['delivery_id']} with provided hash."
+            )
             return JsonResponse(
                 {
                     "error": "The content delivery associated with this token does not exist."
                 },
-                status=500,
+                status=422,
             )
 
         if delivery.enrollment.status != EnrollmentStatus.ACTIVE:
@@ -113,11 +116,14 @@ class AssignmentSubmissionView(View):
                 id=delivery_id, hash_value=decoded["delivery_hash"]
             )
         except ContentDelivery.DoesNotExist:
+            logger.error(
+                f"Assignment submission failed: No content delivery found for ID {delivery_id} with provided hash."
+            )
             return JsonResponse(
                 {
                     "error": "The content delivery associated with this token does not exist."
                 },
-                status=500,
+                status=422,
             )
 
         existing_submission = AssignmentSubmission.objects.filter(
@@ -145,8 +151,11 @@ class AssignmentSubmissionView(View):
 
         assignment = delivery.course_content.assignment
         if not assignment:
+            logger.error(
+                f"Assignment submission failed: No assignment found for content delivery ID {delivery_id}."
+            )
             return JsonResponse(
-                {"error": "No assignment associated with this link"}, status=500
+                {"error": "No assignment associated with this link"}, status=422
             )
 
         if assignment.requires_text_submission and not text_submission:
@@ -239,11 +248,14 @@ class QuizSubmissionView(View):
                 id=delivery_id, hash_value=decoded["delivery_hash"]
             )
         except ContentDelivery.DoesNotExist:
+            logger.error(
+                f"Quiz submission failed: No content delivery found for ID {delivery_id} with provided hash."
+            )
             return None, JsonResponse(
                 {
                     "error": "The content delivery associated with this token does not exist."
                 },
-                status=500,
+                status=422,
             )
 
         enrollment = delivery.enrollment
@@ -254,8 +266,11 @@ class QuizSubmissionView(View):
 
         quiz = delivery.course_content.quiz
         if not quiz:
+            logger.error(
+                f"Quiz submission failed: No quiz found for content delivery ID {delivery_id}."
+            )
             return None, JsonResponse(
-                {"error": "No quiz associated with this link"}, status=500
+                {"error": "No quiz associated with this link"}, status=422
             )
 
         try:
@@ -266,7 +281,10 @@ class QuizSubmissionView(View):
                 f"Learner ID {enrollment.learner.id} submitted quiz for Course {enrollment.course.title} with score {score}. Passed: {passed}"
             )
         except ValueError as ve:
-            return None, JsonResponse({"error": str(ve)}, status=500)
+            logger.error(
+                f"Quiz submission failed: Error calculating score for content delivery ID {delivery_id}. Error: {ve}"
+            )
+            return None, JsonResponse({"error": str(ve)}, status=422)
 
         QuizSubmission.objects.create(
             delivery=delivery,
@@ -293,8 +311,8 @@ class QuizSubmissionView(View):
             ).count() == 1:
                 new_delivery = delivery.schedule_next_delivery()
 
-            if not new_delivery:
-                enrollment.graduate()
+                if not new_delivery:
+                    enrollment.graduate()
         else:
             failed_submissions_count = QuizSubmission.objects.filter(
                 delivery=delivery,
@@ -586,17 +604,23 @@ class SubmitCertificateFormView(View):
         try:
             enrollment = Enrollment.objects.get(id=enrollment_id)
         except Enrollment.DoesNotExist:
+            logger.error(
+                f"Certificate generation failed: No enrollment found for ID {enrollment_id}."
+            )
             return JsonResponse(
                 {"error": "The enrollment associated with this token does not exist."},
-                status=500,
+                status=422,
             )
 
         if enrollment.status != EnrollmentStatus.COMPLETED:
+            logger.error(
+                f"Certificate generation failed: Enrollment ID {enrollment_id} is not completed."
+            )
             return JsonResponse(
                 {
                     "error": "The enrollment is not completed. Certificate cannot be issued."
                 },
-                status=400,
+                status=422,
             )
         certificate, created = Certificate.objects.get_or_create(
             enrollment=enrollment, defaults={"name_on_certificate": name}

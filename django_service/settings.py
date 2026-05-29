@@ -108,7 +108,7 @@ DATABASES = {
 }
 
 DJANGO_EMAIL_LEARNING = {
-    "SITE_BASE_URL": "http://localhost:8000",
+    "SITE_BASE_URL": os.environ.get("SITE_BASE_URL", "http://localhost:8000"),
     "JWT_SECRET_KEY": "your-very-asdasdasdasdaasdawqA2eSDFaasecret-keym0824+s26vkron%(@whp&wyaw=26",
     "ENCRYPTION_SECRET_KEY": "your-very-asdasdasdasecure-and-random-jwt-secret-keym0824+s26vkron%(@whp&wyaw=26",
     "FROM_EMAIL": os.environ.get("FROM_EMAIL", "webmaster@localhost"),
