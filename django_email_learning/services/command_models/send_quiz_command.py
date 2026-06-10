@@ -18,9 +18,6 @@ class QuizNotFoundError(Exception):
     pass
 
 
-DJANGO_EMAIL_LEARNING_CONF = settings.DJANGO_EMAIL_LEARNING
-
-
 class SendQuizCommand(AbstractCommand):
     command_name: Literal["send_quiz"] = "send_quiz"
     link: str
@@ -28,6 +25,7 @@ class SendQuizCommand(AbstractCommand):
     content_id: int
 
     def execute(self) -> None:
+        conf = settings.DJANGO_EMAIL_LEARNING
         content = CourseContent.objects.get(id=self.content_id)
         if not content.quiz:
             raise QuizNotFoundError(
@@ -51,7 +49,7 @@ class SendQuizCommand(AbstractCommand):
         context = {
             "quiz": quiz,
             "link": self.link,
-            "amp_action_url": f"{DJANGO_EMAIL_LEARNING_CONF['SITE_BASE_URL']}{reverse('django_email_learning:api_personalised:quiz_amp_submission')}",
+            "amp_action_url": f"{conf['SITE_BASE_URL']}{reverse('django_email_learning:api_personalised:quiz_amp_submission')}",
             "question_ids": question_ids,
             "token": token,
             "unsubscribe_link": content.course.generate_unsubscribe_link(self.email),
@@ -67,7 +65,7 @@ class SendQuizCommand(AbstractCommand):
         email_message.attach_alternative(
             render_to_string("emails/quiz.html", context), "text/html"
         )
-        if DJANGO_EMAIL_LEARNING_CONF.get("AMP_ENABLED"):
+        if conf.get("AMP_ENABLED"):
             email_message.attach_alternative(
                 render_to_string("emails/quiz_amp.html", context), "text/x-amp-html"
             )
