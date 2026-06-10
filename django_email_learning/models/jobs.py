@@ -15,6 +15,7 @@ class JobName(StrEnum):
 class JobStatus(StrEnum):
     RUNNING = "running"
     COMPLETED = "completed"
+    STALE = "stale"
 
 
 class JobExecution(models.Model):
@@ -48,7 +49,7 @@ class JobExecution(models.Model):
                     job_name=job_name,
                     status=JobStatus.RUNNING.value,
                     started_at__lt=stale_cutoff,
-                ).update(status=JobStatus.COMPLETED.value, finished_at=timezone.now())
+                ).update(status=JobStatus.STALE.value, finished_at=timezone.now())
                 return cls.objects.create(
                     job_name=job_name,
                     status=JobStatus.RUNNING.value,

@@ -38,7 +38,7 @@ def test_start_if_not_running_resets_stale_running_record(db) -> None:
     assert execution.status == JobStatus.RUNNING.value
 
     stale.refresh_from_db()
-    assert stale.status == JobStatus.COMPLETED.value
+    assert stale.status == JobStatus.STALE.value
     assert stale.finished_at is not None
 
 
@@ -79,5 +79,5 @@ def test_start_if_not_running_only_resets_stale_for_matching_job(db) -> None:
 
     stale_imap.refresh_from_db()
     stale_deliver.refresh_from_db()
-    assert stale_imap.status == JobStatus.COMPLETED.value
+    assert stale_imap.status == JobStatus.STALE.value
     assert stale_deliver.status == JobStatus.RUNNING.value
