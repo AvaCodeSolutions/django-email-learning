@@ -1,6 +1,6 @@
 import Base from '../../src/components/Base.jsx'
 import EmptyTableState from '../../src/components/EmptyTableState.jsx'
-import { Avatar, InputBase, IconButton, Box, Button, Chip, Dialog, FormControl, Grid, InputLabel, LinearProgress, MenuItem, Pagination, Paper, Select, TableContainer, Table, TableBody, TableHead, TableCell, TableRow, Tooltip, Typography } from '@mui/material'
+import { Avatar, InputBase, IconButton, Box, Button, Chip, Dialog, Grid, LinearProgress, MenuItem, Pagination, Paper, Select, TableContainer, Table, TableBody, TableHead, TableCell, TableRow, Tooltip, Typography } from '@mui/material'
 import { Timeline, TimelineItem, TimelineContent, TimelineOppositeContent, TimelineSeparator, TimelineConnector, TimelineDot } from '@mui/lab'
 import { useState, useEffect, useRef } from 'react'
 import FilterListOffIcon from '@mui/icons-material/FilterListOff';
@@ -272,55 +272,56 @@ function Learners(initialQs="") {
       <Grid size={{xs: 12}} sx={{ py: 2, pl: 2 }}>
         <Box sx={{ p: 2, marginBottom: 2, border: '1px solid', borderColor: 'border.main', borderRadius: 2, minHeight: 300, backgroundColor: 'background.box' }}>
 
-          {/* Search + filter bar */}
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2, alignItems: 'center' }}>
-            <Paper sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', minWidth: 260 }}>
+          {/* Search + filter bar — all items share the same 40px height */}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2, alignItems: 'stretch' }}>
+            <Paper
+              variant="outlined"
+              sx={{ px: 0.5, display: 'flex', alignItems: 'center', minWidth: 260, height: 40, boxSizing: 'border-box' }}
+            >
               <InputBase
-                sx={{ px: 1, flex: 1 }}
+                sx={{ px: 1, flex: 1, fontSize: '0.875rem' }}
                 placeholder={localeMessages["search_learners"]}
                 inputRef={searcchInputRef}
                 onKeyDown={(e) => { if (e.key === 'Enter') { search(); } }}
               />
-              <IconButton type="button" sx={{ p: '10px' }} aria-label="search" onClick={search}>
-                <SearchIcon />
+              <IconButton size="small" sx={{ p: '6px' }} aria-label="search" onClick={search}>
+                <SearchIcon fontSize="small" />
               </IconButton>
             </Paper>
 
-            <FormControl size="small" sx={{ minWidth: 180 }}>
-              <InputLabel>{localeMessages['filter_by_course'] || 'Course'}</InputLabel>
-              <Select
-                value={courseFilter}
-                label={localeMessages['filter_by_course'] || 'Course'}
-                onChange={handleCourseFilterChange}
-              >
-                <MenuItem value="">{localeMessages['all_courses'] || 'All Courses'}</MenuItem>
-                {courses.map(c => (
-                  <MenuItem key={c.id} value={String(c.id)}>{c.title}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <Select
+              size="small"
+              displayEmpty
+              value={courseFilter}
+              onChange={handleCourseFilterChange}
+              sx={{ minWidth: 180, height: 40, fontSize: '0.875rem' }}
+            >
+              <MenuItem value=""><em>{localeMessages['all_courses'] || 'All Courses'}</em></MenuItem>
+              {courses.map(c => (
+                <MenuItem key={c.id} value={String(c.id)}>{c.title}</MenuItem>
+              ))}
+            </Select>
 
-            <FormControl size="small" sx={{ minWidth: 160 }}>
-              <InputLabel>{localeMessages['filter_by_status'] || 'Status'}</InputLabel>
-              <Select
-                value={statusFilter}
-                label={localeMessages['filter_by_status'] || 'Status'}
-                onChange={handleStatusFilterChange}
-              >
-                <MenuItem value="">{localeMessages['all_statuses'] || 'All Statuses'}</MenuItem>
-                {ENROLLMENT_STATUSES.map(s => (
-                  <MenuItem key={s} value={s}>{localeMessages[s] || s}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <Select
+              size="small"
+              displayEmpty
+              value={statusFilter}
+              onChange={handleStatusFilterChange}
+              sx={{ minWidth: 160, height: 40, fontSize: '0.875rem' }}
+            >
+              <MenuItem value=""><em>{localeMessages['all_statuses'] || 'All Statuses'}</em></MenuItem>
+              {ENROLLMENT_STATUSES.map(s => (
+                <MenuItem key={s} value={s}>{localeMessages[s] || s}</MenuItem>
+              ))}
+            </Select>
 
             {isFiltered && (
               <Tooltip title={localeMessages['reset_filters'] || 'Reset Filters'}>
                 <Button
                   variant="outlined"
-                  size="small"
                   startIcon={<FilterListOffIcon />}
                   onClick={resetFilters}
+                  sx={{ height: 40, fontSize: '0.875rem', textTransform: 'none' }}
                 >
                   {localeMessages['reset_filters'] || 'Reset'}
                 </Button>

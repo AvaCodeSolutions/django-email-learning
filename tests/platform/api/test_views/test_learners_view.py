@@ -119,7 +119,9 @@ def test_learners_view_status_filter(superadmin_client, learners_factory, course
     assert data["items"][0]["email"] == "completed@example.com"
 
 
-def test_learners_view_status_filter_ignores_invalid_value(superadmin_client, learners_factory):
+def test_learners_view_status_filter_ignores_invalid_value(
+    superadmin_client, learners_factory
+):
     learners_factory(3)
 
     response = superadmin_client.get(f"{URL}?status=not_a_real_status")
