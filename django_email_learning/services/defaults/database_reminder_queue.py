@@ -54,8 +54,16 @@ class DatabaseReminderQueue(DeliveryQueueProtocol):
         return (
             DeliverySchedule.objects.filter(delivery__id__in=task_ids)
             .filter(id=Subquery(latest_schedule_id_subquery))
-            .select_related("delivery__enrollment__learner", "delivery__course_content")
-            .iterator()
+            .select_related(
+                "delivery__enrollment__learner",
+                "delivery__course_content__course__organization",
+                "delivery__course_content__course__imap_connection",
+                "delivery__course_content__lesson",
+                "delivery__course_content__quiz",
+                "delivery__course_content__assignment",
+            )
+            .prefetch_related("delivery__course_content__quiz__questions")
+            .iterator(chunk_size=self.ITERATOR_BATCH_SIZE)
         )
 
     def next_task(self) -> DeliverySchedule | None:

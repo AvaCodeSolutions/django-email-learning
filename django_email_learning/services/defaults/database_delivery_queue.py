@@ -33,8 +33,16 @@ class DatabaseDeliveryQueue(DeliveryQueueProtocol):
         # Return fresh objects outside transaction
         return (
             DeliverySchedule.objects.filter(id__in=task_ids)
-            .select_related("delivery__enrollment__learner", "delivery__course_content")
-            .iterator()
+            .select_related(
+                "delivery__enrollment__learner",
+                "delivery__course_content__course__organization",
+                "delivery__course_content__course__imap_connection",
+                "delivery__course_content__lesson",
+                "delivery__course_content__quiz",
+                "delivery__course_content__assignment",
+            )
+            .prefetch_related("delivery__course_content__quiz__questions")
+            .iterator(chunk_size=self.ITERATOR_BATCH_SIZE)
         )
 
     def next_task(self) -> DeliverySchedule | None:
