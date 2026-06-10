@@ -8,6 +8,7 @@ from django_email_learning.services.utils import get_private_file_storage, mask_
 from .deliveries import ContentDelivery
 from .organizations import OrganizationUser
 from .course_contents import Assignment
+from .enums.course_content_type import CourseContentType
 from django_email_learning.services.utils import PRIVATE_FILE_STORAGE
 
 
@@ -20,7 +21,7 @@ class QuizSubmission(models.Model):
     submitted_at = models.DateTimeField(auto_now_add=True)
 
     def clean(self) -> None:
-        if self.delivery.course_content.type != "quiz":
+        if self.delivery.course_content.type != CourseContentType.QUIZ:
             raise ValidationError("Sent item must be associated with a quiz content.")
         already_submitted = QuizSubmission.objects.filter(
             delivery=self.delivery

@@ -2,6 +2,7 @@
 from .enums.enrollment_status import EnrollmentStatus
 from .enums.delivery_status import DeliveryStatus
 from .enums.deactivation_reason import DeactivationReason
+from .enums.course_content_type import CourseContentType
 from .organizations import Organization, OrganizationUser
 from .mixin_models import EncryptionMixin
 from .imap_connections import ImapConnection, InboxFolder, is_domain_or_ip
