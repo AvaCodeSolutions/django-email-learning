@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.db import models, transaction, IntegrityError
 from django.utils import timezone
 from enum import StrEnum
@@ -36,9 +38,17 @@ class JobExecution(models.Model):
         ]
 
     @classmethod
-    def start_if_not_running(cls, job_name: str) -> "JobExecution | None":
+    def start_if_not_running(
+        cls, job_name: str, stale_after_hours: int = 2
+    ) -> "JobExecution | None":
         try:
             with transaction.atomic():
+                stale_cutoff = timezone.now() - timedelta(hours=stale_after_hours)
+                cls.objects.filter(
+                    job_name=job_name,
+                    status=JobStatus.RUNNING.value,
+                    started_at__lt=stale_cutoff,
+                ).update(status=JobStatus.COMPLETED.value, finished_at=timezone.now())
                 return cls.objects.create(
                     job_name=job_name,
                     status=JobStatus.RUNNING.value,
