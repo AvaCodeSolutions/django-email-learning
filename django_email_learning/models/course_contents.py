@@ -1,6 +1,7 @@
 from enum import StrEnum
 
 from django.db import models
+from .enums.course_content_type import CourseContentType
 from typing import Optional
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -140,11 +141,7 @@ class CourseContent(models.Model):
     priority = models.IntegerField()
     type = models.CharField(
         max_length=50,
-        choices=[
-            ("lesson", "Lesson"),
-            ("quiz", "Quiz"),
-            ("assignment", "Assignment"),
-        ],
+        choices=[(t.value, t.name.capitalize()) for t in CourseContentType],
     )
     lesson = models.ForeignKey(Lesson, null=True, blank=True, on_delete=models.CASCADE)
     quiz = models.ForeignKey(Quiz, null=True, blank=True, on_delete=models.CASCADE)
@@ -157,51 +154,51 @@ class CourseContent(models.Model):
     is_published = models.BooleanField(default=False)
 
     def __str__(self) -> str:
-        if self.type == "lesson" and self.lesson:
+        if self.type == CourseContentType.LESSON and self.lesson:
             return f"{self.priority} - Lesson: {self.lesson.title}"
-        elif self.type == "quiz" and self.quiz:
+        elif self.type == CourseContentType.QUIZ and self.quiz:
             return f"{self.priority} - Quiz: {self.quiz.title}"
-        elif self.type == "assignment" and self.assignment:
+        elif self.type == CourseContentType.ASSIGNMENT and self.assignment:
             return f"{self.priority} - Assignment: {self.assignment.title}"
         return f"{self.course.title} content #{self.priority}"
 
     @property
     def deadline_days(self) -> Optional[int]:
-        if self.type == "quiz" and self.quiz:
+        if self.type == CourseContentType.QUIZ and self.quiz:
             return self.quiz.deadline_days
-        elif self.type == "assignment" and self.assignment:
+        elif self.type == CourseContentType.ASSIGNMENT and self.assignment:
             return self.assignment.deadline_days
         return None
 
     @property
     def reminder_interval_days(self) -> Optional[int]:
-        if self.type == "quiz" and self.quiz:
+        if self.type == CourseContentType.QUIZ and self.quiz:
             return self.quiz.reminder_interval_days
-        elif self.type == "assignment" and self.assignment:
+        elif self.type == CourseContentType.ASSIGNMENT and self.assignment:
             return self.assignment.reminder_interval_days
         return None
 
     @property
     def title(self) -> str:
-        if self.type == "lesson" and self.lesson:
+        if self.type == CourseContentType.LESSON and self.lesson:
             return self.lesson.title
-        elif self.type == "quiz" and self.quiz:
+        elif self.type == CourseContentType.QUIZ and self.quiz:
             return self.quiz.title
-        elif self.type == "assignment" and self.assignment:
+        elif self.type == CourseContentType.ASSIGNMENT and self.assignment:
             return self.assignment.title
         return "Untitled Content"
 
     @property
     def limited_attempts(self) -> Optional[bool]:
-        if self.type == "quiz" and self.quiz:
+        if self.type == CourseContentType.QUIZ and self.quiz:
             return self.quiz.limited_attempts
         return None
 
     @property
     def is_blocking(self) -> Optional[bool]:
-        if self.type == "quiz" and self.quiz:
+        if self.type == CourseContentType.QUIZ and self.quiz:
             return self.quiz.is_blocking
-        elif self.type == "assignment" and self.assignment:
+        elif self.type == CourseContentType.ASSIGNMENT and self.assignment:
             return self.assignment.is_blocking
         return None
 
@@ -225,17 +222,17 @@ class CourseContent(models.Model):
             return ngettext("%(count)d day", "%(count)d days", days) % {"count": days}
 
     def _validate_content(self) -> None:
-        if self.type == "lesson" and not self.lesson:
+        if self.type == CourseContentType.LESSON and not self.lesson:
             raise ValidationError("Lesson must be provided for lesson content.")
-        if self.type == "quiz" and not self.quiz:
+        if self.type == CourseContentType.QUIZ and not self.quiz:
             raise ValidationError("Quiz must be provided for quiz content.")
-        if self.type == "assignment" and not self.assignment:
+        if self.type == CourseContentType.ASSIGNMENT and not self.assignment:
             raise ValidationError("Assignment must be provided for assignment content.")
-        if self.type == "lesson" and self.lesson:
+        if self.type == CourseContentType.LESSON and self.lesson:
             self.lesson.full_clean()
-        elif self.type == "quiz" and self.quiz:
+        elif self.type == CourseContentType.QUIZ and self.quiz:
             self.quiz.full_clean()
-        elif self.type == "assignment" and self.assignment:
+        elif self.type == CourseContentType.ASSIGNMENT and self.assignment:
             self.assignment.full_clean()
 
     def full_clean(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]

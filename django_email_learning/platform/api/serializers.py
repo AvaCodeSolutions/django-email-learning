@@ -28,6 +28,7 @@ from django_email_learning.models import (
     CourseContent,
     Course,
     QuizSelectionStrategy,
+    CourseContentType,
     Enrollment,
     EnrollmentStatus,
     OrganizationUser,
@@ -893,7 +894,15 @@ class ContentSentEvent(BaseModel):
 class Event(BaseModel):
     type: EventType
     timestamp: datetime
-    event_data: DeactivatedEvent | QuizSubmitedEvent | ContentSentEvent | AssignmentSubmitedEvent | AssignmentReviewdEvent | ReminderSentEvent | None = Field(
+    event_data: (
+        DeactivatedEvent
+        | QuizSubmitedEvent
+        | ContentSentEvent
+        | AssignmentSubmitedEvent
+        | AssignmentReviewdEvent
+        | ReminderSentEvent
+        | None
+    ) = Field(
         discriminator="type"
     )  # REGISTERED, VERIFIED, COURSE_COMPLETED have no additional data
 
@@ -939,7 +948,7 @@ class EnrollmentResponse(BaseModel):
                         ),
                     )
                 )
-                if delivery.course_content.type == "assignment":
+                if delivery.course_content.type == CourseContentType.ASSIGNMENT:
                     if (
                         delivery.reminder_state == ContentDelivery.ReminderStatus.SENT
                         and delivery.remind_at
@@ -985,7 +994,7 @@ class EnrollmentResponse(BaseModel):
                             )
                     # TODO:events for reminders and submissions for assignments
 
-                if delivery.course_content.type == "quiz":
+                if delivery.course_content.type == CourseContentType.QUIZ:
                     if (
                         delivery.reminder_state == ContentDelivery.ReminderStatus.SENT
                         and delivery.remind_at
@@ -1106,7 +1115,7 @@ class CreateCourseContentRequest(BaseModel):
                 content=self.content.content,
             )
             lesson.save()
-            content_type = "lesson"
+            content_type = CourseContentType.LESSON
 
         elif isinstance(self.content, AssignmentCreate):
             assignment = Assignment(
@@ -1119,7 +1128,7 @@ class CreateCourseContentRequest(BaseModel):
                 reminder_interval_days=self.content.reminder_interval_days,  # type: ignore[misc]
             )
             assignment.save()
-            content_type = "assignment"
+            content_type = CourseContentType.ASSIGNMENT
 
         elif isinstance(self.content, QuizCreate):
             quiz = Quiz(
@@ -1146,7 +1155,7 @@ class CreateCourseContentRequest(BaseModel):
                         question=question,
                     )
                     answer.save()
-            content_type = "quiz"
+            content_type = CourseContentType.QUIZ
 
         course_content = CourseContent.objects.create(
             course=course,

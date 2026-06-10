@@ -43,6 +43,7 @@ from django_email_learning.models import (
     Certificate,
     Course,
     CourseContent,
+    CourseContentType,
     Enrollment,
     EnrollmentStatus,
     ImapConnection,
@@ -964,7 +965,7 @@ class SendLessonToPlatformUser(View):
             # with a lesson-id fallback for backward compatibility.
             course_content = CourseContent.objects.filter(
                 id=serializer.id,
-                type="lesson",
+                type=CourseContentType.LESSON,
                 course__organization_id=kwargs["organization_id"],
             ).first()
             if course_content is None:

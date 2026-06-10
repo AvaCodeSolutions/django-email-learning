@@ -1,5 +1,9 @@
 from django_email_learning.ports.delivery_queue_protocol import DeliveryQueueProtocol
-from django_email_learning.models import DeliverySchedule, DeliveryStatus
+from django_email_learning.models import (
+    DeliverySchedule,
+    DeliveryStatus,
+    CourseContentType,
+)
 from django_email_learning.services.command_models.send_lesson_command import (
     SendLessonCommand,
     LessonNotFoundError,
@@ -98,7 +102,7 @@ class DeliverContentsJob:
             delivery_schedule.save()
             return
 
-        if course_content.type == "lesson":
+        if course_content.type == CourseContentType.LESSON:
             is_delivered = self.send_lesson_content(delivery_schedule)
             if is_delivered:
                 logger.info(
@@ -115,7 +119,7 @@ class DeliverContentsJob:
                     )
                     delivery_schedule.delivery.enrollment.graduate()
 
-        elif course_content.type == "quiz":
+        elif course_content.type == CourseContentType.QUIZ:
             is_delivered = self.send_quiz_content(delivery_schedule)
 
             # For quiz we don't schedule next content automatically, because the scheduling should be done after quiz completion.
@@ -124,7 +128,7 @@ class DeliverContentsJob:
                     f"Quiz content delivered for DeliverySchedule ID {delivery_schedule.id}. Next content scheduling is deferred until quiz completion."
                 )
         elif (
-            course_content.type == "assignment"
+            course_content.type == CourseContentType.ASSIGNMENT
             and course_content.assignment is not None
         ):
             is_delivered = self.send_assignment_content(delivery_schedule)
