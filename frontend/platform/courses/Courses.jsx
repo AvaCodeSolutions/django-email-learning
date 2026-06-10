@@ -17,6 +17,7 @@ import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import Base from '../../src/components/Base.jsx'
+import EmptyTableState from '../../src/components/EmptyTableState.jsx'
 import SchoolIcon from '@mui/icons-material/School';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
@@ -176,14 +177,10 @@ function Courses() {
                 </TableRow>
               ))}
               {courses.length === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={userRole !== 'viewer' ? 5 : 4}
-                    sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}
-                  >
-                    {localeMessages["no_courses_found"] || "No courses found."}
-                  </TableCell>
-                </TableRow>
+                <EmptyTableState
+                  colSpan={userRole !== 'viewer' ? 5 : 4}
+                  message={localeMessages['no_courses_found'] || 'No courses found.'}
+                />
               )}
             </TableBody>
           </Table>

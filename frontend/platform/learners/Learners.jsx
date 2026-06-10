@@ -1,4 +1,5 @@
 import Base from '../../src/components/Base.jsx'
+import EmptyTableState from '../../src/components/EmptyTableState.jsx'
 import { Avatar, InputBase, IconButton, Box, Chip, Dialog, Grid, LinearProgress, Pagination, Paper, TableContainer, Table, TableBody, TableHead, TableCell, TableRow, Typography } from '@mui/material'
 import { Timeline, TimelineItem, TimelineContent, TimelineOppositeContent, TimelineSeparator, TimelineConnector, TimelineDot } from '@mui/lab'
 import { useState, useEffect, useRef } from 'react'
@@ -266,6 +267,12 @@ function Learners(initialQs="") {
                 </TableRow>
               </TableHead>
               <TableBody>
+                {learners.length === 0 && (
+                  <EmptyTableState
+                    colSpan={2}
+                    message={localeMessages['no_learners_found'] || 'No learners found.'}
+                  />
+                )}
                 {learners.map((learner) => (
                   <TableRow
                     key={learner.id}

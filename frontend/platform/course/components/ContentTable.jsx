@@ -1,4 +1,5 @@
 import { Alert, Box, CircularProgress, Chip, IconButton, Switch, TableContainer, Table, TableHead, TableRow, TableBody, TableCell, Paper, Tooltip, Typography } from '@mui/material';
+import EmptyTableState from '../../../src/components/EmptyTableState.jsx';
 import { useState, useEffect } from 'react';
 import { getCookie } from '../../../src/utils.js';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -196,6 +197,12 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
               </TableRow>
             </TableHead>
             <TableBody>
+                {contentList.length === 0 && (
+                  <EmptyTableState
+                    colSpan={userRole !== 'viewer' ? 6 : 5}
+                    message={localeMessages['no_content_found'] || 'No content added yet.'}
+                  />
+                )}
                 {contentList.map((content) => (
                     <TableRow
                         key={content.id}

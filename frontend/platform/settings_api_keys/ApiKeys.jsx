@@ -1,5 +1,6 @@
 
 import Base from "../../src/components/Base";
+import EmptyTableState from "../../src/components/EmptyTableState.jsx";
 import { Box, Button, IconButton, Grid, Dialog, Typography, TableContainer, Table, TableHead, TableRow,TableBody, TableCell } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -122,7 +123,7 @@ const ApiKeys = () => {
                 >
                     {localeMessages["add_api_key"]}
                 </Button>
-        { apiKeyList.length > 0 && (<TableContainer sx={{ maxHeight: 440, border: '1px solid', borderColor: 'grey.300', borderRadius: 1 }} >
+        <TableContainer sx={{ maxHeight: 440, border: '1px solid', borderColor: 'grey.300', borderRadius: 1 }} >
                     <Table sx={{ tableLayout: 'fixed', width: '100%' }}>
             <TableHead>
               <TableRow>
@@ -133,6 +134,12 @@ const ApiKeys = () => {
               </TableRow>
             </TableHead>
             <TableBody>
+              {apiKeyList.length === 0 && (
+                <EmptyTableState
+                  colSpan={4}
+                  message={localeMessages['no_api_keys_found'] || 'No API keys yet.'}
+                />
+              )}
               { apiKeyList.map((key) => (
                 <TableRow key={key.id}>
                                     <TableCell dir={direction} sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>
@@ -189,7 +196,6 @@ const ApiKeys = () => {
           </Table>
           </TableContainer>
 
-        )}
         </Box>
         </Grid>
         <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
