@@ -3,7 +3,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db.utils import IntegrityError
 from django.db.models.functions import TruncDate
-from django.db.models import Count
+from django.db.models import Count, Prefetch
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models, transaction
@@ -1074,6 +1074,9 @@ class UpdateSessionView(View):
 
 @method_decorator(accessible_for(roles={"admin", "instructor"}), name="get")
 class LearnersView(PaginatedApiMixin, View):
+    # Stashed on the instance so serialize_item can read it without re-parsing the request.
+    _course_id: str | None = None
+
     def get_query_set(self, request: Any) -> models.QuerySet:
         organization_id = self.kwargs["organization_id"]
         qs = Enrollment.objects.filter(course__organization_id=organization_id)
@@ -1094,33 +1097,34 @@ class LearnersView(PaginatedApiMixin, View):
             search_term = request.GET["search"]
             qs = qs.filter(models.Q(learner__email__icontains=search_term))
         learner_ids = qs.values("learner_id").distinct()
-        return Learner.objects.filter(id__in=learner_ids)
+        learner_qs = Learner.objects.filter(id__in=learner_ids)
+
+        course_id = request.GET.get("course_id")
+        self._course_id = course_id
+        if course_id:
+            # Prefetch the single enrollment for this course so serialize_item
+            # can access status and progress_percentage without extra DB queries.
+            learner_qs = learner_qs.prefetch_related(
+                Prefetch(
+                    "enrollment_set",
+                    queryset=Enrollment.objects.filter(course_id=course_id),
+                    to_attr="_course_enrollment",
+                )
+            )
+        return learner_qs
 
     def get_item_serializer_class(self) -> Any:
         return serializers.LearnerResponse
 
-    def get(self, request: Any, *args: Any, **kwargs: Any) -> JsonResponse:
-        response = super().get(request, *args, **kwargs)
-        course_id = request.GET.get("course_id")
-        if not course_id:
-            return response
-
-        # Annotate each learner with their enrollment status and progress for the filtered course
-        data = response.content.decode()
-        payload = json.loads(data)
-        learner_ids = [item["id"] for item in payload["items"]]
-        enrollments = {
-            e.learner_id: e
-            for e in Enrollment.objects.filter(
-                learner_id__in=learner_ids, course_id=course_id
-            ).select_related("learner")
-        }
-        for item in payload["items"]:
-            enrollment = enrollments.get(item["id"])
+    def serialize_item(self, item: Any, request: Any) -> dict:
+        data = serializers.LearnerResponse.model_validate(item).model_dump()
+        if self._course_id:
+            enrollments: list = getattr(item, "_course_enrollment", [])
+            enrollment = enrollments[0] if enrollments else None
             if enrollment:
-                item["enrollment_status"] = enrollment.status
-                item["enrollment_progress"] = enrollment.progress_percentage
-        return JsonResponse(payload, status=response.status_code)
+                data["enrollment_status"] = enrollment.status
+                data["enrollment_progress"] = enrollment.progress_percentage
+        return data
 
 
 @method_decorator(

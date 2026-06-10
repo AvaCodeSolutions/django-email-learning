@@ -12,14 +12,11 @@ class PaginatedApiMixin:
         qs = self.get_query_set(request=request)
 
         items = qs[offset : offset + page_size]
-        item_serializer_class = self.get_item_serializer_class()
         count = qs.count()
 
         response_list = []
         for item in items:
-            response_list.append(
-                item_serializer_class.model_validate(item).model_dump()
-            )
+            response_list.append(self.serialize_item(item, request))
         return JsonResponse(
             {
                 "items": response_list,
@@ -30,6 +27,14 @@ class PaginatedApiMixin:
             },
             status=200,
         )
+
+    def serialize_item(self, item: Any, request: Any) -> dict:  # type: ignore[no-untyped-def]
+        """Serialise a single queryset item to a dict.
+
+        Subclasses may override this to add extra fields without touching
+        the pagination logic.
+        """
+        return self.get_item_serializer_class().model_validate(item).model_dump()
 
     def get_query_set(self, request: Any) -> QuerySet:
         raise NotImplementedError("Subclasses must implement get_query_set method")
