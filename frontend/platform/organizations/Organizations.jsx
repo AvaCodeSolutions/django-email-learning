@@ -1,4 +1,5 @@
 import Base from "../../src/components/Base";
+import EmptyTableState from "../../src/components/EmptyTableState.jsx";
 import Alert from "@mui/material/Alert"
 import Box from "@mui/material/Box"
 import Button from "@mui/material/Button"
@@ -120,7 +121,7 @@ function Organizations() {
           setDialogOpen(true);
         }}>{localeMessages["add_organization"]}</Button>}
 
-        { organizations.length > 0 && (<TableContainer component={Paper} sx={{ maxHeight: 440, border: '1px solid', borderColor: 'grey.300', borderRadius: 1 }}>
+        <TableContainer component={Paper} sx={{ maxHeight: 440, border: '1px solid', borderColor: 'grey.300', borderRadius: 1 }}>
           <Table>
             <TableHead>
               <TableRow>
@@ -129,6 +130,12 @@ function Organizations() {
               </TableRow>
             </TableHead>
             <TableBody>
+              {organizations.length === 0 && (
+                <EmptyTableState
+                  colSpan={2}
+                  message={localeMessages['no_organizations_found'] || 'No organizations found.'}
+                />
+              )}
               { organizations.map((org) => (
                 <TableRow key={org.id}>
                   <TableCell dir={htmlTag.dir} sx={{ textAlign: htmlTag.dir === 'rtl' ? 'right' : 'left' }}>
@@ -161,8 +168,6 @@ function Organizations() {
             </TableBody>
           </Table>
           </TableContainer>
-
-        )}
 
         </Box>
 
