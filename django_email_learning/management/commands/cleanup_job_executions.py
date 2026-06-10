@@ -32,7 +32,7 @@ class Command(BaseCommand):
 
         cutoff = timezone.now() - timedelta(days=days)
         queryset = JobExecution.objects.filter(
-            status=JobStatus.COMPLETED.value,
+            status__in=[JobStatus.COMPLETED.value, JobStatus.STALE.value],
             finished_at__isnull=False,
             finished_at__lt=cutoff,
         )
@@ -41,13 +41,13 @@ class Command(BaseCommand):
 
         if dry_run:
             self.stdout.write(
-                f"Dry run: {candidate_count} completed job executions older than {days} days would be deleted."
+                f"Dry run: {candidate_count} completed/staled job executions older than {days} days would be deleted."
             )
             return
 
         deleted_count, _ = queryset.delete()
         self.stdout.write(
             self.style.SUCCESS(
-                f"Deleted {deleted_count} completed job executions older than {days} days."
+                f"Deleted {deleted_count} completed/staled job executions older than {days} days."
             )
         )
