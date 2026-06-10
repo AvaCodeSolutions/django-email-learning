@@ -18,8 +18,8 @@ import {
     DialogActions,
 } from '@mui/material';
 import RequiredTextField from '../../../src/components/RequiredTextField';
-import { getCookie } from '../../../src/utils';
 import { useAppContext } from '../../../src/render';
+import apiClient from '../../../src/apiClient.js';
 
 const AssignmentForm = ({
     cancelCallback,
@@ -180,19 +180,7 @@ const AssignmentForm = ({
             }
             return;
         }
-        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-            body: JSON.stringify(buildPayload(true)),
-        })
-            .then((res) => {
-                if (!res.ok) throw new Error('Assignment create failed');
-                return res.json();
-            })
+        apiClient.post(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/`, buildPayload(true))
             .then((data) => {
                 setErrorMessage('');
                 setAssignmentIdentifier(data.assignment.id);
@@ -213,22 +201,10 @@ const AssignmentForm = ({
             }
             return;
         }
-        fetch(
+        apiClient.post(
             `${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${contentIdentifier}/`,
-            {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken'),
-                },
-                body: JSON.stringify(buildPayload(false)),
-            }
+            buildPayload(false)
         )
-            .then((res) => {
-                if (!res.ok) throw new Error('Assignment update failed');
-                return res.json();
-            })
             .then(() => {
                 setErrorMessage('');
                 setSuccessMessage(localeMessages['assignment_saved_success']);

@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { useAppContext } from '../../../src/render.jsx';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import apiClient from '../../../src/apiClient.js';
 import PlusIcon from '@mui/icons-material/Add';
 import CreateInstructorForm from './CreateInstructorForm';
 
@@ -34,12 +35,7 @@ function AddInstructorsSection({ onChangeCallback, activeOrganizationId, initial
     };
 
     useEffect(() => {
-        fetch(`${apiBaseUrl}/organizations/${activeOrganizationId}/users/`, {
-            method: 'GET',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-        })
-            .then((response) => response.json())
+        apiClient.get(`${apiBaseUrl}/organizations/${activeOrganizationId}/users/`)
             .then((data) => {
                 const instructors = (data.organization_users || []).filter(
                     (u) => u.can_act_as_instructor

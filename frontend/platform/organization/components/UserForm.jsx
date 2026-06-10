@@ -8,8 +8,8 @@ import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import ImageUpload from '../../../src/components/ImageUpload.jsx';
-import { getCookie } from '../../../src/utils.js';
 import { useAppContext } from '../../../src/render.jsx';
+import apiClient from '../../../src/apiClient.js';
 
 
 const UserForm = ({ onClose, organizationId, refreshUsers, user = null }) => {
@@ -44,26 +44,13 @@ const UserForm = ({ onClose, organizationId, refreshUsers, user = null }) => {
     };
 
     const createUser = (id) => {
-        fetch(`${apiBaseUrl}/organizations/${organizationId}/users/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-            body: JSON.stringify({
-                'user_id': id,
-                'role': role,
-                'display_name': displayName.trim() || null,
-                'photo': photoPath,
-            }),
+        apiClient.post(`${apiBaseUrl}/organizations/${organizationId}/users/`, {
+            'user_id': id,
+            'role': role,
+            'display_name': displayName.trim() || null,
+            'photo': photoPath,
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to add user to organization');
-            }
-            return response.json();
-        })
-        .then(data => {
+        .then(() => {
             refreshUsers();
             onClose();
         })
@@ -87,20 +74,7 @@ const UserForm = ({ onClose, organizationId, refreshUsers, user = null }) => {
     };
 
     const addUser = () => {
-        fetch(`${apiBaseUrl}/users/get-or-create-by-email/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-            body: JSON.stringify({ 'email': email, 'organization_id': organizationId }),
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to get or create user by email');
-            }
-            return response.json();
-        })
+        apiClient.post(`${apiBaseUrl}/users/get-or-create-by-email/`, { 'email': email, 'organization_id': organizationId })
         .then(data => {
             const userId = data.id;
             createUser(userId);
@@ -119,21 +93,8 @@ const UserForm = ({ onClose, organizationId, refreshUsers, user = null }) => {
             photo: photoPath,
         };
 
-        fetch(`${apiBaseUrl}/organizations/${organizationId}/users/${user.user_id}/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-            body: JSON.stringify(payload),
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to update user role');
-            }
-            return response.json();
-        })
-        .then(data => {
+        apiClient.post(`${apiBaseUrl}/organizations/${organizationId}/users/${user.user_id}/`, payload)
+        .then(() => {
             refreshUsers();
             onClose();
         })

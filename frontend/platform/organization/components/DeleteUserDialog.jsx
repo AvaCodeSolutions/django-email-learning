@@ -1,8 +1,8 @@
 import { Alert, Button, Box, DialogActions, DialogContent, DialogContentText, DialogTitle, Typography } from "@mui/material";
 import { useState } from "react"
-import { getCookie } from '../../../src/utils';
 import { useAppContext } from '../../../src/render.jsx';
 import WarningIcon from '@mui/icons-material/Warning';
+import apiClient from '../../../src/apiClient.js';
 
 
 const DeleteUserDialog = ({ user, handleClose, handleSuccess}) => {
@@ -11,21 +11,9 @@ const DeleteUserDialog = ({ user, handleClose, handleSuccess}) => {
     const [errorMessage, setErrorMessage] = useState("");
 
     const deleteUser = () => {
-        fetch(`${apiBaseUrl}/organizations/${user.organization_id}/users/${user.id}/`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-        })
-        .then(response => {
-          if(response.status != 200) {
-            throw new Error("Unhandled network Error! user is not deleted")
-          }
-          return response.json()}
-        )
+        apiClient.del(`${apiBaseUrl}/organizations/${user.organization_id}/users/${user.id}/`)
         .then(data => {
-            if (data.error){
+            if (data && data.error){
               throw new Error(data.error)
             } else {
               console.log('User deleted successfully:', data);
@@ -33,7 +21,7 @@ const DeleteUserDialog = ({ user, handleClose, handleSuccess}) => {
             }
         })
         .catch(error => {
-            setErrorMessage(error.message)
+            setErrorMessage(error instanceof apiClient.ApiError ? (error.body?.error || error.message) : error.message);
         });
     }
 

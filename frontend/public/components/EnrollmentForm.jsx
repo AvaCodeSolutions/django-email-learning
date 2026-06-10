@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { Alert, Box, Button, CircularProgress, Typography, Dialog } from '@mui/material';
 import RequiredTextField from  '../../src/components/RequiredTextField.jsx';
-import { getCookie } from '../../src/utils.js';
 import { useAppContext } from '../../src/render.jsx';
+import apiClient from '../../src/apiClient.js';
 
 
 const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, onCancle, onComplete, autoFocusEmail = false}) => {
@@ -10,15 +10,8 @@ const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, o
     const emailRef = React.useRef('');
     const [errorMessage, setErrorMessage] = React.useState('');
     const [isProcessing, setIsProcessing] = React.useState(false);
-    const [csrfToken, setCsrfToken] = React.useState(getCookie('csrftoken'));
     const [showReloadDialog, setShowReloadDialog] = React.useState(false);
     const { localeMessages, termsOfServiceUrl } = useAppContext();
-
-    useEffect(() => {
-        if (!csrfToken) {
-            setShowReloadDialog(true);
-        }
-    }, []);
 
     React.useEffect(() => {
         if (!autoFocusEmail) {
@@ -50,37 +43,22 @@ const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, o
     const enroll = () => {
         if (validateForm()) {
             setIsProcessing(true);
-            fetch(endpoint, {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken,
-                },
-                body: JSON.stringify({
-                    email: emailRef.current.value,
-                    course_slug: course_slug,
-                    organization_id: organization_id,
-                }),
+            apiClient.post(endpoint, {
+                email: emailRef.current.value,
+                course_slug: course_slug,
+                organization_id: organization_id,
             })
-            .then(response => {
-                if (!response.ok) {
-                    if (response.status === 403) {
-                        // CSRF token might be missing or invalid, prompt user to reload
-                        setShowReloadDialog(true);
-                        return;
-                    }
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
+            .then(() => {
                 // Handle success
                 setIsProcessing(false);
                 onComplete();
             })
             .catch(error => {
                 setIsProcessing(false);
+                if (error instanceof apiClient.ApiError && error.status === 403) {
+                    setShowReloadDialog(true);
+                    return;
+                }
                 setErrorMessage(localeMessages['enrollment_failed']);
             });
         }

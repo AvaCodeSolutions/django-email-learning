@@ -5,8 +5,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import RequiredTextField from '../../../src/components/RequiredTextField.jsx';
 import ContentEditor from '../../../src/components/ContentEditor.jsx';
-import { getCookie } from '../../../src/utils.js';
 import { useAppContext } from '../../../src/render.jsx';
+import apiClient from '../../../src/apiClient.js';
 
 function LessonForm({ header, initialTitle, initialContent, cancelCallback, successCallback, courseId, lessonId, initialWaitingPeriod, contentId }) {
     const initialWaitingPeriodValue = initialWaitingPeriod ? initialWaitingPeriod.period : 1;
@@ -79,27 +79,13 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
         }
 
         console.log("Adding lesson to course ID:", courseId);
-        fetch(apiBaseUrl + '/organizations/' + orgId + '/courses/' + courseId + '/contents/', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
+        apiClient.post(apiBaseUrl + '/organizations/' + orgId + '/courses/' + courseId + '/contents/', {
+            content: {
+                title: title,
+                content: content,
+                type: 'lesson'
             },
-            body: JSON.stringify({
-                content: {
-                    title: title,
-                    content: content,
-                    type: 'lesson'
-                },
-                waiting_period: {"period": waitingPeriod, "type": waitingPeriodUnit},
-            }),
-        })
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error('Lesson create failed');
-            }
-            return response.json();
+            waiting_period: {"period": waitingPeriod, "type": waitingPeriodUnit},
         })
         .then((data) => {
             console.log('Lesson created successfully:', data);
@@ -130,37 +116,24 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
 
         console.log("Updating lesson ID:", lessonIdentifier);
 
-        fetch(apiBaseUrl + '/organizations/' + orgId + '/courses/' + courseId + '/contents/' + contentIdentifier + '/', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
+        apiClient.post(apiBaseUrl + '/organizations/' + orgId + '/courses/' + courseId + '/contents/' + contentIdentifier + '/', {
+            lesson: {
+                title: title,
+                content: content,
             },
-            body: JSON.stringify({
-                lesson: {
-                    title: title,
-                    content: content,
-                },
-                waiting_period: {"period": waitingPeriod, "type": waitingPeriodUnit},
-            }),
+            waiting_period: {"period": waitingPeriod, "type": waitingPeriodUnit},
         })
-        .then((response) => {
-            console.log(response)
-            if (response.status === 200) {
-                console.log('Lesson updated successfully');
-                setErrorMessage("");
-                setSuccessMessage(localeMessages["lesson_saved_success"]);
-                setSavedSnapshot({
-                    title,
-                    content,
-                    waitingPeriod: String(waitingPeriod),
-                    waitingPeriodUnit,
-                });
-                successCallback?.();
-                return;
-            }
-            throw new Error('Lesson update failed');
+        .then(() => {
+            console.log('Lesson updated successfully');
+            setErrorMessage("");
+            setSuccessMessage(localeMessages["lesson_saved_success"]);
+            setSavedSnapshot({
+                title,
+                content,
+                waitingPeriod: String(waitingPeriod),
+                waitingPeriodUnit,
+            });
+            successCallback?.();
         })
         .catch((error) => {
             console.error('Error updating lesson:', error);
@@ -217,20 +190,7 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
         const formData = new FormData();
         formData.append('file', selectedFile);
 
-        fetch(`${apiBaseUrl}/organizations/${orgId}/file/`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: formData,
-        })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error('Image upload failed');
-                }
-                return response.json();
-            })
+        apiClient.upload(`${apiBaseUrl}/organizations/${orgId}/file/`, formData)
             .then((data) => {
                 setUploadedImages((previousImages) => [...previousImages, data]);
                 event.target.value = '';
@@ -306,22 +266,11 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
         }
 
         setIsDeletingImage(true);
-        fetch(`${apiBaseUrl}/organizations/${orgId}/file/`, {
-            method: 'DELETE',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
-                file_path: imagePendingDelete.file_path,
-                file_url: imagePendingDelete.file_url,
-            }),
+        apiClient.del(`${apiBaseUrl}/organizations/${orgId}/file/`, {
+            file_path: imagePendingDelete.file_path,
+            file_url: imagePendingDelete.file_url,
         })
-            .then(async (response) => {
-                if (!response.ok) {
-                    throw new Error('Image delete failed');
-                }
+            .then(() => {
                 removeUploadedImageFromList(imagePendingDelete.file_url);
                 setDeleteImageDialogOpen(false);
                 setImagePendingDelete(null);

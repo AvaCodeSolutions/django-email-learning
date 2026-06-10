@@ -54,6 +54,7 @@ describe('DeleteCoursePopup', () => {
 
   it('calls handleSuccess and handleClose after successful deletion', async () => {
     global.fetch.mockResolvedValue({
+      ok: true,
       status: 200,
       json: () => Promise.resolve({}),
     });

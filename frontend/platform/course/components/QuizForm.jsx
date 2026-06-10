@@ -3,8 +3,8 @@ import { Alert,Box, Button, FormControlLabel, Grid, InputLabel, MenuItem, Select
 import QuizIcon from '@mui/icons-material/Quiz';
 import RequiredTextField from '../../../src/components/RequiredTextField';
 import QuestionForm from './QuestionForm';
-import { getCookie } from '../../../src/utils';
 import { useAppContext } from '../../../src/render';
+import apiClient from '../../../src/apiClient.js';
 
 const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod, initialStrategy, initialDeadlineDays, initialLimitedAttempts, initialIsBlocking, initialReminderIntervalDays }) => {
     const questionIdRef = useRef(0);
@@ -121,30 +121,16 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
         }
         console.log("Adding new quiz to course ID:", courseId);
         const quizPayload = buildQuizPayload();
-        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
+        apiClient.post(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/`, {
+            content: {
+                ...quizPayload,
             },
-            body: JSON.stringify({
-                content: {
-                    ...quizPayload,
-                },
-                waiting_period: {
-                    period: waitingPeriod,
-                    type: waitingPeriodUnit
-                }
-            }),
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
+            waiting_period: {
+                period: waitingPeriod,
+                type: waitingPeriodUnit
             }
-            return response.json();
         })
-        .then(data => {
-            console.log('Quiz created successfully:', data);
+        .then(() => {
             successCallback();
         })
         .catch(error => {
@@ -238,29 +224,16 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
         }
         console.log("Updating quiz ID:", quizId, "for course ID:", courseId);
         const quizPayload = buildQuizPayload();
-        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${contentId}/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
+        apiClient.post(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${contentId}/`, {
+            quiz: {
+                ...quizPayload,
             },
-            body: JSON.stringify({
-                quiz: {
-                    ...quizPayload,
-                },
-                waiting_period: {
-                    period: waitingPeriod,
-                    type: waitingPeriodUnit
-                }}),
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
+            waiting_period: {
+                period: waitingPeriod,
+                type: waitingPeriodUnit
             }
-            return response.json();
         })
-        .then(data => {
-            console.log('Quiz updated successfully:', data);
+        .then(() => {
             successCallback();
         })
         .catch(error => {

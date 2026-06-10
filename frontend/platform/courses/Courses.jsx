@@ -23,8 +23,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import LockIcon from '@mui/icons-material/Lock';
 import render, { useAppContext } from '../../src/render.jsx';
-import { getCookie } from '../../src/utils.js';
 import { lazy, Suspense } from "react";
+import apiClient from '../../src/apiClient.js';
 
 const CourseForm = lazy(() => import("./components/CourseForm.jsx"));
 const EnableCourseSwitchPopup = lazy(() => import("./components/EnableCourseSwitchPopup.jsx"));
@@ -49,15 +49,7 @@ function Courses() {
     if (!organizationId) {
       return;
     }
-    fetch(`${apiBaseUrl}/organizations/${organizationId}/courses${queryParameters}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-          },
-        })
-      .then(response => response.json())
+    apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/courses${queryParameters}`)
       .then(data => {
         setCourses(data.courses);
         setCoursesAreLoaded(true);

@@ -37,7 +37,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import AttachFileOutlinedIcon from '@mui/icons-material/AttachFileOutlined';
 import OpenInNewOutlinedIcon from '@mui/icons-material/OpenInNewOutlined';
 import { useAppContext } from '../../../src/render.jsx';
-import { getCookie } from '../../../src/utils.js';
+import apiClient from '../../../src/apiClient.js';
 
 function SubmittedAssignmentsSection({ onPendingCountChange }) {
     const { apiBaseUrl, courseId, localeMessages } = useAppContext();
@@ -72,13 +72,7 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
         const endpoint = `${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/submitted_assignments/?${params.toString()}`;
 
         setIsSubmittedAssignmentsLoading(true);
-        return fetch(endpoint, {
-            method: 'GET',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-        })
-            .then((response) => response.json())
+        return apiClient.get(endpoint)
             .then((data) => {
                 const submissions = data.items || [];
                 setSubmittedAssignments(submissions);
@@ -241,13 +235,7 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
         setReviewFeedback('');
         setReviewResult('');
 
-        fetch(endpoint, {
-            method: 'GET',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-        })
-            .then((response) => response.json())
+        apiClient.get(endpoint)
             .then((data) => {
                 setSubmissionDetail(data);
                 setReviewResult(
@@ -276,24 +264,10 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
         setReviewError('');
         setReviewSuccess('');
 
-        fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-            body: JSON.stringify({
+        apiClient.post(endpoint, {
                 review_result: reviewResult,
                 comment: reviewFeedback.trim() || null,
-            }),
         })
-            .then(async (response) => {
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to submit review.');
-                }
-                return data;
-            })
             .then((data) => {
                 setSubmissionDetail(data);
                 setReviewSuccess(

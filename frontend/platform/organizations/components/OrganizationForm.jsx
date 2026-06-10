@@ -2,8 +2,8 @@ import { Alert, Box, Button, DialogActions, Divider, FormControlLabel, Switch, T
 import RequiredTextField  from "../../../src/components/RequiredTextField.jsx";
 import ImageUpload from '../../../src/components/ImageUpload.jsx';
 import { useState } from "react";
-import { getCookie } from '../../../src/utils.js';
 import { useAppContext } from '../../../src/render.jsx';
+import apiClient from '../../../src/apiClient.js';
 
 function OrganizationForm({ successCallback, failureCallback, cancelCallback, createMode, initialName, initialDescription, initialLogoUrl, initialWebsite, initialLinkedinPage, initialYoutubeChannel, initialIsPublic, organizationId }) {
     const { localeMessages, apiBaseUrl, direction, defaultOrgSetting, defaultOrgSettings } = useAppContext();
@@ -103,28 +103,13 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
             payload.remove_logo = true;
         }
 
-        fetch(`${apiBaseUrl}/organizations/${organizationId}/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-            body: JSON.stringify(payload),
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(data => {
-                    throw data;
-                });
-            }
-            return response.json();
-        })
+        apiClient.post(`${apiBaseUrl}/organizations/${organizationId}/`, payload)
         .then(data => {
             successCallback(data);
         })
         .catch(error => {
             setErrorMessage(localeMessages["error_try_again"]);
-            failureCallback(error);
+            failureCallback(error instanceof apiClient.ApiError ? error.body : error);
         });
     }
 
@@ -134,13 +119,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
             return;
         }
 
-        fetch(`${apiBaseUrl}/organizations/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-            body: JSON.stringify({
+        apiClient.post(`${apiBaseUrl}/organizations/`, {
                 name: name.trim(),
                 description: description.trim(),
                 logo: logoServerPath,
@@ -148,22 +127,13 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
                 linkedin_page: linkedinPage.trim(),
                 youtube_channel: youtubeChannel.trim(),
                 is_public: isPublic,
-            }),
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(data => {
-                    throw data;
-                });
-            }
-            return response.json();
         })
         .then(data => {
             successCallback(data);
         })
         .catch(error => {
             setErrorMessage(localeMessages["error_try_again"]);
-            failureCallback(error);
+            failureCallback(error instanceof apiClient.ApiError ? error.body : error);
         });
     }
 

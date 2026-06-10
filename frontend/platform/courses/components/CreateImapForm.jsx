@@ -2,7 +2,7 @@ import RequiredTextField from "../../../src/components/RequiredTextField"
 import { Alert, Box, Button, Chip, Stack, TextField, Tooltip } from "@mui/material"
 import { useState } from "react"
 import { useAppContext } from '../../../src/render.jsx';
-import { getCookie } from '../../../src/utils';
+import apiClient from '../../../src/apiClient.js';
 
 
 const CreateImapForm = ({ onSuccess, activeOrganizationId }) => {
@@ -26,26 +26,12 @@ const CreateImapForm = ({ onSuccess, activeOrganizationId }) => {
         if (!isValid) {
             return;
         }
-        fetch(apiBaseUrl + '/organizations/' + activeOrganizationId + '/imap-connections/', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-            body: JSON.stringify({
+        apiClient.post(apiBaseUrl + '/organizations/' + activeOrganizationId + '/imap-connections/', {
                 email: email,
                 password: password,
                 server: server,
                 port: port,
                 folders: folders.includes("inbox") ? folders : ["inbox", ...folders],
-            }),
-        })
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
         })
         .then((data) => {
             if (onSuccess) {

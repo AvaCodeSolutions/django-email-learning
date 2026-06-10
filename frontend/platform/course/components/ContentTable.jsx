@@ -1,8 +1,8 @@
 import { Alert, Box, CircularProgress, Chip, IconButton, Switch, TableContainer, Table, TableHead, TableRow, TableBody, TableCell, Paper, Tooltip, Typography } from '@mui/material';
 import EmptyTableState from '../../../src/components/EmptyTableState.jsx';
 import { useState, useEffect } from 'react';
-import { getCookie } from '../../../src/utils.js';
 import DeleteIcon from '@mui/icons-material/Delete';
+import apiClient from '../../../src/apiClient.js';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import ForwardToInboxOutlinedIcon from '@mui/icons-material/ForwardToInboxOutlined';
 
@@ -101,29 +101,18 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
     }
 
     const TogglePublishContent = (contentId, is_published) => {
-        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${contentId}/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
+        apiClient.post(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${contentId}/`, {
                 is_published: is_published
-            })
         })
-            .then(response => {
-                if (response.ok) {
-                    console.log('Publish status toggled successfully');
-                    // Update the local state to reflect the change
-                    setContentList(contentList.map(content => {
-                        if (content.id === contentId) {
-                            return { ...content, is_published: !content.is_published };
-                        }
-                        return content;
-                    }));
-                } else {
-                    console.error('Error toggling publish status:', response.statusText);
-                }
+            .then(() => {
+                console.log('Publish status toggled successfully');
+                // Update the local state to reflect the change
+                setContentList(contentList.map(content => {
+                    if (content.id === contentId) {
+                        return { ...content, is_published: !content.is_published };
+                    }
+                    return content;
+                }));
             })
             .catch(error => console.error('Error toggling publish status:', error));
     }
@@ -131,14 +120,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
 
     const getContets = () => {
 
-        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-        })
-            .then(response => response.json())
+        apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents`)
             .then(data => {
                 setContentList(data.course_contents);
                 let event = {type: 'content_loaded', data: data};
@@ -149,22 +131,9 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
 
     const sendLessonToCurrentUser = (contentId) => {
         setSendingContentId(contentId);
-        fetch(`${apiBaseUrl}/organizations/${organizationId}/send-lesson/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({
+        apiClient.post(`${apiBaseUrl}/organizations/${organizationId}/send-lesson/`, {
                 id: contentId,
-            }),
         })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error(`Send lesson failed with status ${response.status}`);
-                }
-                return response.json();
-            })
             .then(() => {
                 console.log('Lesson sent successfully');
                 setSendSuccessMessage(localeMessages["lesson_sent_to_your_email"] || 'Lesson sent to your email.');

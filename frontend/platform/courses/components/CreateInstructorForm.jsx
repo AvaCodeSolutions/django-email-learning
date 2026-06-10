@@ -3,7 +3,7 @@ import { Alert, Box, Button, Typography } from '@mui/material';
 import RequiredTextField from '../../../src/components/RequiredTextField';
 import ImageUpload from '../../../src/components/ImageUpload.jsx';
 import { useAppContext } from '../../../src/render.jsx';
-import { getCookie } from '../../../src/utils';
+import apiClient from '../../../src/apiClient.js';
 
 
 const CreateInstructorForm = ({ onSuccess, activeOrganizationId }) => {
@@ -43,39 +43,15 @@ const CreateInstructorForm = ({ onSuccess, activeOrganizationId }) => {
         if (!valid) return;
         setErrorMessage('');
 
-        fetch(`${apiBaseUrl}/users/get-or-create-by-email/`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-            body: JSON.stringify({ email: trimmedEmail, organization_id: activeOrganizationId }),
-        })
-            .then((response) => {
-                if (!response.ok) throw new Error('Failed to get or create user');
-                return response.json();
-            })
+        apiClient.post(`${apiBaseUrl}/users/get-or-create-by-email/`, { email: trimmedEmail, organization_id: activeOrganizationId })
             .then((userData) =>
-                fetch(`${apiBaseUrl}/organizations/${activeOrganizationId}/users/`, {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken'),
-                    },
-                    body: JSON.stringify({
-                        user_id: userData.id,
-                        role: 'instructor',
-                        display_name: trimmedDisplayName,
-                        photo: photoPath,
-                    }),
+                apiClient.post(`${apiBaseUrl}/organizations/${activeOrganizationId}/users/`, {
+                    user_id: userData.id,
+                    role: 'instructor',
+                    display_name: trimmedDisplayName,
+                    photo: photoPath,
                 })
             )
-            .then((response) => {
-                if (!response.ok) throw new Error('Failed to add instructor to organization');
-                return response.json();
-            })
             .then((orgUserData) => {
                 if (onSuccess) onSuccess(orgUserData);
                 setEmail('');
