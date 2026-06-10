@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { AppBar, Chip, Drawer, Box, Typography, MenuList, MenuItem, ListItemIcon, ListItemText, Tooltip, Link, Select, Stack, Collapse } from '@mui/material'
+import { AppBar, Chip, Divider, Drawer, Box, Typography, MenuList, MenuItem, ListItemIcon, ListItemText, Tooltip, Link, Select, Stack } from '@mui/material'
 import IconButton from '@mui/material/IconButton';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
@@ -8,9 +8,6 @@ import WarningIcon from '@mui/icons-material/Warning';
 import ErrorIcon from '@mui/icons-material/Error';
 import VpnKeyOutlinedIcon from '@mui/icons-material/VpnKeyOutlined';
 import CorporateFareOutlinedIcon from '@mui/icons-material/CorporateFareOutlined';
-import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
-import ExpandLess from '@mui/icons-material/ExpandLess';
-import ExpandMore from '@mui/icons-material/ExpandMore';
 import MenuIcon from '@mui/icons-material/Menu';
 import logoHorizontalLightUrl from '../assets/logo-h-light.png'
 import logoHorizontalDarkUrl from '../assets/logo-h-dark.png'
@@ -52,6 +49,29 @@ function OrganizationsSelect({organizations, activeOrganizationId, changeOrganiz
     )
 }
 
+function NavItem({ page, isActive }) {
+    return (
+        <MenuItem sx={(theme) => ({
+            backgroundColor: isActive ? (theme.palette.mode === 'dark' ? theme.palette.deepPurple[800] : theme.palette.deepPurple[50]) : 'transparent',
+            '& .MuiTouchRipple-root': { color: theme.palette.secondary.main },
+            padding: 0,
+            '&:hover .MuiListItemIcon-root': { color: theme.palette.primary.dark },
+        })}>
+            <Link
+                href={page.href}
+                underline="none"
+                color="inherit"
+                sx={{ display: 'flex', alignItems: 'center', width: '100%', py: '8px', px: '16px' }}
+            >
+                <ListItemIcon sx={(theme) => ({ minWidth: 35, color: theme.palette.mode === 'dark' ? theme.palette.deepPurple[300] : theme.palette.deepPurple[500] })}>
+                    {page.icon}
+                </ListItemIcon>
+                <ListItemText primary={page.name} slotProps={{ primary: { fontSize: '0.95rem' } }} />
+            </Link>
+        </MenuItem>
+    );
+}
+
 function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganizationSwitcher, drawerWidth}) {
     const [menuOpen, setMenuOpen] = useState(false)
     const [organizations, setOrganizations] = useState([])
@@ -63,7 +83,6 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
 
     const drawerVariant = isMdUpScreen ? "permanent" : "temporary";
     const currentPath = typeof window !== 'undefined' ? window.location.pathname.replace(/\/+$/, '') || '/' : '/';
-    const [settingsOpen, setSettingsOpen] = useState(() => /\/settings(\/|$)/.test(currentPath));
     let logoHorizontalUrl, logoVerticalUrl;
     if (customLogo) {
         logoHorizontalUrl = theme.palette.mode === 'light' ? (customLogo.horizontalLight ? customLogo.horizontalLight : customLogo.horizontalDark) : (customLogo.horizontalDark ? customLogo.horizontalDark : customLogo.horizontalLight);
@@ -128,20 +147,20 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
         });
     }, []);
 
-    let pages = []
-
+    const adminPages = []
     if (isOrganizationAdmin) {
-        pages.push(
-            { name: localeMessages["organizations"], icon: <CorporateFareOutlinedIcon fontSize="small" />, href:  platformBaseUrl + '/organizations/'},
+        adminPages.push(
+            { name: localeMessages["organizations"], icon: <CorporateFareOutlinedIcon fontSize="small" />, href: platformBaseUrl + '/organizations/' },
         );
     }
 
-    pages.push({ name: localeMessages["course_management"], icon: <SchoolOutlinedIcon fontSize="small" />, href: platformBaseUrl + '/courses/' });
+    const platformPages = []
+    platformPages.push({ name: localeMessages["course_management"], icon: <SchoolOutlinedIcon fontSize="small" />, href: platformBaseUrl + '/courses/' });
     if (isOrganizationAdmin || isPlatformAdmin || isInstructor) {
-        pages.push({ name: localeMessages["learners"], icon: <PeopleOutlinedIcon fontSize="small" />, href: platformBaseUrl + '/learners/' });
+        platformPages.push({ name: localeMessages["learners"], icon: <PeopleOutlinedIcon fontSize="small" />, href: platformBaseUrl + '/learners/' });
     }
-    // pages.push({ name: 'Analytics', icon: <BarChartIcon fontSize="small" />, href: platformBaseUrl + '/analytics/' });
-    let settingsPages = []
+
+    const settingsPages = []
     if (isPlatformAdmin) {
         settingsPages.push({ name: localeMessages["api_keys"], icon: <VpnKeyOutlinedIcon fontSize="small" />, href: platformBaseUrl + '/settings/api_keys' });
     }
@@ -158,8 +177,6 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
         const pagePath = new URL(href, window.location.origin).pathname.replace(/\/+$/, '') || '/';
         return currentPath === pagePath || (pagePath !== '/' && currentPath.startsWith(`${pagePath}/`));
     };
-
-    const isSettingsSectionActive = settingsPages.some((page) => isActivePage(page.href));
 
         const healthStatus = deliverContentsJobStatus?.job_health_status || 'healthy';
         const statusConfig = jobsStatusMap[healthStatus] || jobsStatusMap.healthy;
@@ -239,112 +256,33 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                 showOrganizationSwitcher && <OrganizationsSelect organizations={organizations} activeOrganizationId={activeOrganizationId} changeOrganizationCallback={changeOrganizationCallback} sx={{ m: 2 }}  />
             }
             <MenuList>
-                { pages.map((page) => {
-                    const isActive = isActivePage(page.href);
-                    return (
-                    <MenuItem key={page.name} sx={(theme) => ({
-                        backgroundColor: isActive ? (theme.palette.mode === 'dark' ? theme.palette.deepPurple[800] : theme.palette.deepPurple[50]) : 'transparent',
-                        '& .MuiTouchRipple-root': {
-                            color: theme.palette.secondary.main,
-                        },
-                        padding: 0,
-                        '&:hover .MuiListItemIcon-root': { color: theme.palette.primary.dark }})}>
-                        <Link
-                            href={page.href}
-                            underline="none"
-                            color="inherit"
-                            sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                width: '100%',
-                                py: '8px',
-                                px: '16px',
-                            }}
-                        >
-                        <ListItemIcon sx={(theme) => ({ minWidth: 35, color: theme.palette.mode === 'dark' ? theme.palette.deepPurple[300] : theme.palette.deepPurple[500] })}>
-                            {page.icon}
-                        </ListItemIcon>
-                        <ListItemText
-                            primary={page.name}
-                            slotProps={{
-                                primary: {
-                                    fontSize: '0.95rem',
-                                },
-                            }}
-                        />
-                        </Link>
-                    </MenuItem>
-                )}) }
-                {settingsPages.length > 0 && [
-                    <MenuItem
-                        key="settings-toggle"
-                        onClick={() => setSettingsOpen(!settingsOpen)}
-                        sx={(theme) => ({
-                            backgroundColor: isSettingsSectionActive ? (theme.palette.mode === 'dark' ? theme.palette.deepPurple[800] : theme.palette.deepPurple[50]) : 'transparent',
-                            '& .MuiTouchRipple-root': {
-                                color: theme.palette.secondary.main,
-                            },
-                            '&:hover .MuiListItemIcon-root': { color: theme.palette.primary.dark },
-                        })}
-                    >
-                        <ListItemIcon sx={(theme) => ({ minWidth: 35, color: theme.palette.mode === 'dark' ? theme.palette.deepPurple[300] : theme.palette.deepPurple[500] })}>
-                            <SettingsOutlinedIcon fontSize="small" />
-                        </ListItemIcon>
-                        <ListItemText
-                            primary={localeMessages["settings"] || 'Settings'}
-                            slotProps={{
-                                primary: {
-                                    fontSize: '0.95rem',
-                                },
-                            }}
-                        />
-                        {settingsOpen ? <ExpandLess /> : <ExpandMore />}
-                    </MenuItem>,
-                    <Collapse key="settings-collapse" in={settingsOpen} timeout="auto" unmountOnExit>
-                        <MenuList disablePadding>
-                            {settingsPages.map((page) => {
-                                const isActive = isActivePage(page.href);
-                                return (
-                                    <MenuItem
-                                        key={page.name}
-                                        sx={(theme) => ({
-                                            pl: 4,
-                                            backgroundColor: isActive ? (theme.palette.mode === 'dark' ? theme.palette.deepPurple[800] : theme.palette.deepPurple[50]) : 'transparent',
-                                            '& .MuiTouchRipple-root': {
-                                                color: theme.palette.secondary.main,
-                                            },
-                                            '&:hover .MuiListItemIcon-root': { color: theme.palette.primary.dark },
-                                        })}
-                                    >
-                                        <Link
-                                            href={page.href}
-                                            underline="none"
-                                            color="inherit"
-                                            sx={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                width: '100%',
-                                                py: 0.1,
-                                            }}
-                                        >
-                                            <ListItemIcon sx={(theme) => ({ minWidth: 35, color: theme.palette.mode === 'dark' ? theme.palette.deepPurple[300] : theme.palette.deepPurple[500] })}>
-                                                {page.icon}
-                                            </ListItemIcon>
-                                            <ListItemText
-                                                primary={page.name}
-                                                slotProps={{
-                                                    primary: {
-                                                        fontSize: '0.95rem',
-                                                    },
-                                                }}
-                                            />
-                                        </Link>
-                                    </MenuItem>
-                                );
-                            })}
-                        </MenuList>
-                    </Collapse>
-                ]}
+                {/* ── Administration ── (org admin only) */}
+                {adminPages.length > 0 && <>
+                    <Divider textAlign="left" sx={{ mt: 1, mb: 0.5 }}>
+                        <Typography variant="caption" sx={{ color: 'text.disabled', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.7rem' }}>
+                            {localeMessages['administration'] || 'Administration'}
+                        </Typography>
+                    </Divider>
+                    {adminPages.map((page) => <NavItem key={page.name} page={page} isActive={isActivePage(page.href)} />)}
+                </>}
+
+                {/* ── Platform ── */}
+                <Divider textAlign="left" sx={{ mt: 1, mb: 0.5 }}>
+                    <Typography variant="caption" sx={{ color: 'text.disabled', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.7rem' }}>
+                        {localeMessages['platform_section'] || 'Platform'}
+                    </Typography>
+                </Divider>
+                {platformPages.map((page) => <NavItem key={page.name} page={page} isActive={isActivePage(page.href)} />)}
+
+                {/* ── Settings ── (platform admin only, always expanded) */}
+                {settingsPages.length > 0 && <>
+                    <Divider textAlign="left" sx={{ mt: 1, mb: 0.5 }}>
+                        <Typography variant="caption" sx={{ color: 'text.disabled', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.7rem' }}>
+                            {localeMessages['settings'] || 'Settings'}
+                        </Typography>
+                    </Divider>
+                    {settingsPages.map((page) => <NavItem key={page.name} page={page} isActive={isActivePage(page.href)} />)}
+                </>}
             </MenuList>
             {sidebarCustomComponent && <Box sx={{ height: "100px", width: "100%" }} dangerouslySetInnerHTML={{ __html: sidebarCustomComponent.componentTag }} />}
         </Drawer>

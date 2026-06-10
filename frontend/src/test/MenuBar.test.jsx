@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from './test-utils';
 import MenuBar from '../components/MenuBar';
 
@@ -100,11 +99,41 @@ describe('MenuBar', () => {
     expect(screen.getByText('Learners')).toBeInTheDocument();
   });
 
-  it('shows Settings menu item with API Keys for platform admin', () => {
+  it('shows Settings section label for platform admin', () => {
     renderWithProviders(<MenuBar {...defaultProps} />, {
       appContext: { isPlatformAdmin: true },
     });
     expect(screen.getByText('Settings')).toBeInTheDocument();
+  });
+
+  it('shows API Keys immediately without needing a click for platform admin', () => {
+    renderWithProviders(<MenuBar {...defaultProps} />, {
+      appContext: { isPlatformAdmin: true },
+    });
+    expect(screen.getByText('API Keys')).toBeInTheDocument();
+  });
+
+  it('does not show Settings section for non-platform-admin', () => {
+    renderWithProviders(<MenuBar {...defaultProps} />);
+    expect(screen.queryByText('Settings')).not.toBeInTheDocument();
+    expect(screen.queryByText('API Keys')).not.toBeInTheDocument();
+  });
+
+  it('shows Administration section label for org admin', () => {
+    renderWithProviders(<MenuBar {...defaultProps} />, {
+      appContext: { isOrganizationAdmin: true },
+    });
+    expect(screen.getByText('Administration')).toBeInTheDocument();
+  });
+
+  it('does not show Administration section label for regular user', () => {
+    renderWithProviders(<MenuBar {...defaultProps} />);
+    expect(screen.queryByText('Administration')).not.toBeInTheDocument();
+  });
+
+  it('always shows Platform section label', () => {
+    renderWithProviders(<MenuBar {...defaultProps} />);
+    expect(screen.getByText('Platform')).toBeInTheDocument();
   });
 
   it('populates the organization selector after fetch', async () => {
@@ -164,13 +193,4 @@ describe('MenuBar', () => {
     );
   });
 
-  it('expands Settings sub-menu on click to reveal API Keys', async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<MenuBar {...defaultProps} />, {
-      appContext: { isPlatformAdmin: true },
-    });
-
-    await user.click(screen.getByText('Settings'));
-    expect(screen.getByText('API Keys')).toBeInTheDocument();
-  });
 });
