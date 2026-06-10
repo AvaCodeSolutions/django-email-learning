@@ -42,7 +42,7 @@ class DatabaseDeliveryQueue(DeliveryQueueProtocol):
                 "delivery__course_content__assignment",
             )
             .prefetch_related("delivery__course_content__quiz__questions")
-            .iterator()
+            .iterator(chunk_size=self.ITERATOR_BATCH_SIZE)
         )
 
     def next_task(self) -> DeliverySchedule | None:
