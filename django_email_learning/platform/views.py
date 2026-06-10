@@ -639,6 +639,13 @@ class Learners(BasePlatformView):
             "practice_attempt": _("Practice Attempt"),
             "reminder_sent": _("Reminder Sent"),
             "quiz_title": _("Quiz Title"),
+            "filter_by_course": _("Filter by Course"),
+            "filter_by_status": _("Filter by Status"),
+            "all_courses": _("All Courses"),
+            "all_statuses": _("All Statuses"),
+            "reset_filters": _("Reset Filters"),
+            "progress": _("Progress"),
+            "no_learners_found": _("No learners found."),
         }
 
 

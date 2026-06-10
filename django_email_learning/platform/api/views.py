@@ -1084,6 +1084,12 @@ class LearnersView(PaginatedApiMixin, View):
             is_active_str = request.GET["is_active"].lower()
             if is_active_str in ["true", "yes"]:
                 qs = qs.filter(status=EnrollmentStatus.ACTIVE)
+        if "status" in request.GET:
+            status_value = request.GET["status"]
+            try:
+                qs = qs.filter(status=EnrollmentStatus(status_value))
+            except ValueError:
+                pass
         if "search" in request.GET:
             search_term = request.GET["search"]
             qs = qs.filter(models.Q(learner__email__icontains=search_term))
@@ -1092,6 +1098,29 @@ class LearnersView(PaginatedApiMixin, View):
 
     def get_item_serializer_class(self) -> Any:
         return serializers.LearnerResponse
+
+    def get(self, request: Any, *args: Any, **kwargs: Any) -> JsonResponse:
+        response = super().get(request, *args, **kwargs)
+        course_id = request.GET.get("course_id")
+        if not course_id:
+            return response
+
+        # Annotate each learner with their enrollment status and progress for the filtered course
+        data = response.content.decode()
+        payload = json.loads(data)
+        learner_ids = [item["id"] for item in payload["items"]]
+        enrollments = {
+            e.learner_id: e
+            for e in Enrollment.objects.filter(
+                learner_id__in=learner_ids, course_id=course_id
+            ).select_related("learner")
+        }
+        for item in payload["items"]:
+            enrollment = enrollments.get(item["id"])
+            if enrollment:
+                item["enrollment_status"] = enrollment.status
+                item["enrollment_progress"] = enrollment.progress_percentage
+        return JsonResponse(payload, status=response.status_code)
 
 
 @method_decorator(

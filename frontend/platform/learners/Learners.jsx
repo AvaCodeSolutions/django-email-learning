@@ -1,8 +1,9 @@
 import Base from '../../src/components/Base.jsx'
 import EmptyTableState from '../../src/components/EmptyTableState.jsx'
-import { Avatar, InputBase, IconButton, Box, Chip, Dialog, Grid, LinearProgress, Pagination, Paper, TableContainer, Table, TableBody, TableHead, TableCell, TableRow, Typography } from '@mui/material'
+import { Avatar, InputBase, IconButton, Box, Button, Chip, Dialog, FormControl, Grid, InputLabel, LinearProgress, MenuItem, Pagination, Paper, Select, TableContainer, Table, TableBody, TableHead, TableCell, TableRow, Tooltip, Typography } from '@mui/material'
 import { Timeline, TimelineItem, TimelineContent, TimelineOppositeContent, TimelineSeparator, TimelineConnector, TimelineDot } from '@mui/lab'
 import { useState, useEffect, useRef } from 'react'
+import FilterListOffIcon from '@mui/icons-material/FilterListOff';
 import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
 import HowToRegIcon from '@mui/icons-material/HowToReg';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
@@ -23,6 +24,8 @@ import apiClient from '../../src/apiClient.js';
 const EnrollentList = lazy(() => import("./components/EnrollmentList.jsx"));
 
 
+const ENROLLMENT_STATUSES = ['active', 'completed', 'deactivated', 'canceled', 'inactive'];
+
 function Learners(initialQs="") {
 
   const [organizationId, setOrganizationId] = useState(null);
@@ -31,11 +34,27 @@ function Learners(initialQs="") {
   const searcchInputRef = useRef(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogContent, setDialogContent] = useState(null);
-  const [qs, setQs] = useState(initialQs);
   const [showPagination, setShowPagination] = useState(false);
   const pageSize = 20;
   const [pagesCount, setPagesCount] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
+  const [courses, setCourses] = useState([]);
+
+  // Read initial filter values from URL query params
+  const urlParams = new URLSearchParams(window.location.search);
+  const [courseFilter, setCourseFilter] = useState(urlParams.get('course_id') || '');
+  const [statusFilter, setStatusFilter] = useState(urlParams.get('status') || '');
+  const [searchQs, setSearchQs] = useState('');
+
+  const buildQs = () => {
+    const parts = [];
+    if (courseFilter) parts.push(`course_id=${encodeURIComponent(courseFilter)}`);
+    if (statusFilter) parts.push(`status=${encodeURIComponent(statusFilter)}`);
+    if (searchQs) parts.push(searchQs);
+    return parts.join('&');
+  };
+
+  const qs = buildQs();
 
   const eventMap = {
     'registered': {icon: <AppRegistrationIcon sx={{ color: 'white' }} />, color: "#00bcd4", title: localeMessages["learner_registered"]},
@@ -138,6 +157,8 @@ function Learners(initialQs="") {
         email: learner.email,
         photo: learner.photo || null,
         enrollmentsCount: learner.enrollments_count || { total: 0, completed: 0 },
+        enrollmentStatus: learner.enrollment_status || null,
+        enrollmentProgress: learner.enrollment_progress ?? null,
         enrollments: [],
         state: 0, // 0: not loaded, 1: loading, 2: loaded
       })));
@@ -153,6 +174,13 @@ function Learners(initialQs="") {
     }
     reloadLearners();
   }, [organizationId, qs, currentPage]);
+
+  useEffect(() => {
+    if (!organizationId) return;
+    apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/courses/`)
+      .then(data => setCourses(data.courses || []))
+      .catch(error => console.error('Error fetching courses:', error));
+  }, [organizationId]);
 
   const loadEnrollments = (learner) => {
     if (learner.state === 2) {
@@ -212,8 +240,29 @@ function Learners(initialQs="") {
   }
 
   const search = () => {
-    setQs(`search=${encodeURIComponent(searcchInputRef.current.value)}`);
-  }
+    setSearchQs(`search=${encodeURIComponent(searcchInputRef.current.value)}`);
+    setCurrentPage(1);
+  };
+
+  const handleCourseFilterChange = (e) => {
+    setCourseFilter(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleStatusFilterChange = (e) => {
+    setStatusFilter(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const resetFilters = () => {
+    setCourseFilter('');
+    setStatusFilter('');
+    setSearchQs('');
+    if (searcchInputRef.current) searcchInputRef.current.value = '';
+    setCurrentPage(1);
+  };
+
+  const isFiltered = courseFilter || statusFilter || searchQs;
 
   return (
     <Base
@@ -223,26 +272,70 @@ function Learners(initialQs="") {
       <Grid size={{xs: 12}} sx={{ py: 2, pl: 2 }}>
         <Box sx={{ p: 2, marginBottom: 2, border: '1px solid', borderColor: 'border.main', borderRadius: 2, minHeight: 300, backgroundColor: 'background.box' }}>
 
-          <Paper
-            sx={{ mb: '10px', p: '2px 4px', display: 'flex', alignItems: 'center', width: 400 }}
-          >
-            <InputBase
-              sx={{ px: 1, flex: 1 }}
-              placeholder={localeMessages["search_learners"]}
-              inputRef={searcchInputRef}
-              onKeyDown={(e) => { if (e.key === 'Enter') { search(); } }}
-            />
-            <IconButton type="button" sx={{ p: '10px' }} aria-label="search" onClick={search}>
-              <SearchIcon />
-            </IconButton>
-          </Paper>
+          {/* Search + filter bar */}
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2, alignItems: 'center' }}>
+            <Paper sx={{ p: '2px 4px', display: 'flex', alignItems: 'center', minWidth: 260 }}>
+              <InputBase
+                sx={{ px: 1, flex: 1 }}
+                placeholder={localeMessages["search_learners"]}
+                inputRef={searcchInputRef}
+                onKeyDown={(e) => { if (e.key === 'Enter') { search(); } }}
+              />
+              <IconButton type="button" sx={{ p: '10px' }} aria-label="search" onClick={search}>
+                <SearchIcon />
+              </IconButton>
+            </Paper>
+
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <InputLabel>{localeMessages['filter_by_course'] || 'Course'}</InputLabel>
+              <Select
+                value={courseFilter}
+                label={localeMessages['filter_by_course'] || 'Course'}
+                onChange={handleCourseFilterChange}
+              >
+                <MenuItem value="">{localeMessages['all_courses'] || 'All Courses'}</MenuItem>
+                {courses.map(c => (
+                  <MenuItem key={c.id} value={String(c.id)}>{c.title}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel>{localeMessages['filter_by_status'] || 'Status'}</InputLabel>
+              <Select
+                value={statusFilter}
+                label={localeMessages['filter_by_status'] || 'Status'}
+                onChange={handleStatusFilterChange}
+              >
+                <MenuItem value="">{localeMessages['all_statuses'] || 'All Statuses'}</MenuItem>
+                {ENROLLMENT_STATUSES.map(s => (
+                  <MenuItem key={s} value={s}>{localeMessages[s] || s}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {isFiltered && (
+              <Tooltip title={localeMessages['reset_filters'] || 'Reset Filters'}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<FilterListOffIcon />}
+                  onClick={resetFilters}
+                >
+                  {localeMessages['reset_filters'] || 'Reset'}
+                </Button>
+              </Tooltip>
+            )}
+          </Box>
 
           <TableContainer component={Paper} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1 }}>
             <Table stickyHeader>
               <TableHead>
                 <TableRow>
                   <TableCell sx={{textAlign: direction=="rtl" ? "right" : "left"}}>{localeMessages["learners_list"]}</TableCell>
-                  <TableCell sx={{textAlign: direction=="rtl" ? "right" : "left"}}>Courses</TableCell>
+                  <TableCell sx={{textAlign: direction=="rtl" ? "right" : "left"}}>
+                    {courseFilter ? localeMessages['progress'] || 'Progress' : 'Courses'}
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -282,8 +375,28 @@ function Learners(initialQs="") {
                       </Box>
                     </TableCell>
                     <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>
-                      <Typography variant="body2">{learner.enrollmentsCount.total} enrolled</Typography>
-                      <Typography variant="body2" color="text.secondary">{learner.enrollmentsCount.completed} completed</Typography>
+                      {courseFilter && learner.enrollmentProgress !== null ? (
+                        <Box sx={{ minWidth: 120 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                            <Typography variant="body2" color="text.secondary">
+                              {localeMessages[learner.enrollmentStatus] || learner.enrollmentStatus}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {learner.enrollmentProgress}%
+                            </Typography>
+                          </Box>
+                          <LinearProgress
+                            variant="determinate"
+                            value={learner.enrollmentProgress}
+                            sx={{ borderRadius: 1, height: 6 }}
+                          />
+                        </Box>
+                      ) : (
+                        <>
+                          <Typography variant="body2">{learner.enrollmentsCount.total} enrolled</Typography>
+                          <Typography variant="body2" color="text.secondary">{learner.enrollmentsCount.completed} completed</Typography>
+                        </>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
