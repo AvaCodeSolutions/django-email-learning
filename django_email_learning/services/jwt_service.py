@@ -16,7 +16,7 @@ class ExpiredTokenException(Exception):
 
 
 def _secret() -> str:
-    return settings.DJANGO_EMAIL_LEARNING["JWT_SECRET_KEY"]
+    return str(settings.DJANGO_EMAIL_LEARNING["JWT_SECRET_KEY"])
 
 
 def generate_jwt(
