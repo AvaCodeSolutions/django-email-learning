@@ -113,7 +113,6 @@ class DeliverContentsJob:
                     logger.info(
                         f"No more content to schedule for enrollment {delivery_schedule.delivery.enrollment.id}"
                     )
-                    # TODO: if the sent content was the last in the course, consider marking the enrollment as completed.
                     delivery_schedule.delivery.enrollment.graduate()
 
         elif course_content.type == "quiz":
@@ -252,7 +251,7 @@ class DeliverContentsJob:
         return False
 
     def handle_failed_delivery(self, delivery_schedule: DeliverySchedule) -> None:
-        # TODO: Implement custome metric logging for blocked deliveries and failed attempts.
+        # TODO: Add metric logging for rescheduled failed attempts.
         """Handle a failed delivery by rescheduling or blocking it."""
         if delivery_schedule.failed_attempts >= 3:
             logger.error(
