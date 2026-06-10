@@ -806,6 +806,8 @@ class LearnerResponse(BaseModel):
     email: str
     photo: Optional[Any] = None
     enrollments_count: EnrollmentsCount | None = None
+    enrollment_status: Optional[str] = None
+    enrollment_progress: Optional[int] = None
 
     @field_serializer("photo")
     def serialize_photo(self, photo: Optional[Any]) -> Optional[str]:
