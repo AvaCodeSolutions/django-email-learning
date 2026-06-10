@@ -1,4 +1,5 @@
 from functools import wraps
+from django.core.exceptions import ImproperlyConfigured
 from django.http import JsonResponse
 from django_email_learning.models import OrganizationUser
 from django_email_learning.apps import PLATFORM_ADMIN_GROUP_NAME
@@ -36,6 +37,12 @@ def accessible_for(roles: set[str]) -> typing.Callable:
     def decorator(view_func: typing.Callable) -> typing.Callable:
         @wraps(view_func)
         def _wrapped_view(request, *view_args, **view_kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+            if "organization_id" not in view_kwargs:
+                raise ImproperlyConfigured(
+                    f"accessible_for decorator requires 'organization_id' in URL kwargs, "
+                    f"but it was not found for view '{view_func.__name__}'."
+                )
+
             user = request.user
             if not user.is_authenticated:
                 return JsonResponse({"error": "Unauthorized"}, status=401)
@@ -43,7 +50,7 @@ def accessible_for(roles: set[str]) -> typing.Callable:
             if not user.is_superuser:
                 has_access = OrganizationUser.objects.filter(  # type: ignore[misc]
                     user=user,
-                    organization_id=view_kwargs.get("organization_id"),
+                    organization_id=view_kwargs["organization_id"],
                     role__in=roles,
                 ).exists()
                 if not has_access:
@@ -55,6 +62,27 @@ def accessible_for(roles: set[str]) -> typing.Callable:
     return decorator
 
 
+def _resolve_active_organization_id(
+    request: typing.Any, view_kwargs: dict
+) -> typing.Optional[int]:
+    """Resolve the active organization ID for a request.
+
+    Resolution order:
+    1. URL kwarg ``organization_id`` (API / detail views)
+    2. ``active_organization_id`` stored in the session (template views after first load)
+    3. The user's first org membership (template views before session is populated)
+    """
+    if "organization_id" in view_kwargs:
+        return view_kwargs["organization_id"]
+    org_id = request.session.get("active_organization_id")
+    if org_id:
+        return org_id
+    membership = request.user.memberships.first()  # type: ignore[union-attr]
+    if membership:
+        return membership.organization_id
+    return None
+
+
 def is_an_organization_member(only_admin: bool = False) -> typing.Callable:
     def decorator(view_func: typing.Callable) -> typing.Callable:
         @wraps(view_func)
@@ -64,13 +92,14 @@ def is_an_organization_member(only_admin: bool = False) -> typing.Callable:
                 return JsonResponse({"error": "Unauthorized"}, status=401)
 
             if not user.is_superuser:
+                organization_id = _resolve_active_organization_id(request, view_kwargs)
                 qs = OrganizationUser.objects.filter(  # type: ignore[misc]
-                    user=user
+                    user=user,
+                    organization_id=organization_id,
                 )
                 if only_admin:
                     qs = qs.filter(role="admin")
-                has_access = qs.exists()
-                if not has_access:
+                if not qs.exists():
                     return JsonResponse({"error": "Forbidden"}, status=403)
             return view_func(request, *view_args, **view_kwargs)
 

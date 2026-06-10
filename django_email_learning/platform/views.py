@@ -75,7 +75,9 @@ class BasePlatformView(TemplateView):
                     self.request.user.is_superuser
                     or (
                         OrganizationUser.objects.filter(
-                            user=self.request.user, role="instructor"
+                            user=self.request.user,
+                            organization_id=active_organization_id,
+                            role="instructor",
                         ).exists()  # type: ignore[misc]
                     )
                 ),
@@ -100,7 +102,9 @@ class BasePlatformView(TemplateView):
                     self.request.user.is_superuser
                     or (
                         OrganizationUser.objects.filter(
-                            user=self.request.user, role="admin"
+                            user=self.request.user,
+                            organization_id=active_organization_id,
+                            role="admin",
                         ).exists()  # type: ignore[misc]
                     )
                 ),
