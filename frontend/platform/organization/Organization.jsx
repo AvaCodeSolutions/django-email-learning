@@ -14,8 +14,8 @@ import LinearProgress from "@mui/material/LinearProgress";
 import Dialog from "@mui/material/Dialog";
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import { getCookie } from "../../src/utils.js";
 import { useState, useEffect } from "react";
+import apiClient from "../../src/apiClient.js";
 import { Button } from "@mui/material";
 import render, { useAppContext } from "../../src/render";
 
@@ -31,14 +31,7 @@ function Organization() {
     const { localeMessages, direction, userRole, apiBaseUrl, platformBaseUrl, organizationId } = useAppContext();
 
     const refreshUsers = () => {
-        fetch(`${apiBaseUrl}/organizations/${organizationId}/users/`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-        })
-        .then(response => response.json())
+        apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/users/`)
         .then(data => {
             setOrganizationUsers(data.organization_users);
         })
@@ -49,14 +42,7 @@ function Organization() {
 
     useEffect(() => {
 
-        fetch(`${apiBaseUrl}/organizations/${organizationId}/`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-        })
-        .then(response => response.json())
+        apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/`)
         .then(data => {
             setOrganization(data);
         })

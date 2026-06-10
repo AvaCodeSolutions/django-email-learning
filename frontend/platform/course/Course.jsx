@@ -17,8 +17,8 @@ import ContentTable from './components/ContentTable.jsx';
 import SubmittedAssignmentsSection from './components/SubmittedAssignmentsSection.jsx';
 import { PieChart } from '@mui/x-charts/PieChart'
 import { BarChart } from '@mui/x-charts/BarChart';
-import { getCookie } from '../../src/utils.js';
 import { lazy, Suspense } from "react";
+import apiClient from '../../src/apiClient.js';
 
 const QuizForm = lazy(() => import("./components/QuizForm.jsx"));
 const LessonForm = lazy(() => import("./components/LessonForm.jsx"));
@@ -89,13 +89,7 @@ function Course() {
         setIsEnrollmentsLoading(true);
         setIsWeeklyStatsLoading(true);
 
-        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/`, {
-            method: 'GET',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-        })
-            .then(response => response.json())
+        apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/`)
             .then(data => {
                 setEnrollmentsCount([
                     { label: localeMessages["unverified"], value: data.enrollments_count.unverified, color: theme.palette.indigo[200] },
@@ -107,13 +101,7 @@ function Course() {
             .catch(error => console.error('Error fetching course data:', error))
             .finally(() => setIsEnrollmentsLoading(false));
 
-        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/enrollments/statistics/`, {
-            method: 'GET',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-        })
-            .then(response => response.json())
+        apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/enrollments/statistics/`)
             .then(data => {
                 setWeeklyStats(data.statistics);
             })
@@ -123,13 +111,7 @@ function Course() {
 
     const refreshPendingAssignmentsCount = () => {
         const endpoint = `${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/submitted_assignments/?status=pending_review`;
-        fetch(endpoint, {
-            method: 'GET',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-        })
-            .then(response => response.json())
+        apiClient.get(endpoint)
             .then(data => {
                 setPendingAssignmentsCount((data.submissions || []).length);
             })
@@ -188,18 +170,12 @@ function Course() {
 
     const getContent = async (contentId, ) => {
         console.log("Fetching content with ID:", contentId);
-        const response = await fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${contentId}/`, {
-            method: 'GET',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-        });
-        if (response.ok) {
-            const data = await response.json();
+        try {
+            const data = await apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${contentId}/`);
             console.log("Content data:", data);
             return data;
-        } else {
-            console.error('Error fetching content:', response.statusText);
+        } catch (error) {
+            console.error('Error fetching content:', error);
             return null;
         }
     }
@@ -222,18 +198,9 @@ function Course() {
     }
 
     const deletContent = (contentId) => {
-        fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${contentId}/`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-        })
-            .then(response => {
-                if (response.ok) {
-                    setContentLoaded(false);
-                } else {
-                    console.error('Error deleting content:', response.statusText);
-                }
+        apiClient.del(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${contentId}/`)
+            .then(() => {
+                setContentLoaded(false);
             })
             .catch(error => console.error('Error deleting content:', error));
         setDialogMaxWidth('lg');
@@ -304,21 +271,10 @@ function Course() {
         }
         if (event.type === 'content_reordered') {
             console.log("Reordering contents with new order:", event.new_order);
-            fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/reorder/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify({
-                    ordered_content_ids: event.new_order
-                })
-            }).then(response => {
-                if (response.ok) {
-                    console.log('Contents reordered successfully');
-                } else {
-                    console.error('Error reordering contents:', response.statusText);
-                }
+            apiClient.post(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/reorder/`, {
+                ordered_content_ids: event.new_order
+            }).then(() => {
+                console.log('Contents reordered successfully');
             })
             .catch(error => console.error('Error reordering contents:', error));
         }

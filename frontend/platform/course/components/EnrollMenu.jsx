@@ -3,8 +3,8 @@ import { useAppContext } from '../../../src/render.jsx';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import GoogleIcon from '@mui/icons-material/Google';
-import { getCookie } from '../../../src/utils.js';
 import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Menu, MenuItem, Alert, Typography, FormGroup, FormControlLabel, Checkbox } from '@mui/material';
+import apiClient from '../../../src/apiClient.js';
 
 
 const EnrollMenu = ({successCallback}) => {
@@ -82,25 +82,12 @@ const EnrollMenu = ({successCallback}) => {
 
         try {
             const oauthBaseUrl = apiBaseUrl.replace(/\/api\/platform$/, '/oauth');
-            const createSessionResponse = await fetch(`${oauthBaseUrl}/sessions/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken'),
+            const createSessionData = await apiClient.post(`${oauthBaseUrl}/sessions/`, {
+                handler: {
+                    provider_and_purpose: 'google_group_enrollment',
+                    course_id: Number(courseId),
                 },
-                body: JSON.stringify({
-                    handler: {
-                        provider_and_purpose: 'google_group_enrollment',
-                        course_id: Number(courseId),
-                    },
-                }),
             });
-
-            const createSessionData = await createSessionResponse.json();
-
-            if (!createSessionResponse.ok) {
-                throw new Error(createSessionData?.error || 'Failed to start OAuth session.');
-            }
 
             setGoogleAuthorizationUrl(createSessionData.authorization_url || '');
             setGoogleAuthSessionId(createSessionData.session_id || null);
@@ -137,12 +124,7 @@ const EnrollMenu = ({successCallback}) => {
         const maxAttempts = 60;
 
         for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-            const response = await fetch(`${apiBaseUrl}/organizations/${organizationId}/oauth-session/${sessionId}/`);
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data?.error || 'Failed to fetch OAuth session state.');
-            }
+            const data = await apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/oauth-session/${sessionId}/`);
 
             if (data.state === 'COMPLETED') {
                 return;
@@ -159,12 +141,7 @@ const EnrollMenu = ({successCallback}) => {
     }
 
     const fetchGroups = async (sessionId) => {
-        const response = await fetch(`${apiBaseUrl}/organizations/${organizationId}/oauth-session/${sessionId}/get_groups`);
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data?.error || 'Failed to fetch Google groups.');
-        }
+        const data = await apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/oauth-session/${sessionId}/get_groups`);
 
         const groups = Array.isArray(data?.groups) ? data.groups : [];
         return groups
@@ -176,22 +153,9 @@ const EnrollMenu = ({successCallback}) => {
     }
 
     const enrollUsersByGroups = async (sessionId, groups) => {
-        const response = await fetch(`${apiBaseUrl}/organizations/${organizationId}/oauth-session/${sessionId}/enroll_users`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-            body: JSON.stringify({
-                groups,
-            }),
+        await apiClient.post(`${apiBaseUrl}/organizations/${organizationId}/oauth-session/${sessionId}/enroll_users`, {
+            groups,
         });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data?.error || 'Failed to enroll users.');
-        }
     }
 
     const authorizeWithGoogle = async () => {
@@ -296,23 +260,9 @@ const EnrollMenu = ({successCallback}) => {
         setManualEnrollError('');
 
         try {
-            const response = await fetch(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/enrollments/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify({
-                    learner_email: email,
-                })
+            await apiClient.post(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/enrollments/`, {
+                learner_email: email,
             });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                setManualEnrollError(data?.error || (localeMessages['enrollment_failed'] || 'Failed to enroll learner.'));
-                return;
-            }
             successCallback(localeMessages['enrollment_success'] || 'Learner enrolled successfully.');
             setManualEnrollEmail('');
             setManualEnrollOpen(false);

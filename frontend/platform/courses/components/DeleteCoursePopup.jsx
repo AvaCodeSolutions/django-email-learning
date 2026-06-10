@@ -1,8 +1,8 @@
 import { Alert, Button, Box, DialogActions, DialogContent, DialogContentText, DialogTitle, Typography } from "@mui/material";
 import { useState } from "react"
-import { getCookie } from '../../../src/utils';
 import { useAppContext } from '../../../src/render.jsx';
 import WarningIcon from '@mui/icons-material/Warning';
+import apiClient from '../../../src/apiClient.js';
 
 const DeleteCoursePopup = ({ courseId, courseTitle, handleClose, handleSuccess}) => {
     const { localeMessages, apiBaseUrl } = useAppContext();
@@ -12,21 +12,9 @@ const DeleteCoursePopup = ({ courseId, courseTitle, handleClose, handleSuccess})
 
 
     const deleteCourse = () => {
-        fetch(`${apiBaseUrl}/organizations/${activeOrganizationId}/courses/${courseId}/`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-        })
-        .then(response => {
-          if(response.status != 200 && response.status != 409) {
-            throw new Error("Unhandled network Error! course is not deleted")
-          }
-          return response.json()}
-        )
+        apiClient.del(`${apiBaseUrl}/organizations/${activeOrganizationId}/courses/${courseId}/`)
         .then(data => {
-            if (data.error){
+            if (data && data.error){
               throw new Error(data.error)
             } else {
               console.log('Course state deleted successfully:', data);
@@ -35,7 +23,11 @@ const DeleteCoursePopup = ({ courseId, courseTitle, handleClose, handleSuccess})
             }
         })
         .catch(error => {
-            setErrorMessage(error.message)
+            if (error instanceof apiClient.ApiError && error.status === 409 && error.body?.error) {
+                setErrorMessage(error.body.error);
+            } else {
+                setErrorMessage(error.message);
+            }
             setShowError(true);
         });
     }

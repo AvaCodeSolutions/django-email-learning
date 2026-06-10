@@ -17,8 +17,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import SchoolIcon from '@mui/icons-material/School';
 import BackspaceIcon from '@mui/icons-material/Backspace';
 import render, { useAppContext } from '../../src/render.jsx';
-import { getCookie } from '../../src/utils.js';
 import { lazy, Suspense } from "react";
+import apiClient from '../../src/apiClient.js';
 
 const EnrollentList = lazy(() => import("./components/EnrollmentList.jsx"));
 
@@ -55,14 +55,7 @@ function Learners(initialQs="") {
   const showEnrollmentStatus = (enrollmentId) => {
     setDialogOpen(true);
     setDialogContent(<LinearProgress sx={{ m: 10 }} />);
-    fetch(`${apiBaseUrl}/organizations/${organizationId}/enrollments/${enrollmentId}/`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken'),
-      },
-    })
-    .then(response => response.json())
+    apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/enrollments/${enrollmentId}/`)
     .then(data => {
       setDialogContent(
         <Box>
@@ -136,14 +129,7 @@ function Learners(initialQs="") {
 
   const reloadLearners = () => {
 
-    fetch(`${apiBaseUrl}/organizations/${organizationId}/learners/?${qs}&page_size=${pageSize}&page=${currentPage}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken'),
-      },
-    })
-    .then(response => response.json())
+    apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/learners/?${qs}&page_size=${pageSize}&page=${currentPage}`)
     .then(data => {
       setShowPagination(data.page != 1 || data.has_more);
       setPagesCount(Math.ceil(data.total_count / pageSize));
@@ -177,14 +163,7 @@ function Learners(initialQs="") {
       item.id === learner.id ? { ...item, state: 1 } : item
     )));
 
-    return fetch(`${apiBaseUrl}/organizations/${organizationId}/learners/${learner.id}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken'),
-      },
-    })
-    .then(response => response.json())
+    return apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/learners/${learner.id}`)
     .then(data => {
       setLearners((prevLearners) => prevLearners.map((item) => (
         item.id === learner.id ? { ...item, enrollments: data.enrollments, state: 2 } : item

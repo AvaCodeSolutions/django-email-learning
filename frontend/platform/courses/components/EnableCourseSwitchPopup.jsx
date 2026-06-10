@@ -1,6 +1,6 @@
 import { Button, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
-import { getCookie } from '../../../src/utils';
 import { useAppContext } from '../../../src/render.jsx';
+import apiClient from '../../../src/apiClient.js';
 
 
 const EnableCourseSwitchPopup = ({ courseId, action, courseTitle, handleClose, handleSuccess}) => {
@@ -8,15 +8,7 @@ const EnableCourseSwitchPopup = ({ courseId, action, courseTitle, handleClose, h
     const { localeMessages, apiBaseUrl } = useAppContext();
 
     const updateCourseState = () => {
-        fetch(`${apiBaseUrl}/organizations/${activeOrganizationId}/courses/${courseId}/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: JSON.stringify({ enabled: action === 'enable', image: "SKIP" }),
-        })
-        .then(response => response.json())
+        apiClient.post(`${apiBaseUrl}/organizations/${activeOrganizationId}/courses/${courseId}/`, { enabled: action === 'enable', image: "SKIP" })
         .then(data => {
             console.log('Course state updated successfully:', data);
             handleSuccess(data);

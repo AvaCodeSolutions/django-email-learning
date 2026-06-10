@@ -23,8 +23,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import LockIcon from '@mui/icons-material/Lock';
 import { useState, useEffect, use } from "react";
-import { getCookie } from "../../src/utils";
 import render, { useAppContext } from "../../src/render";
+import apiClient from "../../src/apiClient.js";
 import { lazy, Suspense } from "react";
 
 const OrganizationForm = lazy(() => import("./components/OrganizationForm.jsx"));
@@ -37,14 +37,7 @@ function Organizations() {
   const [tableUpdates, setTableUpdates] = useState([]);
 
   useEffect(() => {
-    fetch(`${apiBaseUrl}/organizations/`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken'),
-      },
-    })
-    .then(response => response.json())
+    apiClient.get(`${apiBaseUrl}/organizations/`)
     .then(data => {
       setOrganizations(data.organizations);
     })
@@ -68,20 +61,10 @@ function Organizations() {
   }
 
   const deleteOrganization = (organizationId) => {
-    fetch(`${apiBaseUrl}/organizations/${organizationId}/`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken'),
-      },
-    })
-    .then(response => {
-      if (response.ok) {
-        console.log('Organization deleted successfully');
-        setTableUpdates(prev => [...prev, { deletedOrganizationId: organizationId }]);
-      } else {
-        console.error('Error deleting organization');
-      }
+    apiClient.del(`${apiBaseUrl}/organizations/${organizationId}/`)
+    .then(() => {
+      console.log('Organization deleted successfully');
+      setTableUpdates(prev => [...prev, { deletedOrganizationId: organizationId }]);
     })
     .catch(error => {
       console.error('Error deleting organization:', error);

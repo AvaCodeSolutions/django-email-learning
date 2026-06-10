@@ -9,7 +9,7 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import render, {useAppContext} from "../../src/render";
 import { useState, useEffect } from "react";
-import { getCookie } from "../../src/utils.js";
+import apiClient from "../../src/apiClient.js";
 
 
 
@@ -33,16 +33,9 @@ const DeleteConfirmationDialog = ({apiKey, onCancel, onSuccess}) => {
                     variant="contained"
                     color="error"
                     onClick={() => {
-                        fetch(`${apiBaseUrl}/api_keys/${apiKey.id}/`, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRFToken': getCookie('csrftoken'),
-                            },
-                        })
-                        .then(response => {
-                            if (response.ok) {
-                                onSuccess();
-                            }
+                        apiClient.del(`${apiBaseUrl}/api_keys/${apiKey.id}/`)
+                        .then(() => {
+                            onSuccess();
                         });
                     }}
                 >
@@ -64,13 +57,7 @@ const ApiKeys = () => {
     useEffect(() => {
         // Fetch API keys from the backend
         if (!loaded) {
-        fetch(`${apiBaseUrl}/api_keys/`, {
-            method: 'GET',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-        })
-        .then(response => response.json())
+        apiClient.get(`${apiBaseUrl}/api_keys/`)
         .then(data => {
             setApiKeyList(data.api_keys.map((key) => ({
                 id: key.id,
@@ -87,13 +74,7 @@ const ApiKeys = () => {
     }, [loaded]);
 
     const addApiKey = () => {
-        fetch(`${apiBaseUrl}/api_keys/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-        })
-        .then(response => response.json())
+        apiClient.post(`${apiBaseUrl}/api_keys/`)
         .then(data => {
             data.visible = false;
             setApiKeyList([...apiKeyList, data]);

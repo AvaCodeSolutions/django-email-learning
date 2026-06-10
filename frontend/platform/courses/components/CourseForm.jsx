@@ -6,7 +6,7 @@ import AddInstructorsSection from '../components/AddInstructorsSection.jsx';
 import { useAppContext } from '../../../src/render.jsx';
 import ImageUpload from '../../../src/components/ImageUpload.jsx';
 import { useEffect, useState } from 'react';
-import { getCookie } from '../../../src/utils.js';
+import apiClient from '../../../src/apiClient.js';
 
 const MAX_EXTERNAL_REFERENCES = 10;
 
@@ -79,20 +79,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
 
     useEffect(() => {
         if (!createMode && courseId) {
-            fetch(apiBaseUrl + '/organizations/' + activeOrganizationId + '/courses/' + courseId + '/', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                credentials: 'include', // Include cookies in the request
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
+            apiClient.get(apiBaseUrl + '/organizations/' + activeOrganizationId + '/courses/' + courseId + '/')
             .then(data => {
                 setCourseTitle(data.title);
                 setCourseSlug(data.slug);
@@ -279,24 +266,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             updatePayload.instructors = currentInstructors;
         }
 
-        fetch(apiBaseUrl + '/organizations/' + activeOrganizationId + '/courses/' + courseId + '/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        credentials: 'include', // Include cookies in the request
-        body: JSON.stringify(updatePayload),
-        })
-        .then(response => {
-            if (!response.ok && response.status != 409) {
-                if (response.status >= 500) {
-                    setErrorMessage("Server error occurred. Please try again later.");
-                }
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
+        apiClient.post(apiBaseUrl + '/organizations/' + activeOrganizationId + '/courses/' + courseId + '/', updatePayload)
         .then(data => {
             if (data.error) {
                 setErrorMessage(data.error);
@@ -318,7 +288,15 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
         })
         .catch((error) => {
             console.error('Error:', error);
-            failureCallback(error);
+            if (error instanceof apiClient.ApiError && error.status === 409 && error.body?.error) {
+                setErrorMessage(error.body.error);
+                failureCallback(error.body);
+            } else {
+                if (error instanceof apiClient.ApiError && error.status >= 500) {
+                    setErrorMessage("Server error occurred. Please try again later.");
+                }
+                failureCallback(error);
+            }
         });
     };
 
@@ -328,14 +306,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             return
         }
         const normalizedExternalReferences = normalizeExternalReferences(externalReferences);
-        fetch(apiBaseUrl + '/organizations/' + activeOrganizationId + '/courses/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrftoken')
-        },
-        credentials: 'include', // Include cookies in the request
-        body: JSON.stringify({
+        apiClient.post(apiBaseUrl + '/organizations/' + activeOrganizationId + '/courses/', {
             title: courseTitle,
             slug: courseSlug,
             description: courseDescription,
@@ -346,16 +317,6 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             external_references: normalizedExternalReferences.length > 0 ? normalizedExternalReferences : null,
             image: imageServerPath ? imageServerPath : null,
             instructors: addInstructors && selectedInstructorIds.length > 0 ? selectedInstructorIds : null,
-        }),
-        })
-        .then(response => {
-            if (!response.ok && response.status != 409) {
-                if (response.status >= 500) {
-                    setErrorMessage("Server error occurred. Please try again later.");
-                }
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
         })
         .then(data => {
             if (data.error) {
@@ -378,7 +339,15 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
         })
         .catch((error) => {
             console.error('Error:', error);
-            failureCallback(error);
+            if (error instanceof apiClient.ApiError && error.status === 409 && error.body?.error) {
+                setErrorMessage(error.body.error);
+                failureCallback(error.body);
+            } else {
+                if (error instanceof apiClient.ApiError && error.status >= 500) {
+                    setErrorMessage("Server error occurred. Please try again later.");
+                }
+                failureCallback(error);
+            }
         });
     };
 
