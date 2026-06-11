@@ -65,8 +65,8 @@ function Organization() {
     return (<Base breadCrumbList={[
         {label: localeMessages["organizations"], href: `${platformBaseUrl}/organizations`, index: 0},
         {label: organization ? organization.name : '', href: '#', index: 1}]} showOrganizationSwitcher={false}>
-        <Grid size={12} sx={{ py: 2, px: 4 }}>
-            <Box sx={{ p: 2, border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: 2, minHeight: 300 }}>
+        <Grid size={12} sx={{ py: 2, px: { xs: 0, sm: 4 } }}>
+            <Box sx={{ p: { xs: 1, sm: 2 }, borderTop: '1px solid', borderBottom: '1px solid', borderLeft: { xs: 'none', sm: '1px solid' }, borderRight: { xs: 'none', sm: '1px solid' }, borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: { xs: 0, sm: 2 }, minHeight: 300 }}>
                 <Button variant="contained" color="secondary" onClick={() => {setDialogContent(
                     <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
                         <UserForm organizationId={organizationId} onClose={() => setDialogOpen(false)} refreshUsers={refreshUsers} />

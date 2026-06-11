@@ -19,7 +19,7 @@ const ThemeSwitcher = () => {
   };
 
   return (
-    <Box sx={{ pt: {xs: '16px', md: '8px'} }}>
+    <Box sx={{ display: 'flex', alignItems: 'center' }}>
       <Button
         onClick={toggleTheme}
         size="small"

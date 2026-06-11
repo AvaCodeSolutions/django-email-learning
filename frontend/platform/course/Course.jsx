@@ -308,14 +308,15 @@ function Course() {
                     </Alert>
                 </Box>
             )}
-            <Grid size={{xs: 12}} sx={{ px: 2, pt: 2, pb: 3 }}>
+            <Grid size={{xs: 12}} sx={{ px: { xs: 0, md: 2 }, pt: 2, pb: 3 }}>
                 <Box
                     sx={{
+                        display: { xs: 'none', md: 'block' },
                         mb: 3,
                         p: 2,
                         border: '1px solid',
                         borderColor: 'border.main',
-                        borderRadius: 2,
+                        borderRadius: { xs: 0, sm: 2 },
                         backgroundColor: 'background.box',
                     }}
                 >
@@ -340,7 +341,7 @@ function Course() {
                         </Grid>
                     </Grid>
                 </Box>
-                <Box sx={{ p: 3, border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: 2, minHeight: 300 }}>
+                <Box sx={{ px: { xs: 0, md: 2 }, py: 2, borderTop: '1px solid', borderBottom: '1px solid', borderLeft: { xs: 'none', sm: '1px solid' }, borderRight: { xs: 'none', sm: '1px solid' }, borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: { xs: 0, sm: 2 }, minHeight: 300 }}>
                     <Tabs
                         value={activeTab}
                         onChange={(_, value) => {
@@ -349,13 +350,15 @@ function Course() {
                                 setContentLoaded(false);
                             }
                         }}
+                        variant="scrollable"
+                        scrollButtons="auto"
                         sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
                     >
                         <Tab
                             value="content"
                             icon={<ViewListIcon fontSize="small" />}
                             iconPosition="start"
-                            label={localeMessages["tab_manage_course_content"] || 'Manage Course Content'}
+                            label={<><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{localeMessages["tab_manage_course_content"] || 'Manage Course Content'}</Box><Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{localeMessages["tab_contents"] || 'Contents'}</Box></>}
                         />
                         {canSeeSubmittedAssignments && (
                             <Tab
@@ -379,7 +382,7 @@ function Course() {
                                         }}
                                     >
                                         <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
-                                            {localeMessages["tab_submitted_assignments"] || 'Submitted Assignments'}
+                                            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{localeMessages["tab_submitted_assignments"] || 'Submitted Assignments'}</Box><Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{localeMessages["tab_assignments"] || 'Assignments'}</Box>
                                         </Box>
                                     </Badge>
                                 }
@@ -389,13 +392,14 @@ function Course() {
                             value="analytics"
                             icon={<InsightsIcon fontSize="small" />}
                             iconPosition="start"
-                            label={localeMessages["tab_course_analytics"] || 'Course Analytics'}
+                            label={<><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{localeMessages["tab_course_analytics"] || 'Course Analytics'}</Box><Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{localeMessages["tab_analytics"] || 'Analytics'}</Box></>}
                         />
                     </Tabs>
 
                     {activeTab === 'content' && (
                         <>
-                            {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
+                            <Box sx={{ px: 2 }}>
+                                {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
                                 setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><LessonForm
                                     header={localeMessages["new_lesson"]}
                                     cancelCallback={() => setDialogOpen(false)}
@@ -418,6 +422,7 @@ function Course() {
                             {userRole === 'admin' && <EnrollMenu successCallback={handleEnrollMenuSuccess} />}
                             </> }
                             {customComponent && <Box className="custom-component-wrapper" sx={{ display: customComponent.container_display }} dangerouslySetInnerHTML={{ __html: customComponent.html }}></Box>}
+                            </Box>
                             <ContentTable courseId={courseId} loaded={contentLoaded} eventHandler={(event) => tableEventHandler(event)} />
                         </>
                     )}
@@ -435,7 +440,7 @@ function Course() {
                             </Alert>
                             <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
                                 <Grid size={{xs: 12, lg: 6}} sx={{ display: 'flex', flexDirection: 'column' }}>
-                                    <Box sx={{ py: 3, border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', flex: 1 }}>
+                                    <Box sx={{ py: 3, borderTop: '1px solid', borderBottom: '1px solid', borderLeft: { xs: 'none', sm: '1px solid' }, borderRight: { xs: 'none', sm: '1px solid' }, borderColor: 'border.main', borderRadius: { xs: 0, sm: 2 }, backgroundColor: 'background.box', flex: 1 }}>
                                         <Typography variant="h6" align='center'>{localeMessages["enrollments_distribution"]}</Typography>
                                         <Typography variant="body2" align='center' sx={{ mt: 1, mb: 2, color: 'text.secondary' }}>
                                             {(localeMessages["total_enrollments"]) + ': ' + totalEnrollments}
@@ -482,7 +487,7 @@ function Course() {
                                     </Box>
                                 </Grid>
                                 <Grid size={{xs: 12, lg: 6}} sx={{ display: 'flex', flexDirection: 'column' }}>
-                                    <Box sx={{ py: 3, border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', flex: 1 }}>
+                                    <Box sx={{ py: 3, borderTop: '1px solid', borderBottom: '1px solid', borderLeft: { xs: 'none', sm: '1px solid' }, borderRight: { xs: 'none', sm: '1px solid' }, borderColor: 'border.main', borderRadius: { xs: 0, sm: 2 }, backgroundColor: 'background.box', flex: 1 }}>
                                         <Typography variant="h6" align='center'>{localeMessages["weekly_enrollments"]}</Typography>
                                         {isWeeklyStatsLoading ? (
                                             <Box sx={{ px: 2 }}>

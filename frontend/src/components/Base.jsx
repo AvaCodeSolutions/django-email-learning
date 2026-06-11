@@ -62,8 +62,8 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
     <GlobalStyles styles={(theme) => ({ body: { margin: 0, padding: 0, backgroundColor: theme.palette.background.main, color: theme.palette.text.primary } })} />
     <MenuBar activeOrganizationId={activeOrganizationId} changeOrganizationCallback={setActiveOrganizationId} showOrganizationSwitcher={showOrganizationSwitcher} drawerWidth={drawerWidth} />
     <Box component="main"
-      sx={{ flexGrow: 1, padding: {sm: 3, xs: 1, md: 5}, width: { md: `calc(100% - ${drawerWidth}px)` }, float: { md: direction === 'rtl' ? 'left' : 'right' } }}>
-    <Grid container spacing={0} sx={{ mt: { xs: 10, md: 6 }, px: 4 }}>
+      sx={{ flexGrow: 1, padding: {xs: 0, sm: 3, md: 5}, width: { md: `calc(100% - ${drawerWidth}px)` }, float: { md: direction === 'rtl' ? 'left' : 'right' } }}>
+    <Grid container spacing={0} sx={{ mt: { xs: 12, md: 6 }, px: { xs: 1, sm: 4 } }}>
       <Grid size={{xs: 12}}>
       <Breadcrumbs
         aria-label="breadcrumb"
@@ -93,10 +93,6 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
            sx={(theme) => ({
              fontSize: { xs: '0.78rem', sm: '0.84rem', md: '1.15rem' },
              lineHeight: 1.3,
-             maxWidth: { xs: 110, sm: 180, md: 300 },
-             whiteSpace: 'nowrap',
-             overflow: 'hidden',
-             textOverflow: 'ellipsis',
              transition: 'color 0.2s ease',
              '&:hover': {
                color: 'text.primary',
@@ -113,10 +109,6 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
              fontWeight: 400,
              fontSize: { xs: '0.85rem', sm: '0.92rem', md: '1.2rem' },
              lineHeight: 1.3,
-             maxWidth: { xs: 130, sm: 220, md: 360 },
-             whiteSpace: 'nowrap',
-             overflow: 'hidden',
-             textOverflow: 'ellipsis',
            }}
          >
            {label}
@@ -137,13 +129,11 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
     <Box
       component="footer"
       sx={{
-        position: 'fixed',
-        bottom: 0,
-        right: direction === 'rtl' ? 'auto' : 2,
-        left: direction === 'rtl' ? 2 : 'auto',
+        width: { md: `calc(100% - ${drawerWidth}px)` },
+        float: { md: direction === 'rtl' ? 'left' : 'right' },
+        textAlign: direction === 'rtl' ? 'left' : 'right',
         padding: 1,
-        zIndex: 1000,
-        backgroundColor: 'transparent'
+        mt: 2,
       }}
     >
       <Typography

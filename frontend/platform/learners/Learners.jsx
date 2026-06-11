@@ -269,8 +269,8 @@ function Learners(initialQs="") {
           breadCrumbList={[{label: localeMessages["learners"], href: '#'}]}
           organizationIdRefreshCallback={setOrganizationId}
         >
-      <Grid size={{xs: 12}} sx={{ py: 2, pl: 2 }}>
-        <Box sx={{ p: 2, marginBottom: 2, border: '1px solid', borderColor: 'border.main', borderRadius: 2, minHeight: 300, backgroundColor: 'background.box' }}>
+      <Grid size={{xs: 12}} sx={{ py: 2, pl: { xs: 0, sm: 2 } }}>
+        <Box sx={{ p: { xs: 1, sm: 2 }, marginBottom: 2, borderTop: '1px solid', borderBottom: '1px solid', borderLeft: { xs: 'none', sm: '1px solid' }, borderRight: { xs: 'none', sm: '1px solid' }, borderColor: 'border.main', borderRadius: { xs: 0, sm: 2 }, minHeight: 300, backgroundColor: 'background.box' }}>
 
           {/* Search + filter bar — all items share the same 40px height */}
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2, alignItems: 'stretch' }}>

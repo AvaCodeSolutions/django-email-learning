@@ -1,10 +1,12 @@
 import { Alert, Box, CircularProgress, Chip, IconButton, Switch, TableContainer, Table, TableHead, TableRow, TableBody, TableCell, Paper, Tooltip, Typography } from '@mui/material';
 import EmptyTableState from '../../../src/components/EmptyTableState.jsx';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import DeleteIcon from '@mui/icons-material/Delete';
 import apiClient from '../../../src/apiClient.js';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import ForwardToInboxOutlinedIcon from '@mui/icons-material/ForwardToInboxOutlined';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
 import { useAppContext } from '../../../src/render.jsx';
 
@@ -13,6 +15,8 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
     const [contentList, setContentList] = useState([]);
     const [isDragging, setIsDragging] = useState(false);
     const [draggedContentId, setDraggedContentId] = useState(null);
+    const contentListRef = useRef(contentList);
+    const draggedContentIdRef = useRef(draggedContentId);
     const [sendingContentId, setSendingContentId] = useState(null);
     const [sendSuccessMessage, setSendSuccessMessage] = useState('');
 
@@ -20,6 +24,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
         event.preventDefault();
         setIsDragging(true);
         setDraggedContentId(contentId);
+        draggedContentIdRef.current = contentId;
     }
 
     const { apiBaseUrl, userRole, localeMessages, direction } = useAppContext();
@@ -46,15 +51,45 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
     }, [loaded]);
 
     useEffect(() => {
+        contentListRef.current = contentList;
+    }, [contentList]);
+
+    useEffect(() => {
         const onPointerUp = () => {
-            console.log('Pointer released anywhere');
             setIsDragging(false);
             setDraggedContentId(null);
+            draggedContentIdRef.current = null;
+        };
+
+        const onTouchMove = (e) => {
+            if (!draggedContentIdRef.current) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            const el = document.elementFromPoint(touch.clientX, touch.clientY);
+            const row = el?.closest('[data-content-id]');
+            if (!row) return;
+            const hoverId = Number(row.dataset.contentId);
+            const dragId = draggedContentIdRef.current;
+            if (hoverId === dragId) return;
+            const list = contentListRef.current;
+            const draggedIndex = list.findIndex(c => c.id === dragId);
+            const hoverIndex = list.findIndex(c => c.id === hoverId);
+            if (draggedIndex === -1 || hoverIndex === -1) return;
+            const newList = [...list];
+            const [draggedItem] = newList.splice(draggedIndex, 1);
+            newList.splice(hoverIndex, 0, draggedItem);
+            contentListRef.current = newList;
+            setContentList(newList);
+            eventHandler({ type: 'content_reordered', new_order: newList.map(c => c.id) });
         };
 
         window.addEventListener('pointerup', onPointerUp);
+        window.addEventListener('touchmove', onTouchMove, { passive: false });
 
-        return () => window.removeEventListener('pointerup', onPointerUp);
+        return () => {
+            window.removeEventListener('pointerup', onPointerUp);
+            window.removeEventListener('touchmove', onTouchMove);
+        };
     }, []);
 
     useEffect(() => {
@@ -153,16 +188,16 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                 {sendSuccessMessage}
             </Alert>
         )}
-          <TableContainer component={Paper} dir={direction}>
+          <TableContainer component={Paper} dir={direction} sx={{ borderRadius: { xs: 0, sm: '8px' }, borderLeft: { xs: '0 !important', sm: undefined }, borderRight: { xs: '0 !important', sm: undefined } }}>
               <Table sx={{ width: "100%", direction: direction }} aria-label="Contents">
-            <TableHead>
+            <TableHead sx={{ display: { xs: 'none', sm: 'table-header-group' } }}>
               <TableRow>
                 { userRole !== 'viewer' && <TableCell sx={{ width: '40px', boxSizing: 'border-box' }}></TableCell>}
                 <TableCell sx={{ textAlign: direction == 'rtl' ? 'right' : 'left' }}>{localeMessages["title"]}</TableCell>
-                <TableCell sx={{ textAlign: direction == 'rtl' ? 'right' : 'left' }}>{localeMessages["waiting_time"]}</TableCell>
-                <TableCell sx={{ textAlign: direction == 'rtl' ? 'right' : 'left' }}>{localeMessages["type"]}</TableCell>
-                <TableCell sx={{ textAlign: direction == 'rtl' ? 'right' : 'left' }}>{localeMessages["published"]}</TableCell>
-                {userRole !== 'viewer' && <TableCell align={direction == 'rtl' ? 'right' : 'left'}>{localeMessages["actions"]}</TableCell>}
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: direction == 'rtl' ? 'right' : 'left' }}>{localeMessages["waiting_time"]}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: direction == 'rtl' ? 'right' : 'left' }}>{localeMessages["type"]}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: direction == 'rtl' ? 'right' : 'left' }}>{localeMessages["published"]}</TableCell>
+                {userRole !== 'viewer' && <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={direction == 'rtl' ? 'right' : 'left'}>{localeMessages["actions"]}</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -175,6 +210,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                 {contentList.map((content) => (
                     <TableRow
                         key={content.id}
+                        data-content-id={content.id}
                         sx={{
                             transition: 'transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease',
                             ...(isDragging && draggedContentId === content.id
@@ -207,46 +243,85 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                                 eventHandler(event);
                             }
                         }}>
-                         { userRole !== 'viewer' && <TableCell align={direction == 'rtl' ? 'right' : 'left'} sx={{ cursor: 'grab', width: '40px', padding: '8px 0', textAlign: 'center' }}><DragIndicatorIcon fontSize="small"
+                         { userRole !== 'viewer' && <TableCell align={direction == 'rtl' ? 'right' : 'left'} sx={{ cursor: 'grab', width: { xs: '48px', sm: '40px' }, minWidth: { xs: '48px', sm: '40px' }, padding: { xs: '8px 4px', sm: '8px 0' }, textAlign: 'center' }}><DragIndicatorIcon fontSize="small"
                         onMouseDown={(event) => startDrag(event, content.id)}
+                        onTouchStart={(event) => startDrag(event, content.id)}
                         /></TableCell>}
-                        <TableCell align={direction == 'rtl' ? 'right' : 'left'}><Typography
-                            component="span"
-                            onClick={() => {let event = {type: 'content_clicked', content_id: content.id}; eventHandler(event);}}
-                            sx={{ cursor: 'pointer', color: theme => theme.palette.mode === 'dark' ? theme.palette.secondary.main : theme.palette.secondary.dark }}>{content.title}
-                            {content.type === 'quiz' && content.is_blocking === false && (
-                                <Chip
-                                    label={localeMessages["practice_quiz"]}
-                                    size="small"
-                                    sx={(theme) => ({
-                                        ml: 1,
-                                        backgroundColor: theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.2)' : 'rgba(33, 150, 243, 0.14)',
-                                        color: theme.palette.mode === 'dark' ? '#64B5F6' : '#0D47A1',
-                                    })}
-                                />
+                        <TableCell align={direction == 'rtl' ? 'right' : 'left'} sx={{ position: 'relative', pl: { xs: 0.5, sm: 2 } }}>
+                            {isDragging && draggedContentId === content.id && (
+                                <Box sx={{
+                                    display: { xs: 'flex', sm: 'none' },
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    position: 'absolute',
+                                    right: 8,
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    backgroundColor: 'action.selected',
+                                    borderRadius: 1,
+                                    px: 0.25,
+                                    py: 0.25,
+                                }}>
+                                    <KeyboardArrowUpIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                    <KeyboardArrowDownIcon sx={{ fontSize: 16, color: 'text.secondary', mt: '-6px' }} />
+                                </Box>
                             )}
-                            {content.type === 'quiz' && content.is_blocking !== false && content.limited_attempts !== null &&  ( content.limited_attempts ? <Chip label={localeMessages["two_attempts"]} size="small" sx={(theme) => ({ ml: 1, backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 152, 0, 0.15)' : 'rgba(255, 203, 71, 0.5)', color: theme.palette.mode === 'dark' ? '#FF9800' : '#9a4208' })}
-                             /> : <Chip label={localeMessages["unlimited_attempts"]} size="small" sx={(theme) => ({ ml: 1, backgroundColor: theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.15)' : 'rgba(129, 199, 132, 0.5)', color: theme.palette.mode === 'dark' ? '#4CAF50' : '#256029' })} />)}</Typography></TableCell>
-                        <TableCell align={direction == 'rtl' ? 'right' : 'left'}>{formatPeriod(content.waiting_period)}</TableCell>
-                        <TableCell align={direction == 'rtl' ? 'right' : 'left'}>{localeMessages[content.type]}</TableCell>
-                        <TableCell align={direction == 'rtl' ? 'right' : 'left'}><Switch checked={content.is_published}  onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} /></TableCell>
-                        {userRole !== 'viewer' && <TableCell align={direction == 'rtl' ? 'right' : 'left'}>
-
-                            <IconButton aria-label={localeMessages["delete"]} onClick={() => deleteContent(content.id)}>
-                                <DeleteIcon />
-                            </IconButton>
+                            <Typography
+                                component="span"
+                                onClick={() => {let event = {type: 'content_clicked', content_id: content.id}; eventHandler(event);}}
+                                sx={{ cursor: 'pointer', color: theme => theme.palette.mode === 'dark' ? theme.palette.secondary.main : theme.palette.secondary.dark }}>
+                                <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' }, color: 'text.secondary', fontWeight: 500 }}>{localeMessages[content.type]}: </Box>{content.title}
+                                {content.type === 'quiz' && content.is_blocking === false && (
+                                    <Chip label={localeMessages["practice_quiz"]} size="small" sx={(theme) => ({ ml: 1, backgroundColor: theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.2)' : 'rgba(33, 150, 243, 0.14)', color: theme.palette.mode === 'dark' ? '#64B5F6' : '#0D47A1', fontSize: { xs: '0.6rem', sm: '0.75rem' }, height: { xs: 16, sm: 24 }, '& .MuiChip-label': { px: { xs: 0.5, sm: 1 } } })} />
+                                )}
+                                {content.type === 'quiz' && content.is_blocking !== false && content.limited_attempts !== null && ( content.limited_attempts ? <Chip label={localeMessages["two_attempts"]} size="small" sx={(theme) => ({ ml: 1, backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 152, 0, 0.15)' : 'rgba(255, 203, 71, 0.5)', color: theme.palette.mode === 'dark' ? '#FF9800' : '#9a4208', fontSize: { xs: '0.6rem', sm: '0.75rem' }, height: { xs: 16, sm: 24 }, '& .MuiChip-label': { px: { xs: 0.5, sm: 1 } } })} /> : <Chip label={localeMessages["unlimited_attempts"]} size="small" sx={(theme) => ({ ml: 1, backgroundColor: theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.15)' : 'rgba(129, 199, 132, 0.5)', color: theme.palette.mode === 'dark' ? '#4CAF50' : '#256029', fontSize: { xs: '0.6rem', sm: '0.75rem' }, height: { xs: 16, sm: 24 }, '& .MuiChip-label': { px: { xs: 0.5, sm: 1 } } })} />)}
+                            </Typography>
+                            {/* Mobile second line */}
+                            <Box sx={{ display: { xs: 'flex', sm: 'none' }, alignItems: 'center', flexWrap: 'wrap', gap: 0, mt: 0.75 }}>
+                                {formatPeriod(content.waiting_period) && (
+                                    <>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pl: 0, pr: 1 }}>
+                                            <Typography variant="caption" color="text.disabled">{localeMessages["waiting_time"] || 'Delay'}:</Typography>
+                                            <Typography variant="caption" color="text.secondary">{formatPeriod(content.waiting_period)}</Typography>
+                                        </Box>
+                                        <Box sx={{ width: '1px', height: '14px', backgroundColor: 'divider' }} />
+                                    </>
+                                )}
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, px: 1 }}>
+                                    <Typography variant="caption" color="text.disabled">{localeMessages["published"] || 'Published'}:</Typography>
+                                    <Switch size="small" checked={content.is_published} onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} />
+                                </Box>
+                                {userRole !== 'viewer' && <>
+                                    <Box sx={{ width: '1px', height: '14px', backgroundColor: 'divider' }} />
+                                    <Box sx={{ display: 'flex', alignItems: 'center', px: 0.5 }}>
+                                        <IconButton size="small" aria-label={localeMessages["delete"]} onClick={() => deleteContent(content.id)}><DeleteIcon fontSize="small" /></IconButton>
+                                        {canSendLesson && content.type === 'lesson' && (
+                                            sendingContentId === content.id ? (
+                                                <CircularProgress size="16px" sx={{ display: 'inline-block', verticalAlign: 'middle', mx: '3px' }} />
+                                            ) : (
+                                                <Tooltip title={localeMessages["send_lesson_to_yourself"] || 'Send it to yourself'} placement="top">
+                                                    <span>
+                                                        <IconButton size="small" aria-label={localeMessages["send_lesson"] || 'Send lesson'} onClick={() => sendLessonToCurrentUser(content.id)}><ForwardToInboxOutlinedIcon fontSize="small" /></IconButton>
+                                                    </span>
+                                                </Tooltip>
+                                            )
+                                        )}
+                                    </Box>
+                                </>}
+                            </Box>
+                        </TableCell>
+                        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={direction == 'rtl' ? 'right' : 'left'}>{formatPeriod(content.waiting_period)}</TableCell>
+                        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={direction == 'rtl' ? 'right' : 'left'}>{localeMessages[content.type]}</TableCell>
+                        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={direction == 'rtl' ? 'right' : 'left'}><Switch checked={content.is_published} onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} /></TableCell>
+                        {userRole !== 'viewer' && <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={direction == 'rtl' ? 'right' : 'left'}>
+                            <IconButton aria-label={localeMessages["delete"]} onClick={() => deleteContent(content.id)}><DeleteIcon /></IconButton>
                             {canSendLesson && content.type === 'lesson' && (
                                 sendingContentId === content.id ? (
                                     <CircularProgress size="18px" sx={{ display: 'inline-block', verticalAlign: 'middle' }} />
                                 ) : (
                                     <Tooltip title={localeMessages["send_lesson_to_yourself"] || 'Send it to yourself'} placement="top">
                                         <span>
-                                            <IconButton
-                                                aria-label={localeMessages["send_lesson"] || 'Send lesson'}
-                                                onClick={() => sendLessonToCurrentUser(content.id)}
-                                            >
-                                                <ForwardToInboxOutlinedIcon />
-                                            </IconButton>
+                                            <IconButton aria-label={localeMessages["send_lesson"] || 'Send lesson'} onClick={() => sendLessonToCurrentUser(content.id)}><ForwardToInboxOutlinedIcon /></IconButton>
                                         </span>
                                     </Tooltip>
                                 )

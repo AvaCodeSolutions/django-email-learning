@@ -90,8 +90,8 @@ const ApiKeys = () => {
     }
 
     return (<Base breadCrumbList={[{label: localeMessages["api_keys"], href: '#'}]} showOrganizationSwitcher={false}>
-        <Grid size={12} sx={{ py: 2, pl: 2 }}>
-        <Box sx={{ p: 2, border: '1px solid', borderColor: 'border.main', borderRadius: 2, backgroundColor: 'background.box', minHeight: 300, width: { lg: '80%' } }}>
+        <Grid size={12} sx={{ py: 2, pl: { xs: 0, sm: 2 } }}>
+        <Box sx={{ p: { xs: 1, sm: 2 }, borderTop: '1px solid', borderBottom: '1px solid', borderLeft: { xs: 'none', sm: '1px solid' }, borderRight: { xs: 'none', sm: '1px solid' }, borderColor: 'border.main', borderRadius: { xs: 0, sm: 2 }, backgroundColor: 'background.box', minHeight: 300, width: { lg: '80%' } }}>
         <Typography>{localeMessages["api_key_intro"]}</Typography>
                 <Button
                     variant="contained"

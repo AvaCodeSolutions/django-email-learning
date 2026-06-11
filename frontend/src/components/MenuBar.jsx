@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { AppBar, Chip, Divider, Drawer, Box, Typography, MenuList, MenuItem, ListItemIcon, ListItemText, Tooltip, Link, Select, Stack } from '@mui/material'
+import { AppBar, Divider, Drawer, Box, Typography, MenuList, MenuItem, ListItemIcon, ListItemText, Tooltip, Link, Select } from '@mui/material'
 import IconButton from '@mui/material/IconButton';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
@@ -19,33 +19,31 @@ import ThemeSwitcher from './ThemeSwitcher.jsx';
 import { useAppContext } from '../render.jsx';
 
 
-function OrganizationsSelect({organizations, activeOrganizationId, changeOrganizationCallback, sx}) {
-
+function OrganizationsSelect({organizations, activeOrganizationId, changeOrganizationCallback}) {
     return (
-        <Select
-            value={activeOrganizationId || ""}
-            onChange={(e) => changeOrganizationCallback(e.target.value)}
-            displayEmpty
-            inputProps={{ 'aria-label': 'Select organization' }}
-            sx={{
-                ml: 1,
-                fontSize: 16,
-                '& .MuiSelect-select': {
-                    paddingTop: '8px',
-                    paddingBottom: '8px',
-                },
-                '& .MuiSvgIcon-root': {
-                    top: 'calc(50% - 12px)',
-                },
-                ...sx
-            }}
-        >
-            {organizations.map((org) => (
-                <MenuItem key={org.id} value={org.id}>
-                    {org.name}
-                </MenuItem>
-            ))}
-        </Select>
+        <Box sx={{ px: 2, pb: 1 }}>
+            <Typography variant="caption" sx={{ color: 'text.disabled', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.65rem', display: 'block', mb: 0.75 }}>
+                Organization
+            </Typography>
+            <Select
+                value={activeOrganizationId ? String(activeOrganizationId) : ""}
+                onChange={(e) => changeOrganizationCallback(e.target.value)}
+                displayEmpty
+                inputProps={{ 'aria-label': 'Select organization' }}
+                sx={{
+                    width: '100%',
+                    fontSize: 16,
+                    '& .MuiSelect-select': { paddingTop: '8px', paddingBottom: '8px' },
+                    '& .MuiSvgIcon-root': { top: 'calc(50% - 12px)' },
+                }}
+            >
+                {organizations.map((org) => (
+                    <MenuItem key={org.id} value={String(org.id)}>
+                        {org.name}
+                    </MenuItem>
+                ))}
+            </Select>
+        </Box>
     )
 }
 
@@ -187,40 +185,13 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
 
     return (
         <Box component="nav"sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
-        <AppBar sx={{boxShadow: 0, backgroundColor: 'background.nav', borderBottom: {xs: '1px solid'}, borderColor: {xs: 'border.main', md: 'none'} }}>
-            <Box sx={{ my: 1, ml: 5, height: { xs: "57px", md: "30px" }, display: 'flex', justifyContent: direction === 'rtl' ? 'flex-end' : 'flex-start', alignItems: 'center' }}>
+        <AppBar sx={{boxShadow: 0, borderRadius: 0, backgroundColor: 'background.nav', borderBottom: {xs: '1px solid'}, borderColor: {xs: 'border.main', md: 'none'} }}>
+            <Box sx={{ my: 1, ml: '4px', height: { xs: "57px", md: "30px" }, display: 'flex', justifyContent: direction === 'rtl' ? 'flex-end' : 'flex-start', alignItems: 'center' }}>
                 <img src={logoHorizontalUrl} alt="Logo" style={{maxHeight: "57px", height: "100%"}} />
             </Box>
-            <Box sx={{ position: "absolute", left: direction === 'rtl' ? 'auto' : '270px', right: direction === 'rtl' ? '270px' : 'auto', top: '10px', display: {xs: 'none', md: 'flex' }}}>
-                {deliverContentsJobStatus && isPlatformAdmin && (
-                    <Tooltip title={localeMessages["content_delivery_tooltip"]}>
-                        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                            <Chip
-                                size="small"
-                                icon={statusConfig.icon}
-                                label={localeMessages["content_delivery_job"]}
-                                sx={(theme) => ({
-                                    px: 0.75,
-                                    borderRadius: 1.5,
-                                    fontWeight: 500,
-                                    color: theme.palette.status[statusConfig.paletteKey].text,
-                                    backgroundColor: theme.palette.status[statusConfig.paletteKey].bg,
-                                    border: `1px solid ${theme.palette.mode === 'dark' ? 'transparent' : theme.palette.status[statusConfig.paletteKey].border}`,
-                                    '& .MuiChip-icon': {
-                                        color: theme.palette.status[statusConfig.paletteKey].icon || theme.palette.status[statusConfig.paletteKey].text,
-                                    },
-                                })}
-                            />
-                            <Typography variant="caption" color="text.secondary">
-                                {executionTime ? `${localeMessages["last_run"]} ${executionTime}` : localeMessages["never_run"]}
-                            </Typography>
-                        </Stack>
-                    </Tooltip>
-                )}
-            </Box>
-            <Box sx={{display: { xs: 'flex'}, right: direction === 'rtl' ? 'auto' : '0', left: direction === 'rtl' ? '0' : 'auto', position: "absolute", direction: direction, alignItems: 'center'}}>
+            <Box sx={{display: { xs: 'flex'}, right: direction === 'rtl' ? 'auto' : '0', left: direction === 'rtl' ? '0' : 'auto', position: "absolute", top: '10px', direction: direction, alignItems: 'center'}}>
                 <ThemeSwitcher />
-                <Box sx={{ m: 1, pt: '7px' }}>
+                <Box sx={{ m: 1 }}>
                 <IconButton
                     aria-controls="menu-appbar"
                     onClick={toggleMenuDrawer(true)}
@@ -247,14 +218,15 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                 </Box>
             </Box>
         </AppBar>
-        <Drawer anchor={direction === 'rtl' ? 'right' : 'left'} variant={drawerVariant} onClose={toggleMenuDrawer(false)} open={menuOpen} sx={{ '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth } }}
-            slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(251, 251, 255, 0.57)', backdropFilter: 'blur(5px)' }}, paper: { sx: { borderRadius: 0}}}}>
+        <Drawer anchor={direction === 'rtl' ? 'right' : 'left'} variant={drawerVariant} onClose={toggleMenuDrawer(false)} open={menuOpen} sx={{ '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, display: 'flex', flexDirection: 'column' } }}
+            slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(0, 0, 0, 0.15)', backdropFilter: 'blur(5px)' }}, paper: { sx: { borderRadius: 0}}}}>
             <Box sx={{ my: 2, textAlign: 'center' }}>
                 <img src={logoVerticalUrl} alt="Logo" style={{ width: "50%" }} />
             </Box>
             {
-                showOrganizationSwitcher && <OrganizationsSelect organizations={organizations} activeOrganizationId={activeOrganizationId} changeOrganizationCallback={changeOrganizationCallback} sx={{ m: 2 }}  />
+                showOrganizationSwitcher && <OrganizationsSelect organizations={organizations} activeOrganizationId={activeOrganizationId} changeOrganizationCallback={changeOrganizationCallback} />
             }
+            <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
             <MenuList>
                 {/* ── Administration ── (org admin only) */}
                 {adminPages.length > 0 && <>
@@ -283,8 +255,40 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                     </Divider>
                     {settingsPages.map((page) => <NavItem key={page.name} page={page} isActive={isActivePage(page.href)} />)}
                 </>}
+
+                {/* ── System ── (platform admin only) */}
+                {deliverContentsJobStatus && isPlatformAdmin && <>
+                    <Divider textAlign="left" sx={{ mt: 1, mb: 0.5 }}>
+                        <Typography variant="caption" sx={{ color: 'text.disabled', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.7rem' }}>
+                            {localeMessages['system'] || 'System'}
+                        </Typography>
+                    </Divider>
+                    <Tooltip title={localeMessages["content_delivery_tooltip"]} placement="right">
+                        <Box sx={(theme) => ({
+                            mx: 2, my: 1, px: 1.5, py: 1.25,
+                            borderRadius: 2,
+                            backgroundColor: theme.palette.status[statusConfig.paletteKey].bg,
+                            border: `1px solid ${theme.palette.mode === 'dark' ? 'transparent' : theme.palette.status[statusConfig.paletteKey].border}`,
+                            cursor: 'default',
+                        })}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.5 }}>
+                                <Box sx={(theme) => ({
+                                    width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+                                    backgroundColor: theme.palette.status[statusConfig.paletteKey].icon || theme.palette.status[statusConfig.paletteKey].text,
+                                })} />
+                                <Typography sx={(theme) => ({ fontSize: '0.78rem', fontWeight: 600, color: theme.palette.status[statusConfig.paletteKey].text, lineHeight: 1 })}>
+                                    {localeMessages["content_delivery_job"]}
+                                </Typography>
+                            </Box>
+                            <Typography variant="caption" sx={(theme) => ({ color: theme.palette.status[statusConfig.paletteKey].text, opacity: 0.75 })}>
+                                {executionTime ? `${localeMessages["last_run"]} ${executionTime}` : localeMessages["never_run"]}
+                            </Typography>
+                        </Box>
+                    </Tooltip>
+                </>}
             </MenuList>
-            {sidebarCustomComponent && <Box sx={{ height: "100px", width: "100%" }} dangerouslySetInnerHTML={{ __html: sidebarCustomComponent.componentTag }} />}
+            </Box>
+            {sidebarCustomComponent && <Box sx={{ mt: 'auto' }} dangerouslySetInnerHTML={{ __html: sidebarCustomComponent.componentTag }} />}
         </Drawer>
         </Box>)
 }

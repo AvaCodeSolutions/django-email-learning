@@ -117,8 +117,8 @@ function Courses() {
       breadCrumbList={[{label: localeMessages.course_management, href: '#'}]}
       organizationIdRefreshCallback={setOrganizationId}
     >
-      <Grid size={{xs: 12}} sx={{ py: 2, pl: 2 }}>
-        <Box sx={{ p: 2, border: '1px solid', borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: 2, minHeight: 300 }}>
+      <Grid size={{xs: 12}} sx={{ py: 2, pl: { xs: 0, sm: 2 } }}>
+        <Box sx={{ p: { xs: 1, sm: 2 }, borderTop: '1px solid', borderBottom: '1px solid', borderLeft: { xs: 'none', sm: '1px solid' }, borderRight: { xs: 'none', sm: '1px solid' }, borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: { xs: 0, sm: 2 }, minHeight: 300 }}>
         {userRole !== 'viewer' && <Button variant="contained" startIcon={<SchoolIcon sx={{ marginLeft: direction === 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
           setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><CourseForm
             successCallback={handleCourseCreated}
@@ -134,7 +134,7 @@ function Courses() {
               <TableRow>
                 <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["title"]}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["course_language"]}</TableCell>
-                <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["total_enrollments"]}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["total_enrollments"]}</TableCell>
                 <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["enabled"]}</TableCell>
                 {userRole !== 'viewer' && <TableCell align={direction === 'rtl' ? 'left' : 'right'}>{localeMessages["actions"]}</TableCell>}
               </TableRow>
@@ -146,7 +146,7 @@ function Courses() {
                     <Link href={`${platformBaseUrl}/courses/${course.id}`} color='secondary.dark'>{course.title}</Link>{course.is_public ? "" : <Chip icon={<LockIcon fontSize="small" />} label={localeMessages["private"]} size="small" sx={{ ml: 1 }} />}
                   </TableCell>
                   <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: direction === 'rtl' ? 'right' : 'left' }}>{getLanguageLabel(course.language)}</TableCell>
-                  <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{course.enrollments_count.total}</TableCell>
+                  <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: direction === 'rtl' ? 'right' : 'left' }}>{course.enrollments_count.total}</TableCell>
                   <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>
                     <Switch
                       checked={course.enabled}
