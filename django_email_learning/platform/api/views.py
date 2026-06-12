@@ -1123,7 +1123,7 @@ class LearnersView(PaginatedApiMixin, View):
             enrollment = enrollments[0] if enrollments else None
             if enrollment:
                 data["enrollment_status"] = enrollment.status
-                data["enrollment_progress"] = enrollment.progress_percentage
+                data["enrollment_progress"] = enrollment.progress_percentage()
         return data
 
 
@@ -1153,7 +1153,7 @@ class SingleLearnerView(View):
                         id=enrollment.id,
                         course_title=enrollment.course.title,
                         status=EnrollmentStatus(enrollment.status),
-                        progress=enrollment.progress_percentage,
+                        progress=enrollment.progress_percentage(),
                         certificate_url=certificate_url,
                     )
                 )
