@@ -23,7 +23,7 @@ const CustomComponentSlot = memo(function CustomComponentSlot({ html, display })
   return (
     <Box
       className="custom-component-wrapper"
-      sx={{ display }}
+      sx={{ display, marginBottom: {xs: 1, md: 2} }}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
@@ -405,30 +405,30 @@ function Course() {
 
                     {activeTab === 'content' && (
                         <>
-                            <Box sx={{ px: 1, display: 'flex', flexDirection: {xs:'column', md: 'row'}, alignItems: { xs: 'stretch', md: 'flex-start' }, pb: 2, width: '100%', }}>
-                                {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon />} sx={{ marginBottom: {xs: 1, md: 2}, marginInlineEnd: 1 }} onClick={() => {
+                            <Box sx={{ px: 1, display: 'flex', flexDirection: {xs:'column', md: 'row'}, flexWrap: { md: 'wrap' }, alignItems: { xs: 'stretch', md: 'flex-start' }, pb: 2, width: '100%', '& > .MuiButton-root': { flex: { md: '0 0 calc(100% / 3 - 8px)', lg: '0 0 calc(100% / 5 - 8px)' } } }}>
+                                {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon />} sx={{ marginBottom: {xs: 1, md: 2}, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
                                 setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><LessonForm
                                     header={localeMessages["new_lesson"]}
                                     cancelCallback={() => setDialogOpen(false)}
                                     successCallback={() => setContentLoaded(false)}
                                     courseId={courseId} /></Suspense>);
                                 setDialogOpen(true);}}>{localeMessages["add_lesson"]}</Button>
-                            <Button variant="contained" startIcon={<BallotIcon />} sx={{ marginBottom: {xs: 1, md: 2}, marginInlineEnd: 1 }} onClick={() => {
+                            <Button variant="contained" startIcon={<BallotIcon />} sx={{ marginBottom: {xs: 1, md: 2}, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
                                 setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><QuizForm
                                     cancelCallback={() => setDialogOpen(false)}
                                     successCallback={resetDialog}
                                     courseId={courseId} /></Suspense>);
                                 setDialogOpen(true);}}>{localeMessages["add_quiz"]}</Button>
-                            <Button variant="contained" startIcon={<AssignmentIcon />} sx={{ marginBottom: 2, marginInlineEnd: 1 }} onClick={() => {
+                            <Button variant="contained" startIcon={<AssignmentIcon />} sx={{ marginBottom: 2, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
                                 setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><AssignmentForm
                                     header={localeMessages["new_assignment"]}
                                     cancelCallback={() => setDialogOpen(false)}
                                     successCallback={resetDialog}
                                     courseId={courseId} /></Suspense>);
                                 setDialogOpen(true);}}>{localeMessages["add_assignment"]}</Button>
-                            {userRole === 'admin' && <Box sx={{ marginInlineStart: { xs: 0, md: 'auto' }, alignSelf: { xs: 'stretch', md: 'center' } }}><EnrollMenu successCallback={handleEnrollMenuSuccess} /></Box>}
-                            </> }
                             {customComponent && <CustomComponentSlot html={customComponent.html} display={customComponent.container_display} />}
+                            {userRole === 'admin' && <Box sx={{ marginInlineStart: { xs: 0, md: 'auto' }, alignSelf: { xs: 'stretch', md: 'flex-start' } }}><EnrollMenu successCallback={handleEnrollMenuSuccess} /></Box>}
+                            </> }
                             </Box>
                             <ContentTable courseId={courseId} loaded={contentLoaded} eventHandler={(event) => tableEventHandler(event)} />
                         </>

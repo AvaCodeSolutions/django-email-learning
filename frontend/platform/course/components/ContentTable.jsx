@@ -281,7 +281,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                                 </Box>
                                 <Box component="span" sx={{ display: { xs: 'inline', sm: 'inline-flex' }, alignItems: 'center', gap: 0.5 }}>
                                     {content.title}
-                                    {userRole !== 'viewer' && <EditOutlinedIcon className="edit-icon" sx={{ fontSize: '0.9rem', opacity: { xs: 1, sm: 0 }, transition: 'opacity 0.15s', verticalAlign: 'middle', ml: 1 }} />}
+                                    {userRole !== 'viewer' && <EditOutlinedIcon className="edit-icon" sx={{ fontSize: '0.9rem', opacity: 1, transition: 'opacity 0.15s', verticalAlign: 'middle', ml: 1 }} />}
                                     {content.type === 'quiz' && content.is_blocking === false && (
                                         <Chip label={localeMessages["practice_quiz"]} size="small" sx={(theme) => ({ ml: 1, backgroundColor: theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.2)' : 'rgba(33, 150, 243, 0.14)', color: theme.palette.mode === 'dark' ? '#64B5F6' : '#0D47A1', fontSize: { xs: '0.6rem', sm: '0.75rem' }, height: { xs: 16, sm: 24 }, '& .MuiChip-label': { px: { xs: 0.5, sm: 1 } } })} />
                                     )}
