@@ -363,7 +363,11 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                     borderColor: 'divider',
                     position: 'sticky',
                     top: 0,
-                    zIndex: 10
+                    zIndex: 10,
+                    flexWrap: 'wrap',
+                    height: 'auto',
+                    minHeight: 'unset',
+                    py: 0.5,
                 }}>
                     <IconButton
                         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}

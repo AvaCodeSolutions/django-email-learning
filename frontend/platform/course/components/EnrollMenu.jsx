@@ -279,15 +279,21 @@ const EnrollMenu = ({successCallback}) => {
                 variant="outlined"
                 startIcon={<PersonAddAlt1Icon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />}
                 endIcon={<ArrowDropDownIcon />}
-                sx={{
+                sx={(theme) => ({
                     marginBottom: 2,
                     minWidth: 190,
+                    width: { xs: '100%', md: 'auto' },
                     justifyContent: 'flex-start',
                     '& .MuiButton-endIcon': {
                         marginInlineStart: 'auto',
                         marginInlineEnd: 0,
                     },
-                }}
+                    marginInlineEnd: { xs: 0, md: 1 },
+                    ...(theme.palette.mode === 'dark' && {
+                        borderColor: 'rgba(184, 190, 255, 0.5)',
+                        '&:hover': { borderColor: 'rgba(210, 214, 255, 0.5)' },
+                    }),
+                })}
                 onClick={openEnrollMenu}
                 >
                 {localeMessages['enroll_learner'] }

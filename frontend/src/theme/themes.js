@@ -48,15 +48,15 @@ const defaultOptions = {
     MuiCssBaseline: {
       styleOverrides: {
         a: ({ theme }) => ({
-          color: theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main,
-          textDecorationColor: theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main,
+          color: theme.palette.mode === 'dark' ? theme.palette.link?.main ?? theme.palette.primary.light : theme.palette.primary.main,
+          textDecorationColor: theme.palette.mode === 'dark' ? theme.palette.link?.main ?? theme.palette.primary.light : theme.palette.primary.main,
           transition: 'color 0.2s ease, text-decoration-color 0.2s ease',
           '&:hover': {
             color: theme.palette.mode === 'dark'
-              ? alpha(theme.palette.primary.light, 0.85)
+              ? theme.palette.link?.hover ?? theme.palette.primary.light
               : alpha(theme.palette.primary.main, 0.85),
             textDecorationColor: theme.palette.mode === 'dark'
-              ? alpha(theme.palette.primary.light, 0.85)
+              ? theme.palette.link?.hover ?? theme.palette.primary.light
               : alpha(theme.palette.primary.main, 0.85),
           },
         }),
@@ -65,15 +65,15 @@ const defaultOptions = {
     MuiLink: {
       styleOverrides: {
         root: ({ theme }) => ({
-          color: theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main,
-          textDecorationColor: theme.palette.mode === 'dark' ? theme.palette.primary.light : theme.palette.primary.main,
+          color: theme.palette.mode === 'dark' ? theme.palette.link?.main ?? theme.palette.primary.light : theme.palette.primary.main,
+          textDecorationColor: theme.palette.mode === 'dark' ? theme.palette.link?.main ?? theme.palette.primary.light : theme.palette.primary.main,
           transition: 'color 0.2s ease, text-decoration-color 0.2s ease',
           '&:hover': {
             color: theme.palette.mode === 'dark'
-              ? alpha(theme.palette.primary.light, 0.85)
+              ? theme.palette.link?.hover ?? theme.palette.primary.light
               : alpha(theme.palette.primary.main, 0.85),
             textDecorationColor: theme.palette.mode === 'dark'
-              ? alpha(theme.palette.primary.light, 0.85)
+              ? theme.palette.link?.hover ?? theme.palette.primary.light
               : alpha(theme.palette.primary.main, 0.85),
           },
         }),
@@ -92,10 +92,11 @@ const defaultOptions = {
     },
     MuiTableContainer: {
       styleOverrides: {
-        root: ({ theme }) => ({
+        root: {
           borderRadius: 8,
-          border: `1px solid ${theme.palette.border.main}`,
-        }),
+          border: 'none',
+          boxShadow: 'none',
+        },
       },
     },
     MuiTableRow: {
@@ -113,7 +114,7 @@ const defaultOptions = {
               paddingBottom: 12,
             },
             'a': {
-              color: theme.palette.mode === 'light' ? theme.palette.secondary.dark : theme.palette.secondary.main,
+              color: theme.palette.mode === 'light' ? theme.palette.primary.dark : theme.palette.link?.main ?? theme.palette.primary.light,
               textDecoration: 'none',
             },
             '& .MuiIconButton-root': {
@@ -125,11 +126,11 @@ const defaultOptions = {
             '& .MuiLink-root': {
               color: theme.palette.mode === 'light'
                 ? undefined
-                : `${alpha(theme.palette.secondary.light, 0.92)} !important`,
+                : `${theme.palette.link?.main ?? theme.palette.primary.light} !important`,
               '&:hover': {
                 color: theme.palette.mode === 'light'
                   ? undefined
-                  : `${alpha(theme.palette.secondary.light, 1)} !important`,
+                  : `${theme.palette.link?.hover ?? theme.palette.primary.light} !important`,
               },
             },
             '&:last-child td, &:last-child th': {
@@ -141,14 +142,25 @@ const defaultOptions = {
     },
     MuiTableCell: {
       styleOverrides: {
-        root: {
+        root: ({ theme }) => ({
           lineHeight: 1.4,
-        },
+          borderColor: theme.palette.mode === 'light' ? '#f0f0f0' : 'rgba(255,255,255,0.06)',
+        }),
       },
     },
     MuiSwitch: {
       defaultProps: {
         size: 'small',
+      },
+      styleOverrides: {
+        colorPrimary: ({ theme }) => theme.palette.mode === 'dark' ? {
+          '&.Mui-checked': {
+            color: '#9899c8',
+            '& + .MuiSwitch-track': {
+              backgroundColor: '#6b6d9e',
+            },
+          },
+        } : {},
       },
     },
     MuiRadio: {
@@ -258,10 +270,12 @@ const defaultOptions = {
     },
     MuiPaper: {
       styleOverrides: {
-        root: {
+        root: ({ theme }) => ({
           borderRadius: '8px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        },
+          boxShadow: theme.palette.mode === 'dark'
+            ? '0 1px 2px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.2)'
+            : '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.04)',
+        }),
       },
     },
     MuiButton: {
@@ -339,14 +353,29 @@ const defaultOptions = {
         },
       },
     },
+    MuiTab: {
+      styleOverrides: {
+        root: ({ theme }) => theme.palette.mode === 'dark' ? {
+          color: theme.palette.text.primary,
+          '&.Mui-selected': {
+            color: theme.palette.primary.light,
+          },
+        } : {},
+      },
+    },
     MuiTableHead: {
       styleOverrides: {
         root: ({ theme }) => ({
-          backgroundColor: theme.palette.background.nav,
+          backgroundColor: theme.palette.mode === 'light'
+            ? 'rgba(124, 134, 255, 0.06)'
+            : theme.palette.background.dark,
           '* th': {
             fontWeight: 400,
             paddingTop: '10px',
             paddingBottom: '10px',
+            backgroundColor: theme.palette.mode === 'light'
+              ? 'rgba(124, 134, 255, 0.06)'
+              : theme.palette.background.dark,
           },
         }),
       },
@@ -386,13 +415,14 @@ const darkPalette = {
       secondary: '#ffffff99',
     },
     background: {
-      main: '#383539',
-      box: '#2c2c2eff',
-      dark: '#232324ff',
-      nav: '#2c2c2eff',
+      // 4 distinct surface levels — darkest to lightest
+      dark: '#0f0f11',      // level 0: deepest (sidebar base, page chrome)
+      main: '#18181b',      // level 1: page background
+      nav: '#27272a',       // level 2: nav bar, header, sidebar surface (same as cards)
+      box: '#27272a',       // level 3: cards, papers, raised content
     },
     border: {
-      main: '#555555ff',
+      main: '#3f3f46',
     },
     errorText: {
       main: '#ff6b9d',
@@ -400,6 +430,11 @@ const darkPalette = {
     primary: {
       main: '#7c86ff',
       text: 'rgb(184, 190, 255)',
+    },
+    // soft lavender-white for links — matches outlined button text, distinct from pure purple chrome
+    link: {
+      main: 'rgb(184, 190, 255)',
+      hover: 'rgb(210, 214, 255)',
     },
     status: darkStatusPalette,
 

@@ -244,7 +244,7 @@ const AssignmentForm = ({
     }, [hasDeadline, hasReminderInterval, reminderIntervalDays]);
 
     return (
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ px: { xs: '14px', sm: 3 }, py: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <Typography variant="h2" sx={{ fontSize: '1.5rem' }}>
                     {header || localeMessages['new_assignment']}

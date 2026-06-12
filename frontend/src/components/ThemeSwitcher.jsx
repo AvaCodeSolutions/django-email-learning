@@ -1,4 +1,5 @@
 import { Box, Button } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import LightModeRoundedIcon from '@mui/icons-material/LightModeRounded';
 import DarkModeRoundedIcon from '@mui/icons-material/DarkModeRounded';
 import { useThemeContext } from '../theme/ThemeContext';
@@ -23,6 +24,7 @@ const ThemeSwitcher = () => {
       <Button
         onClick={toggleTheme}
         size="small"
+        aria-label={isLightTheme ? 'Switch to dark mode' : 'Switch to light mode'}
         startIcon={isLightTheme ? <DarkModeRoundedIcon fontSize="small" sx={{ml: direction === 'rtl' ? 1 : 0, mr: direction === 'rtl' ? 0 : 1}} /> : <LightModeRoundedIcon fontSize="small" sx={{ml: direction === 'rtl' ? 1 : 0, mr: direction === 'rtl' ? 0 : 1}} />}
         sx={(theme) => ({
           minWidth: 0,
@@ -30,11 +32,11 @@ const ThemeSwitcher = () => {
           py: 0.5,
           direction: direction,
           borderRadius: 2,
-          border: `1px solid ${theme.palette.border.main}`,
+          border: `1px solid ${alpha(theme.palette.border.main, 0.4)}`,
           color: 'text.primary',
-          backgroundColor: theme.palette.mode === 'light' ? 'rgba(124, 134, 255, 0.08)' : 'rgba(255, 255, 255, 0.06)',
+          backgroundColor: theme.palette.mode === 'light' ? 'rgba(124, 134, 255, 0.08)' : 'rgba(0, 0, 0, 0.35)',
           '&:hover': {
-            backgroundColor: theme.palette.mode === 'light' ? 'rgba(124, 134, 255, 0.16)' : 'rgba(255, 255, 255, 0.12)',
+            backgroundColor: theme.palette.mode === 'light' ? 'rgba(124, 134, 255, 0.16)' : 'rgba(0, 0, 0, 0.5)',
             borderColor: theme.palette.primary.main,
           },
         })}

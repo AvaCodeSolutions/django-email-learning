@@ -61,8 +61,9 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
    <>
     <GlobalStyles styles={(theme) => ({ body: { margin: 0, padding: 0, backgroundColor: theme.palette.background.main, color: theme.palette.text.primary } })} />
     <MenuBar activeOrganizationId={activeOrganizationId} changeOrganizationCallback={setActiveOrganizationId} showOrganizationSwitcher={showOrganizationSwitcher} drawerWidth={drawerWidth} />
+    <Box sx={{ width: { md: `calc(100% - ${drawerWidth}px)` }, float: { md: direction === 'rtl' ? 'left' : 'right' }, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
     <Box component="main"
-      sx={{ flexGrow: 1, padding: {xs: 0, sm: 3, md: 5}, width: { md: `calc(100% - ${drawerWidth}px)` }, float: { md: direction === 'rtl' ? 'left' : 'right' } }}>
+      sx={{ flexGrow: 1, padding: {xs: 0, sm: 3, md: 5}, maxWidth: '1400px', width: '100%' }}>
     <Grid container spacing={0} sx={{ mt: { xs: 12, md: 6 }, px: { xs: 1, sm: 4 } }}>
       <Grid size={{xs: 12}}>
       <Breadcrumbs
@@ -88,14 +89,14 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
          <Link
            key={index}
            underline="hover"
-           color="text.secondary"
            href={href}
            sx={(theme) => ({
-             fontSize: { xs: '0.78rem', sm: '0.84rem', md: '1.15rem' },
+             fontSize: { xs: '0.85rem', sm: '0.92rem', md: '1.15rem' },
              lineHeight: 1.3,
-             transition: 'color 0.2s ease',
+             color: theme.palette.mode === 'dark' ? theme.palette.link?.main ?? theme.palette.primary.light : theme.palette.primary.dark,
+             transition: 'opacity 0.2s ease',
              '&:hover': {
-               color: 'text.primary',
+               opacity: 0.8,
              },
            })}
          >
@@ -129,37 +130,36 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
     <Box
       component="footer"
       sx={{
-        width: { md: `calc(100% - ${drawerWidth}px)` },
-        float: { md: direction === 'rtl' ? 'left' : 'right' },
         textAlign: direction === 'rtl' ? 'left' : 'right',
-        padding: 1,
-        mt: 2,
+        py: 1,
+        paddingInlineEnd: 1,
+        mt: 'auto',
       }}
     >
       <Typography
         variant="caption"
-        sx={{
-          color: 'text.secondary',
-          opacity: 0.8
-        }}
+        sx={(theme) => ({
+          color: theme.palette.mode === 'dark' ? theme.palette.text.primary : theme.palette.text.secondary,
+        })}
       >
         Powered by{' '}
         <Link
           href="https://www.avacodesolutions.com/"
           target="_blank"
           rel="noopener noreferrer"
-          sx={{
-            color: 'primary.dark',
+          sx={(theme) => ({
+            color: theme.palette.mode === 'dark' ? theme.palette.link?.main : 'primary.dark',
             textDecoration: 'none',
             '&:hover': {
               textDecoration: 'underline'
             }
-          }}
+          })}
         >
           AvaCode Solutions
         </Link>
         {' '}| BSD 3-Clause License
       </Typography>
+    </Box>
     </Box>
     </>
   );

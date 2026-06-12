@@ -270,7 +270,7 @@ function Learners(initialQs="") {
           organizationIdRefreshCallback={setOrganizationId}
         >
       <Grid size={{xs: 12}} sx={{ py: 2, pl: { xs: 0, sm: 2 } }}>
-        <Box sx={{ p: { xs: 1, sm: 2 }, marginBottom: 2, borderTop: '1px solid', borderBottom: '1px solid', borderLeft: { xs: 'none', sm: '1px solid' }, borderRight: { xs: 'none', sm: '1px solid' }, borderColor: 'border.main', borderRadius: { xs: 0, sm: 2 }, minHeight: 300, backgroundColor: 'background.box' }}>
+        <Box sx={{ p: { xs: 1, sm: 2 }, marginBottom: 2, borderRadius: { xs: 0, sm: 2 }, minHeight: 300, backgroundColor: 'background.box', boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.04)' }}>
 
           {/* Search + filter bar — all items share the same 40px height */}
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2, alignItems: 'stretch' }}>
@@ -329,7 +329,7 @@ function Learners(initialQs="") {
             )}
           </Box>
 
-          <TableContainer component={Paper} sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1 }}>
+          <TableContainer component={Paper} sx={{}}>
             <Table stickyHeader>
               <TableHead>
                 <TableRow>

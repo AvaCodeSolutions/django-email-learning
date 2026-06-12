@@ -66,7 +66,7 @@ function Organization() {
         {label: localeMessages["organizations"], href: `${platformBaseUrl}/organizations`, index: 0},
         {label: organization ? organization.name : '', href: '#', index: 1}]} showOrganizationSwitcher={false}>
         <Grid size={12} sx={{ py: 2, px: { xs: 0, sm: 4 } }}>
-            <Box sx={{ p: { xs: 1, sm: 2 }, borderTop: '1px solid', borderBottom: '1px solid', borderLeft: { xs: 'none', sm: '1px solid' }, borderRight: { xs: 'none', sm: '1px solid' }, borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: { xs: 0, sm: 2 }, minHeight: 300 }}>
+            <Box sx={{ p: { xs: 1, sm: 2 }, backgroundColor: 'background.box', boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.04)', borderRadius: { xs: 0, sm: 2 }, minHeight: 300 }}>
                 <Button variant="contained" color="secondary" onClick={() => {setDialogContent(
                     <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
                         <UserForm organizationId={organizationId} onClose={() => setDialogOpen(false)} refreshUsers={refreshUsers} />
