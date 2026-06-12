@@ -46,7 +46,7 @@ class SendLessonCommand(AbstractCommand):
         if not enrollment:
             progress = 0
         else:
-            progress = enrollment.progress_percentage
+            progress = enrollment.progress_percentage(extra_delivered=1)
         next_content = content.get_next()
         context = {
             "lesson": lesson,

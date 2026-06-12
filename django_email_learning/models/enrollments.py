@@ -254,8 +254,7 @@ class Enrollment(models.Model):
         else:
             raise ValidationError("No published content available to schedule.")
 
-    @property
-    def progress_percentage(self) -> int:
+    def progress_percentage(self, extra_delivered: int = 0) -> int:
         total_content = self.course.coursecontent_set.filter(is_published=True).count()
         if total_content == 0:
             return 0
@@ -268,7 +267,7 @@ class Enrollment(models.Model):
             .count()
         )
 
-        progress = int((delivered_content / total_content) * 100)
+        progress = int(((delivered_content + extra_delivered) / total_content) * 100)
         return progress
 
 

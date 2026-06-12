@@ -15,7 +15,7 @@ def test_single_llearner_viewe(viewer_client, enrollment):
     assert len(data["enrollments"]) == 1
     enrollment_data = data["enrollments"][0]
     assert enrollment_data["id"] == enrollment.id
-    assert enrollment_data["progress"] == enrollment.progress_percentage
+    assert enrollment_data["progress"] == enrollment.progress_percentage()
     assert enrollment_data["course_title"] == enrollment.course.title
     assert enrollment_data["status"] == enrollment.status.value
     assert enrollment_data["certificate_url"] is None
