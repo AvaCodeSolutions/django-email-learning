@@ -38,7 +38,7 @@ function EnrollentList({enrollments, selectHandler}) {
   }
 
   return (
-    <TableContainer component={Paper} sx={{ maxHeight: 300, border: '1px solid', borderColor: 'grey.300', borderRadius: 1 }}>
+    <TableContainer component={Paper} sx={{ maxHeight: 300 }}>
       <Table>
         <TableHead>
           <TableRow>

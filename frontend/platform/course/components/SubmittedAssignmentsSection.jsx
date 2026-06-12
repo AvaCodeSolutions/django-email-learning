@@ -290,7 +290,7 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
 
     return (
         <>
-            <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap' }}>
+            <Stack direction="row" spacing={1} sx={{ px: 1,mb: 2, flexWrap: 'wrap' }}>
                 {submittedAssignmentsPendingOnly ? (
                     <Chip
                         color="primary"
@@ -309,7 +309,7 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
             {isSubmittedAssignmentsLoading ? (
                 <LinearProgress />
             ) : (
-                <TableContainer component={Paper}>
+                <TableContainer component={Paper} sx={{ borderRadius: { xs: 0, md: '8px' }, border: 'none', boxShadow: 'none' }}>
                     <Table>
                         <TableHead>
                             <TableRow>

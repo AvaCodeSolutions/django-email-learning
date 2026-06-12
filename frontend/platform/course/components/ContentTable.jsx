@@ -2,11 +2,16 @@ import { Alert, Box, CircularProgress, Chip, IconButton, Switch, TableContainer,
 import EmptyTableState from '../../../src/components/EmptyTableState.jsx';
 import { useState, useEffect, useRef } from 'react';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import BallotOutlinedIcon from '@mui/icons-material/BallotOutlined';
+import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import apiClient from '../../../src/apiClient.js';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import ForwardToInboxOutlinedIcon from '@mui/icons-material/ForwardToInboxOutlined';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 import { useAppContext } from '../../../src/render.jsx';
 
@@ -189,7 +194,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
             </Alert>
         )}
           <TableContainer component={Paper} dir={direction} sx={{ borderRadius: { xs: 0, sm: '8px' }, borderLeft: { xs: '0 !important', sm: undefined }, borderRight: { xs: '0 !important', sm: undefined } }}>
-              <Table sx={{ width: "100%", direction: direction }} aria-label="Contents">
+              <Table size="small" sx={{ width: "100%", direction: direction }} aria-label="Contents">
             <TableHead sx={{ display: { xs: 'none', sm: 'table-header-group' } }}>
               <TableRow>
                 { userRole !== 'viewer' && <TableCell sx={{ width: '40px', boxSizing: 'border-box' }}></TableCell>}
@@ -266,16 +271,22 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                                     <KeyboardArrowDownIcon sx={{ fontSize: 16, color: 'text.secondary', mt: '-6px' }} />
                                 </Box>
                             )}
-                            <Typography
+                            <Box
                                 component="span"
                                 onClick={() => {let event = {type: 'content_clicked', content_id: content.id}; eventHandler(event);}}
-                                sx={{ cursor: 'pointer', color: theme => theme.palette.mode === 'dark' ? theme.palette.secondary.main : theme.palette.secondary.dark }}>
-                                <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' }, color: 'text.secondary', fontWeight: 500 }}>{localeMessages[content.type]}: </Box>{content.title}
-                                {content.type === 'quiz' && content.is_blocking === false && (
-                                    <Chip label={localeMessages["practice_quiz"]} size="small" sx={(theme) => ({ ml: 1, backgroundColor: theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.2)' : 'rgba(33, 150, 243, 0.14)', color: theme.palette.mode === 'dark' ? '#64B5F6' : '#0D47A1', fontSize: { xs: '0.6rem', sm: '0.75rem' }, height: { xs: 16, sm: 24 }, '& .MuiChip-label': { px: { xs: 0.5, sm: 1 } } })} />
-                                )}
-                                {content.type === 'quiz' && content.is_blocking !== false && content.limited_attempts !== null && ( content.limited_attempts ? <Chip label={localeMessages["two_attempts"]} size="small" sx={(theme) => ({ ml: 1, backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 152, 0, 0.15)' : 'rgba(255, 203, 71, 0.5)', color: theme.palette.mode === 'dark' ? '#FF9800' : '#9a4208', fontSize: { xs: '0.6rem', sm: '0.75rem' }, height: { xs: 16, sm: 24 }, '& .MuiChip-label': { px: { xs: 0.5, sm: 1 } } })} /> : <Chip label={localeMessages["unlimited_attempts"]} size="small" sx={(theme) => ({ ml: 1, backgroundColor: theme.palette.mode === 'dark' ? 'rgba(76, 175, 80, 0.15)' : 'rgba(129, 199, 132, 0.5)', color: theme.palette.mode === 'dark' ? '#4CAF50' : '#256029', fontSize: { xs: '0.6rem', sm: '0.75rem' }, height: { xs: 16, sm: 24 }, '& .MuiChip-label': { px: { xs: 0.5, sm: 1 } } })} />)}
-                            </Typography>
+                                sx={(theme) => ({ cursor: 'pointer', color: theme.palette.mode === 'dark' ? theme.palette.link?.main ?? theme.palette.primary.light : theme.palette.primary.dark, display: { xs: 'block', sm: 'inline-flex' }, alignItems: 'center', gap: 0.5, '&:hover': { opacity: 0.8 }, '&:hover .edit-icon': { opacity: 1 } })}>
+                                <Box component="span" sx={{ display: { xs: 'inline-flex', sm: 'none' }, alignItems: 'center', gap: 0.4, color: 'text.secondary', fontWeight: 500, verticalAlign: 'middle', mr: 0.5 }}>
+                                    {content.type === 'lesson' ? <DescriptionOutlinedIcon sx={{ fontSize: '0.95rem' }} /> : content.type === 'quiz' ? <BallotOutlinedIcon sx={{ fontSize: '0.95rem' }} /> : <AssignmentOutlinedIcon sx={{ fontSize: '0.95rem' }} />}
+                                    {localeMessages[content.type]}:
+                                </Box>
+                                <Box component="span" sx={{ display: { xs: 'inline', sm: 'inline-flex' }, alignItems: 'center', gap: 0.5 }}>
+                                    {content.title}
+                                    {userRole !== 'viewer' && <EditOutlinedIcon className="edit-icon" sx={{ fontSize: '0.9rem', opacity: { xs: 1, sm: 0 }, transition: 'opacity 0.15s', verticalAlign: 'middle', ml: 1 }} />}
+                                    {content.type === 'quiz' && content.is_blocking === false && (
+                                        <Chip label={localeMessages["practice_quiz"]} size="small" sx={(theme) => ({ ml: 1, backgroundColor: theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.2)' : 'rgba(33, 150, 243, 0.14)', color: theme.palette.mode === 'dark' ? '#64B5F6' : '#0D47A1', fontSize: { xs: '0.6rem', sm: '0.75rem' }, height: { xs: 16, sm: 24 }, '& .MuiChip-label': { px: { xs: 0.5, sm: 1 } } })} />
+                                    )}
+                                </Box>
+                            </Box>
                             {/* Mobile second line */}
                             <Box sx={{ display: { xs: 'flex', sm: 'none' }, alignItems: 'center', flexWrap: 'wrap', gap: 0, mt: 0.75 }}>
                                 {formatPeriod(content.waiting_period) && (
@@ -289,7 +300,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                                 )}
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, px: 1 }}>
                                     <Typography variant="caption" color="text.disabled">{localeMessages["published"] || 'Published'}:</Typography>
-                                    <Switch size="small" checked={content.is_published} onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} />
+                                    <Switch size="small" checked={content.is_published} onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} inputProps={{ 'aria-label': `${localeMessages["published"] || 'Published'}: ${content.title}` }} />
                                 </Box>
                                 {userRole !== 'viewer' && <>
                                     <Box sx={{ width: '1px', height: '14px', backgroundColor: 'divider' }} />
@@ -311,8 +322,26 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                             </Box>
                         </TableCell>
                         <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={direction == 'rtl' ? 'right' : 'left'}>{formatPeriod(content.waiting_period)}</TableCell>
-                        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={direction == 'rtl' ? 'right' : 'left'}>{localeMessages[content.type]}</TableCell>
-                        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={direction == 'rtl' ? 'right' : 'left'}><Switch checked={content.is_published} onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} /></TableCell>
+                        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={direction == 'rtl' ? 'right' : 'left'}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
+                                <Chip
+                                    size="small"
+                                    icon={content.type === 'lesson' ? <DescriptionOutlinedIcon /> : content.type === 'quiz' ? <BallotOutlinedIcon /> : <AssignmentOutlinedIcon />}
+                                    label={localeMessages[content.type]}
+                                    variant="outlined"
+                                    sx={(theme) => ({ fontSize: '0.75rem', color: theme.palette.mode === 'dark' ? theme.palette.text.primary : undefined, borderColor: theme.palette.mode === 'dark' ? theme.palette.text.secondary : undefined })}
+                                />
+                                {content.type === 'quiz' && content.is_blocking !== false && content.limited_attempts !== null && (
+                                    <Chip
+                                        size="small"
+                                        variant="outlined"
+                                        label={content.limited_attempts ? localeMessages["two_attempts"] : localeMessages["unlimited_attempts"]}
+                                        sx={{ fontSize: '0.7rem', color: 'text.secondary', borderColor: 'divider' }}
+                                    />
+                                )}
+                            </Box>
+                        </TableCell>
+                        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={direction == 'rtl' ? 'right' : 'left'}><Switch checked={content.is_published} onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} inputProps={{ 'aria-label': `${localeMessages["published"] || 'Published'}: ${content.title}` }} /></TableCell>
                         {userRole !== 'viewer' && <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={direction == 'rtl' ? 'right' : 'left'}>
                             <IconButton aria-label={localeMessages["delete"]} onClick={() => deleteContent(content.id)}><DeleteIcon /></IconButton>
                             {canSendLesson && content.type === 'lesson' && (
@@ -334,26 +363,30 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
         </TableContainer>
         {(showQuizTwoAttemptNote || showQuizUnlimitedAttemptsNote) && (
             <Box
-                sx={{
+                sx={(theme) => ({
                     mt: 1.5,
                     px: 1.5,
                     py: 1,
+                    display: { xs: 'none', md: 'flex' },
+                    alignItems: 'flex-start',
+                    gap: 1,
                     borderRadius: 1,
-                    backgroundColor: 'action.hover',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                }}
+                    backgroundColor: theme.palette.mode === 'light' ? '#f5f5f7' : theme.palette.background.dark,
+                })}
             >
-                {showQuizTwoAttemptNote && (
-                    <Typography component="div" variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                        • <Box component="span" sx={{ fontWeight: 600 }}>{localeMessages["two_attempts"]}:</Box> {localeMessages["quiz_2_attempts_sub_note"]}
-                    </Typography>
-                )}
-                {showQuizUnlimitedAttemptsNote && (
-                    <Typography component="div" variant="caption" color="text.secondary" sx={{ display: 'block', mt: showQuizTwoAttemptNote ? 0.5 : 0 }}>
-                        • <Box component="span" sx={{ fontWeight: 600 }}>{localeMessages["unlimited_attempts"]}:</Box> {localeMessages["quiz_unlimited_attempts_sub_note"]}
-                    </Typography>
-                )}
+                <InfoOutlinedIcon sx={{ fontSize: '0.95rem', mt: '1px', flexShrink: 0, color: 'text.disabled' }} />
+                <Box>
+                    {showQuizTwoAttemptNote && (
+                        <Typography component="div" variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.75rem' }}>
+                            <Box component="span" sx={{ fontWeight: 600 }}>{localeMessages["two_attempts"]}:</Box> {localeMessages["quiz_2_attempts_sub_note"]}
+                        </Typography>
+                    )}
+                    {showQuizUnlimitedAttemptsNote && (
+                        <Typography component="div" variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.75rem', mt: showQuizTwoAttemptNote ? 0.5 : 0 }}>
+                            <Box component="span" sx={{ fontWeight: 600 }}>{localeMessages["unlimited_attempts"]}:</Box> {localeMessages["quiz_unlimited_attempts_sub_note"]}
+                        </Typography>
+                    )}
+                </Box>
             </Box>
         )}
         </>

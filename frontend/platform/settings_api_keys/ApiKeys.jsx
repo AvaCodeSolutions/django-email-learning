@@ -91,7 +91,7 @@ const ApiKeys = () => {
 
     return (<Base breadCrumbList={[{label: localeMessages["api_keys"], href: '#'}]} showOrganizationSwitcher={false}>
         <Grid size={12} sx={{ py: 2, pl: { xs: 0, sm: 2 } }}>
-        <Box sx={{ p: { xs: 1, sm: 2 }, borderTop: '1px solid', borderBottom: '1px solid', borderLeft: { xs: 'none', sm: '1px solid' }, borderRight: { xs: 'none', sm: '1px solid' }, borderColor: 'border.main', borderRadius: { xs: 0, sm: 2 }, backgroundColor: 'background.box', minHeight: 300, width: { lg: '80%' } }}>
+        <Box sx={{ p: { xs: 1, sm: 2 }, borderRadius: { xs: 0, sm: 2 }, backgroundColor: 'background.box', boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.04)', minHeight: 300, width: { lg: '80%' } }}>
         <Typography>{localeMessages["api_key_intro"]}</Typography>
                 <Button
                     variant="contained"
@@ -104,7 +104,7 @@ const ApiKeys = () => {
                 >
                     {localeMessages["add_api_key"]}
                 </Button>
-        <TableContainer sx={{ maxHeight: 440, border: '1px solid', borderColor: 'grey.300', borderRadius: 1 }} >
+        <TableContainer sx={{ maxHeight: 440 }} >
                     <Table sx={{ tableLayout: 'fixed', width: '100%' }}>
             <TableHead>
               <TableRow>

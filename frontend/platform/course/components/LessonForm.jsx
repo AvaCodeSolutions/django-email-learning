@@ -294,7 +294,7 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
 
     return (
         <>
-        <Box sx={{ p: 3 }} onKeyDown={(e) => {
+        <Box sx={{ px: { xs: '14px', sm: 3 }, py: 3 }} onKeyDown={(e) => {
             if (e.key === 'Escape') {
                 if (hasUnsavedChanges) {
                     setConfirmCloseDialogOpen(true);

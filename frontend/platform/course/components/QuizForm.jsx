@@ -296,7 +296,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     }
 
     return (
-         <Box ref={dialogRef} sx={{ p: 3 }} tabIndex={0} focusable="true" onKeyDown={(e) => {
+         <Box ref={dialogRef} sx={{ px: { xs: '14px', sm: 3 }, py: 3 }} tabIndex={0} focusable="true" onKeyDown={(e) => {
             if (e.key === 'Escape') {
                 if (showQuestionField) {
                     setShowQuestionField(false);

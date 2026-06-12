@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { alpha } from '@mui/material/styles'
 import { AppBar, Divider, Drawer, Box, Typography, MenuList, MenuItem, ListItemIcon, ListItemText, Tooltip, Link, Select } from '@mui/material'
 import IconButton from '@mui/material/IconButton';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
@@ -22,7 +23,7 @@ import { useAppContext } from '../render.jsx';
 function OrganizationsSelect({organizations, activeOrganizationId, changeOrganizationCallback}) {
     return (
         <Box sx={{ px: 2, pb: 1 }}>
-            <Typography variant="caption" sx={{ color: 'text.disabled', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.65rem', display: 'block', mb: 0.75 }}>
+            <Typography variant="caption" sx={(theme) => ({ color: theme.palette.mode === 'dark' ? theme.palette.text.secondary : theme.palette.text.disabled, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.65rem', display: 'block', mb: 0.75 })}>
                 Organization
             </Typography>
             <Select
@@ -50,10 +51,22 @@ function OrganizationsSelect({organizations, activeOrganizationId, changeOrganiz
 function NavItem({ page, isActive }) {
     return (
         <MenuItem sx={(theme) => ({
-            backgroundColor: isActive ? (theme.palette.mode === 'dark' ? theme.palette.deepPurple[800] : theme.palette.deepPurple[50]) : 'transparent',
-            '& .MuiTouchRipple-root': { color: theme.palette.secondary.main },
+            backgroundColor: isActive
+                ? theme.palette.mode === 'dark'
+                    ? alpha(theme.palette.primary.main, 0.18)
+                    : theme.palette.deepPurple[50]
+                : 'transparent',
+            borderInlineStart: isActive
+                ? `3px solid ${theme.palette.primary.main}`
+                : '3px solid transparent',
+            '& .MuiTouchRipple-root': { color: theme.palette.primary.main },
             padding: 0,
-            '&:hover .MuiListItemIcon-root': { color: theme.palette.primary.dark },
+            '&:hover': {
+                backgroundColor: theme.palette.mode === 'dark'
+                    ? alpha(theme.palette.primary.main, 0.12)
+                    : theme.palette.deepPurple[50],
+            },
+            '&:hover .MuiListItemIcon-root': { color: theme.palette.primary.main },
         })}>
             <Link
                 href={page.href}
@@ -61,10 +74,18 @@ function NavItem({ page, isActive }) {
                 color="inherit"
                 sx={{ display: 'flex', alignItems: 'center', width: '100%', py: '8px', px: '16px' }}
             >
-                <ListItemIcon sx={(theme) => ({ minWidth: 35, color: theme.palette.mode === 'dark' ? theme.palette.deepPurple[300] : theme.palette.deepPurple[500] })}>
+                <ListItemIcon sx={(theme) => ({
+                    minWidth: 35,
+                    color: isActive
+                        ? theme.palette.primary.main
+                        : theme.palette.mode === 'dark' ? theme.palette.deepPurple[300] : theme.palette.deepPurple[500],
+                })}>
                     {page.icon}
                 </ListItemIcon>
-                <ListItemText primary={page.name} slotProps={{ primary: { fontSize: '0.95rem' } }} />
+                <ListItemText
+                    primary={page.name}
+                    slotProps={{ primary: { fontSize: '0.95rem', fontWeight: isActive ? 600 : 400, color: isActive ? 'primary.main' : 'inherit' } }}
+                />
             </Link>
         </MenuItem>
     );
@@ -185,11 +206,11 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
 
     return (
         <Box component="nav"sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
-        <AppBar sx={{boxShadow: 0, borderRadius: 0, backgroundColor: 'background.nav', borderBottom: {xs: '1px solid'}, borderColor: {xs: 'border.main', md: 'none'} }}>
+        <AppBar sx={(theme) => ({boxShadow: 0, borderRadius: 0, backgroundColor: 'background.nav', borderBottom: `1px solid ${alpha(theme.palette.border.main, 0.4)}` })}>
             <Box sx={{ my: 1, ml: '4px', height: { xs: "57px", md: "30px" }, display: 'flex', justifyContent: direction === 'rtl' ? 'flex-end' : 'flex-start', alignItems: 'center' }}>
                 <img src={logoHorizontalUrl} alt="Logo" style={{maxHeight: "57px", height: "100%"}} />
             </Box>
-            <Box sx={{display: { xs: 'flex'}, right: direction === 'rtl' ? 'auto' : '0', left: direction === 'rtl' ? '0' : 'auto', position: "absolute", top: '10px', direction: direction, alignItems: 'center'}}>
+            <Box sx={{display: { xs: 'flex'}, right: direction === 'rtl' ? 'auto' : '0', left: direction === 'rtl' ? '0' : 'auto', position: "absolute", top: '50%', transform: 'translateY(-50%)', direction: direction, alignItems: 'center'}}>
                 <ThemeSwitcher />
                 <Box sx={{ m: 1 }}>
                 <IconButton
@@ -218,7 +239,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                 </Box>
             </Box>
         </AppBar>
-        <Drawer anchor={direction === 'rtl' ? 'right' : 'left'} variant={drawerVariant} onClose={toggleMenuDrawer(false)} open={menuOpen} sx={{ '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, display: 'flex', flexDirection: 'column' } }}
+        <Drawer anchor={direction === 'rtl' ? 'right' : 'left'} variant={drawerVariant} onClose={toggleMenuDrawer(false)} open={menuOpen} sx={{ '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, display: 'flex', flexDirection: 'column', backgroundColor: 'background.nav' } }}
             slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(0, 0, 0, 0.15)', backdropFilter: 'blur(5px)' }}, paper: { sx: { borderRadius: 0}}}}>
             <Box sx={{ my: 2, textAlign: 'center' }}>
                 <img src={logoVerticalUrl} alt="Logo" style={{ width: "50%" }} />
@@ -231,7 +252,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                 {/* ── Administration ── (org admin only) */}
                 {adminPages.length > 0 && <>
                     <Divider textAlign="left" sx={{ mt: 1, mb: 0.5 }}>
-                        <Typography variant="caption" sx={{ color: 'text.disabled', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.7rem' }}>
+                        <Typography variant="caption" sx={(theme) => ({ color: theme.palette.mode === 'dark' ? theme.palette.text.secondary : theme.palette.text.disabled, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.7rem' })}>
                             {localeMessages['administration'] || 'Administration'}
                         </Typography>
                     </Divider>
@@ -240,7 +261,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
 
                 {/* ── Platform ── */}
                 <Divider textAlign="left" sx={{ mt: 1, mb: 0.5 }}>
-                    <Typography variant="caption" sx={{ color: 'text.disabled', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.7rem' }}>
+                    <Typography variant="caption" sx={(theme) => ({ color: theme.palette.mode === 'dark' ? theme.palette.text.secondary : theme.palette.text.disabled, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.7rem' })}>
                         {localeMessages['platform_section'] || 'Platform'}
                     </Typography>
                 </Divider>
@@ -249,7 +270,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                 {/* ── Settings ── (platform admin only, always expanded) */}
                 {settingsPages.length > 0 && <>
                     <Divider textAlign="left" sx={{ mt: 1, mb: 0.5 }}>
-                        <Typography variant="caption" sx={{ color: 'text.disabled', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.7rem' }}>
+                        <Typography variant="caption" sx={(theme) => ({ color: theme.palette.mode === 'dark' ? theme.palette.text.secondary : theme.palette.text.disabled, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.7rem' })}>
                             {localeMessages['settings'] || 'Settings'}
                         </Typography>
                     </Divider>
@@ -259,7 +280,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                 {/* ── System ── (platform admin only) */}
                 {deliverContentsJobStatus && isPlatformAdmin && <>
                     <Divider textAlign="left" sx={{ mt: 1, mb: 0.5 }}>
-                        <Typography variant="caption" sx={{ color: 'text.disabled', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.7rem' }}>
+                        <Typography variant="caption" sx={(theme) => ({ color: theme.palette.mode === 'dark' ? theme.palette.text.secondary : theme.palette.text.disabled, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.7rem' })}>
                             {localeMessages['system'] || 'System'}
                         </Typography>
                     </Divider>

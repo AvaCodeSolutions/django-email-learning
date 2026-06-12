@@ -118,7 +118,7 @@ function Courses() {
       organizationIdRefreshCallback={setOrganizationId}
     >
       <Grid size={{xs: 12}} sx={{ py: 2, pl: { xs: 0, sm: 2 } }}>
-        <Box sx={{ p: { xs: 1, sm: 2 }, borderTop: '1px solid', borderBottom: '1px solid', borderLeft: { xs: 'none', sm: '1px solid' }, borderRight: { xs: 'none', sm: '1px solid' }, borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: { xs: 0, sm: 2 }, minHeight: 300 }}>
+        <Box sx={{ p: { xs: 1, sm: 2 }, backgroundColor: 'background.box', boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.04)', borderRadius: { xs: 0, sm: 2 }, minHeight: 300 }}>
         {userRole !== 'viewer' && <Button variant="contained" startIcon={<SchoolIcon sx={{ marginLeft: direction === 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
           setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><CourseForm
             successCallback={handleCourseCreated}
@@ -136,7 +136,7 @@ function Courses() {
                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["course_language"]}</TableCell>
                 <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["total_enrollments"]}</TableCell>
                 <TableCell sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["enabled"]}</TableCell>
-                {userRole !== 'viewer' && <TableCell align={direction === 'rtl' ? 'left' : 'right'}>{localeMessages["actions"]}</TableCell>}
+                {userRole !== 'viewer' && <TableCell align={direction === 'rtl' ? 'left' : 'right'} sx={{ whiteSpace: 'nowrap', width: '1%' }}>{localeMessages["actions"]}</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -155,7 +155,7 @@ function Courses() {
                       disabled={userRole === 'viewer'}
                     />
                   </TableCell>
-                  {userRole !== 'viewer' && <TableCell align={direction === 'rtl' ? 'left' : 'right'}>
+                  {userRole !== 'viewer' && <TableCell align={direction === 'rtl' ? 'left' : 'right'} sx={{ whiteSpace: 'nowrap', width: '1%' }}>
                     <IconButton onClick={() => {
                       showEditCourseDialog(course);}}><EditIcon fontSize="small" /></IconButton>
                     <IconButton aria-label={`Delete ${course.title}`} onClick={() => {

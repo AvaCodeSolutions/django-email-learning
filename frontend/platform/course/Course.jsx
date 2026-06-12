@@ -11,12 +11,11 @@ import ViewListIcon from '@mui/icons-material/ViewList';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import InsightsIcon from '@mui/icons-material/Insights';
 import { useState, useEffect } from 'react';
-import { Box, Grid, Button, Dialog, LinearProgress, Typography, Alert, Skeleton, Tabs, Tab, Badge } from '@mui/material'
+import { Box, Grid, Button, Dialog, LinearProgress, Typography, Alert, Tabs, Tab, Badge } from '@mui/material'
 import { useTheme } from '@mui/material/styles';
 import ContentTable from './components/ContentTable.jsx';
 import SubmittedAssignmentsSection from './components/SubmittedAssignmentsSection.jsx';
-import { PieChart } from '@mui/x-charts/PieChart'
-import { BarChart } from '@mui/x-charts/BarChart';
+import CourseAnalyticsSection from './components/CourseAnalyticsSection.jsx';
 import { lazy, Suspense } from "react";
 import apiClient from '../../src/apiClient.js';
 
@@ -314,34 +313,32 @@ function Course() {
                         display: { xs: 'none', md: 'block' },
                         mb: 3,
                         p: 2,
-                        border: '1px solid',
-                        borderColor: 'border.main',
                         borderRadius: { xs: 0, sm: 2 },
-                        backgroundColor: 'background.box',
+                        backgroundColor: 'background.box', boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.04)',
                     }}
                 >
                     <Grid container spacing={2}>
                         <Grid size={{ xs: 12, sm: 4 }}>
-                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                            <Typography variant="caption" sx={{ color: 'text.primary', display: 'block', mb: 0.5, opacity: { xs: 1 } }}>
                                 {localeMessages["total_enrollments"] || 'Total Enrollments'}
                             </Typography>
                             <Typography variant="h6">{totalEnrollments}</Typography>
                         </Grid>
                         <Grid size={{ xs: 12, sm: 4 }}>
-                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                            <Typography variant="caption" sx={{ color: 'text.primary', display: 'block', mb: 0.5 }}>
                                 {localeMessages["active"] || 'Active'}
                             </Typography>
-                            <Typography variant="h6">{activePercentage}%</Typography>
+                            <Typography variant="h6">{activeEnrollments} <Typography component="span" variant="body2" sx={{ color: 'text.secondary' }}>({activePercentage}%)</Typography></Typography>
                         </Grid>
                         <Grid size={{ xs: 12, sm: 4 }}>
-                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
+                            <Typography variant="caption" sx={{ color: 'text.primary', display: 'block', mb: 0.5 }}>
                                 {localeMessages["weekly_enrollments"] || 'Weekly Enrollments'}
                             </Typography>
                             <Typography variant="h6">{currentWeekEnrollments}</Typography>
                         </Grid>
                     </Grid>
                 </Box>
-                <Box sx={{ px: { xs: 0, md: 2 }, py: 2, borderTop: '1px solid', borderBottom: '1px solid', borderLeft: { xs: 'none', sm: '1px solid' }, borderRight: { xs: 'none', sm: '1px solid' }, borderColor: 'border.main', backgroundColor: 'background.box', borderRadius: { xs: 0, sm: 2 }, minHeight: 300 }}>
+                <Box sx={{ px: { xs: 0, md: 2 }, py: 2, backgroundColor: 'background.box', boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.04)', borderRadius: { xs: 0, sm: 2 }, minHeight: 300 }}>
                     <Tabs
                         value={activeTab}
                         onChange={(_, value) => {
@@ -398,28 +395,28 @@ function Course() {
 
                     {activeTab === 'content' && (
                         <>
-                            <Box sx={{ px: 2 }}>
-                                {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
+                            <Box sx={{ px: 1, display: 'flex', flexDirection: {xs:'column', md: 'row'}, alignItems: { xs: 'stretch', md: 'flex-start' }, pb: 2, width: '100%', }}>
+                                {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon />} sx={{ marginBottom: {xs: 1, md: 2}, marginInlineEnd: 1 }} onClick={() => {
                                 setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><LessonForm
                                     header={localeMessages["new_lesson"]}
                                     cancelCallback={() => setDialogOpen(false)}
                                     successCallback={() => setContentLoaded(false)}
                                     courseId={courseId} /></Suspense>);
                                 setDialogOpen(true);}}>{localeMessages["add_lesson"]}</Button>
-                            <Button variant="contained" startIcon={<BallotIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2, marginLeft: 1, marginRight: 1 }} onClick={() => {
+                            <Button variant="contained" startIcon={<BallotIcon />} sx={{ marginBottom: {xs: 1, md: 2}, marginInlineEnd: 1 }} onClick={() => {
                                 setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><QuizForm
                                     cancelCallback={() => setDialogOpen(false)}
                                     successCallback={resetDialog}
                                     courseId={courseId} /></Suspense>);
                                 setDialogOpen(true);}}>{localeMessages["add_quiz"]}</Button>
-                            <Button variant="contained" startIcon={<AssignmentIcon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2, marginLeft: 1, marginRight: 1 }} onClick={() => {
+                            <Button variant="contained" startIcon={<AssignmentIcon />} sx={{ marginBottom: 2, marginInlineEnd: 1 }} onClick={() => {
                                 setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><AssignmentForm
                                     header={localeMessages["new_assignment"]}
                                     cancelCallback={() => setDialogOpen(false)}
                                     successCallback={resetDialog}
                                     courseId={courseId} /></Suspense>);
                                 setDialogOpen(true);}}>{localeMessages["add_assignment"]}</Button>
-                            {userRole === 'admin' && <EnrollMenu successCallback={handleEnrollMenuSuccess} />}
+                            {userRole === 'admin' && <Box sx={{ marginInlineStart: { xs: 0, md: 'auto' }, alignSelf: { xs: 'stretch', md: 'center' } }}><EnrollMenu successCallback={handleEnrollMenuSuccess} /></Box>}
                             </> }
                             {customComponent && <Box className="custom-component-wrapper" sx={{ display: customComponent.container_display }} dangerouslySetInnerHTML={{ __html: customComponent.html }}></Box>}
                             </Box>
@@ -434,91 +431,21 @@ function Course() {
                     )}
 
                     {activeTab === 'analytics' && (
-                        <>
-                            <Alert severity="info" sx={{ mb: 2 }}>
-                                {localeMessages["course_analytics_tab_info"] || 'Course analytics are shown below.'}
-                            </Alert>
-                            <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
-                                <Grid size={{xs: 12, lg: 6}} sx={{ display: 'flex', flexDirection: 'column' }}>
-                                    <Box sx={{ py: 3, borderTop: '1px solid', borderBottom: '1px solid', borderLeft: { xs: 'none', sm: '1px solid' }, borderRight: { xs: 'none', sm: '1px solid' }, borderColor: 'border.main', borderRadius: { xs: 0, sm: 2 }, backgroundColor: 'background.box', flex: 1 }}>
-                                        <Typography variant="h6" align='center'>{localeMessages["enrollments_distribution"]}</Typography>
-                                        <Typography variant="body2" align='center' sx={{ mt: 1, mb: 2, color: 'text.secondary' }}>
-                                            {(localeMessages["total_enrollments"]) + ': ' + totalEnrollments}
-                                        </Typography>
-                                        {isEnrollmentsLoading ? (
-                                            <Box sx={{ px: 2 }}>
-                                                <Skeleton variant="circular" width={180} height={180} sx={{ mx: 'auto', my: 2 }} />
-                                                <Skeleton variant="text" width="80%" sx={{ mx: 'auto' }} />
-                                                <Skeleton variant="text" width="60%" sx={{ mx: 'auto' }} />
-                                            </Box>
-                                        ) : hasEnrollmentsChartData ? (
-                                            <PieChart
-                                                height={300}
-                                                series={[
-                                                {
-                                                    data: enrollmentsPieData,
-                                                    innerRadius: '50%',
-                                                    arcLabelMinAngle: 20,
-                                                    highlightScope: { fade: 'global', highlight: 'item' },
-                                                },
-                                                ]}
-                                                skipAnimation={false}
-                                                margin={{
-                                                    bottom: 20,
-                                                    top: 20,
-                                                    left: 5,
-                                                    right: 5,
-                                                }}
-                                                slotProps={{
-                                                    legend: {
-                                                    direction: 'row',
-                                                    position: { vertical: 'bottom', horizontal: 'middle' },
-                                                    padding: 0,
-                                                    },
-                                                }}
-                                            />
-                                        ) : (
-                                            <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2 }}>
-                                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                                    {localeMessages['no_data_yet'] || 'No data yet'}
-                                                </Typography>
-                                            </Box>
-                                        )}
-                                    </Box>
-                                </Grid>
-                                <Grid size={{xs: 12, lg: 6}} sx={{ display: 'flex', flexDirection: 'column' }}>
-                                    <Box sx={{ py: 3, borderTop: '1px solid', borderBottom: '1px solid', borderLeft: { xs: 'none', sm: '1px solid' }, borderRight: { xs: 'none', sm: '1px solid' }, borderColor: 'border.main', borderRadius: { xs: 0, sm: 2 }, backgroundColor: 'background.box', flex: 1 }}>
-                                        <Typography variant="h6" align='center'>{localeMessages["weekly_enrollments"]}</Typography>
-                                        {isWeeklyStatsLoading ? (
-                                            <Box sx={{ px: 2 }}>
-                                                <Skeleton variant="rectangular" height={220} sx={{ borderRadius: 1, my: 2 }} />
-                                                <Skeleton variant="text" width="75%" sx={{ mx: 'auto' }} />
-                                            </Box>
-                                        ) : hasWeeklyChartData ? (
-                                            <BarChart
-                                                margin={{
-                                                    top: 60,
-                                                }}
-                                                xAxis={[{data: weeklyStats.map((stat) => stat.date)}]}
-                                                series={[{ data: weeklyStats.map((stat) => stat.count), color: theme.palette.secondary.main }]}
-                                                height={300}
-                                            />
-                                        ) : (
-                                            <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2 }}>
-                                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                                    {localeMessages['no_data_yet'] || 'No data yet'}
-                                                </Typography>
-                                            </Box>
-                                        )}
-                                    </Box>
-                                </Grid>
-                            </Grid>
-                        </>
+                        <CourseAnalyticsSection
+                            localeMessages={localeMessages}
+                            totalEnrollments={totalEnrollments}
+                            isEnrollmentsLoading={isEnrollmentsLoading}
+                            hasEnrollmentsChartData={hasEnrollmentsChartData}
+                            enrollmentsPieData={enrollmentsPieData}
+                            isWeeklyStatsLoading={isWeeklyStatsLoading}
+                            hasWeeklyChartData={hasWeeklyChartData}
+                            weeklyStats={weeklyStats}
+                        />
                     )}
                 </Box>
             </Grid>
 
-            <Dialog open={dialogOpen} onClose={handleClose} fullWidth maxWidth={dialogMaxWidth}>
+            <Dialog open={dialogOpen} onClose={handleClose} fullWidth maxWidth={dialogMaxWidth} sx={{ '& .MuiDialog-paper': { mx: { xs: '4px', sm: 4 }, width: { xs: 'calc(100% - 8px)', sm: undefined } }, '& .MuiDialogTitle-root': { px: { xs: 2, sm: 3 } }, '& .MuiDialogContent-root': { px: { xs: 2, sm: 3 } }, '& .MuiDialogActions-root': { px: { xs: 2, sm: 3 } } }}>
                 {dialogContent}
             </Dialog>
         </Base>

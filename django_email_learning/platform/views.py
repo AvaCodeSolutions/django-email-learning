@@ -311,7 +311,7 @@ class CourseView(BasePlatformView):
             "authorize_button": _("Authorize with Google"),
             "published": _("Published"),
             "type": _("Type"),
-            "waiting_time": _("Waiting Time"),
+            "waiting_time": _("Send Delay"),
             "title": _("Title"),
             "add_quiz": _("Add Quiz"),
             "add_assignment": _("Add Assignment"),
@@ -338,7 +338,7 @@ class CourseView(BasePlatformView):
                 "If enabled, learners must submit the assignment, and the assignment must be approved by an instructor before they can continue receiving course content."
             ),
             "lesson_waiting_tooltip": _(
-                "Set the amount of time that we should wait after the previous lesson or quiz submission before sending this lesson"
+                "How long to wait after the previous item is sent before delivering this lesson. Each delay is relative to the previous item, not to enrollment."
             ),
             "upload": _("Upload"),
             "uploaded_image_preview": _("Uploaded image preview"),
@@ -372,7 +372,7 @@ class CourseView(BasePlatformView):
             ),
             "add_question": _("Add Question"),
             "quiz_settings": _("Quiz Settings"),
-            "waiting_period": _("Waiting Period"),
+            "waiting_period": _("Send Delay"),
             "limited_attempts": _("Limited Attempts"),
             "unlimited_attempts": _("Unlimited Attempts"),
             "two_attempts": _("2 Attempts"),
@@ -395,7 +395,7 @@ class CourseView(BasePlatformView):
             "score_tooltip": _("Minimum percentage score required to pass this quiz"),
             "period": _("Period"),
             "period_tooltip": _(
-                "Time to wait after the previous content delivery before sending this quiz"
+                "How long to wait after the previous item is sent before delivering this quiz. Each delay is relative to the previous item, not to enrollment."
             ),
             "percentage": _("Percentage"),
             "quiz_deadline": _("Deadline to Complete Quiz"),
@@ -480,7 +480,7 @@ class CourseView(BasePlatformView):
             "save_assignment": _("Save Assignment"),
             "assignment_saved_success": _("Assignment saved successfully."),
             "assignment_waiting_tooltip": _(
-                "Set the amount of time to wait after the previous content delivery before sending this assignment."
+                "How long to wait after the previous item is sent before delivering this assignment. Each delay is relative to the previous item, not to enrollment."
             ),
             "no_deadline": _("No Deadline"),
             "requires_text_submission": _("Requires Text Submission"),
