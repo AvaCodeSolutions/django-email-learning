@@ -10,7 +10,7 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import InsightsIcon from '@mui/icons-material/Insights';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { Box, Grid, Button, Dialog, LinearProgress, Typography, Alert, Tabs, Tab, Badge } from '@mui/material'
 import { useTheme } from '@mui/material/styles';
 import ContentTable from './components/ContentTable.jsx';
@@ -18,6 +18,16 @@ import SubmittedAssignmentsSection from './components/SubmittedAssignmentsSectio
 import CourseAnalyticsSection from './components/CourseAnalyticsSection.jsx';
 import { lazy, Suspense } from "react";
 import apiClient from '../../src/apiClient.js';
+
+const CustomComponentSlot = memo(function CustomComponentSlot({ html, display }) {
+  return (
+    <Box
+      className="custom-component-wrapper"
+      sx={{ display }}
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+});
 
 const QuizForm = lazy(() => import("./components/QuizForm.jsx"));
 const LessonForm = lazy(() => import("./components/LessonForm.jsx"));
@@ -418,7 +428,7 @@ function Course() {
                                 setDialogOpen(true);}}>{localeMessages["add_assignment"]}</Button>
                             {userRole === 'admin' && <Box sx={{ marginInlineStart: { xs: 0, md: 'auto' }, alignSelf: { xs: 'stretch', md: 'center' } }}><EnrollMenu successCallback={handleEnrollMenuSuccess} /></Box>}
                             </> }
-                            {customComponent && <Box className="custom-component-wrapper" sx={{ display: customComponent.container_display }} dangerouslySetInnerHTML={{ __html: customComponent.html }}></Box>}
+                            {customComponent && <CustomComponentSlot html={customComponent.html} display={customComponent.container_display} />}
                             </Box>
                             <ContentTable courseId={courseId} loaded={contentLoaded} eventHandler={(event) => tableEventHandler(event)} />
                         </>
