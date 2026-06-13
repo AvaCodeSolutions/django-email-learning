@@ -8,7 +8,7 @@ import DownloadIcon from '@mui/icons-material/Download'
 import Base from '../../src/components/Base.jsx'
 import render, { useAppContext } from '../../src/render.jsx';
 import apiClient from '../../src/apiClient.js'
-import { BarChart, LineChart } from '@mui/x-charts'
+import { BarChart, LineChart, PieChart } from '@mui/x-charts'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -72,24 +72,39 @@ function TimeSeriesChart({ data, color = '#636eec', noDataMessage }) {
 
 function StatusBreakdownChart({ data, localeMessages, noDataMessage }) {
     if (!data?.length) return <NoData message={noDataMessage} />
-    const courseMap = {}
-    const statuses = [...new Set(data.map(r => r.status))]
-    data.forEach(r => {
-        if (!courseMap[r.course_title]) courseMap[r.course_title] = {}
-        courseMap[r.course_title][r.status] = r.count
-    })
-    const courseLabels = Object.keys(courseMap)
+
+    // Aggregate counts across all courses by status
+    const totals = {}
+    data.forEach(r => { totals[r.status] = (totals[r.status] || 0) + r.count })
+    const pieData = Object.entries(totals).map(([status, count]) => ({
+        id: status,
+        value: count,
+        label: `${localeMessages[status] || status} (${count})`,
+        color: STATUS_COLORS[status],
+    }))
+
     return (
-        <BarChart
-            xAxis={[{ scaleType: 'band', data: courseLabels, tickLabelStyle: { fontSize: 11 } }]}
-            series={statuses.map(s => ({
-                label: localeMessages[s] || s,
-                data: courseLabels.map(c => courseMap[c][s] || 0),
-                color: STATUS_COLORS[s],
-                stack: 'total',
-            }))}
-            height={200}
-            margin={{ left: 40, right: 10, top: 10, bottom: 60 }}
+        <PieChart
+            height={220}
+            series={[{
+                data: pieData,
+                innerRadius: '45%',
+                arcLabel: (item) => `${item.value}`,
+                arcLabelMinAngle: 20,
+                highlightScope: { fade: 'global', highlight: 'item' },
+            }]}
+            margin={{ bottom: 30, top: 10, left: 10, right: 10 }}
+            slotProps={{
+                legend: {
+                    direction: 'row',
+                    position: { vertical: 'bottom', horizontal: 'middle' },
+                    padding: 0,
+                    itemMarkWidth: 10,
+                    itemMarkHeight: 10,
+                    markGap: 5,
+                    itemGap: 12,
+                },
+            }}
         />
     )
 }
@@ -142,12 +157,34 @@ function FunnelChart({ data, learnersReachedLabel, noDataMessage }) {
 
 function ProgressChart({ data, noDataMessage }) {
     if (!data?.length) return <NoData message={noDataMessage} />
+    const pieData = data.map((r, i) => ({
+        id: r.course_id,
+        value: r.average_progress,
+        label: `${r.course_title} (${r.average_progress}%)`,
+        color: ['#636eec', '#4caf50', '#ffa726', '#ef5350', '#90caf9', '#ab47bc'][i % 6],
+    }))
     return (
-        <BarChart
-            xAxis={[{ scaleType: 'band', data: data.map(r => r.course_title), tickLabelStyle: { fontSize: 11 } }]}
-            series={[{ data: data.map(r => r.average_progress), color: '#636eec', label: '%' }]}
-            height={200}
-            margin={{ left: 40, right: 10, top: 10, bottom: 60 }}
+        <PieChart
+            height={220}
+            series={[{
+                data: pieData,
+                innerRadius: '45%',
+                arcLabel: (item) => `${item.value}%`,
+                arcLabelMinAngle: 20,
+                highlightScope: { fade: 'global', highlight: 'item' },
+            }]}
+            margin={{ bottom: 30, top: 10, left: 10, right: 10 }}
+            slotProps={{
+                legend: {
+                    direction: 'row',
+                    position: { vertical: 'bottom', horizontal: 'middle' },
+                    padding: 0,
+                    itemMarkWidth: 10,
+                    itemMarkHeight: 10,
+                    markGap: 5,
+                    itemGap: 12,
+                },
+            }}
         />
     )
 }
