@@ -109,10 +109,35 @@ function StatusBreakdownChart({ data, localeMessages, noDataMessage }) {
     )
 }
 
-// Estimate px width needed for the longest label at 11px font (~6.5px per char)
-function labelMargin(items) {
-    const longest = Math.max(...items.map(r => r.title.length))
-    return Math.min(Math.max(longest * 6.5, 120), 400)
+function FunnelGroup({ items, learnersReachedLabel }) {
+    const max = Math.max(...items.map(r => r.learners_reached), 1)
+    return (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+            {items.map(row => (
+                <Box key={row.course_content_id} sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Typography
+                        variant="body2"
+                        sx={{ minWidth: 180, width: 180, flexShrink: 0, fontSize: '0.8rem', lineHeight: 1.3 }}
+                        title={row.title}
+                    >
+                        {row.title}
+                    </Typography>
+                    <Box sx={{ flex: 1, bgcolor: 'action.hover', borderRadius: 1, overflow: 'hidden', height: 18 }}>
+                        <Box sx={{
+                            height: '100%',
+                            width: `${(row.learners_reached / max) * 100}%`,
+                            bgcolor: '#636eec',
+                            borderRadius: 1,
+                            minWidth: row.learners_reached > 0 ? 4 : 0,
+                        }} />
+                    </Box>
+                    <Typography variant="body2" sx={{ minWidth: 32, textAlign: 'right', fontSize: '0.8rem', fontWeight: 600, color: 'text.secondary' }}>
+                        {row.learners_reached}
+                    </Typography>
+                </Box>
+            ))}
+        </Box>
+    )
 }
 
 function FunnelChart({ data, learnersReachedLabel, noDataMessage }) {
@@ -126,41 +151,20 @@ function FunnelChart({ data, learnersReachedLabel, noDataMessage }) {
     })
     const groups = Object.values(courseMap)
 
-    // If all items belong to one course, render a single chart without the group heading
     if (groups.length === 1) {
-        const items = groups[0].items
-        const left = labelMargin(items)
-        return (
-            <BarChart
-                layout="horizontal"
-                yAxis={[{ scaleType: 'band', data: items.map(r => r.title), tickLabelStyle: { fontSize: 11 } }]}
-                series={[{ data: items.map(r => r.learners_reached), color: '#636eec', label: learnersReachedLabel }]}
-                height={Math.max(180, items.length * 36)}
-                margin={{ left, right: 20, top: 10, bottom: 30 }}
-            />
-        )
+        return <FunnelGroup items={groups[0].items} learnersReachedLabel={learnersReachedLabel} />
     }
 
-    // Multiple courses — render a labelled chart per course
     return (
-        <Box>
-            {groups.map((group, i) => {
-                const left = labelMargin(group.items)
-                return (
-                <Box key={group.title} sx={{ mb: i < groups.length - 1 ? 2 : 0 }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 600 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {groups.map(group => (
+                <Box key={group.title}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, fontWeight: 600 }}>
                         {group.title}
                     </Typography>
-                    <BarChart
-                        layout="horizontal"
-                        yAxis={[{ scaleType: 'band', data: group.items.map(r => r.title), tickLabelStyle: { fontSize: 11 } }]}
-                        series={[{ data: group.items.map(r => r.learners_reached), color: '#636eec', label: learnersReachedLabel }]}
-                        height={Math.max(120, group.items.length * 36)}
-                        margin={{ left, right: 20, top: 10, bottom: 30 }}
-                    />
+                    <FunnelGroup items={group.items} learnersReachedLabel={learnersReachedLabel} />
                 </Box>
-                )
-            })}
+            ))}
         </Box>
     )
 }
