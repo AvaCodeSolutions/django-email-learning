@@ -23,18 +23,6 @@ function daysAgo(n) {
     return d.toISOString().slice(0, 10)
 }
 
-const STATUS_COLORS = {
-    active: '#636eec',
-    completed: '#4caf50',
-    deactivated: '#ef5350',
-    delivered: '#4caf50',
-    scheduled: '#90caf9',
-    processing: '#ffa726',
-    canceled: '#bdbdbd',
-    blocked: '#ef5350',
-    failed: '#ef5350',
-}
-
 // ─── shared UI ───────────────────────────────────────────────────────────────
 
 function NoData({ message }) {
@@ -114,7 +102,6 @@ function StatusBreakdownChart({ data, localeMessages, noDataMessage }) {
         id: status,
         value: count,
         label: `${localeMessages[status] || status} (${count})`,
-        color: STATUS_COLORS[status],
     }))
 
     return (
