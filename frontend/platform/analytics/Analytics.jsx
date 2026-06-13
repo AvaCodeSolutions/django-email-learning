@@ -369,7 +369,7 @@ function Analytics() {
                             </FormControl>
                         </Grid>
                         <Grid size={{ xs: 6, sm: 3, md: 2 }}>
-                            <Button fullWidth variant="contained" onClick={fetchAll} disabled={loading}>
+                            <Button fullWidth variant="contained" size="small" sx={{ height: 40 }} onClick={fetchAll} disabled={loading}>
                                 {loading ? <CircularProgress size={18} color="inherit" /> : localeMessages.apply}
                             </Button>
                         </Grid>
