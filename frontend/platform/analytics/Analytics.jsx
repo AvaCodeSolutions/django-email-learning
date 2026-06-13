@@ -109,6 +109,12 @@ function StatusBreakdownChart({ data, localeMessages, noDataMessage }) {
     )
 }
 
+// Estimate px width needed for the longest label at 11px font (~6.5px per char)
+function labelMargin(items) {
+    const longest = Math.max(...items.map(r => r.title.length))
+    return Math.min(Math.max(longest * 6.5, 120), 400)
+}
+
 function FunnelChart({ data, learnersReachedLabel, noDataMessage }) {
     if (!data?.length) return <NoData message={noDataMessage} />
 
@@ -123,13 +129,14 @@ function FunnelChart({ data, learnersReachedLabel, noDataMessage }) {
     // If all items belong to one course, render a single chart without the group heading
     if (groups.length === 1) {
         const items = groups[0].items
+        const left = labelMargin(items)
         return (
             <BarChart
                 layout="horizontal"
                 yAxis={[{ scaleType: 'band', data: items.map(r => r.title), tickLabelStyle: { fontSize: 11 } }]}
                 series={[{ data: items.map(r => r.learners_reached), color: '#636eec', label: learnersReachedLabel }]}
                 height={Math.max(180, items.length * 36)}
-                margin={{ left: 220, right: 20, top: 10, bottom: 30 }}
+                margin={{ left, right: 20, top: 10, bottom: 30 }}
             />
         )
     }
@@ -137,7 +144,9 @@ function FunnelChart({ data, learnersReachedLabel, noDataMessage }) {
     // Multiple courses — render a labelled chart per course
     return (
         <Box>
-            {groups.map((group, i) => (
+            {groups.map((group, i) => {
+                const left = labelMargin(group.items)
+                return (
                 <Box key={group.title} sx={{ mb: i < groups.length - 1 ? 2 : 0 }}>
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 600 }}>
                         {group.title}
@@ -147,10 +156,11 @@ function FunnelChart({ data, learnersReachedLabel, noDataMessage }) {
                         yAxis={[{ scaleType: 'band', data: group.items.map(r => r.title), tickLabelStyle: { fontSize: 11 } }]}
                         series={[{ data: group.items.map(r => r.learners_reached), color: '#636eec', label: learnersReachedLabel }]}
                         height={Math.max(120, group.items.length * 36)}
-                        margin={{ left: 220, right: 20, top: 10, bottom: 30 }}
+                        margin={{ left, right: 20, top: 10, bottom: 30 }}
                     />
                 </Box>
-            ))}
+                )
+            })}
         </Box>
     )
 }
