@@ -35,6 +35,7 @@ class EnrollmentStatusBreakdownResponse(BaseModel):
 class CompletionFunnelItem(BaseModel):
     course_content_id: int
     course_id: int
+    course_title: str
     title: str
     priority: int
     type: str

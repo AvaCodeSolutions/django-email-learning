@@ -163,10 +163,10 @@ class CompletionFunnelView(View):
 
         contents = CourseContent.objects.filter(
             course__organization_id=organization_id, is_published=True
-        )
+        ).select_related("course")
         if course_ids:
             contents = contents.filter(course_id__in=course_ids)
-        contents = contents.order_by("course_id", "priority")
+        contents = contents.order_by("course__title", "priority")
 
         delivered_counts = (
             _content_delivery_qs(organization_id, course_ids)
@@ -181,6 +181,7 @@ class CompletionFunnelView(View):
                 serializers.CompletionFunnelItem(
                     course_content_id=c.id,
                     course_id=c.course_id,
+                    course_title=c.course.title,
                     title=c.title,
                     priority=c.priority,
                     type=c.type,

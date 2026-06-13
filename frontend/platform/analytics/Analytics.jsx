@@ -96,14 +96,47 @@ function StatusBreakdownChart({ data, localeMessages, noDataMessage }) {
 
 function FunnelChart({ data, learnersReachedLabel, noDataMessage }) {
     if (!data?.length) return <NoData message={noDataMessage} />
+
+    // Group by course so mixed-course results are readable
+    const courseMap = {}
+    data.forEach(item => {
+        if (!courseMap[item.course_id]) courseMap[item.course_id] = { title: item.course_title, items: [] }
+        courseMap[item.course_id].items.push(item)
+    })
+    const groups = Object.values(courseMap)
+
+    // If all items belong to one course, render a single chart without the group heading
+    if (groups.length === 1) {
+        const items = groups[0].items
+        return (
+            <BarChart
+                layout="horizontal"
+                yAxis={[{ scaleType: 'band', data: items.map(r => r.title), tickLabelStyle: { fontSize: 11 } }]}
+                series={[{ data: items.map(r => r.learners_reached), color: '#636eec', label: learnersReachedLabel }]}
+                height={Math.max(180, items.length * 36)}
+                margin={{ left: 140, right: 20, top: 10, bottom: 30 }}
+            />
+        )
+    }
+
+    // Multiple courses — render a labelled chart per course
     return (
-        <BarChart
-            layout="horizontal"
-            yAxis={[{ scaleType: 'band', data: data.map(r => r.title), tickLabelStyle: { fontSize: 11 } }]}
-            series={[{ data: data.map(r => r.learners_reached), color: '#636eec', label: learnersReachedLabel }]}
-            height={Math.max(180, data.length * 36)}
-            margin={{ left: 140, right: 20, top: 10, bottom: 30 }}
-        />
+        <Box>
+            {groups.map((group, i) => (
+                <Box key={group.title} sx={{ mb: i < groups.length - 1 ? 2 : 0 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 600 }}>
+                        {group.title}
+                    </Typography>
+                    <BarChart
+                        layout="horizontal"
+                        yAxis={[{ scaleType: 'band', data: group.items.map(r => r.title), tickLabelStyle: { fontSize: 11 } }]}
+                        series={[{ data: group.items.map(r => r.learners_reached), color: '#636eec', label: learnersReachedLabel }]}
+                        height={Math.max(120, group.items.length * 36)}
+                        margin={{ left: 140, right: 20, top: 10, bottom: 30 }}
+                    />
+                </Box>
+            ))}
+        </Box>
     )
 }
 
