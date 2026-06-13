@@ -61,7 +61,18 @@ function SectionBox({ children, sx = {} }) {
 function ChartCard({ title, tooltip, children }) {
     return (
         <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+            <Box sx={(theme) => ({
+                display: 'flex', alignItems: 'center', gap: 0.75,
+                px: 2, py: 1,
+                mb: 1.5,
+                mx: { xs: -1, sm: -2 },
+                mt: { xs: -1, sm: -2 },
+                borderRadius: { xs: 0, sm: '8px 8px 0 0' },
+                backgroundColor: theme.palette.mode === 'light'
+                    ? 'rgba(124, 134, 255, 0.06)'
+                    : theme.palette.background.dark,
+                borderBottom: `1px solid ${theme.palette.mode === 'light' ? 'rgba(124,134,255,0.12)' : theme.palette.divider}`,
+            })}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{title}</Typography>
                 {tooltip && (
                     <Tooltip title={tooltip} placement="top" arrow>
