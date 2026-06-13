@@ -143,13 +143,16 @@ function FunnelGroup({ items, learnersReachedLabel }) {
 function FunnelChart({ data, learnersReachedLabel, noDataMessage }) {
     if (!data?.length) return <NoData message={noDataMessage} />
 
-    // Group by course so mixed-course results are readable
+    // Group by course, preserving priority order within each group
     const courseMap = {}
     data.forEach(item => {
         if (!courseMap[item.course_id]) courseMap[item.course_id] = { title: item.course_title, items: [] }
         courseMap[item.course_id].items.push(item)
     })
-    const groups = Object.values(courseMap)
+    const groups = Object.values(courseMap).map(group => ({
+        ...group,
+        items: [...group.items].sort((a, b) => a.priority - b.priority),
+    }))
 
     if (groups.length === 1) {
         return <FunnelGroup items={groups[0].items} learnersReachedLabel={learnersReachedLabel} />
