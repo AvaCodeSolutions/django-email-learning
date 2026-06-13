@@ -114,7 +114,7 @@ function FunnelChart({ data, learnersReachedLabel, noDataMessage }) {
                 yAxis={[{ scaleType: 'band', data: items.map(r => r.title), tickLabelStyle: { fontSize: 11 } }]}
                 series={[{ data: items.map(r => r.learners_reached), color: '#636eec', label: learnersReachedLabel }]}
                 height={Math.max(180, items.length * 36)}
-                margin={{ left: 140, right: 20, top: 10, bottom: 30 }}
+                margin={{ left: 220, right: 20, top: 10, bottom: 30 }}
             />
         )
     }
@@ -132,7 +132,7 @@ function FunnelChart({ data, learnersReachedLabel, noDataMessage }) {
                         yAxis={[{ scaleType: 'band', data: group.items.map(r => r.title), tickLabelStyle: { fontSize: 11 } }]}
                         series={[{ data: group.items.map(r => r.learners_reached), color: '#636eec', label: learnersReachedLabel }]}
                         height={Math.max(120, group.items.length * 36)}
-                        margin={{ left: 140, right: 20, top: 10, bottom: 30 }}
+                        margin={{ left: 220, right: 20, top: 10, bottom: 30 }}
                     />
                 </Box>
             ))}
@@ -379,21 +379,25 @@ function Analytics() {
                     </Grid>
                 </Grid>
 
-                {/* Row 3 */}
+                {/* Row 3 — funnel full width */}
                 <Grid container spacing={3} sx={{ mb: 3 }}>
-                    <Grid size={{ xs: 12, md: 6 }}>
+                    <Grid size={{ xs: 12 }}>
                         <ChartCard title={localeMessages.completion_funnel}>
                             {loading ? <ChartLoading /> : <FunnelChart data={funnel} learnersReachedLabel={localeMessages.learners_reached} noDataMessage={noData} />}
                         </ChartCard>
                     </Grid>
-                    <Grid size={{ xs: 12, md: 6 }}>
+                </Grid>
+
+                {/* Row 4 — open rate full width */}
+                <Grid container spacing={3} sx={{ mb: 3 }}>
+                    <Grid size={{ xs: 12 }}>
                         <ChartCard title={localeMessages.email_open_rate}>
                             {loading ? <ChartLoading /> : <OpenRateChart data={openRate} openRateLabel={localeMessages.email_open_rate} noDataMessage={noData} />}
                         </ChartCard>
                     </Grid>
                 </Grid>
 
-                {/* Row 4 */}
+                {/* Row 5 */}
                 <Grid container spacing={3}>
                     <Grid size={{ xs: 12, md: 6 }}>
                         <ChartCard title={localeMessages.average_progress}>
