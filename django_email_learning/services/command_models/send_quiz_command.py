@@ -46,6 +46,15 @@ class SendQuizCommand(AbstractCommand):
         question_ids = decoded_token.get(
             "question_ids", quiz.questions.values_list("id", flat=True)
         )
+        delivery = content.contentdelivery_set.filter(
+            enrollment__learner__email=self.email
+        ).first()
+        track_open_url = (
+            f"{conf['SITE_BASE_URL']}{reverse('django_email_learning:personalised:track_open', kwargs={'hash_value': delivery.hash_value})}"
+            if delivery
+            else None
+        )
+
         context = {
             "quiz": quiz,
             "link": self.link,
@@ -53,6 +62,7 @@ class SendQuizCommand(AbstractCommand):
             "question_ids": question_ids,
             "token": token,
             "unsubscribe_link": content.course.generate_unsubscribe_link(self.email),
+            "track_open_url": track_open_url,
         }
         payload = render_to_string("emails/quiz.txt", context)
 

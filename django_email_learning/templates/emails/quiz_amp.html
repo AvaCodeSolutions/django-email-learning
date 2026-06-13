@@ -117,6 +117,7 @@
 {% endblock %}
 
 {% block content %}
+{% if track_open_url %}<amp-pixel src="{{ track_open_url }}" layout="nodisplay"></amp-pixel>{% endif %}
 <h2 class="email-title">{{ quiz.title }}</h2>
 
 <p [hidden]="formState.submitted">

@@ -1,0 +1,11 @@
+{% extends "emails/base_amp.html" %}
+{% load i18n %}
+
+{% block content %}
+{% if track_open_url %}<amp-pixel src="{{ track_open_url }}" layout="nodisplay"></amp-pixel>{% endif %}
+<h2 class="email-title">{{ assignment.title }}</h2>
+<p>{{ assignment.description }}</p>
+<p align="center">
+    <a href="{{ link }}" class="button">{% translate "Submit Your Assignment" %}</a>
+</p>
+{% endblock %}

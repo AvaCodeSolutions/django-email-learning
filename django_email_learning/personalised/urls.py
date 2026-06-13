@@ -6,6 +6,7 @@ from django_email_learning.personalised.views import (
     CertificateFormView,
     CertificateView,
     UnsubscribeView,
+    TrackOpenView,
 )
 
 app_name = "django_email_learning"
@@ -23,4 +24,5 @@ urlpatterns = [
         name="certificate",
     ),
     path("unsubscribe/", UnsubscribeView.as_view(), name="unsubscribe"),
+    path("track/open/<str:hash_value>/", TrackOpenView.as_view(), name="track_open"),
 ]

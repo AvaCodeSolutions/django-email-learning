@@ -7,6 +7,7 @@ from django.utils.translation import gettext as _
 from django.utils.translation import get_language_info, get_language
 from django.urls import reverse
 from django_email_learning.models import ContentDelivery, EnrollmentStatus, Certificate
+from django.utils import timezone
 from django_email_learning.services import jwt_service
 from django_email_learning.personalised.serializers import PublicQuizSerializer
 from django_email_learning.services.command_models.verify_enrollment_command import (
@@ -499,7 +500,7 @@ class CertificateView(BaseTemplateView):
 
         return self.render_to_response(
             context={
-                "page_title": f"{_("Certificate of Completion")} | {certificate.enrollment.course.title} | {certificate.name_on_certificate}",
+                "page_title": f"{_('Certificate of Completion')} | {certificate.enrollment.course.title} | {certificate.name_on_certificate}",
                 "appContext": {
                     "name": certificate.name_on_certificate,
                     "courseTitle": certificate.enrollment.course.title,
@@ -528,3 +529,31 @@ class CertificateView(BaseTemplateView):
                 | self.get_app_context(),
             }
         )
+
+
+# 1×1 transparent GIF (43 bytes)
+_TRANSPARENT_GIF = (
+    b"\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00"
+    b"\xff\xff\xff\x00\x00\x00\x21\xf9\x04\x01\x00\x00\x00"
+    b"\x00\x2c\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02"
+    b"\x44\x01\x00\x3b"
+)
+
+
+class TrackOpenView(View):
+    """
+    Records the first open of a content delivery email.
+    Used both as a tracking pixel (HTML emails) and via <amp-pixel> (AMP emails).
+    Always returns a 1×1 transparent GIF so email clients don't show a broken image.
+    """
+
+    def get(self, request, hash_value: str, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
+        try:
+            delivery = ContentDelivery.objects.get(hash_value=hash_value)
+            if delivery.opened_at is None:
+                delivery.opened_at = timezone.now()
+                delivery.save(update_fields=["opened_at"])
+        except ContentDelivery.DoesNotExist:
+            pass  # Invalid hash — still return the pixel, don't error
+
+        return HttpResponse(_TRANSPARENT_GIF, content_type="image/gif")

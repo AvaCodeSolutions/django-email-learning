@@ -67,6 +67,7 @@
                 {% blocktranslate %}Alternatively, you can also send an email with the subject <b>drop {{ course_slug }}</b> to {{ imap_email_address }}.{% endblocktranslate %}
             {% endif %}
         </p>
+        {% if track_open_url %}<img src="{{ track_open_url }}" width="1" height="1" alt="" style="display:none;" />{% endif %}
 {% endblock %}
 
 {% block footer %}
