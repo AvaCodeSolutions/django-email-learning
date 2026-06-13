@@ -2,7 +2,7 @@ import 'vite/modulepreload-polyfill'
 import { useState, useEffect, useCallback } from 'react'
 import {
     Box, Typography, Grid, MenuItem, Select, FormControl, InputLabel,
-    TextField, Button, CircularProgress, LinearProgress, Alert, Chip, Stack,
+    TextField, Button, CircularProgress, Alert, Chip, Stack,
 } from '@mui/material'
 import DownloadIcon from '@mui/icons-material/Download'
 import Base from '../../src/components/Base.jsx'
@@ -122,11 +122,15 @@ function FunnelGroup({ items, learnersReachedLabel }) {
                     >
                         {row.title}
                     </Typography>
-                    <LinearProgress
-                        variant="determinate"
-                        value={(row.learners_reached / max) * 100}
-                        sx={{ flex: 1, height: 8, borderRadius: 4, '& .MuiLinearProgress-bar': { borderRadius: 4 } }}
-                    />
+                    <Box sx={{ flex: 1, bgcolor: 'action.hover', borderRadius: 1, overflow: 'hidden', height: 18 }}>
+                        <Box sx={{
+                            height: '100%',
+                            width: `${(row.learners_reached / max) * 100}%`,
+                            bgcolor: '#636eec',
+                            borderRadius: 1,
+                            minWidth: row.learners_reached > 0 ? 4 : 0,
+                        }} />
+                    </Box>
                     <Typography variant="body2" sx={{ minWidth: 32, textAlign: 'right', fontSize: '0.8rem', fontWeight: 600, color: 'text.secondary' }}>
                         {row.learners_reached}
                     </Typography>
