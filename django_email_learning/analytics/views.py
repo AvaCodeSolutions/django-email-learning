@@ -1,3 +1,4 @@
+import json
 from django.views import View
 from django.utils.decorators import method_decorator
 from django.http import HttpResponse, JsonResponse
@@ -16,6 +17,7 @@ from django_email_learning.models import (
 )
 from django_email_learning.models.enums.delivery_status import DeliveryStatus
 from django_email_learning.analytics.downloads import csv_response
+from django_email_learning.analytics import serializers
 
 
 # ---------------------------------------------------------------------------
@@ -86,6 +88,11 @@ def _content_delivery_qs(organization_id: int, course_ids: list[int]):  # type: 
     return qs
 
 
+def _json(model: serializers.BaseModel) -> JsonResponse:  # type: ignore[no-untyped-def]
+    """Serialise a Pydantic model to a JsonResponse."""
+    return JsonResponse(json.loads(model.model_dump_json()))
+
+
 # ---------------------------------------------------------------------------
 # Chart views
 # ---------------------------------------------------------------------------
@@ -110,14 +117,15 @@ class EnrollmentsOverTimeView(View):
             .order_by("period")
         )
 
-        return JsonResponse(
-            {
-                "data": [
-                    {"period": r["period"].isoformat(), "count": r["count"]}
-                    for r in rows
-                ]
-            }
+        response = serializers.EnrollmentsOverTimeResponse(
+            data=[
+                serializers.PeriodCount(
+                    period=r["period"].isoformat(), count=r["count"]
+                )
+                for r in rows
+            ]
         )
+        return _json(response)
 
 
 @method_decorator(is_an_organization_member(), name="get")
@@ -133,19 +141,18 @@ class EnrollmentStatusBreakdownView(View):
             .order_by("course__title", "status")
         )
 
-        return JsonResponse(
-            {
-                "data": [
-                    {
-                        "course_id": r["course__id"],
-                        "course_title": r["course__title"],
-                        "status": r["status"],
-                        "count": r["count"],
-                    }
-                    for r in rows
-                ]
-            }
+        response = serializers.EnrollmentStatusBreakdownResponse(
+            data=[
+                serializers.CourseStatusCount(
+                    course_id=r["course__id"],
+                    course_title=r["course__title"],
+                    status=r["status"],
+                    count=r["count"],
+                )
+                for r in rows
+            ]
         )
+        return _json(response)
 
 
 @method_decorator(is_an_organization_member(), name="get")
@@ -169,21 +176,20 @@ class CompletionFunnelView(View):
         )
         delivered_map = {r["course_content_id"]: r["count"] for r in delivered_counts}
 
-        return JsonResponse(
-            {
-                "data": [
-                    {
-                        "course_content_id": c.id,
-                        "course_id": c.course_id,
-                        "title": c.title,
-                        "priority": c.priority,
-                        "type": c.type,
-                        "learners_reached": delivered_map.get(c.id, 0),
-                    }
-                    for c in contents
-                ]
-            }
+        response = serializers.CompletionFunnelResponse(
+            data=[
+                serializers.CompletionFunnelItem(
+                    course_content_id=c.id,
+                    course_id=c.course_id,
+                    title=c.title,
+                    priority=c.priority,
+                    type=c.type,
+                    learners_reached=delivered_map.get(c.id, 0),
+                )
+                for c in contents
+            ]
         )
+        return _json(response)
 
 
 @method_decorator(is_an_organization_member(), name="get")
@@ -199,7 +205,6 @@ class AverageProgressView(View):
             .prefetch_related("content_deliveries__delivery_schedules")
         )
 
-        # Group progress per course
         course_progress: dict[int, dict] = {}
         for enrollment in enrollments:
             cid = enrollment.course_id
@@ -213,21 +218,20 @@ class AverageProgressView(View):
             course_progress[cid]["total"] += 1
             course_progress[cid]["sum"] += enrollment.progress_percentage()
 
-        return JsonResponse(
-            {
-                "data": [
-                    {
-                        "course_id": v["course_id"],
-                        "course_title": v["course_title"],
-                        "average_progress": round(v["sum"] / v["total"], 1)
-                        if v["total"]
-                        else 0,
-                        "active_enrollments": v["total"],
-                    }
-                    for v in course_progress.values()
-                ]
-            }
+        response = serializers.AverageProgressResponse(
+            data=[
+                serializers.AverageProgressItem(
+                    course_id=v["course_id"],
+                    course_title=v["course_title"],
+                    average_progress=round(v["sum"] / v["total"], 1)
+                    if v["total"]
+                    else 0,
+                    active_enrollments=v["total"],
+                )
+                for v in course_progress.values()
+            ]
         )
+        return _json(response)
 
 
 @method_decorator(is_an_organization_member(), name="get")
@@ -248,7 +252,6 @@ class TimeToCompleteView(View):
             .values("course__id", "course__title", "days_to_complete")
         )
 
-        # Build per-course distribution bucketed by weeks
         course_data: dict[int, dict] = {}
         for r in rows:
             cid = r["course__id"]
@@ -263,24 +266,21 @@ class TimeToCompleteView(View):
                     round(r["days_to_complete"].total_seconds() / 86400, 1)
                 )
 
-        return JsonResponse(
-            {
-                "data": [
-                    {
-                        "course_id": v["course_id"],
-                        "course_title": v["course_title"],
-                        "completion_days": v["completions"],
-                        "average_days": round(
-                            sum(v["completions"]) / len(v["completions"]), 1
-                        )
-                        if v["completions"]
-                        else None,
-                        "total_completions": len(v["completions"]),
-                    }
-                    for v in course_data.values()
-                ]
-            }
+        response = serializers.TimeToCompleteResponse(
+            data=[
+                serializers.TimeToCompleteItem(
+                    course_id=v["course_id"],
+                    course_title=v["course_title"],
+                    completion_days=v["completions"],
+                    average_days=round(sum(v["completions"]) / len(v["completions"]), 1)
+                    if v["completions"]
+                    else None,
+                    total_completions=len(v["completions"]),
+                )
+                for v in course_data.values()
+            ]
         )
+        return _json(response)
 
 
 @method_decorator(is_an_organization_member(), name="get")
@@ -306,14 +306,15 @@ class EmailDeliveryOverTimeView(View):
             .order_by("period")
         )
 
-        return JsonResponse(
-            {
-                "data": [
-                    {"period": r["period"].isoformat(), "count": r["count"]}
-                    for r in rows
-                ]
-            }
+        response = serializers.EmailDeliveryOverTimeResponse(
+            data=[
+                serializers.PeriodCount(
+                    period=r["period"].isoformat(), count=r["count"]
+                )
+                for r in rows
+            ]
         )
+        return _json(response)
 
 
 @method_decorator(is_an_organization_member(), name="get")
@@ -333,19 +334,18 @@ class EmailDeliveryStatusBreakdownView(View):
             .order_by("delivery__enrollment__course__title", "status")
         )
 
-        return JsonResponse(
-            {
-                "data": [
-                    {
-                        "course_id": r["delivery__enrollment__course__id"],
-                        "course_title": r["delivery__enrollment__course__title"],
-                        "status": r["status"],
-                        "count": r["count"],
-                    }
-                    for r in rows
-                ]
-            }
+        response = serializers.EmailDeliveryStatusBreakdownResponse(
+            data=[
+                serializers.CourseStatusCount(
+                    course_id=r["delivery__enrollment__course__id"],
+                    course_title=r["delivery__enrollment__course__title"],
+                    status=r["status"],
+                    count=r["count"],
+                )
+                for r in rows
+            ]
         )
+        return _json(response)
 
 
 @method_decorator(is_an_organization_member(), name="get")
@@ -354,10 +354,9 @@ class EmailOpenRateView(View):
         organization_id = kwargs["organization_id"]
         course_ids = _course_ids(request)
 
-        base_qs = _content_delivery_qs(organization_id, course_ids)
-
         rows = (
-            base_qs.filter(delivery_schedules__status=DeliveryStatus.DELIVERED)
+            _content_delivery_qs(organization_id, course_ids)
+            .filter(delivery_schedules__status=DeliveryStatus.DELIVERED)
             .values("enrollment__course__id", "enrollment__course__title")
             .annotate(
                 total_delivered=Count("id", distinct=True),
@@ -370,24 +369,21 @@ class EmailOpenRateView(View):
             .order_by("enrollment__course__title")
         )
 
-        return JsonResponse(
-            {
-                "data": [
-                    {
-                        "course_id": r["enrollment__course__id"],
-                        "course_title": r["enrollment__course__title"],
-                        "total_delivered": r["total_delivered"],
-                        "total_opened": r["total_opened"],
-                        "open_rate": round(
-                            r["total_opened"] / r["total_delivered"] * 100, 1
-                        )
-                        if r["total_delivered"]
-                        else 0,
-                    }
-                    for r in rows
-                ]
-            }
+        response = serializers.EmailOpenRateResponse(
+            data=[
+                serializers.EmailOpenRateItem(
+                    course_id=r["enrollment__course__id"],
+                    course_title=r["enrollment__course__title"],
+                    total_delivered=r["total_delivered"],
+                    total_opened=r["total_opened"],
+                    open_rate=round(r["total_opened"] / r["total_delivered"] * 100, 1)
+                    if r["total_delivered"]
+                    else 0,
+                )
+                for r in rows
+            ]
         )
+        return _json(response)
 
 
 # ---------------------------------------------------------------------------
