@@ -240,7 +240,7 @@ function Analytics() {
 
     // ── render ─────────────────────────────────────────────────────────────
     return (
-        <Base>
+        <Base breadCrumbList={[{ label: localeMessages.analytics, href: '#' }]}>
             <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1400, mx: 'auto' }}>
                 <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
                     {localeMessages.analytics}
