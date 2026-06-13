@@ -10,6 +10,7 @@ import Base from '../../src/components/Base.jsx'
 import render, { useAppContext } from '../../src/render.jsx';
 import apiClient from '../../src/apiClient.js'
 import { BarChart, LineChart, PieChart } from '@mui/x-charts'
+import { useTheme } from '@mui/material/styles'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -91,7 +92,7 @@ function ChartLoading() {
 
 // ─── chart components (defined at module level — never inside a component) ───
 
-function TimeSeriesChart({ data, color = '#636eec', noDataMessage }) {
+function TimeSeriesChart({ data, color, noDataMessage }) {
     if (!data?.length) return <NoData message={noDataMessage} />
     return (
         <LineChart
@@ -142,7 +143,7 @@ function StatusBreakdownChart({ data, localeMessages, noDataMessage }) {
     )
 }
 
-function FunnelGroup({ items, learnersReachedLabel }) {
+function FunnelGroup({ items, learnersReachedLabel, color }) {
     const max = Math.max(...items.map(r => r.learners_reached), 1)
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
@@ -159,7 +160,7 @@ function FunnelGroup({ items, learnersReachedLabel }) {
                         <Box sx={{
                             height: '100%',
                             width: `${(row.learners_reached / max) * 100}%`,
-                            bgcolor: '#636eec',
+                            bgcolor: color,
                             borderRadius: 1,
                             minWidth: row.learners_reached > 0 ? 4 : 0,
                         }} />
@@ -173,7 +174,7 @@ function FunnelGroup({ items, learnersReachedLabel }) {
     )
 }
 
-function FunnelChart({ data, learnersReachedLabel, noDataMessage }) {
+function FunnelChart({ data, learnersReachedLabel, noDataMessage, color }) {
     if (!data?.length) return <NoData message={noDataMessage} />
 
     // Group by course, preserving priority order within each group
@@ -188,7 +189,7 @@ function FunnelChart({ data, learnersReachedLabel, noDataMessage }) {
     }))
 
     if (groups.length === 1) {
-        return <FunnelGroup items={groups[0].items} learnersReachedLabel={learnersReachedLabel} />
+        return <FunnelGroup items={groups[0].items} learnersReachedLabel={learnersReachedLabel} color={color} />
     }
 
     return (
@@ -198,14 +199,14 @@ function FunnelChart({ data, learnersReachedLabel, noDataMessage }) {
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, fontWeight: 600 }}>
                         {group.title}
                     </Typography>
-                    <FunnelGroup items={group.items} learnersReachedLabel={learnersReachedLabel} />
+                    <FunnelGroup items={group.items} learnersReachedLabel={learnersReachedLabel} color={color} />
                 </Box>
             ))}
         </Box>
     )
 }
 
-function ProgressChart({ data, noDataMessage }) {
+function ProgressChart({ data, noDataMessage, color }) {
     if (!data?.length) return <NoData message={noDataMessage} />
     return (
         <BarChart
@@ -213,7 +214,7 @@ function ProgressChart({ data, noDataMessage }) {
             yAxis={[{ min: 0, max: 100 }]}
             series={[{
                 data: data.map(r => r.average_progress),
-                color: '#636eec',
+                color,
                 label: '%',
                 valueFormatter: (v) => `${v}%`,
             }]}
@@ -242,7 +243,7 @@ function TimeToCompleteChart({ data, averageDaysLabel, completedLabel, noDataMes
     )
 }
 
-function OpenRateChart({ data, openRateLabel, noDataMessage }) {
+function OpenRateChart({ data, openRateLabel, noDataMessage, color }) {
     if (!data?.length) return <NoData message={noDataMessage} />
     return (
         <Stack spacing={1.5}>
@@ -253,7 +254,7 @@ function OpenRateChart({ data, openRateLabel, noDataMessage }) {
                         <Typography variant="body2" fontWeight={600}>{row.open_rate}%</Typography>
                     </Box>
                     <Box sx={{ height: 6, borderRadius: 3, bgcolor: 'action.hover', overflow: 'hidden' }}>
-                        <Box sx={{ height: '100%', width: `${row.open_rate}%`, bgcolor: '#636eec', borderRadius: 3 }} />
+                        <Box sx={{ height: '100%', width: `${row.open_rate}%`, bgcolor: color, borderRadius: 3 }} />
                     </Box>
                     <Typography variant="caption" color="text.secondary">
                         {row.total_opened} / {row.total_delivered} {openRateLabel}
@@ -268,6 +269,8 @@ function OpenRateChart({ data, openRateLabel, noDataMessage }) {
 
 function Analytics() {
     const { apiBaseUrl, analyticsBaseUrl, localeMessages } = useAppContext()
+    const theme = useTheme()
+    const color = theme.palette.secondary.main
 
     const [courses, setCourses] = useState([])
     const [selectedCourses, setSelectedCourses] = useState([])
@@ -427,7 +430,7 @@ function Analytics() {
                     <Grid size={{ xs: 12, md: 6 }}>
                         <SectionBox sx={{ height: '100%' }}>
                             <ChartCard title={localeMessages.enrollments_over_time}>
-                                {loading ? <ChartLoading /> : <TimeSeriesChart data={enrollmentsOverTime} noDataMessage={noData} />}
+                                {loading ? <ChartLoading /> : <TimeSeriesChart data={enrollmentsOverTime} color={color} noDataMessage={noData} />}
                             </ChartCard>
                         </SectionBox>
                     </Grid>
@@ -443,7 +446,7 @@ function Analytics() {
                     <Grid size={{ xs: 12, md: 6 }}>
                         <SectionBox sx={{ height: '100%' }}>
                             <ChartCard title={localeMessages.email_delivery_over_time}>
-                                {loading ? <ChartLoading /> : <TimeSeriesChart data={deliveryOverTime} color="#4caf50" noDataMessage={noData} />}
+                                {loading ? <ChartLoading /> : <TimeSeriesChart data={deliveryOverTime} color={color} noDataMessage={noData} />}
                             </ChartCard>
                         </SectionBox>
                     </Grid>
@@ -459,7 +462,7 @@ function Analytics() {
                     <Grid size={{ xs: 12 }}>
                         <SectionBox>
                             <ChartCard title={localeMessages.completion_funnel} tooltip={localeMessages.completion_funnel_tooltip}>
-                                {loading ? <ChartLoading /> : <FunnelChart data={funnel} learnersReachedLabel={localeMessages.learners_reached} noDataMessage={noData} />}
+                                {loading ? <ChartLoading /> : <FunnelChart data={funnel} learnersReachedLabel={localeMessages.learners_reached} noDataMessage={noData} color={color} />}
                             </ChartCard>
                         </SectionBox>
                     </Grid>
@@ -468,7 +471,7 @@ function Analytics() {
                     <Grid size={{ xs: 12 }}>
                         <SectionBox>
                             <ChartCard title={localeMessages.email_open_rate}>
-                                {loading ? <ChartLoading /> : <OpenRateChart data={openRate} openRateLabel={localeMessages.email_open_rate} noDataMessage={noData} />}
+                                {loading ? <ChartLoading /> : <OpenRateChart data={openRate} openRateLabel={localeMessages.email_open_rate} noDataMessage={noData} color={color} />}
                             </ChartCard>
                         </SectionBox>
                     </Grid>
@@ -477,7 +480,7 @@ function Analytics() {
                     <Grid size={{ xs: 12, md: 6 }}>
                         <SectionBox sx={{ height: '100%' }}>
                             <ChartCard title={localeMessages.average_progress}>
-                                {loading ? <ChartLoading /> : <ProgressChart data={avgProgress} noDataMessage={noData} />}
+                                {loading ? <ChartLoading /> : <ProgressChart data={avgProgress} noDataMessage={noData} color={color} />}
                             </ChartCard>
                         </SectionBox>
                     </Grid>
