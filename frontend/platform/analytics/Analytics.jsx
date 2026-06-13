@@ -44,9 +44,23 @@ function NoData({ message }) {
     )
 }
 
+function SectionBox({ children, sx = {} }) {
+    return (
+        <Box sx={{
+            p: { xs: 1, sm: 2 },
+            borderRadius: { xs: 0, sm: 2 },
+            backgroundColor: 'background.box',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.04)',
+            ...sx,
+        }}>
+            {children}
+        </Box>
+    )
+}
+
 function ChartCard({ title, tooltip, children }) {
     return (
-        <Box sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', height: '100%' }}>
+        <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{title}</Typography>
                 {tooltip && (
@@ -318,145 +332,153 @@ function Analytics() {
     return (
         <Base breadCrumbList={[{ label: localeMessages.analytics, href: '#' }]}>
             <Grid size={{ xs: 12 }} sx={{ py: 2, pl: { xs: 0, sm: 2 } }}>
-            <Box sx={{ p: { xs: 1, sm: 2 }, mb: 2, borderRadius: { xs: 0, sm: 2 }, backgroundColor: 'background.box', boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.04)' }}>
-
-                {/* Filters */}
-                <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>{localeMessages.filters}</Typography>
-                    <Grid container spacing={2} alignItems="flex-end">
-                        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                            <FormControl fullWidth size="small">
-                                <InputLabel>{localeMessages.course}</InputLabel>
-                                <Select
-                                    multiple
-                                    value={selectedCourses}
-                                    onChange={e => setSelectedCourses(e.target.value)}
-                                    label={localeMessages.course}
-                                    renderValue={selected => (
-                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                            {selected.map(id => (
-                                                <Chip key={id} size="small"
-                                                    label={courses.find(c => c.id === id)?.title || id} />
-                                            ))}
-                                        </Box>
-                                    )}
-                                >
-                                    {courses.map(c => (
-                                        <MenuItem key={c.id} value={c.id}>{c.title}</MenuItem>
-                                    ))}
-                                </Select>
-                            </FormControl>
-                        </Grid>
-                        <Grid size={{ xs: 6, sm: 3, md: 2 }}>
-                            <TextField fullWidth size="small" type="date" label={localeMessages.date_from}
-                                value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                                slotProps={{ inputLabel: { shrink: true } }} />
-                        </Grid>
-                        <Grid size={{ xs: 6, sm: 3, md: 2 }}>
-                            <TextField fullWidth size="small" type="date" label={localeMessages.date_to}
-                                value={dateTo} onChange={e => setDateTo(e.target.value)}
-                                slotProps={{ inputLabel: { shrink: true } }} />
-                        </Grid>
-                        <Grid size={{ xs: 6, sm: 3, md: 2 }}>
-                            <FormControl fullWidth size="small">
-                                <InputLabel>{localeMessages.granularity}</InputLabel>
-                                <Select value={granularity} onChange={e => setGranularity(e.target.value)}
-                                    label={localeMessages.granularity}>
-                                    <MenuItem value="day">{localeMessages.day}</MenuItem>
-                                    <MenuItem value="week">{localeMessages.week}</MenuItem>
-                                    <MenuItem value="month">{localeMessages.month}</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Grid>
-                        <Grid size={{ xs: 6, sm: 3, md: 2 }}>
-                            <Button fullWidth variant="contained" size="small" sx={{ height: 40 }} onClick={fetchAll} disabled={loading}>
-                                {loading ? <CircularProgress size={18} color="inherit" /> : localeMessages.apply}
-                            </Button>
-                        </Grid>
-                    </Grid>
-                </Box>
-
-                {error && <Alert severity="error" sx={{ mb: 3 }}>Failed to load analytics data.</Alert>}
-
-
-
-                {/* Downloads */}
-                <Box sx={{ mb: 3, pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>{localeMessages.downloads}</Typography>
-                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                        {[
-                            { key: 'downloads/learner-progress', label: localeMessages.download_learner_progress },
-                            { key: 'downloads/delivery-log', label: localeMessages.download_delivery_log },
-                            { key: 'downloads/completion-summary', label: localeMessages.download_completion_summary },
-                        ].map(({ key, label }) => (
-                            <Button key={key} variant="outlined" size="small"
-                                startIcon={<DownloadIcon />} onClick={() => download(key)}>
-                                {label}
-                            </Button>
-                        ))}
-                    </Stack>
-                </Box>
-
-                {/* Row 1 */}
-                <Grid container spacing={3} sx={{ mb: 3 }}>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                        <ChartCard title={localeMessages.enrollments_over_time}>
-                            {loading ? <ChartLoading /> : <TimeSeriesChart data={enrollmentsOverTime} noDataMessage={noData} />}
-                        </ChartCard>
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                        <ChartCard title={localeMessages.enrollment_status_breakdown}>
-                            {loading ? <ChartLoading /> : <StatusBreakdownChart data={statusBreakdown} localeMessages={localeMessages} noDataMessage={noData} />}
-                        </ChartCard>
-                    </Grid>
-                </Grid>
-
-                {/* Row 2 */}
-                <Grid container spacing={3} sx={{ mb: 3 }}>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                        <ChartCard title={localeMessages.email_delivery_over_time}>
-                            {loading ? <ChartLoading /> : <TimeSeriesChart data={deliveryOverTime} color="#4caf50" noDataMessage={noData} />}
-                        </ChartCard>
-                    </Grid>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                        <ChartCard title={localeMessages.email_delivery_status_breakdown}>
-                            {loading ? <ChartLoading /> : <StatusBreakdownChart data={deliveryStatus} localeMessages={localeMessages} noDataMessage={noData} />}
-                        </ChartCard>
-                    </Grid>
-                </Grid>
-
-                {/* Row 3 — funnel full width */}
-                <Grid container spacing={3} sx={{ mb: 3 }}>
-                    <Grid size={{ xs: 12 }}>
-                        <ChartCard title={localeMessages.completion_funnel} tooltip={localeMessages.completion_funnel_tooltip}>
-                            {loading ? <ChartLoading /> : <FunnelChart data={funnel} learnersReachedLabel={localeMessages.learners_reached} noDataMessage={noData} />}
-                        </ChartCard>
-                    </Grid>
-                </Grid>
-
-                {/* Row 4 — open rate full width */}
-                <Grid container spacing={3} sx={{ mb: 3 }}>
-                    <Grid size={{ xs: 12 }}>
-                        <ChartCard title={localeMessages.email_open_rate}>
-                            {loading ? <ChartLoading /> : <OpenRateChart data={openRate} openRateLabel={localeMessages.email_open_rate} noDataMessage={noData} />}
-                        </ChartCard>
-                    </Grid>
-                </Grid>
-
-                {/* Row 5 */}
                 <Grid container spacing={3}>
+
+                    {/* Filters card */}
+                    <Grid size={{ xs: 12 }}>
+                        <SectionBox>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>{localeMessages.filters}</Typography>
+                            <Grid container spacing={2} alignItems="flex-end">
+                                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                                    <FormControl fullWidth size="small">
+                                        <InputLabel>{localeMessages.course}</InputLabel>
+                                        <Select
+                                            multiple
+                                            value={selectedCourses}
+                                            onChange={e => setSelectedCourses(e.target.value)}
+                                            label={localeMessages.course}
+                                            renderValue={selected => (
+                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                    {selected.map(id => (
+                                                        <Chip key={id} size="small"
+                                                            label={courses.find(c => c.id === id)?.title || id} />
+                                                    ))}
+                                                </Box>
+                                            )}
+                                        >
+                                            {courses.map(c => (
+                                                <MenuItem key={c.id} value={c.id}>{c.title}</MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                                <Grid size={{ xs: 6, sm: 3, md: 2 }}>
+                                    <TextField fullWidth size="small" type="date" label={localeMessages.date_from}
+                                        value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                                        slotProps={{ inputLabel: { shrink: true } }} />
+                                </Grid>
+                                <Grid size={{ xs: 6, sm: 3, md: 2 }}>
+                                    <TextField fullWidth size="small" type="date" label={localeMessages.date_to}
+                                        value={dateTo} onChange={e => setDateTo(e.target.value)}
+                                        slotProps={{ inputLabel: { shrink: true } }} />
+                                </Grid>
+                                <Grid size={{ xs: 6, sm: 3, md: 2 }}>
+                                    <FormControl fullWidth size="small">
+                                        <InputLabel>{localeMessages.granularity}</InputLabel>
+                                        <Select value={granularity} onChange={e => setGranularity(e.target.value)}
+                                            label={localeMessages.granularity}>
+                                            <MenuItem value="day">{localeMessages.day}</MenuItem>
+                                            <MenuItem value="week">{localeMessages.week}</MenuItem>
+                                            <MenuItem value="month">{localeMessages.month}</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                                <Grid size={{ xs: 6, sm: 3, md: 2 }}>
+                                    <Button fullWidth variant="contained" size="small" sx={{ height: 40 }} onClick={fetchAll} disabled={loading}>
+                                        {loading ? <CircularProgress size={18} color="inherit" /> : localeMessages.apply}
+                                    </Button>
+                                </Grid>
+                            </Grid>
+                            {error && <Alert severity="error" sx={{ mt: 2 }}>Failed to load analytics data.</Alert>}
+                        </SectionBox>
+                    </Grid>
+
+                    {/* Downloads card */}
+                    <Grid size={{ xs: 12 }}>
+                        <SectionBox>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>{localeMessages.downloads}</Typography>
+                            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                                {[
+                                    { key: 'downloads/learner-progress', label: localeMessages.download_learner_progress },
+                                    { key: 'downloads/delivery-log', label: localeMessages.download_delivery_log },
+                                    { key: 'downloads/completion-summary', label: localeMessages.download_completion_summary },
+                                ].map(({ key, label }) => (
+                                    <Button key={key} variant="outlined" size="small"
+                                        startIcon={<DownloadIcon />} onClick={() => download(key)}>
+                                        {label}
+                                    </Button>
+                                ))}
+                            </Stack>
+                        </SectionBox>
+                    </Grid>
+
+                    {/* Row 1 */}
                     <Grid size={{ xs: 12, md: 6 }}>
-                        <ChartCard title={localeMessages.average_progress}>
-                            {loading ? <ChartLoading /> : <ProgressChart data={avgProgress} noDataMessage={noData} />}
-                        </ChartCard>
+                        <SectionBox sx={{ height: '100%' }}>
+                            <ChartCard title={localeMessages.enrollments_over_time}>
+                                {loading ? <ChartLoading /> : <TimeSeriesChart data={enrollmentsOverTime} noDataMessage={noData} />}
+                            </ChartCard>
+                        </SectionBox>
                     </Grid>
                     <Grid size={{ xs: 12, md: 6 }}>
-                        <ChartCard title={localeMessages.time_to_complete}>
-                            {loading ? <ChartLoading /> : <TimeToCompleteChart data={timeToComplete} averageDaysLabel={localeMessages.average_days} completedLabel={localeMessages.completed} noDataMessage={noData} />}
-                        </ChartCard>
+                        <SectionBox sx={{ height: '100%' }}>
+                            <ChartCard title={localeMessages.enrollment_status_breakdown}>
+                                {loading ? <ChartLoading /> : <StatusBreakdownChart data={statusBreakdown} localeMessages={localeMessages} noDataMessage={noData} />}
+                            </ChartCard>
+                        </SectionBox>
                     </Grid>
+
+                    {/* Row 2 */}
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <SectionBox sx={{ height: '100%' }}>
+                            <ChartCard title={localeMessages.email_delivery_over_time}>
+                                {loading ? <ChartLoading /> : <TimeSeriesChart data={deliveryOverTime} color="#4caf50" noDataMessage={noData} />}
+                            </ChartCard>
+                        </SectionBox>
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <SectionBox sx={{ height: '100%' }}>
+                            <ChartCard title={localeMessages.email_delivery_status_breakdown}>
+                                {loading ? <ChartLoading /> : <StatusBreakdownChart data={deliveryStatus} localeMessages={localeMessages} noDataMessage={noData} />}
+                            </ChartCard>
+                        </SectionBox>
+                    </Grid>
+
+                    {/* Funnel — full width */}
+                    <Grid size={{ xs: 12 }}>
+                        <SectionBox>
+                            <ChartCard title={localeMessages.completion_funnel} tooltip={localeMessages.completion_funnel_tooltip}>
+                                {loading ? <ChartLoading /> : <FunnelChart data={funnel} learnersReachedLabel={localeMessages.learners_reached} noDataMessage={noData} />}
+                            </ChartCard>
+                        </SectionBox>
+                    </Grid>
+
+                    {/* Open rate — full width */}
+                    <Grid size={{ xs: 12 }}>
+                        <SectionBox>
+                            <ChartCard title={localeMessages.email_open_rate}>
+                                {loading ? <ChartLoading /> : <OpenRateChart data={openRate} openRateLabel={localeMessages.email_open_rate} noDataMessage={noData} />}
+                            </ChartCard>
+                        </SectionBox>
+                    </Grid>
+
+                    {/* Row 3 */}
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <SectionBox sx={{ height: '100%' }}>
+                            <ChartCard title={localeMessages.average_progress}>
+                                {loading ? <ChartLoading /> : <ProgressChart data={avgProgress} noDataMessage={noData} />}
+                            </ChartCard>
+                        </SectionBox>
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <SectionBox sx={{ height: '100%' }}>
+                            <ChartCard title={localeMessages.time_to_complete}>
+                                {loading ? <ChartLoading /> : <TimeToCompleteChart data={timeToComplete} averageDaysLabel={localeMessages.average_days} completedLabel={localeMessages.completed} noDataMessage={noData} />}
+                            </ChartCard>
+                        </SectionBox>
+                    </Grid>
+
                 </Grid>
-            </Box>
             </Grid>
         </Base>
     )
