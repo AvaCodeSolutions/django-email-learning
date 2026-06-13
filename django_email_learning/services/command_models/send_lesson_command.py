@@ -10,6 +10,8 @@ from django_email_learning.services.email_sender_service import email_sender_ser
 from django_email_learning.services.metrics_service import MetricsService
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
+from django.urls import reverse
+from django.conf import settings
 from typing import Literal
 
 from django_email_learning.services.utils import mask_email
@@ -48,6 +50,19 @@ class SendLessonCommand(AbstractCommand):
         else:
             progress = enrollment.progress_percentage(extra_delivered=1)
         next_content = content.get_next()
+
+        conf = settings.DJANGO_EMAIL_LEARNING
+        delivery = (
+            enrollment.content_deliveries.filter(course_content=content).first()
+            if enrollment
+            else None
+        )
+        track_open_url = (
+            f"{conf['SITE_BASE_URL']}{reverse('django_email_learning:personalised:track_open', kwargs={'hash_value': delivery.hash_value})}"
+            if delivery
+            else None
+        )
+
         context = {
             "lesson": lesson,
             "unsubscribe_link": content.course.generate_unsubscribe_link(self.email),
@@ -58,6 +73,7 @@ class SendLessonCommand(AbstractCommand):
             "imap_email_address": content.course.imap_connection.email
             if content.course.imap_connection
             else None,
+            "track_open_url": track_open_url,
         }
         payload = render_to_string("emails/lesson.txt", context)
 
@@ -70,6 +86,10 @@ class SendLessonCommand(AbstractCommand):
         email_message.attach_alternative(
             render_to_string("emails/lesson.html", context), "text/html"
         )
+        if conf.get("AMP_ENABLED"):
+            email_message.attach_alternative(
+                render_to_string("emails/lesson_amp.html", context), "text/x-amp-html"
+            )
 
         email_sender_service.send(email_message)
         metric_service.lesson_sent(

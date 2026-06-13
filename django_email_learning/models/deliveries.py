@@ -38,6 +38,7 @@ class ContentDelivery(models.Model):
         default=ReminderStatus.NOT_APPLICABLE,
         db_index=True,
     )
+    opened_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = [["enrollment", "course_content"]]
