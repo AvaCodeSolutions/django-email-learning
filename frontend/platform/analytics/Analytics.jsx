@@ -2,11 +2,11 @@ import 'vite/modulepreload-polyfill'
 import { useState, useEffect, useCallback } from 'react'
 import {
     Box, Typography, Grid, MenuItem, Select, FormControl, InputLabel,
-    TextField, Button, Divider, CircularProgress, Alert, Chip, Stack,
+    TextField, Button, CircularProgress, Alert, Chip, Stack,
 } from '@mui/material'
 import DownloadIcon from '@mui/icons-material/Download'
 import Base from '../../src/components/Base.jsx'
-import render, { useAppContext } from '../../src/render.jsx'
+import render, { useAppContext } from '../../src/render.jsx';
 import apiClient from '../../src/apiClient.js'
 import { BarChart, LineChart } from '@mui/x-charts'
 
@@ -238,13 +238,11 @@ function Analytics() {
 
     return (
         <Base breadCrumbList={[{ label: localeMessages.analytics, href: '#' }]}>
-            <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1400, mx: 'auto' }}>
-                <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
-                    {localeMessages.analytics}
-                </Typography>
+            <Grid size={{ xs: 12 }} sx={{ py: 2, pl: { xs: 0, sm: 2 } }}>
+            <Box sx={{ p: { xs: 1, sm: 2 }, mb: 2, borderRadius: { xs: 0, sm: 2 }, backgroundColor: 'background.box', boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.04)' }}>
 
                 {/* Filters */}
-                <Box sx={{ p: 2, mb: 3, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                <Box sx={{ mb: 3 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>{localeMessages.filters}</Typography>
                     <Grid container spacing={2} alignItems="flex-end">
                         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
@@ -301,9 +299,11 @@ function Analytics() {
 
                 {error && <Alert severity="error" sx={{ mb: 3 }}>Failed to load analytics data.</Alert>}
 
+
+
                 {/* Downloads */}
-                <Box sx={{ mb: 3 }}>
-                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>{localeMessages.downloads}</Typography>
+                <Box sx={{ mb: 3, pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>{localeMessages.downloads}</Typography>
                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                         {[
                             { key: 'downloads/learner-progress', label: localeMessages.download_learner_progress },
@@ -317,8 +317,6 @@ function Analytics() {
                         ))}
                     </Stack>
                 </Box>
-
-                <Divider sx={{ mb: 3 }} />
 
                 {/* Row 1 */}
                 <Grid container spacing={3} sx={{ mb: 3 }}>
@@ -376,8 +374,9 @@ function Analytics() {
                     </Grid>
                 </Grid>
             </Box>
+            </Grid>
         </Base>
     )
 }
 
-render(<Analytics />)
+render({children: <Analytics />})
