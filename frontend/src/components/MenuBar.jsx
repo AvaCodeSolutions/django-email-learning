@@ -4,6 +4,7 @@ import { AppBar, Divider, Drawer, Box, Typography, MenuList, MenuItem, ListItemI
 import IconButton from '@mui/material/IconButton';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
+import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
 import DoneIcon from '@mui/icons-material/Done';
 import WarningIcon from '@mui/icons-material/Warning';
 import ErrorIcon from '@mui/icons-material/Error';
@@ -178,6 +179,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     if (isOrganizationAdmin || isPlatformAdmin || isInstructor) {
         platformPages.push({ name: localeMessages["learners"], icon: <PeopleOutlinedIcon fontSize="small" />, href: platformBaseUrl + '/learners/' });
     }
+    platformPages.push({ name: localeMessages["analytics"], icon: <BarChartOutlinedIcon fontSize="small" />, href: platformBaseUrl + '/analytics/' });
 
     const settingsPages = []
     if (isPlatformAdmin) {

@@ -51,6 +51,10 @@ class BasePlatformView(TemplateView):
             "appContext": {
                 "apiBaseUrl": reverse("django_email_learning:api_platform:root")[:-1],
                 "platformBaseUrl": reverse("django_email_learning:platform:root")[:-1],
+                "analyticsBaseUrl": {
+                    "base": f"{reverse('django_email_learning:api_analytics:enrollments_over_time', kwargs={'organization_id': active_organization_id}).rsplit('/enrollments', 1)[0]}",
+                    "orgId": active_organization_id,
+                },
                 "sidebarCustomComponent": {
                     "scriptUrl": DJANGO_EMAIL_LEARNING_SETTINGS.get("SIDEBAR", {})
                     .get("CUSTOM_COMPONENT", {})
@@ -112,6 +116,7 @@ class BasePlatformView(TemplateView):
                     "organizations": _("Organizations"),
                     "course_management": _("Course Management"),
                     "learners": _("Learners"),
+                    "analytics": _("Analytics"),
                     "settings": _("Settings"),
                     "api_keys": _("API Keys"),
                     "content_delivery_job": _("Content Delivery Job"),
@@ -726,3 +731,49 @@ class PrivateFileView(View):
         file = PRIVATE_FILE_STORAGE.open(file_path)
         response = FileResponse(file)
         return response
+
+
+@method_decorator(login_required, name="dispatch")
+@method_decorator(is_an_organization_member(), name="dispatch")
+class Analytics(BasePlatformView):
+    template_name = "platform/analytics.html"
+
+    def get_context_data(self, **kwargs):  # type: ignore[no-untyped-def]
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = _("Analytics")
+        return context
+
+    def get_locale_messages(self) -> Dict[str, str]:
+        return {
+            "analytics": _("Analytics"),
+            "filters": _("Filters"),
+            "course": _("Course"),
+            "all_courses": _("All Courses"),
+            "date_from": _("From"),
+            "date_to": _("To"),
+            "granularity": _("Granularity"),
+            "day": _("Day"),
+            "week": _("Week"),
+            "month": _("Month"),
+            "apply": _("Apply"),
+            "enrollments_over_time": _("Enrollments Over Time"),
+            "enrollment_status_breakdown": _("Enrollment Status Breakdown"),
+            "completion_funnel": _("Completion Funnel"),
+            "average_progress": _("Average Progress"),
+            "time_to_complete": _("Time to Complete"),
+            "email_delivery_over_time": _("Email Delivery Over Time"),
+            "email_delivery_status_breakdown": _("Email Delivery Status"),
+            "email_open_rate": _("Email Open Rate"),
+            "downloads": _("Downloads"),
+            "download_learner_progress": _("Learner Progress"),
+            "download_delivery_log": _("Delivery Log"),
+            "download_completion_summary": _("Completion Summary"),
+            "learners_reached": _("Learners Reached"),
+            "open_rate": _("Open Rate"),
+            "average_days": _("Avg. Days"),
+            "active": _("Active"),
+            "completed": _("Completed"),
+            "deactivated": _("Deactivated"),
+            "no_data": _("No data available for the selected filters."),
+            "loading": _("Loading…"),
+        }
