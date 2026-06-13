@@ -759,6 +759,9 @@ class Analytics(BasePlatformView):
             "enrollments_over_time": _("Enrollments Over Time"),
             "enrollment_status_breakdown": _("Enrollment Status Breakdown"),
             "completion_funnel": _("Completion Funnel"),
+            "completion_funnel_tooltip": _(
+                "Shows how many learners received each piece of content. The bar length is relative to the content with the most deliveries, so you can quickly see where learners drop off."
+            ),
             "average_progress": _("Average Progress"),
             "time_to_complete": _("Time to Complete"),
             "email_delivery_over_time": _("Email Delivery Over Time"),

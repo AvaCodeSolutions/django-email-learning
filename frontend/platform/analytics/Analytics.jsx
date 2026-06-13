@@ -2,9 +2,10 @@ import 'vite/modulepreload-polyfill'
 import { useState, useEffect, useCallback } from 'react'
 import {
     Box, Typography, Grid, MenuItem, Select, FormControl, InputLabel,
-    TextField, Button, CircularProgress, Alert, Chip, Stack,
+    TextField, Button, CircularProgress, Alert, Chip, Stack, Tooltip,
 } from '@mui/material'
 import DownloadIcon from '@mui/icons-material/Download'
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import Base from '../../src/components/Base.jsx'
 import render, { useAppContext } from '../../src/render.jsx';
 import apiClient from '../../src/apiClient.js'
@@ -43,10 +44,17 @@ function NoData({ message }) {
     )
 }
 
-function ChartCard({ title, children }) {
+function ChartCard({ title, tooltip, children }) {
     return (
         <Box sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider', height: '100%' }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>{title}</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{title}</Typography>
+                {tooltip && (
+                    <Tooltip title={tooltip} placement="top" arrow>
+                        <InfoOutlinedIcon sx={{ fontSize: '1rem', color: 'text.secondary', cursor: 'help', flexShrink: 0 }} />
+                    </Tooltip>
+                )}
+            </Box>
             {children}
         </Box>
     )
@@ -420,7 +428,7 @@ function Analytics() {
                 {/* Row 3 — funnel full width */}
                 <Grid container spacing={3} sx={{ mb: 3 }}>
                     <Grid size={{ xs: 12 }}>
-                        <ChartCard title={localeMessages.completion_funnel}>
+                        <ChartCard title={localeMessages.completion_funnel} tooltip={localeMessages.completion_funnel_tooltip}>
                             {loading ? <ChartLoading /> : <FunnelChart data={funnel} learnersReachedLabel={localeMessages.learners_reached} noDataMessage={noData} />}
                         </ChartCard>
                     </Grid>
