@@ -13,6 +13,7 @@ The project currently includes the following management commands:
 - ``deactivate_inactive_enrollments``
 - ``deliver_contents``
 - ``send_reminders``
+- ``rotate_encryption_key``
 
 check_imap_connections
 ----------------------
