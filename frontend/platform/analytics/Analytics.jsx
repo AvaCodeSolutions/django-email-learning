@@ -157,34 +157,18 @@ function FunnelChart({ data, learnersReachedLabel, noDataMessage }) {
 
 function ProgressChart({ data, noDataMessage }) {
     if (!data?.length) return <NoData message={noDataMessage} />
-    const pieData = data.map((r, i) => ({
-        id: r.course_id,
-        value: r.average_progress,
-        label: `${r.course_title} (${r.average_progress}%)`,
-        color: ['#636eec', '#4caf50', '#ffa726', '#ef5350', '#90caf9', '#ab47bc'][i % 6],
-    }))
     return (
-        <PieChart
-            height={220}
+        <BarChart
+            xAxis={[{ scaleType: 'band', data: data.map(r => r.course_title), tickLabelStyle: { fontSize: 11 } }]}
+            yAxis={[{ min: 0, max: 100 }]}
             series={[{
-                data: pieData,
-                innerRadius: '45%',
-                arcLabel: (item) => `${item.value}%`,
-                arcLabelMinAngle: 20,
-                highlightScope: { fade: 'global', highlight: 'item' },
+                data: data.map(r => r.average_progress),
+                color: '#636eec',
+                label: '%',
+                valueFormatter: (v) => `${v}%`,
             }]}
-            margin={{ bottom: 30, top: 10, left: 10, right: 10 }}
-            slotProps={{
-                legend: {
-                    direction: 'row',
-                    position: { vertical: 'bottom', horizontal: 'middle' },
-                    padding: 0,
-                    itemMarkWidth: 10,
-                    itemMarkHeight: 10,
-                    markGap: 5,
-                    itemGap: 12,
-                },
-            }}
+            height={220}
+            margin={{ left: 40, right: 10, top: 10, bottom: 60 }}
         />
     )
 }
