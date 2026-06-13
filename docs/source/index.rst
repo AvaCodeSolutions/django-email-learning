@@ -30,6 +30,7 @@ Django Email Learning documentation
 
    technical/ai-configuration
    technical/management-commands
+   technical/encryption-key-management
 
 
 .. .. toctree::
