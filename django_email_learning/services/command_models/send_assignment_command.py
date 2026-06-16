@@ -63,11 +63,6 @@ class SendAssignmentCommand(AbstractCommand):
         email_message.attach_alternative(
             render_to_string("emails/assignment.html", context), "text/html"
         )
-        if conf.get("AMP_ENABLED"):
-            email_message.attach_alternative(
-                render_to_string("emails/assignment_amp.html", context),
-                "text/x-amp-html",
-            )
 
         email_sender_service.send(email_message)
         metric_service.assignment_sent(

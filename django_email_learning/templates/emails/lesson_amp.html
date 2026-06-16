@@ -1,8 +1,0 @@
-{% extends "emails/base_amp.html" %}
-{% load i18n %}
-
-{% block content %}
-{% if track_open_url %}<amp-img src="{{ track_open_url }}" width="1" height="1" layout="fixed" alt=""></amp-img>{% endif %}
-<h2 class="email-title">{{ lesson.title }}</h2>
-<p>{{ lesson.content|safe }}</p>
-{% endblock %}
