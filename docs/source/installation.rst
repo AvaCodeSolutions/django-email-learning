@@ -323,6 +323,23 @@ If AMP is enabled, you must also add trusted AMP mail client origins to Django's
 .. note::
    Keep AMP disabled in environments where you have not completed sender registration and trusted-origin configuration.
 
+**DELIVERY_WORKERS**
+
+Optional integer controlling how many threads the ``deliver_contents`` job uses to process deliveries concurrently. Defaults to ``1``, which preserves the original sequential behaviour.
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
+        'DELIVERY_WORKERS': 4,  # process up to 4 emails concurrently
+    }
+
+.. note::
+   Set ``DELIVERY_WORKERS`` to a value your SMTP provider can handle — most transactional email services impose per-second rate limits. A value between 2 and 10 is typical. Each worker uses its own database connection, so ensure your database connection pool is sized accordingly.
+
+
 Email Backend Configuration
 ---------------------------
 

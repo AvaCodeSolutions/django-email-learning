@@ -1,32 +1,44 @@
-from django_email_learning.ports.delivery_queue_protocol import DeliveryQueueProtocol
+import datetime
+import logging
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
+
+from django.conf import settings
+from django.db import close_old_connections
+from django.utils import timezone
+from django.utils.module_loading import import_string
+
+from django_email_learning.jobs.job_metrics import track_job_execution
 from django_email_learning.models import (
+    CourseContentType,
     DeliverySchedule,
     DeliveryStatus,
-    CourseContentType,
+    JobExecution,
+    JobName,
+    JobStatus,
+)
+from django_email_learning.ports.delivery_queue_protocol import DeliveryQueueProtocol
+from django_email_learning.services.command_models.send_assignment_command import (
+    AssignmentNotFoundError,
+    SendAssignmentCommand,
 )
 from django_email_learning.services.command_models.send_lesson_command import (
-    SendLessonCommand,
     LessonNotFoundError,
+    SendLessonCommand,
 )
 from django_email_learning.services.command_models.send_quiz_command import (
-    SendQuizCommand,
     QuizNotFoundError,
+    SendQuizCommand,
 )
-from django_email_learning.services.command_models.send_assignment_command import (
-    SendAssignmentCommand,
-    AssignmentNotFoundError,
-)
-from django_email_learning.jobs.job_metrics import track_job_execution
 from django_email_learning.services.metrics_service import metric_service
-from django_email_learning.models import JobExecution, JobName, JobStatus
-from django.utils.module_loading import import_string
-from django.conf import settings
-from django.utils import timezone
-import logging
-import datetime
-
 
 logger = logging.getLogger(__name__)
+
+
+def _get_delivery_workers() -> int:
+    """Return the configured number of delivery worker threads (default 1)."""
+    return int(
+        getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("DELIVERY_WORKERS", 1)
+    )
 
 
 class DeliverContentsJob:
@@ -49,28 +61,88 @@ class DeliverContentsJob:
         job_name=JobName.DELIVER_CONTENTS.value,
     )
     def _run_job(self, job_execution: JobExecution) -> None:
-        should_check_next = True
-        while should_check_next:
+        workers = _get_delivery_workers()
+
+        if workers <= 1:
+            self._run_sequential(job_execution)
+        else:
+            logger.info(f"Starting delivery job with {workers} worker threads.")
+            self._run_threaded(job_execution, workers)
+
+    # ── sequential (original behaviour, workers=1) ──────────────────────────
+
+    def _run_sequential(self, job_execution: JobExecution) -> None:
+        while True:
             delivery_schedule = self.delivery_queue.next_task()
             if delivery_schedule is None:
-                should_check_next = False
                 job_execution.status = JobStatus.COMPLETED.value
                 job_execution.finished_at = timezone.now()
                 job_execution.save()
-            else:
-                try:
-                    self.process_delivery(delivery_schedule)
-                except Exception as e:
-                    # Unhandled exception during delivery processing should not crash the job.
-                    # We log the error and mark the delivery as blocked to prevent further attempts until manual intervention.
-                    delivery_schedule.status = DeliveryStatus.BLOCKED
-                    delivery_schedule.save()
-                    metric_service.delivery_schedule_blocked(
-                        delivery_schedule.delivery.course_content.id
-                    )
-                    logger.exception(
-                        f"Error processing delivery schedule: {str(e)}. Continuing with next task."
-                    )
+                return
+            try:
+                self.process_delivery(delivery_schedule)
+            except Exception as e:
+                self._block_delivery(delivery_schedule, e)
+
+    # ── threaded (workers > 1) ───────────────────────────────────────────────
+
+    def _run_threaded(self, job_execution: JobExecution, workers: int) -> None:
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            futures: dict[Future[None], DeliverySchedule] = {}
+            exhausted = False
+
+            while not exhausted or futures:
+                # Submit new tasks while there is capacity and the queue is not empty
+                while not exhausted and len(futures) < workers:
+                    delivery_schedule = self.delivery_queue.next_task()
+                    if delivery_schedule is None:
+                        exhausted = True
+                        break
+                    future = executor.submit(self._worker, delivery_schedule)
+                    futures[future] = delivery_schedule
+
+                # Collect completed futures
+                done = {f for f in futures if f.done()}
+                for future in done:
+                    delivery_schedule = futures.pop(future)
+                    try:
+                        future.result()
+                    except Exception as e:
+                        self._block_delivery(delivery_schedule, e)
+
+                # Avoid a tight spin-wait when all workers are busy
+                if not done and futures:
+                    next(as_completed(futures), None)
+
+        job_execution.status = JobStatus.COMPLETED.value
+        job_execution.finished_at = timezone.now()
+        job_execution.save()
+
+    def _worker(self, delivery_schedule: DeliverySchedule) -> None:
+        """Entry point for each worker thread."""
+        # Each thread needs its own DB connection.
+        close_old_connections()
+        try:
+            self.process_delivery(delivery_schedule)
+        except Exception as e:
+            self._block_delivery(delivery_schedule, e)
+            raise
+
+    def _block_delivery(
+        self, delivery_schedule: DeliverySchedule, exc: Exception
+    ) -> None:
+        """Mark a delivery as BLOCKED and emit a metric."""
+        delivery_schedule.status = DeliveryStatus.BLOCKED
+        delivery_schedule.save()
+        metric_service.delivery_schedule_blocked(
+            delivery_schedule.delivery.course_content.id
+        )
+        logger.exception(
+            f"Error processing delivery schedule {delivery_schedule.id}: {exc}. "
+            "Marking as BLOCKED."
+        )
+
+    # ── queue / delivery logic (unchanged) ──────────────────────────────────
 
     def get_delivery_queue(self) -> DeliveryQueueProtocol:
         DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(
@@ -122,10 +194,12 @@ class DeliverContentsJob:
         elif course_content.type == CourseContentType.QUIZ:
             is_delivered = self.send_quiz_content(delivery_schedule)
 
-            # For quiz we don't schedule next content automatically, because the scheduling should be done after quiz completion.
+            # For quiz we don't schedule next content automatically,
+            # because the scheduling should be done after quiz completion.
             if is_delivered:
                 logger.info(
-                    f"Quiz content delivered for DeliverySchedule ID {delivery_schedule.id}. Next content scheduling is deferred until quiz completion."
+                    f"Quiz content delivered for DeliverySchedule ID {delivery_schedule.id}. "
+                    "Next content scheduling is deferred until quiz completion."
                 )
         elif (
             course_content.type == CourseContentType.ASSIGNMENT
@@ -133,10 +207,10 @@ class DeliverContentsJob:
         ):
             is_delivered = self.send_assignment_content(delivery_schedule)
 
-            # For assignment we don't schedule next content automatically, because the scheduling should be done after assignment completion.
+            # For assignment we don't schedule next content automatically,
+            # because the scheduling should be done after assignment completion.
             if is_delivered:
                 if not course_content.assignment.is_blocking:
-                    # reschedule next content immediately for non-blocking assignments, For blocking assignments, the next content will be scheduled after the submission approval.
                     logger.info(
                         f"Non-blocking assignment content delivered for DeliverySchedule ID {delivery_schedule.id}. Scheduling next content."
                     )
