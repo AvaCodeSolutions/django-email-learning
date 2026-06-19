@@ -258,9 +258,71 @@ def step_scaffold(
         _patch_settings(settings_path, enable_ai, enable_google)
         success("settings.py patched")
 
+    _write_gitignore(cwd)
+
     info("Running migrations …")
     run([python, "manage.py", "migrate"])
     success("Database ready")
+
+
+GITIGNORE_CONTENT = """
+# Credentials — never commit these
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+wheels/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Django
+*.log
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+static/
+
+# Coverage
+.coverage
+coverage.xml
+htmlcov/
+
+# Testing
+.pytest_cache/
+.tox/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+""".lstrip()
+
+
+def _write_gitignore(cwd: Path) -> None:
+    gitignore = cwd / ".gitignore"
+    if gitignore.exists():
+        warn(".gitignore already exists — skipping")
+        return
+    gitignore.write_text(GITIGNORE_CONTENT)
+    success(".gitignore created (includes .env)")
 
 
 def _patch_settings(settings_path: Path, enable_ai: bool, enable_google: bool) -> None:
