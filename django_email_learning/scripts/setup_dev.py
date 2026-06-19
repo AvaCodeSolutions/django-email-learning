@@ -89,9 +89,24 @@ def step_virtualenv(cwd: Path) -> str:
 def step_choose_features() -> tuple[bool, bool]:
     header("2/6  Optional features")
 
-    enable_ai = ask("Enable AI text-editing features? (y/N) ").lower() == "y"
+    print(
+        "  AI text-editing lets instructors improve lesson content with AI assistance.\n"
+        "  Currently only OpenAI is supported — you will need an OpenAI account and\n"
+        "  an API key (https://platform.openai.com/api-keys)."
+    )
+    enable_ai = ask("  Enable AI text-editing features? (y/N) ").lower() == "y"
+
+    print()
+    print(
+        "  Google Workspace group enrollment lets you bulk-enrol learners from a\n"
+        "  Google Workspace directory. You will need a GCP project with an OAuth 2.0\n"
+        "  Web Application credential. Set the authorised redirect URI to:\n"
+        "    http://localhost:8000/oauth/google/callback/\n"
+        "  Copy the Client ID and Client Secret from the GCP console\n"
+        "  (https://console.cloud.google.com/apis/credentials)."
+    )
     enable_google = (
-        ask("Enable Google Workspace group enrollment? (y/N) ").lower() == "y"
+        ask("  Enable Google Workspace group enrollment? (y/N) ").lower() == "y"
     )
     return enable_ai, enable_google
 
@@ -149,11 +164,6 @@ def step_optional_credentials(cwd: Path, enable_ai: bool, enable_google: bool) -
         success(f"AI enabled with model: {model}")
 
     if enable_google:
-        print()
-        warn("You need a GCP project with an OAuth 2.0 Web Application credential.")
-        warn("Set the authorised redirect URI to:")
-        warn("  http://localhost:8000/oauth/google/callback/")
-        warn("Copy the Client ID and Client Secret from the GCP console.")
         print()
         client_id = ask("  Enter GOOGLE_OAUTH_CLIENT_ID: ")
         append_env(env_path, "GOOGLE_OAUTH_CLIENT_ID", client_id)
