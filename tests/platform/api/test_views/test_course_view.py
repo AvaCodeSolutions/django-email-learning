@@ -288,9 +288,9 @@ def test_update_course_with_target_audience_and_external_references(superadmin_c
 
     # Now, update the created course with target audience and external references
     update_payload = valid_update_course_payload()
-    update_payload[
-        "target_audience"
-    ] = "Beginners with no prior programming experience."
+    update_payload["target_audience"] = (
+        "Beginners with no prior programming experience."
+    )
     update_payload["external_references"] = [
         {
             "name": "GitHub Repository",
