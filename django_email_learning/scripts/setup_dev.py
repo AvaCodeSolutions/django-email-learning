@@ -637,6 +637,19 @@ def print_done(project_name: str, url_prefix: str) -> None:
     print("    • Admin:      http://localhost:8000/admin/")
     print("    • Login:      http://localhost:8000/accounts/login/")
     print()
+    print(
+        f"  {YELLOW}⚠  Email backend is set to Console — no emails will be sent.{RESET}"
+    )
+    print(
+        f"  {YELLOW}   Emails will appear in this terminal instead of in an inbox.{RESET}"
+    )
+    print(
+        f"  {YELLOW}   To test with real emails in dev, configure an SMTP backend or{RESET}"
+    )
+    print(
+        f"  {YELLOW}   a service like Mailpit, Mailtrap, or SendGrid's sandbox mode.{RESET}"
+    )
+    print()
     print("  These are development defaults only. Before going to production,")
     print("  review the full installation guide for configuration options:")
     print()
