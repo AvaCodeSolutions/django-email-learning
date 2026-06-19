@@ -183,9 +183,9 @@ class DeliverySchedule(models.Model):
                 self.delivery.course_content.quiz.selection_strategy
                 == QuizSelectionStrategy.RANDOM_QUESTIONS.value
             ):
-                payload[
-                    "question_ids"
-                ] = self.delivery.course_content.quiz.random_question_ids()  # type: ignore[assignment]
+                payload["question_ids"] = (
+                    self.delivery.course_content.quiz.random_question_ids()
+                )  # type: ignore[assignment]
 
             token = jwt_service.generate_jwt(payload=payload, exp=exp)
             quiz_path = reverse("django_email_learning:personalised:quiz_public_view")

@@ -105,7 +105,7 @@ urlpatterns = [
         name="send_lesson_to_platform_user_view",
     ),
     path(
-        "organizations/<int:organization_id>/file/",
+        "organizations/<int:organization_id>/files/",
         FileView.as_view(),
         name="file_view",
     ),
@@ -141,7 +141,7 @@ urlpatterns = [
         name="assignment_submission_detail_view",
     ),
     path(
-        "organizations/<int:organization_id>/courses/<int:course_id>/submitted_assignment/<int:submission_id>/review/",
+        "organizations/<int:organization_id>/courses/<int:course_id>/submitted_assignments/<int:submission_id>/review/",
         SubmissionReview.as_view(),
         name="submission_review",
     ),

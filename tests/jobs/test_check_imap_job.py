@@ -29,13 +29,16 @@ def test_check_imap_job_processes_unseen_emails(db, course, imap_connection):
         ("OK", [(None, raw_email)]),
     ]
 
-    with patch.object(
-        CheckIMAPJob,
-        "_get_imap_interface",
-        return_value=imap_interface_mock,
-    ), patch(
-        "django_email_learning.jobs.check_imap_job.imaplib.IMAP4_SSL",
-        return_value=account_mock,
+    with (
+        patch.object(
+            CheckIMAPJob,
+            "_get_imap_interface",
+            return_value=imap_interface_mock,
+        ),
+        patch(
+            "django_email_learning.jobs.check_imap_job.imaplib.IMAP4_SSL",
+            return_value=account_mock,
+        ),
     ):
         job = CheckIMAPJob()
         job.run()
@@ -55,13 +58,16 @@ def test_check_imap_job_skips_connection_when_login_fails(db, course, imap_conne
 
     imap_interface_mock = MagicMock()
 
-    with patch.object(
-        CheckIMAPJob,
-        "_get_imap_interface",
-        return_value=imap_interface_mock,
-    ), patch(
-        "django_email_learning.jobs.check_imap_job.imaplib.IMAP4_SSL",
-        side_effect=imaplib.IMAP4.error("login failed"),
+    with (
+        patch.object(
+            CheckIMAPJob,
+            "_get_imap_interface",
+            return_value=imap_interface_mock,
+        ),
+        patch(
+            "django_email_learning.jobs.check_imap_job.imaplib.IMAP4_SSL",
+            side_effect=imaplib.IMAP4.error("login failed"),
+        ),
     ):
         job = CheckIMAPJob()
         job.run()
@@ -90,17 +96,21 @@ def test_check_imap_job_tracks_metric_when_processing_fails(
     )
     account_mock.fetch.return_value = ("OK", [(None, raw_email)])
 
-    with patch.object(
-        CheckIMAPJob,
-        "_get_imap_interface",
-        return_value=imap_interface_mock,
-    ), patch(
-        "django_email_learning.jobs.check_imap_job.imaplib.IMAP4_SSL",
-        return_value=account_mock,
-    ), patch.object(
-        check_imap_job_module.metric_service,
-        "imap_command_handling_failed",
-    ) as metric_spy:
+    with (
+        patch.object(
+            CheckIMAPJob,
+            "_get_imap_interface",
+            return_value=imap_interface_mock,
+        ),
+        patch(
+            "django_email_learning.jobs.check_imap_job.imaplib.IMAP4_SSL",
+            return_value=account_mock,
+        ),
+        patch.object(
+            check_imap_job_module.metric_service,
+            "imap_command_handling_failed",
+        ) as metric_spy,
+    ):
         job = CheckIMAPJob()
         job.run()
 
@@ -113,13 +123,16 @@ def test_check_imap_job_tracks_metric_when_processing_fails(
 
 
 def test_check_imap_job_triggers_started_metric(db):
-    with patch(
-        "django_email_learning.jobs.check_imap_job.imaplib.IMAP4_SSL",
-        side_effect=Exception("no connection"),
-    ), patch.object(
-        check_imap_job_module.metric_service,
-        "job_execution_started",
-    ) as metric_started_spy:
+    with (
+        patch(
+            "django_email_learning.jobs.check_imap_job.imaplib.IMAP4_SSL",
+            side_effect=Exception("no connection"),
+        ),
+        patch.object(
+            check_imap_job_module.metric_service,
+            "job_execution_started",
+        ) as metric_started_spy,
+    ):
         job = CheckIMAPJob()
         job.run()
 
@@ -127,13 +140,16 @@ def test_check_imap_job_triggers_started_metric(db):
 
 
 def test_check_imap_job_triggers_finished_metric(db):
-    with patch(
-        "django_email_learning.jobs.check_imap_job.imaplib.IMAP4_SSL",
-        side_effect=Exception("no connection"),
-    ), patch.object(
-        check_imap_job_module.metric_service,
-        "job_execution_finished",
-    ) as metric_finished_spy:
+    with (
+        patch(
+            "django_email_learning.jobs.check_imap_job.imaplib.IMAP4_SSL",
+            side_effect=Exception("no connection"),
+        ),
+        patch.object(
+            check_imap_job_module.metric_service,
+            "job_execution_finished",
+        ) as metric_finished_spy,
+    ):
         job = CheckIMAPJob()
         job.run()
 
@@ -149,13 +165,16 @@ def test_check_imap_job_does_not_emit_start_or_finish_metrics_when_already_runni
         status=JobStatus.RUNNING.value,
     )
 
-    with patch.object(
-        check_imap_job_module.metric_service,
-        "job_execution_started",
-    ) as metric_started_spy, patch.object(
-        check_imap_job_module.metric_service,
-        "job_execution_finished",
-    ) as metric_finished_spy:
+    with (
+        patch.object(
+            check_imap_job_module.metric_service,
+            "job_execution_started",
+        ) as metric_started_spy,
+        patch.object(
+            check_imap_job_module.metric_service,
+            "job_execution_finished",
+        ) as metric_finished_spy,
+    ):
         CheckIMAPJob().run()
 
     metric_started_spy.assert_not_called()

@@ -467,9 +467,9 @@ class AmpQuizSubmissionView(View):
         response["AMP-Email-Allow-Sender"] = source_origin
         response["Access-Control-Allow-Origin"] = request_origin
         response["AMP-Access-Control-Allow-Source-Origin"] = source_origin
-        response[
-            "Access-Control-Expose-Headers"
-        ] = "AMP-Access-Control-Allow-Source-Origin"
+        response["Access-Control-Expose-Headers"] = (
+            "AMP-Access-Control-Allow-Source-Origin"
+        )
         response["Access-Control-Allow-Credentials"] = "true"
         return response
 

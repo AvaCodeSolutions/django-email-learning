@@ -3,5 +3,4 @@ from django_email_learning.models import DeliverySchedule
 
 
 class DeliveryQueueProtocol(Protocol):
-    def next_task(self) -> DeliverySchedule | None:
-        ...
+    def next_task(self) -> DeliverySchedule | None: ...

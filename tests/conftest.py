@@ -298,7 +298,7 @@ def quiz_with_questions(db, quiz) -> Quiz:
     for i in range(4):
         Answer.objects.create(
             question=question,
-            text=f"Answer {i+1}",
+            text=f"Answer {i + 1}",
             is_correct=(i == 0),  # First answer is correct
         )
     questions.append(question)

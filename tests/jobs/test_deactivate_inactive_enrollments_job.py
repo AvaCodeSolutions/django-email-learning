@@ -25,15 +25,17 @@ def test_deactivate_inactive_enrollments_job_exits_when_already_running(db):
         status=JobStatus.RUNNING.value,
     )
 
-    with patch.object(
-        deactivate_job_module.logger, "warning"
-    ) as warning_spy, patch.object(
-        deactivate_job_module.metric_service,
-        "job_execution_started",
-    ) as metric_started_spy, patch.object(
-        deactivate_job_module.metric_service,
-        "job_execution_finished",
-    ) as metric_finished_spy:
+    with (
+        patch.object(deactivate_job_module.logger, "warning") as warning_spy,
+        patch.object(
+            deactivate_job_module.metric_service,
+            "job_execution_started",
+        ) as metric_started_spy,
+        patch.object(
+            deactivate_job_module.metric_service,
+            "job_execution_finished",
+        ) as metric_finished_spy,
+    ):
         DeactivateInactiveEnrollmentsJob().run()
 
     assert (
@@ -61,13 +63,16 @@ def test_deactivate_inactive_enrollments_job_deactivates_expired_quiz_delivery(
     delivery.valid_until = timezone.now() - timedelta(days=1)
     delivery.save(update_fields=["valid_until"])
 
-    with patch.object(
-        DeactivateInactiveEnrollmentsJob,
-        "send_deactivation_email",
-    ) as send_email_spy, patch.object(
-        deactivate_job_module.metric_service,
-        "user_enrollment_deactivated",
-    ) as user_metric_spy:
+    with (
+        patch.object(
+            DeactivateInactiveEnrollmentsJob,
+            "send_deactivation_email",
+        ) as send_email_spy,
+        patch.object(
+            deactivate_job_module.metric_service,
+            "user_enrollment_deactivated",
+        ) as user_metric_spy,
+    ):
         DeactivateInactiveEnrollmentsJob().run()
 
     enrollment.refresh_from_db()
@@ -106,13 +111,16 @@ def test_deactivate_inactive_enrollments_job_skips_non_quiz_deliveries(
     delivery.valid_until = timezone.now() - timedelta(days=1)
     delivery.save(update_fields=["valid_until"])
 
-    with patch.object(
-        DeactivateInactiveEnrollmentsJob,
-        "send_deactivation_email",
-    ) as send_email_spy, patch.object(
-        deactivate_job_module.metric_service,
-        "user_enrollment_deactivated",
-    ) as user_metric_spy:
+    with (
+        patch.object(
+            DeactivateInactiveEnrollmentsJob,
+            "send_deactivation_email",
+        ) as send_email_spy,
+        patch.object(
+            deactivate_job_module.metric_service,
+            "user_enrollment_deactivated",
+        ) as user_metric_spy,
+    ):
         DeactivateInactiveEnrollmentsJob().run()
 
     enrollment.refresh_from_db()
@@ -135,13 +143,16 @@ def test_deactivate_inactive_enrollments_job_does_not_deactivate_when_deadline_n
     delivery.valid_until = timezone.now() + timedelta(days=1)
     delivery.save(update_fields=["valid_until"])
 
-    with patch.object(
-        DeactivateInactiveEnrollmentsJob,
-        "send_deactivation_email",
-    ) as send_email_spy, patch.object(
-        deactivate_job_module.metric_service,
-        "user_enrollment_deactivated",
-    ) as user_metric_spy:
+    with (
+        patch.object(
+            DeactivateInactiveEnrollmentsJob,
+            "send_deactivation_email",
+        ) as send_email_spy,
+        patch.object(
+            deactivate_job_module.metric_service,
+            "user_enrollment_deactivated",
+        ) as user_metric_spy,
+    ):
         DeactivateInactiveEnrollmentsJob().run()
 
     enrollment.refresh_from_db()
@@ -182,13 +193,16 @@ def test_deactivate_inactive_enrollments_job_non_blocking_quiz_should_not_deacti
     delivery.valid_until = timezone.now() - timedelta(days=1)
     delivery.save(update_fields=["valid_until"])
 
-    with patch.object(
-        DeactivateInactiveEnrollmentsJob,
-        "send_deactivation_email",
-    ) as send_email_spy, patch.object(
-        deactivate_job_module.metric_service,
-        "user_enrollment_deactivated",
-    ) as user_metric_spy:
+    with (
+        patch.object(
+            DeactivateInactiveEnrollmentsJob,
+            "send_deactivation_email",
+        ) as send_email_spy,
+        patch.object(
+            deactivate_job_module.metric_service,
+            "user_enrollment_deactivated",
+        ) as user_metric_spy,
+    ):
         DeactivateInactiveEnrollmentsJob().run()
 
     enrollment.refresh_from_db()

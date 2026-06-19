@@ -12,13 +12,13 @@ def quiz_with_n_questions(n) -> Quiz:
     for i in range(n):
         Question.objects.create(
             quiz=quiz,
-            text=f"Question {i+1}",
+            text=f"Question {i + 1}",
             priority=i + 1,
         )
         for j in range(4):
             Answer.objects.create(
                 question=quiz.questions.last(),
-                text=f"Answer {j+1} for Question {i+1}",
+                text=f"Answer {j + 1} for Question {i + 1}",
                 is_correct=(j == 1),
             )
     return quiz
