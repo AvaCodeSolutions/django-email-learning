@@ -89,25 +89,24 @@ def step_choose_features() -> tuple[bool, bool]:
     header("2/6  Optional features")
 
     print(
-        f"{YELLOW}"
-        "  AI text-editing lets instructors improve lesson content with AI assistance.\n"
-        "  Currently only OpenAI is supported — you will need an OpenAI account and\n"
-        "  an API key (https://platform.openai.com/api-keys)."
-        f"{RESET}"
+        "  AI text-editing lets instructors improve lesson content with AI assistance."
     )
+    print(f"  {CYAN}▸ Requires an OpenAI account and API key:{RESET}")
+    print(f"  {CYAN}  https://platform.openai.com/api-keys{RESET}")
     enable_ai = ask("  Enable AI text-editing features? (y/N) ").lower() == "y"
 
     print()
     print(
-        f"{YELLOW}"
         "  Google Workspace group enrollment lets you bulk-enrol learners from a\n"
-        "  Google Workspace directory. You will need a GCP project with an OAuth 2.0\n"
-        "  Web Application credential. Set the authorised redirect URI to:\n"
-        "    http://localhost:8000/oauth/google/callback/\n"
-        "  Copy the Client ID and Client Secret from the GCP console\n"
-        "  (https://console.cloud.google.com/apis/credentials)."
-        f"{RESET}"
+        "  Google Workspace directory."
     )
+    print(
+        f"  {CYAN}▸ Requires a GCP project with an OAuth 2.0 Web Application credential.{RESET}"
+    )
+    print(f"  {CYAN}  Set the authorised redirect URI to:{RESET}")
+    print(f"  {CYAN}    http://localhost:8000/oauth/google/callback/{RESET}")
+    print(f"  {CYAN}  Then copy the Client ID and Secret from:{RESET}")
+    print(f"  {CYAN}  https://console.cloud.google.com/apis/credentials{RESET}")
     enable_google = (
         ask("  Enable Google Workspace group enrollment? (y/N) ").lower() == "y"
     )
