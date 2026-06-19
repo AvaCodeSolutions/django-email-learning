@@ -145,6 +145,7 @@ omit = [
     "*/wsgi.py",
     "*/asgi.py",
     "django_service/*",  # Exclude Django project files
+    "django_email_learning/scripts/*",  # CLI bootstrap script, not library code
 ]
 branch = true
 
