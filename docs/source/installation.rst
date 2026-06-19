@@ -3,6 +3,42 @@ Installation
 
 This guide will help you install and configure Django Email Learning in your Django project.
 
+Quick Start (Recommended)
+--------------------------
+
+The fastest way to get a working Django project with Django Email Learning is the interactive setup command:
+
+.. code-block:: bash
+
+    pip install django-email-learning
+    django-email-learning-init
+
+This command will:
+
+- Create and activate a virtual environment (if you are not already in one)
+- Ask for your project name and URL prefix
+- Optionally enable AI text-editing features (OpenAI) and Google Workspace group enrollment
+- Install Django and all required dependencies
+- Scaffold a new Django project with ``django_email_learning`` pre-configured in settings and URLs
+- Generate secrets for ``JWT_SECRET_KEY`` and ``ENCRYPTION_SECRET_KEY`` and save them in a ``.env`` file
+- Run database migrations
+- Offer to create a Django superuser
+
+After ``django-email-learning-init`` completes, start the development server:
+
+.. code-block:: bash
+
+    python manage.py runserver
+
+Then open ``http://localhost:8000/<your-prefix>/platform/`` in your browser.
+
+.. note::
+   The setup command configures ``EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"`` by default.
+   This means emails are printed to the terminal rather than sent. To send real emails in development, configure
+   an SMTP backend or a service such as Mailpit. See `Email Backend Configuration`_ below for details.
+
+For an existing Django project, follow the manual steps below.
+
 Prerequisites
 -------------
 
@@ -10,8 +46,8 @@ Prerequisites
 - Django 5.0 or higher
 - A configured email backend (for sending course emails)
 
-Installation Steps
-------------------
+Manual Installation Steps
+--------------------------
 
 1. **Install the Package**
 

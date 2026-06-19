@@ -61,15 +61,28 @@ Comprehensive documentation is available at [django-email-learning.readthedocs.i
 
 ## Installation
 
-This is a Django app, so we assume you already have Django installed.
+### Quick Start
 
-### 1. Install the Package
+The fastest way to get a working development environment is the interactive setup command:
+
+```bash
+pip install django-email-learning
+django-email-learning-init
+```
+
+This sets up a new Django project with `django_email_learning` pre-configured — virtual environment, secrets, migrations, and a superuser — in one go. See the [Installation Guide](https://django-email-learning.readthedocs.io/en/latest/installation.html) for the full walkthrough.
+
+### Manual Installation
+
+For existing Django projects, follow these steps.
+
+#### 1. Install the Package
 
 ```bash
 pip install django-email-learning
 ```
 
-### 2. Add to INSTALLED_APPS
+#### 2. Add to INSTALLED_APPS
 
 Add `django_email_learning` to your `INSTALLED_APPS` in the Django settings file:
 
@@ -80,7 +93,7 @@ INSTALLED_APPS = [
 ]
 ```
 
-### 3. Configure Settings
+#### 3. Configure Settings
 
 Add the required configuration for the site base URL in your Django settings:
 
@@ -94,17 +107,17 @@ DJANGO_EMAIL_LEARNING = {
 
 `ENCRYPTION_SECRET_KEY` should be a long random string used to protect sensitive values such as stored API Keys.
 
-### 4. Configure Media Files
+#### 4. Configure Media Files
 
 This app uses Django's MEDIA files to save organization logos. Ensure your media settings are configured correctly. See the [MEDIA_URL setting](https://docs.djangoproject.com/en/6.0/ref/settings/#media-url) for details.
 
-### 5. Run Migrations
+#### 5. Run Migrations
 
 ```bash
 python manage.py migrate
 ```
 
-### 6. Add URLs
+#### 6. Add URLs
 
 Include the app URLs in your main Django URLs configuration:
 
@@ -120,7 +133,7 @@ urlpatterns = [
 
 The platform will be accessible at `your_preferred_path/platform/`.
 
-### Access Control Notes
+#### Access Control Notes
 
 - **Platform Access:** You need to be logged in to access the `/platform` sub-URL, which is used for managing courses and viewing learner progress.
 
