@@ -357,6 +357,8 @@ def _patch_urls(urls_path: Path, url_prefix: str) -> None:
         f"""from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import RedirectView
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -369,7 +371,7 @@ urlpatterns = [
         "",
         RedirectView.as_view(url="/{url_prefix}/platform/", permanent=False),
     ),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 """
     )
 
@@ -591,6 +593,9 @@ def _patch_settings(settings_path: Path, enable_ai: bool, enable_google: bool) -
     )
 
     del_config = f"""
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
 # django-email-learning configuration
 # See https://django-email-learning.readthedocs.io/en/latest/installation.html
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
