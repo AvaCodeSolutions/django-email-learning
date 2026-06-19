@@ -383,23 +383,119 @@ def _create_login_template(cwd: Path, project_name: str) -> None:
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Log in</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #f5f5f5; }
-    .card { background: #fff; padding: 2rem 2.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.1); width: 100%; max-width: 360px; }
-    h1 { margin: 0 0 1.5rem; font-size: 1.4rem; }
-    label { display: block; margin-bottom: .25rem; font-size: .9rem; font-weight: 600; }
-    input[type=text], input[type=password] { width: 100%; padding: .5rem .75rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1rem; }
-    button { width: 100%; padding: .6rem; background: #0b74e5; color: #fff; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer; }
-    button:hover { background: #0960c4; }
-    .errors { color: #c0392b; margin-bottom: 1rem; font-size: .9rem; }
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: #000000de;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: #f8f8fa;
+    }
+
+    .logo {
+      width: 180px;
+      margin-bottom: 1.75rem;
+    }
+
+    .card {
+      background: #ffffff;
+      padding: 2rem 2.5rem 2.5rem;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 1px 4px rgba(0,0,0,.04);
+      width: 100%;
+      max-width: 380px;
+    }
+
+    h1 {
+      margin: 0 0 1.5rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+      line-height: 1.4;
+      color: #000000de;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.25rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #00000099;
+    }
+
+    input[type=text],
+    input[type=password] {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 1rem;
+      border: 1px solid #cccccc;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: #000000de;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      outline: none;
+    }
+
+    input[type=text]:focus,
+    input[type=password]:focus {
+      border-color: rgb(124, 134, 255);
+      box-shadow: 0 0 0 3px rgba(124, 134, 255, 0.15);
+    }
+
+    button[type=submit] {
+      width: 100%;
+      padding: 0.55rem 1rem;
+      margin-top: 0.5rem;
+      background: rgb(86, 93, 178);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: box-shadow 0.25s ease, filter 0.25s ease;
+    }
+
+    button[type=submit]:hover {
+      box-shadow: 0 0 0 1px rgba(124, 134, 255, 0.2), 0 0 18px 3px rgba(124, 134, 255, 0.14);
+      filter: brightness(1.08);
+    }
+
+    .errors {
+      background: rgba(169, 62, 107, 0.08);
+      color: #a93e6b;
+      border-radius: 8px;
+      padding: 0.6rem 0.875rem;
+      margin-bottom: 1.25rem;
+      font-size: 0.875rem;
+    }
   </style>
 </head>
 <body>
+  {% load static %}
+  <img
+    src="{% static 'logo-h.png' %}"
+    alt="django-email-learning"
+    class="logo"
+  >
   <div class="card">
     <h1>Log in</h1>
     {% if form.errors %}
-      <p class="errors">Invalid username or password.</p>
+      <p class="errors">Invalid username or password. Please try again.</p>
     {% endif %}
     <form method="post">
       {% csrf_token %}
