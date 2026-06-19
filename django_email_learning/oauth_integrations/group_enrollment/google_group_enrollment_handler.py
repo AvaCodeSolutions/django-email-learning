@@ -1,11 +1,14 @@
 import logging
 import base64
+from typing import TYPE_CHECKING
 
 from django_email_learning.oauth_integrations.models import Session
 from django_email_learning.services.jwt_service import decode_jwt
 from .base_group_enrollment_handler import BaseGroupEnrollmentHandler, Group, User
-from google_auth_oauthlib.flow import Flow  #  type: ignore
 from django.conf import settings
+
+if TYPE_CHECKING:
+    from google_auth_oauthlib.flow import Flow  # type: ignore
 from django.urls import reverse
 from django.utils import timezone
 from django.core.files.base import ContentFile
@@ -23,7 +26,15 @@ class GoogleGroupEnrollmentHandler(BaseGroupEnrollmentHandler):
     provider_and_purpose: Literal["google_group_enrollment"] = "google_group_enrollment"
     code_verifier: str | None = None
 
-    def _build_flow(self) -> Flow:
+    def _build_flow(self) -> "Flow":
+        try:
+            from google_auth_oauthlib.flow import Flow  # type: ignore
+        except ImportError as exc:
+            raise ImportError(
+                "Google Workspace group enrollment requires the 'google' extra. "
+                "Install it with: pip install django-email-learning[google]"
+            ) from exc
+
         flow = Flow.from_client_config(
             client_config={
                 "web": {

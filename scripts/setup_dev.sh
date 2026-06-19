@@ -46,37 +46,59 @@ else
     success "Already inside a virtual environment: ${VIRTUAL_ENV}"
 fi
 
-# ── 2. install packages ───────────────────────────────────────────────────────
-header "2/6  Installing packages"
+# ── 2. choose optional features (before install so we can build the extras) ──
+header "2/6  Optional features"
+
+ENABLE_AI="n"
+ENABLE_GOOGLE="n"
+DEL_EXTRAS=""
+
+ask "Enable AI text-editing features? (y/N) "
+read -r ai_choice
+if [[ "${ai_choice,,}" == "y" ]]; then
+    ENABLE_AI="y"
+    DEL_EXTRAS="ai"
+fi
+
+ask "Enable Google Workspace group enrollment? (y/N) "
+read -r google_choice
+if [[ "${google_choice,,}" == "y" ]]; then
+    ENABLE_GOOGLE="y"
+    if [[ -n "$DEL_EXTRAS" ]]; then
+        DEL_EXTRAS="${DEL_EXTRAS},google"
+    else
+        DEL_EXTRAS="google"
+    fi
+fi
+
+# ── 3. install packages ───────────────────────────────────────────────────────
+header "3/6  Installing packages"
 
 info "Installing Django …"
 pip install --quiet --upgrade django
 
-info "Installing django-email-learning …"
-pip install --quiet --upgrade django-email-learning
+if [[ -n "$DEL_EXTRAS" ]]; then
+    info "Installing django-email-learning[${DEL_EXTRAS}] …"
+    pip install --quiet --upgrade "django-email-learning[${DEL_EXTRAS}]"
+else
+    info "Installing django-email-learning …"
+    pip install --quiet --upgrade django-email-learning
+fi
 
-# ── 3. generate secrets ───────────────────────────────────────────────────────
-header "3/6  Dev secrets"
+# ── 4. generate secrets ───────────────────────────────────────────────────────
+header "4/6  Dev secrets"
 
 touch .env
 
-JWT_SECRET=$(generate_secret)
-ENCRYPTION_SECRET=$(generate_secret)
-DJANGO_SECRET=$(generate_secret)
-
-append_env "SECRET_KEY"           "$DJANGO_SECRET"
-append_env "JWT_SECRET_KEY"       "$JWT_SECRET"
-append_env "ENCRYPTION_SECRET_KEY" "$ENCRYPTION_SECRET"
+append_env "SECRET_KEY"            "$(generate_secret)"
+append_env "JWT_SECRET_KEY"        "$(generate_secret)"
+append_env "ENCRYPTION_SECRET_KEY" "$(generate_secret)"
 
 success ".env written with JWT_SECRET_KEY and ENCRYPTION_SECRET_KEY"
 
-# ── 4. optional — AI features ─────────────────────────────────────────────────
-header "4/6  AI features (optional)"
-
-ask "Enable AI text-editing features? (y/N) "
-read -r ai_choice
-
-if [[ "${ai_choice,,}" == "y" ]]; then
+# Collect optional credentials now that .env exists
+if [[ "$ENABLE_AI" == "y" ]]; then
+    echo ""
     ask "  Enter your OPENAI_API_KEY: "
     read -r openai_key
     append_env "OPENAI_API_KEY" "$openai_key"
@@ -97,17 +119,9 @@ if [[ "${ai_choice,,}" == "y" ]]; then
 
     append_env "AI_TEXT_EDITING_MODEL" "$AI_MODEL"
     success "AI enabled with model: ${AI_MODEL}"
-else
-    info "Skipping AI features"
 fi
 
-# ── 5. optional — Google Workspace group enrollment ───────────────────────────
-header "5/6  Google Workspace group enrollment (optional)"
-
-ask "Enable Google Workspace group enrollment? (y/N) "
-read -r google_choice
-
-if [[ "${google_choice,,}" == "y" ]]; then
+if [[ "$ENABLE_GOOGLE" == "y" ]]; then
     echo ""
     warn "You need a GCP project with an OAuth 2.0 Web Application credential."
     warn "Set the authorised redirect URI to:"
@@ -124,12 +138,10 @@ if [[ "${google_choice,,}" == "y" ]]; then
     append_env "GOOGLE_OAUTH_CLIENT_SECRET" "$google_client_secret"
 
     success "Google Workspace enrollment configured"
-else
-    info "Skipping Google Workspace enrollment"
 fi
 
-# ── 6. Django project scaffold ────────────────────────────────────────────────
-header "6/6  Django project"
+# ── 5. Django project scaffold ────────────────────────────────────────────────
+header "5/6  Django project"
 
 PROJECT_NAME="myproject"
 
@@ -137,12 +149,10 @@ if [[ ! -f "manage.py" ]]; then
     info "Scaffolding Django project '${PROJECT_NAME}' …"
     django-admin startproject "${PROJECT_NAME}" .
 
-    # Patch settings.py to add django_email_learning and load .env secrets
     SETTINGS_FILE="${PROJECT_NAME}/settings.py"
 
-    # Prepend env-loading imports at the top of settings.py
     python3 - <<PYEOF
-import re
+import re, os
 
 with open("${SETTINGS_FILE}", "r") as f:
     content = f.read()
@@ -155,19 +165,13 @@ load_dotenv(BASE_DIR / ".env")
 
 '''
 
-# Insert after the first 'from pathlib import Path' line
-content = content.replace(
-    "from pathlib import Path\n",
-    env_loader,
-    1,
-)
+content = content.replace("from pathlib import Path\n", env_loader, 1)
 
 # Wire SECRET_KEY to env
 content = content.replace(
     "SECRET_KEY = 'django-insecure",
     "SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure",
 )
-# Close the os.environ.get call — find the closing quote of the insecure key
 content = re.sub(
     r"(SECRET_KEY = os\.environ\.get\('SECRET_KEY', 'django-insecure[^']*')",
     r"\1)",
@@ -180,7 +184,7 @@ content = content.replace(
     "    'django.contrib.staticfiles',\n    'django_email_learning',\n]",
 )
 
-# Append DJANGO_EMAIL_LEARNING config block at the end
+# Append DJANGO_EMAIL_LEARNING config block
 del_config = '''
 # django-email-learning configuration
 # See https://django-email-learning.readthedocs.io/en/latest/installation.html
@@ -194,10 +198,7 @@ DJANGO_EMAIL_LEARNING = {
 }
 '''
 
-ai_key = os.environ.get("AI_TEXT_EDITING_MODEL")
-google_id = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
-
-if ai_key:
+if os.environ.get("AI_TEXT_EDITING_MODEL"):
     del_config += '''
 DJANGO_EMAIL_LEARNING["AI"] = {
     "OPENAI_API_KEY": os.environ.get("OPENAI_API_KEY"),
@@ -205,7 +206,7 @@ DJANGO_EMAIL_LEARNING["AI"] = {
 }
 '''
 
-if google_id:
+if os.environ.get("GOOGLE_OAUTH_CLIENT_ID"):
     del_config += '''
 DJANGO_EMAIL_LEARNING["GOOGLE_OAUTH_CLIENT_ID"] = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
 DJANGO_EMAIL_LEARNING["GOOGLE_OAUTH_CLIENT_SECRET"] = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
@@ -226,7 +227,9 @@ else
     warn "manage.py already exists — skipping project scaffold"
 fi
 
-# Run migrations
+# ── 6. migrate ────────────────────────────────────────────────────────────────
+header "6/6  Database"
+
 info "Running migrations …"
 python3 manage.py migrate
 
