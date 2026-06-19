@@ -113,8 +113,8 @@ def append_env(env_path: Path, key: str, value: str) -> None:
         f.write(f"{key}={value}\n")
 
 
-def run(args: list[str], **kwargs) -> None:  # type: ignore[type-arg]
-    subprocess.run(args, check=True, **kwargs)
+def run(args: list[str], **kwargs: object) -> None:
+    subprocess.run(args, check=True, **kwargs)  # type: ignore[call-overload]
 
 
 # ── steps ─────────────────────────────────────────────────────────────────────
