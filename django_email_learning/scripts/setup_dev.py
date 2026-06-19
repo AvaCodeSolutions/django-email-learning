@@ -122,7 +122,7 @@ def run(args: list[str], **kwargs) -> None:  # type: ignore[type-arg]
 
 def step_virtualenv(cwd: Path) -> str:
     """Ensure a virtualenv exists and return the path to its Python binary."""
-    header("1/6  Virtual environment")
+    header("1/7  Virtual environment")
 
     if sys.prefix != sys.base_prefix:
         success(f"Already inside a virtual environment: {sys.prefix}")
@@ -139,19 +139,27 @@ def step_virtualenv(cwd: Path) -> str:
     return python
 
 
-def step_project_name() -> str:
-    header("2/6  Project name")
+def step_project_name() -> tuple[str, str]:
+    header("2/7  Project name & URL prefix")
 
     name = ask("  Django project name (default: myproject): ") or "myproject"
     # sanitise: lowercase, replace spaces/hyphens with underscores
     name = re.sub(r"[-\s]+", "_", name.lower())
     name = re.sub(r"[^a-z0-9_]", "", name) or "myproject"
     success(f"Project name: {name}")
-    return name
+
+    prefix = (
+        ask("  URL prefix for django-email-learning (default: email-learning): ")
+        or "email-learning"
+    )
+    # strip leading/trailing slashes
+    prefix = prefix.strip("/")
+    success(f"URL prefix: /{prefix}/")
+    return name, prefix
 
 
 def step_choose_features() -> tuple[bool, bool]:
-    header("3/6  Optional features")
+    header("3/7  Optional features")
 
     print(
         "  AI text-editing lets instructors improve lesson content with AI assistance."
@@ -179,7 +187,7 @@ def step_choose_features() -> tuple[bool, bool]:
 
 
 def step_install(python: str, enable_ai: bool, enable_google: bool) -> None:
-    header("4/6  Installing packages")
+    header("4/7  Installing packages")
 
     pip = [python, "-m", "pip", "install", "--quiet", "--upgrade"]
 
@@ -203,7 +211,7 @@ def step_install(python: str, enable_ai: bool, enable_google: bool) -> None:
 
 
 def step_secrets(cwd: Path) -> None:
-    header("5/6  Dev secrets")
+    header("5/7  Dev secrets")
 
     env_path = cwd / ".env"
     env_path.touch()
@@ -243,9 +251,14 @@ def step_optional_credentials(cwd: Path, enable_ai: bool, enable_google: bool) -
 
 
 def step_scaffold(
-    cwd: Path, python: str, project_name: str, enable_ai: bool, enable_google: bool
+    cwd: Path,
+    python: str,
+    project_name: str,
+    url_prefix: str,
+    enable_ai: bool,
+    enable_google: bool,
 ) -> None:
-    header("6/6  Django project")
+    header("6/7  Django project")
 
     manage_py = cwd / "manage.py"
 
@@ -254,15 +267,27 @@ def step_scaffold(
     else:
         info(f"Scaffolding Django project '{project_name}' …")
         run([python, "-m", "django", "startproject", project_name, str(cwd)])
+
         settings_path = cwd / project_name / "settings.py"
         _patch_settings(settings_path, enable_ai, enable_google)
         success("settings.py patched")
+
+        urls_path = cwd / project_name / "urls.py"
+        _patch_urls(urls_path, url_prefix)
+        success("urls.py configured")
 
     _write_gitignore(cwd)
 
     info("Running migrations …")
     run([python, "manage.py", "migrate"])
     success("Database ready")
+
+
+def step_superuser(python: str) -> None:
+    header("7/7  Superuser")
+
+    info("Creating a superuser account for the admin …")
+    run([python, "manage.py", "createsuperuser"])
 
 
 GITIGNORE_CONTENT = """
@@ -323,6 +348,28 @@ def _write_gitignore(cwd: Path) -> None:
         return
     gitignore.write_text(GITIGNORE_CONTENT)
     success(".gitignore created (includes .env)")
+
+
+def _patch_urls(urls_path: Path, url_prefix: str) -> None:
+    urls_path.write_text(
+        f"""from django.contrib import admin
+from django.urls import path, include
+from django.views.generic import RedirectView
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("accounts/", include("django.contrib.auth.urls")),
+    path(
+        "{url_prefix}/",
+        include("django_email_learning.urls", namespace="django_email_learning"),
+    ),
+    path(
+        "",
+        RedirectView.as_view(url="/{url_prefix}/platform/", permanent=False),
+    ),
+]
+"""
+    )
 
 
 def _patch_settings(settings_path: Path, enable_ai: bool, enable_google: bool) -> None:
@@ -402,7 +449,7 @@ DJANGO_EMAIL_LEARNING = {{
     settings_path.write_text(content + del_config)
 
 
-def print_done(project_name: str) -> None:
+def print_done(project_name: str, url_prefix: str) -> None:
     print()
     print(
         f"{GREEN}{BOLD}╔══════════════════════════════════════════════════════════════╗{RESET}"
@@ -421,6 +468,11 @@ def print_done(project_name: str) -> None:
     print("    • Email backend: Console (emails printed to terminal)")
     print("    • Logos:         Built-in defaults")
     print("    • Quiz settings: Default pass mark and attempt limits")
+    print()
+    print("  URLs:")
+    print(f"    • Platform:   http://localhost:8000/{url_prefix}/platform/")
+    print("    • Admin:      http://localhost:8000/admin/")
+    print("    • Login:      http://localhost:8000/accounts/login/")
     print()
     print("  These are development defaults only. Before going to production,")
     print("  review the full installation guide for configuration options:")
@@ -453,13 +505,14 @@ def main() -> None:
     cwd = Path.cwd()
 
     python = step_virtualenv(cwd)
-    project_name = step_project_name()
+    project_name, url_prefix = step_project_name()
     enable_ai, enable_google = step_choose_features()
     step_install(python, enable_ai, enable_google)
     step_secrets(cwd)
     step_optional_credentials(cwd, enable_ai, enable_google)
-    step_scaffold(cwd, python, project_name, enable_ai, enable_google)
-    print_done(project_name)
+    step_scaffold(cwd, python, project_name, url_prefix, enable_ai, enable_google)
+    step_superuser(python)
+    print_done(project_name, url_prefix)
 
 
 if __name__ == "__main__":
