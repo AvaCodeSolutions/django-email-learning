@@ -49,7 +49,7 @@ const defaultAppContext = {
     quiz: sampleQuiz,
     token: 'test-token',
     csrfToken: 'csrf-token',
-    apiEndpoint: '/api/quiz/submit/',
+    apiEndpoint: '/api/quizzes/submit/',
     localeMessages: sampleLocaleMessages,
     direction: 'ltr',
 };
@@ -135,7 +135,7 @@ describe('Quiz', () => {
         fireEvent.click(screen.getAllByRole('button', { name: 'Submit' }).at(-1));
         await waitFor(() => expect(global.fetch).toHaveBeenCalledOnce());
         const [url, options] = global.fetch.mock.calls[0];
-        expect(url).toBe('/api/quiz/submit/');
+        expect(url).toBe('/api/quizzes/submit/');
         expect(options.method).toBe('POST');
         expect(options.headers['X-CSRFToken']).toBe('csrf-token');
     });

@@ -25,7 +25,7 @@ const ImageUpload = ({ onUploadSuccess, onUploadError, initialUrl }) => {
 
     useEffect(() => {
         if (imageFile) {
-            fetch(`${apiBaseUrl}/organizations/1/file/`, {
+            fetch(`${apiBaseUrl}/organizations/1/files/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': getCookie('csrftoken'),

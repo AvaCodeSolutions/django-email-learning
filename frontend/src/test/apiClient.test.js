@@ -92,7 +92,7 @@ describe('apiClient.upload', () => {
     mockFetch(200, { url: '/files/x.pdf' });
     const formData = new FormData();
 
-    await apiClient.upload('/api/file/', formData);
+    await apiClient.upload('/api/files/', formData);
 
     const [, options] = fetch.mock.calls[0];
     expect(options.headers['Content-Type']).toBeUndefined();
