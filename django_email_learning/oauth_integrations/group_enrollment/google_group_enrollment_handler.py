@@ -39,11 +39,11 @@ class GoogleGroupEnrollmentHandler(BaseGroupEnrollmentHandler):
             client_config={
                 "web": {
                     "client_id": DJANGO_EMAIL_LEARNING_SETTINGS.get(
-                        "GOOGLE_OAUTH_CLIENT_ID"
-                    ),
+                        "GOOGLE_OAUTH", {}
+                    ).get("CLIENT_ID"),
                     "client_secret": DJANGO_EMAIL_LEARNING_SETTINGS.get(
-                        "GOOGLE_OAUTH_CLIENT_SECRET"
-                    ),
+                        "GOOGLE_OAUTH", {}
+                    ).get("CLIENT_SECRET"),
                     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                     "token_uri": "https://oauth2.googleapis.com/token",
                 }

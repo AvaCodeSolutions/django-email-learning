@@ -292,7 +292,7 @@ class CourseView(BasePlatformView):
             "rtl" if get_language_info(course.language)["bidi"] else "ltr"
         )
         context["appContext"]["showGoogleWorkspaceImport"] = bool(
-            DJANGO_EMAIL_LEARNING_SETTINGS.get("GOOGLE_OAUTH_CLIENT_ID")
+            DJANGO_EMAIL_LEARNING_SETTINGS.get("GOOGLE_OAUTH", {}).get("CLIENT_ID")
         ) and apps.is_installed("django_email_learning.oauth_integrations")
         context["page_title"] = _("Course: %(title)s") % {"title": course.title}
         return context

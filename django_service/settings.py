@@ -119,8 +119,10 @@ DJANGO_EMAIL_LEARNING = {
         "TEXT_EDITING_MODEL": LanguageModel.GPT_4O_MINI.model_name,
     },
     "AMP_ENABLED": os.environ.get("AMP_ENABLED", "False").lower() == "true",
-    "GOOGLE_OAUTH_CLIENT_ID": os.environ.get("GOOGLE_OAUTH_CLIENT_ID"),
-    "GOOGLE_OAUTH_CLIENT_SECRET": os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET"),
+    "GOOGLE_OAUTH": {
+        "CLIENT_ID": os.environ.get("GOOGLE_OAUTH_CLIENT_ID"),
+        "CLIENT_SECRET": os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET"),
+    },
     "LOGO": {
         "HORIZONTAL_LOCKUP": {
             "LIGHT_BACKGROUND": None,

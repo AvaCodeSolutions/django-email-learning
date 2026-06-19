@@ -168,12 +168,15 @@ def test_redirect_success_completes_session_and_executes_command(
         "course_id": course.id,
     }
 
-    with patch(
-        "django_email_learning.oauth_integrations.views.decode_jwt",
-        return_value=decoded_request,
-    ), patch(
-        "django_email_learning.oauth_integrations.group_enrollment.google_group_enrollment_handler.GoogleGroupEnrollmentHandler.handle_redirect"
-    ) as mocked_handle:
+    with (
+        patch(
+            "django_email_learning.oauth_integrations.views.decode_jwt",
+            return_value=decoded_request,
+        ),
+        patch(
+            "django_email_learning.oauth_integrations.group_enrollment.google_group_enrollment_handler.GoogleGroupEnrollmentHandler.handle_redirect"
+        ) as mocked_handle,
+    ):
         mocked_handle.return_value = "test-access-token"
         response = anonymous_client.get(
             f"{REDIRECT_URL}?state={session.session_id}&code=test-code"
@@ -328,14 +331,16 @@ def test_enroll_users_success(db, org_admin_client, course):
     Session.objects.create(session_id=session_id, jwt_token=get_jwt(state=session_id))
     users_to_enroll = {User(email="alice@example.com"), User(email="bob@example.com")}
 
-    with patch(
-        "django_email_learning.oauth_integrations.group_enrollment.google_group_enrollment_handler.GoogleGroupEnrollmentHandler.get_users_to_enroll",
-        return_value=users_to_enroll,
-    ), patch(
-        "django_email_learning.platform.api.views.EnrollCommand"
-    ) as mock_enroll, patch(
-        "django_email_learning.platform.api.views.VerifyEnrollmentCommand"
-    ) as mock_verify:
+    with (
+        patch(
+            "django_email_learning.oauth_integrations.group_enrollment.google_group_enrollment_handler.GoogleGroupEnrollmentHandler.get_users_to_enroll",
+            return_value=users_to_enroll,
+        ),
+        patch("django_email_learning.platform.api.views.EnrollCommand") as mock_enroll,
+        patch(
+            "django_email_learning.platform.api.views.VerifyEnrollmentCommand"
+        ) as mock_verify,
+    ):
         mock_enroll.return_value.execute.return_value = None
         mock_verify.return_value.execute.return_value = None
         response = org_admin_client.post(

@@ -158,7 +158,7 @@ def step_project_name() -> tuple[str, str]:
     return name, prefix
 
 
-def step_choose_features() -> tuple[bool, bool]:
+def step_choose_features(url_prefix: str) -> tuple[bool, bool]:
     header("3/7  Optional features")
 
     print(
@@ -177,7 +177,7 @@ def step_choose_features() -> tuple[bool, bool]:
         f"  {CYAN}▸ Requires a GCP project with an OAuth 2.0 Web Application credential.{RESET}"
     )
     print(f"  {CYAN}  Set the authorised redirect URI to:{RESET}")
-    print(f"  {CYAN}    http://localhost:8000/oauth/google/callback/{RESET}")
+    print(f"  {CYAN}    http://localhost:8000/{url_prefix}/oauth/redirect/{RESET}")
     print(f"  {CYAN}  Then copy the Client ID and Secret from:{RESET}")
     print(f"  {CYAN}  https://console.cloud.google.com/apis/credentials{RESET}")
     enable_google = (
@@ -586,8 +586,10 @@ def _patch_settings(settings_path: Path, enable_ai: bool, enable_google: bool) -
     )
     google_block = (
         """
-    "GOOGLE_OAUTH_CLIENT_ID": os.environ.get("GOOGLE_OAUTH_CLIENT_ID"),
-    "GOOGLE_OAUTH_CLIENT_SECRET": os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET"),"""
+    "GOOGLE_OAUTH": {
+        "CLIENT_ID": os.environ.get("GOOGLE_OAUTH_CLIENT_ID"),
+        "CLIENT_SECRET": os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET"),
+    },"""
         if enable_google
         else ""
     )
@@ -682,7 +684,7 @@ def main() -> None:
 
     python = step_virtualenv(cwd)
     project_name, url_prefix = step_project_name()
-    enable_ai, enable_google = step_choose_features()
+    enable_ai, enable_google = step_choose_features(url_prefix)
     step_install(python, enable_ai, enable_google)
     step_secrets(cwd)
     step_optional_credentials(cwd, enable_ai, enable_google)

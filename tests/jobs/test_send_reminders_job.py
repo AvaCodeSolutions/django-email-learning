@@ -128,14 +128,17 @@ def test_send_reminders_job_blocks_on_unexpected_exception_and_tracks_metric(
 
     reminder_queue_mock.add_task(delivery_schedule)
 
-    with patch.object(
-        SendQuizReminderCommand,
-        "execute",
-        side_effect=Exception("Simulated reminder failure"),
-    ), patch.object(
-        send_reminders_job_module.metric_service,
-        "reminder_schedule_blocked",
-    ) as metric_blocked_spy:
+    with (
+        patch.object(
+            SendQuizReminderCommand,
+            "execute",
+            side_effect=Exception("Simulated reminder failure"),
+        ),
+        patch.object(
+            send_reminders_job_module.metric_service,
+            "reminder_schedule_blocked",
+        ) as metric_blocked_spy,
+    ):
         job = SendRemindersJob()
         job.run()
 
@@ -154,13 +157,16 @@ def test_send_reminders_job_does_not_emit_start_or_finish_metrics_when_already_r
         status=JobStatus.RUNNING.value,
     )
 
-    with patch.object(
-        send_reminders_job_module.metric_service,
-        "job_execution_started",
-    ) as metric_started_spy, patch.object(
-        send_reminders_job_module.metric_service,
-        "job_execution_finished",
-    ) as metric_finished_spy:
+    with (
+        patch.object(
+            send_reminders_job_module.metric_service,
+            "job_execution_started",
+        ) as metric_started_spy,
+        patch.object(
+            send_reminders_job_module.metric_service,
+            "job_execution_finished",
+        ) as metric_finished_spy,
+    ):
         SendRemindersJob().run()
 
     metric_started_spy.assert_not_called()
@@ -182,11 +188,14 @@ def test_send_reminders_job_uses_quiz_reminder_command_for_quiz_content(
 
     reminder_queue_mock.add_task(delivery_schedule)
 
-    with patch.object(
-        SendQuizReminderCommand, "execute", return_value=None
-    ) as quiz_execute, patch.object(
-        SendAssignmentReminderCommand, "execute", return_value=None
-    ) as assignment_execute:
+    with (
+        patch.object(
+            SendQuizReminderCommand, "execute", return_value=None
+        ) as quiz_execute,
+        patch.object(
+            SendAssignmentReminderCommand, "execute", return_value=None
+        ) as assignment_execute,
+    ):
         job = SendRemindersJob()
         job.run()
 
@@ -209,11 +218,14 @@ def test_send_reminders_job_uses_assignment_reminder_command_for_assignment_cont
 
     reminder_queue_mock.add_task(delivery_schedule)
 
-    with patch.object(
-        SendAssignmentReminderCommand, "execute", return_value=None
-    ) as assignment_execute, patch.object(
-        SendQuizReminderCommand, "execute", return_value=None
-    ) as quiz_execute:
+    with (
+        patch.object(
+            SendAssignmentReminderCommand, "execute", return_value=None
+        ) as assignment_execute,
+        patch.object(
+            SendQuizReminderCommand, "execute", return_value=None
+        ) as quiz_execute,
+    ):
         job = SendRemindersJob()
         job.run()
 

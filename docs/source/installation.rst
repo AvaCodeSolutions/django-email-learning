@@ -331,6 +331,42 @@ Currently supported built-in models are:
 
 See `AI Configuration <technical/ai-configuration.html>`_ for full details.
 
+**GOOGLE_OAUTH**
+
+Optional configuration for Google Workspace group enrollment.
+
+- Configure this only if you want to allow bulk enrolment of learners from a Google Workspace directory.
+- If you do not use Google Workspace features, you can omit ``GOOGLE_OAUTH`` entirely.
+- Install Google dependencies with ``pip install 'django-email-learning[google]'``.
+- Add ``'django_email_learning.oauth_integrations'`` to ``INSTALLED_APPS`` when using this feature.
+- You need a GCP project with an **OAuth 2.0 Web Application** credential. Set the authorised redirect URI to ``<SITE_BASE_URL>/oauth/google/callback/``.
+
+.. code-block:: python
+
+    INSTALLED_APPS = [
+        # ... your other apps
+        'django_email_learning',
+        'django_email_learning.oauth_integrations',
+        # ... more apps
+    ]
+
+Available keys:
+
+- ``CLIENT_ID``: OAuth 2.0 client ID from the GCP console.
+- ``CLIENT_SECRET``: OAuth 2.0 client secret from the GCP console.
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
+        'GOOGLE_OAUTH': {
+            'CLIENT_ID': os.environ.get('GOOGLE_OAUTH_CLIENT_ID'),
+            'CLIENT_SECRET': os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET'),
+        },
+    }
+
 **AMP_ENABLED**
 
 Optional flag to enable AMP email rendering for supported clients.
