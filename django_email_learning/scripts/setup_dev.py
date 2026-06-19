@@ -276,6 +276,8 @@ def step_scaffold(
         _patch_urls(urls_path, url_prefix)
         success("urls.py configured")
 
+        _create_login_template(cwd, project_name)
+
     _write_gitignore(cwd)
 
     info("Running migrations …")
@@ -370,6 +372,60 @@ urlpatterns = [
 ]
 """
     )
+
+
+def _create_login_template(cwd: Path, project_name: str) -> None:
+    """Create a minimal registration/login.html required by django.contrib.auth.urls."""
+    templates_dir = cwd / project_name / "templates" / "registration"
+    templates_dir.mkdir(parents=True, exist_ok=True)
+    (templates_dir / "login.html").write_text(
+        """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Log in</title>
+  <style>
+    body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; background: #f5f5f5; }
+    .card { background: #fff; padding: 2rem 2.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,.1); width: 100%; max-width: 360px; }
+    h1 { margin: 0 0 1.5rem; font-size: 1.4rem; }
+    label { display: block; margin-bottom: .25rem; font-size: .9rem; font-weight: 600; }
+    input[type=text], input[type=password] { width: 100%; padding: .5rem .75rem; margin-bottom: 1rem; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1rem; }
+    button { width: 100%; padding: .6rem; background: #0b74e5; color: #fff; border: none; border-radius: 4px; font-size: 1rem; cursor: pointer; }
+    button:hover { background: #0960c4; }
+    .errors { color: #c0392b; margin-bottom: 1rem; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Log in</h1>
+    {% if form.errors %}
+      <p class="errors">Invalid username or password.</p>
+    {% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <label for="id_username">Username</label>
+      {{ form.username }}
+      <label for="id_password">Password</label>
+      {{ form.password }}
+      <input type="hidden" name="next" value="{{ next }}">
+      <button type="submit">Log in</button>
+    </form>
+  </div>
+</body>
+</html>
+"""
+    )
+
+    # Register the templates directory in settings.py
+    settings_path = cwd / project_name / "settings.py"
+    content = settings_path.read_text()
+    content = content.replace(
+        '"DIRS": [],',
+        f'"DIRS": [BASE_DIR / "{project_name}" / "templates"],',
+        1,
+    )
+    settings_path.write_text(content)
+    success("Login template created")
 
 
 def _patch_settings(settings_path: Path, enable_ai: bool, enable_google: bool) -> None:
