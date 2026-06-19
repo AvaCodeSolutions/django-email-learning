@@ -10,7 +10,6 @@ import re
 import secrets
 import subprocess
 import sys
-import textwrap
 import venv
 from pathlib import Path
 
@@ -90,20 +89,24 @@ def step_choose_features() -> tuple[bool, bool]:
     header("2/6  Optional features")
 
     print(
+        f"{YELLOW}"
         "  AI text-editing lets instructors improve lesson content with AI assistance.\n"
         "  Currently only OpenAI is supported — you will need an OpenAI account and\n"
         "  an API key (https://platform.openai.com/api-keys)."
+        f"{RESET}"
     )
     enable_ai = ask("  Enable AI text-editing features? (y/N) ").lower() == "y"
 
     print()
     print(
+        f"{YELLOW}"
         "  Google Workspace group enrollment lets you bulk-enrol learners from a\n"
         "  Google Workspace directory. You will need a GCP project with an OAuth 2.0\n"
         "  Web Application credential. Set the authorised redirect URI to:\n"
         "    http://localhost:8000/oauth/google/callback/\n"
         "  Copy the Client ID and Client Secret from the GCP console\n"
         "  (https://console.cloud.google.com/apis/credentials)."
+        f"{RESET}"
     )
     enable_google = (
         ask("  Enable Google Workspace group enrollment? (y/N) ").lower() == "y"
@@ -218,33 +221,37 @@ def _patch_settings(settings_path: Path, enable_ai: bool, enable_google: bool) -
         "    'django.contrib.staticfiles',\n    'django_email_learning',\n]",
     )
 
-    # Build DJANGO_EMAIL_LEARNING config block
-    del_config = textwrap.dedent("""
-        # django-email-learning configuration
-        # See https://django-email-learning.readthedocs.io/en/latest/installation.html
-        EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    # Build DJANGO_EMAIL_LEARNING config block as a single dict
+    ai_block = (
+        """
+    "AI": {
+        "OPENAI_API_KEY": os.environ.get("OPENAI_API_KEY"),
+        "TEXT_EDITING_MODEL": os.environ.get("AI_TEXT_EDITING_MODEL", "gpt-4o-mini"),
+    },"""
+        if enable_ai
+        else ""
+    )
+    google_block = (
+        """
+    "GOOGLE_OAUTH_CLIENT_ID": os.environ.get("GOOGLE_OAUTH_CLIENT_ID"),
+    "GOOGLE_OAUTH_CLIENT_SECRET": os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET"),"""
+        if enable_google
+        else ""
+    )
 
-        DJANGO_EMAIL_LEARNING = {
-            "SITE_BASE_URL": os.environ.get("SITE_BASE_URL", "http://localhost:8000"),
-            "JWT_SECRET_KEY": os.environ.get("JWT_SECRET_KEY"),
-            "ENCRYPTION_SECRET_KEY": os.environ.get("ENCRYPTION_SECRET_KEY"),
-            "FROM_EMAIL": os.environ.get("FROM_EMAIL", "webmaster@localhost"),
-        }
-    """)
+    del_config = f"""
+# django-email-learning configuration
+# See https://django-email-learning.readthedocs.io/en/latest/installation.html
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
-    if enable_ai:
-        del_config += textwrap.dedent("""
-            DJANGO_EMAIL_LEARNING["AI"] = {
-                "OPENAI_API_KEY": os.environ.get("OPENAI_API_KEY"),
-                "TEXT_EDITING_MODEL": os.environ.get("AI_TEXT_EDITING_MODEL", "gpt-4o-mini"),
-            }
-        """)
-
-    if enable_google:
-        del_config += textwrap.dedent("""
-            DJANGO_EMAIL_LEARNING["GOOGLE_OAUTH_CLIENT_ID"] = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
-            DJANGO_EMAIL_LEARNING["GOOGLE_OAUTH_CLIENT_SECRET"] = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
-        """)
+DJANGO_EMAIL_LEARNING = {{
+    "BASE_DIR": BASE_DIR,
+    "SITE_BASE_URL": os.environ.get("SITE_BASE_URL", "http://localhost:8000"),
+    "JWT_SECRET_KEY": os.environ.get("JWT_SECRET_KEY"),
+    "ENCRYPTION_SECRET_KEY": os.environ.get("ENCRYPTION_SECRET_KEY"),
+    "FROM_EMAIL": os.environ.get("FROM_EMAIL", "webmaster@localhost"),{ai_block}{google_block}
+}}
+"""
 
     settings_path.write_text(content + del_config)
 
