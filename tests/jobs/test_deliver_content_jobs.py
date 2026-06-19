@@ -135,14 +135,17 @@ def test_deliver_contents_job_blocks_after_3_failed_attempts(
     job = DeliverContentsJob()
 
     # Patch the send_lesson_content method to always raise an exception
-    with patch.object(
-        SendLessonCommand,
-        "execute",
-        side_effect=Exception("Simulated sending failure"),
-    ), patch.object(
-        deliver_contents_job_module.metric_service,
-        "delivery_schedule_blocked",
-    ) as metric_blocked_spy:
+    with (
+        patch.object(
+            SendLessonCommand,
+            "execute",
+            side_effect=Exception("Simulated sending failure"),
+        ),
+        patch.object(
+            deliver_contents_job_module.metric_service,
+            "delivery_schedule_blocked",
+        ) as metric_blocked_spy,
+    ):
         job.run()
 
     # After running the job, the delivery schedule should be in BLOCKED status
@@ -253,13 +256,16 @@ def test_deliver_contents_job_does_not_emit_start_or_finish_metrics_when_already
         status=JobStatus.RUNNING.value,
     )
 
-    with patch.object(
-        deliver_contents_job_module.metric_service,
-        "job_execution_started",
-    ) as metric_started_spy, patch.object(
-        deliver_contents_job_module.metric_service,
-        "job_execution_finished",
-    ) as metric_finished_spy:
+    with (
+        patch.object(
+            deliver_contents_job_module.metric_service,
+            "job_execution_started",
+        ) as metric_started_spy,
+        patch.object(
+            deliver_contents_job_module.metric_service,
+            "job_execution_finished",
+        ) as metric_finished_spy,
+    ):
         DeliverContentsJob().run()
 
     metric_started_spy.assert_not_called()

@@ -11,11 +11,14 @@ from django_email_learning.models import JobName
 def test_runs_job_and_prints_success_message() -> None:
     stdout = StringIO()
 
-    with patch(
-        "django_email_learning.management.commands.deactivate_inactive_enrollments.logging.basicConfig"
-    ) as mock_basic_config, patch(
-        "django_email_learning.management.commands.deactivate_inactive_enrollments.DeactivateInactiveEnrollmentsJob"
-    ) as mock_job_cls:
+    with (
+        patch(
+            "django_email_learning.management.commands.deactivate_inactive_enrollments.logging.basicConfig"
+        ) as mock_basic_config,
+        patch(
+            "django_email_learning.management.commands.deactivate_inactive_enrollments.DeactivateInactiveEnrollmentsJob"
+        ) as mock_job_cls,
+    ):
         call_command("deactivate_inactive_enrollments", stdout=stdout)
 
     assert mock_basic_config.call_count == 1
@@ -30,10 +33,13 @@ def test_runs_job_and_prints_success_message() -> None:
 def test_enables_debug_logging_when_verbose_option_used() -> None:
     stdout = StringIO()
 
-    with patch(
-        "django_email_learning.management.commands.deactivate_inactive_enrollments.logging.basicConfig"
-    ) as mock_basic_config, patch(
-        "django_email_learning.management.commands.deactivate_inactive_enrollments.DeactivateInactiveEnrollmentsJob"
+    with (
+        patch(
+            "django_email_learning.management.commands.deactivate_inactive_enrollments.logging.basicConfig"
+        ) as mock_basic_config,
+        patch(
+            "django_email_learning.management.commands.deactivate_inactive_enrollments.DeactivateInactiveEnrollmentsJob"
+        ),
     ):
         call_command("deactivate_inactive_enrollments", verbose=True, stdout=stdout)
 
@@ -59,11 +65,14 @@ def test_handles_keyboard_interrupt_without_raising() -> None:
 def test_records_metric_and_reraises_when_job_fails() -> None:
     stdout = StringIO()
 
-    with patch(
-        "django_email_learning.management.commands.deactivate_inactive_enrollments.DeactivateInactiveEnrollmentsJob"
-    ) as mock_job_cls, patch(
-        "django_email_learning.management.commands.deactivate_inactive_enrollments.metric_service.job_execution_failed"
-    ) as mock_job_execution_failed:
+    with (
+        patch(
+            "django_email_learning.management.commands.deactivate_inactive_enrollments.DeactivateInactiveEnrollmentsJob"
+        ) as mock_job_cls,
+        patch(
+            "django_email_learning.management.commands.deactivate_inactive_enrollments.metric_service.job_execution_failed"
+        ) as mock_job_execution_failed,
+    ):
         mock_job_cls.return_value.run.side_effect = RuntimeError("boom")
 
         with pytest.raises(RuntimeError):
