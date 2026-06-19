@@ -586,10 +586,10 @@ def _patch_settings(settings_path: Path, enable_ai: bool, enable_google: bool) -
     )
     google_block = (
         """
-    "GOOGLE_OAUTH": {{
+    "GOOGLE_OAUTH": {
         "CLIENT_ID": os.environ.get("GOOGLE_OAUTH_CLIENT_ID"),
         "CLIENT_SECRET": os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET"),
-    }},"""
+    },"""
         if enable_google
         else ""
     )
