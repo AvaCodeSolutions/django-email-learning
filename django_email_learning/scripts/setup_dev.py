@@ -561,10 +561,15 @@ def _patch_settings(settings_path: Path, enable_ai: bool, enable_google: bool) -
         content,
     )
 
-    # Add django_email_learning to INSTALLED_APPS
+    # Add django_email_learning and optional sub-apps to INSTALLED_APPS
+    extra_apps = "    'django_email_learning',\n"
+    if enable_google:
+        extra_apps += "    'django_email_learning.oauth_integrations',\n"
+    if enable_ai:
+        extra_apps += "    'django_email_learning.ai',\n"
     content = content.replace(
         "    'django.contrib.staticfiles',\n]",
-        "    'django.contrib.staticfiles',\n    'django_email_learning',\n]",
+        f"    'django.contrib.staticfiles',\n{extra_apps}]",
     )
 
     # Build DJANGO_EMAIL_LEARNING config block as a single dict
