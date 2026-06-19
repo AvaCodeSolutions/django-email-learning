@@ -417,11 +417,12 @@ def _create_login_template(cwd: Path, project_name: str) -> None:
     )
 
     # Register the templates directory in settings.py
+    # Django's generated settings.py uses single quotes, so match that.
     settings_path = cwd / project_name / "settings.py"
     content = settings_path.read_text()
     content = content.replace(
-        '"DIRS": [],',
-        f'"DIRS": [BASE_DIR / "{project_name}" / "templates"],',
+        "'DIRS': [],",
+        f"'DIRS': [BASE_DIR / '{project_name}' / 'templates'],",
         1,
     )
     settings_path.write_text(content)
