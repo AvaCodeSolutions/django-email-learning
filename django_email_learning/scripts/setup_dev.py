@@ -6,10 +6,17 @@ Registered as the `django-email-learning-init` console script.
 
 from __future__ import annotations
 
+import argparse
+import itertools
+import random
 import re
 import secrets
 import subprocess
 import sys
+import termios
+import threading
+import time
+import tty
 import venv
 from pathlib import Path
 
@@ -21,14 +28,19 @@ GREEN = "\033[0;32m"
 CYAN = "\033[0;36m"
 YELLOW = "\033[0;33m"
 RESET = "\033[0m"
+CLEAR_LINE = "\033[2K\r"
+
+QUIET = False
 
 
 def info(msg: str) -> None:
-    print(f"{CYAN}▸ {msg}{RESET}")
+    if not QUIET:
+        print(f"{CYAN}▸ {msg}{RESET}")
 
 
 def success(msg: str) -> None:
-    print(f"{GREEN}✔ {msg}{RESET}")
+    if not QUIET:
+        print(f"{GREEN}✔ {msg}{RESET}")
 
 
 def warn(msg: str) -> None:
@@ -36,11 +48,108 @@ def warn(msg: str) -> None:
 
 
 def header(msg: str) -> None:
-    print(f"\n{BOLD}{msg}{RESET}")
+    if not QUIET:
+        print(f"\n{CYAN}{BOLD}{msg}{RESET}")
 
 
 def ask(prompt: str) -> str:
     return input(f"{BOLD}{prompt}{RESET}").strip()
+
+
+# ── spinner ───────────────────────────────────────────────────────────────────
+
+INSTALL_QUIPS = [
+    "Teaching emails new tricks…",
+    "Brewing something great…",
+    "Wiring up the curriculum…",
+    "Summoning Django spirits…",
+    "Packaging knowledge…",
+    "Connecting the dots…",
+    "Almost there, hang tight…",
+]
+
+
+class Spinner:
+    def __init__(self, label: str) -> None:
+        self._label = label
+        self._stop_event = threading.Event()
+        self._thread = threading.Thread(target=self._spin, daemon=True)
+
+    def _spin(self) -> None:
+        frames = itertools.cycle("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏")
+        quip = random.choice(INSTALL_QUIPS)
+        while not self._stop_event.is_set():
+            frame = next(frames)
+            print(
+                f"{CLEAR_LINE}{CYAN}{frame}{RESET} {self._label} {YELLOW}{quip}{RESET}",
+                end="",
+                flush=True,
+            )
+            time.sleep(0.08)
+
+    def __enter__(self) -> Spinner:
+        if not QUIET:
+            self._thread.start()
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self._stop_event.set()
+        if not QUIET:
+            self._thread.join()
+            print(CLEAR_LINE, end="", flush=True)
+
+
+# ── arrow-key menu ────────────────────────────────────────────────────────────
+
+
+def arrow_menu(options: list[tuple[str, str]], title: str) -> int:
+    """
+    Interactive up/down arrow-key menu. Returns the index of the selected item.
+    Each option is a (label, description) tuple.
+    """
+    selected = 0
+
+    def render() -> None:
+        # Move cursor up to redraw
+        if render.drawn:  # type: ignore[attr-defined]
+            print(f"\033[{len(options)}A", end="")
+        for i, (label, desc) in enumerate(options):
+            if i == selected:
+                print(f"  {GREEN}{BOLD}❯ {label}{RESET}  {desc}")
+            else:
+                print(f"    {label}  {desc}")
+        render.drawn = True  # type: ignore[attr-defined]
+
+    render.drawn = False  # type: ignore[attr-defined]
+
+    print(f"\n  {BOLD}{title}{RESET}  {CYAN}(↑↓ to move, Enter to select){RESET}")
+    print()
+
+    fd = sys.stdin.fileno()
+    old = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        render()
+        while True:
+            ch = sys.stdin.read(1)
+            if ch == "\x1b":
+                ch2 = sys.stdin.read(1)
+                ch3 = sys.stdin.read(1)
+                if ch2 == "[":
+                    if ch3 == "A":  # up
+                        selected = (selected - 1) % len(options)
+                    elif ch3 == "B":  # down
+                        selected = (selected + 1) % len(options)
+            elif ch in ("\r", "\n"):
+                break
+            elif ch == "\x03":  # Ctrl-C
+                raise KeyboardInterrupt
+            render()
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, old)
+
+    print()
+    return selected
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -85,8 +194,19 @@ def step_virtualenv(cwd: Path) -> str:
     return python
 
 
+def step_project_name() -> str:
+    header("2/6  Project name")
+
+    name = ask("  Django project name (default: myproject): ") or "myproject"
+    # sanitise: lowercase, replace spaces/hyphens with underscores
+    name = re.sub(r"[-\s]+", "_", name.lower())
+    name = re.sub(r"[^a-z0-9_]", "", name) or "myproject"
+    success(f"Project name: {name}")
+    return name
+
+
 def step_choose_features() -> tuple[bool, bool]:
-    header("2/6  Optional features")
+    header("3/6  Optional features")
 
     print(
         "  AI text-editing lets instructors improve lesson content with AI assistance."
@@ -114,29 +234,31 @@ def step_choose_features() -> tuple[bool, bool]:
 
 
 def step_install(python: str, enable_ai: bool, enable_google: bool) -> None:
-    header("3/6  Installing packages")
+    header("4/6  Installing packages")
 
     pip = [python, "-m", "pip", "install", "--quiet", "--upgrade"]
 
-    info("🦄 Installing Django …")
-    run(pip + ["django"])
+    with Spinner("🦄 Installing Django …"):
+        run(pip + ["django"])
+    success("🦄 Django installed")
 
     extras = ",".join(
         filter(None, ["ai" if enable_ai else "", "google" if enable_google else ""])
     )
     package = f"django-email-learning[{extras}]" if extras else "django-email-learning"
     emoji = "🚀" if extras else "🦄"
-    info(f"{emoji} Installing {package} …")
-    run(pip + [package])
 
-    info("Installing python-dotenv …")
-    run(pip + ["python-dotenv"])
+    with Spinner(f"{emoji} Installing {package} …"):
+        run(pip + [package])
+    success(f"{emoji} {package} installed")
 
-    success("Packages installed")
+    with Spinner("Installing python-dotenv …"):
+        run(pip + ["python-dotenv"])
+    success("python-dotenv installed")
 
 
 def step_secrets(cwd: Path) -> None:
-    header("4/6  Dev secrets")
+    header("5/6  Dev secrets")
 
     env_path = cwd / ".env"
     env_path.touch()
@@ -156,13 +278,13 @@ def step_optional_credentials(cwd: Path, enable_ai: bool, enable_google: bool) -
         openai_key = ask("  Enter your OPENAI_API_KEY: ")
         append_env(env_path, "OPENAI_API_KEY", openai_key)
 
-        print()
-        print("  Supported models:")
-        print("    1) gpt-4o-mini  — balanced quality and speed")
-        print("    2) gpt-5-nano   — smallest and fastest GPT-5 variant")
-        print("    3) gpt-5-mini   — higher quality than nano, still efficient")
-        choice = ask("  Select a model [1-3] (default 1): ")
-        model = {"2": "gpt-5-nano", "3": "gpt-5-mini"}.get(choice, "gpt-4o-mini")
+        models = [
+            ("gpt-4o-mini", "balanced quality and speed"),
+            ("gpt-5-nano", "smallest and fastest GPT-5 variant"),
+            ("gpt-5-mini", "higher quality than nano, still efficient"),
+        ]
+        idx = arrow_menu([(m, d) for m, d in models], "Select a language model")
+        model = models[idx][0]
         append_env(env_path, "AI_TEXT_EDITING_MODEL", model)
         success(f"AI enabled with model: {model}")
 
@@ -175,22 +297,25 @@ def step_optional_credentials(cwd: Path, enable_ai: bool, enable_google: bool) -
         success("Google Workspace enrollment configured")
 
 
-def step_scaffold(cwd: Path, python: str, enable_ai: bool, enable_google: bool) -> None:
-    header("5/6  Django project")
+def step_scaffold(
+    cwd: Path, python: str, project_name: str, enable_ai: bool, enable_google: bool
+) -> None:
+    header("6/6  Django project")
 
-    project_name = "myproject"
     manage_py = cwd / "manage.py"
 
     if manage_py.exists():
         warn("manage.py already exists — skipping project scaffold")
-        return
+    else:
+        info(f"Scaffolding Django project '{project_name}' …")
+        run([python, "-m", "django", "startproject", project_name, str(cwd)])
+        settings_path = cwd / project_name / "settings.py"
+        _patch_settings(settings_path, enable_ai, enable_google)
+        success("settings.py patched")
 
-    info(f"Scaffolding Django project '{project_name}' …")
-    run([python, "-m", "django", "startproject", project_name, str(cwd)])
-
-    settings_path = cwd / project_name / "settings.py"
-    _patch_settings(settings_path, enable_ai, enable_google)
-    success("settings.py patched")
+    info("Running migrations …")
+    run([python, "manage.py", "migrate"])
+    success("Database ready")
 
 
 def _patch_settings(settings_path: Path, enable_ai: bool, enable_google: bool) -> None:
@@ -256,24 +381,19 @@ DJANGO_EMAIL_LEARNING = {{
     settings_path.write_text(content + del_config)
 
 
-def step_migrate(python: str) -> None:
-    header("6/6  Database")
-
-    info("Running migrations …")
-    run([python, "manage.py", "migrate"])
-
-
-def print_done() -> None:
+def print_done(project_name: str) -> None:
     print()
     print(
         f"{GREEN}{BOLD}╔══════════════════════════════════════════════════════════════╗{RESET}"
     )
     print(
-        f"{GREEN}{BOLD}║        django-email-learning is ready!                      ║{RESET}"
+        f"{GREEN}{BOLD}║     🎉  django-email-learning is ready!                     ║{RESET}"
     )
     print(
         f"{GREEN}{BOLD}╚══════════════════════════════════════════════════════════════╝{RESET}"
     )
+    print()
+    print(f"  Project: {BOLD}{project_name}{RESET}")
     print()
     print("  Your dev environment has been configured with these defaults:")
     print("    • Database:      SQLite (db.sqlite3)")
@@ -298,16 +418,27 @@ def print_done() -> None:
 
 
 def main() -> None:
+    global QUIET  # noqa: PLW0603
+
+    parser = argparse.ArgumentParser(
+        description="Bootstrap a django-email-learning dev project"
+    )
+    parser.add_argument(
+        "-q", "--quiet", action="store_true", help="Suppress decorative output (for CI)"
+    )
+    args = parser.parse_args()
+    QUIET = args.quiet
+
     cwd = Path.cwd()
 
     python = step_virtualenv(cwd)
+    project_name = step_project_name()
     enable_ai, enable_google = step_choose_features()
     step_install(python, enable_ai, enable_google)
     step_secrets(cwd)
     step_optional_credentials(cwd, enable_ai, enable_google)
-    step_scaffold(cwd, python, enable_ai, enable_google)
-    step_migrate(python)
-    print_done()
+    step_scaffold(cwd, python, project_name, enable_ai, enable_google)
+    print_done(project_name)
 
 
 if __name__ == "__main__":
