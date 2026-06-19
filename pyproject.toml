@@ -32,6 +32,9 @@ classifiers = [
 
 license-files = ["LICENSE*"]
 
+[project.scripts]
+django-email-learning-init = "django_email_learning.scripts.setup_dev:main"
+
 [project.optional-dependencies]
 ai = ["openai"]
 google = ["google-auth-oauthlib (>=1.3.0,<2.0.0)"]
