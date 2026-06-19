@@ -266,13 +266,27 @@ def step_scaffold(
 def _patch_settings(settings_path: Path, enable_ai: bool, enable_google: bool) -> None:
     content = settings_path.read_text()
 
-    env_loader = (
-        "import os\n"
-        "from pathlib import Path\n"
-        "from dotenv import load_dotenv\n\n"
-        "load_dotenv(BASE_DIR / '.env')\n\n"
+    # Add dotenv import alongside the existing pathlib import
+    content = content.replace(
+        "from pathlib import Path\n",
+        "from pathlib import Path\nfrom dotenv import load_dotenv\n",
+        1,
     )
-    content = content.replace("from pathlib import Path\n", env_loader, 1)
+
+    # Add os import if not already present (Django's generated settings.py has none)
+    if "import os\n" not in content:
+        content = content.replace(
+            "from pathlib import Path\n",
+            "import os\nfrom pathlib import Path\n",
+            1,
+        )
+
+    # Call load_dotenv after BASE_DIR is defined
+    content = content.replace(
+        "BASE_DIR = Path(__file__).resolve().parent.parent\n",
+        "BASE_DIR = Path(__file__).resolve().parent.parent\n\nload_dotenv(BASE_DIR / '.env')\n",
+        1,
+    )
 
     # Wire SECRET_KEY to env
     content = content.replace(
