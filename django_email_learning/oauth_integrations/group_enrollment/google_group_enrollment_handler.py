@@ -38,11 +38,11 @@ class GoogleGroupEnrollmentHandler(BaseGroupEnrollmentHandler):
         flow = Flow.from_client_config(
             client_config={
                 "web": {
-                    "client_id": DJANGO_EMAIL_LEARNING_SETTINGS.get("GOOGLE", {}).get(
+                    "client_id": DJANGO_EMAIL_LEARNING_SETTINGS.get("GOOGLE_OAUTH", {}).get(
                         "CLIENT_ID"
                     ),
                     "client_secret": DJANGO_EMAIL_LEARNING_SETTINGS.get(
-                        "GOOGLE", {}
+                        "GOOGLE_OAUTH", {}
                     ).get("CLIENT_SECRET"),
                     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                     "token_uri": "https://oauth2.googleapis.com/token",
