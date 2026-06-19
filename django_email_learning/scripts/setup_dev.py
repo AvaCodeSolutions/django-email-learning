@@ -118,14 +118,15 @@ def step_install(python: str, enable_ai: bool, enable_google: bool) -> None:
 
     pip = [python, "-m", "pip", "install", "--quiet", "--upgrade"]
 
-    info("Installing Django …")
+    info("🦄 Installing Django …")
     run(pip + ["django"])
 
     extras = ",".join(
         filter(None, ["ai" if enable_ai else "", "google" if enable_google else ""])
     )
     package = f"django-email-learning[{extras}]" if extras else "django-email-learning"
-    info(f"Installing {package} …")
+    emoji = "🚀" if extras else "🦄"
+    info(f"{emoji} Installing {package} …")
     run(pip + [package])
 
     info("Installing python-dotenv …")
