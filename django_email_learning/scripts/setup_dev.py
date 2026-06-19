@@ -13,10 +13,8 @@ import re
 import secrets
 import subprocess
 import sys
-import termios
 import threading
 import time
-import tty
 import venv
 from pathlib import Path
 
@@ -97,59 +95,6 @@ class Spinner:
         if not QUIET:
             self._thread.join()
             print(CLEAR_LINE, end="", flush=True)
-
-
-# ── arrow-key menu ────────────────────────────────────────────────────────────
-
-
-def arrow_menu(options: list[tuple[str, str]], title: str) -> int:
-    """
-    Interactive up/down arrow-key menu. Returns the index of the selected item.
-    Each option is a (label, description) tuple.
-    """
-    selected = 0
-
-    def render() -> None:
-        # Move cursor up to redraw
-        if render.drawn:  # type: ignore[attr-defined]
-            print(f"\033[{len(options)}A", end="")
-        for i, (label, desc) in enumerate(options):
-            if i == selected:
-                print(f"  {GREEN}{BOLD}❯ {label}{RESET}  {desc}")
-            else:
-                print(f"    {label}  {desc}")
-        render.drawn = True  # type: ignore[attr-defined]
-
-    render.drawn = False  # type: ignore[attr-defined]
-
-    print(f"\n  {BOLD}{title}{RESET}  {CYAN}(↑↓ to move, Enter to select){RESET}")
-    print()
-
-    fd = sys.stdin.fileno()
-    old = termios.tcgetattr(fd)
-    try:
-        tty.setraw(fd)
-        render()
-        while True:
-            ch = sys.stdin.read(1)
-            if ch == "\x1b":
-                ch2 = sys.stdin.read(1)
-                ch3 = sys.stdin.read(1)
-                if ch2 == "[":
-                    if ch3 == "A":  # up
-                        selected = (selected - 1) % len(options)
-                    elif ch3 == "B":  # down
-                        selected = (selected + 1) % len(options)
-            elif ch in ("\r", "\n"):
-                break
-            elif ch == "\x03":  # Ctrl-C
-                raise KeyboardInterrupt
-            render()
-    finally:
-        termios.tcsetattr(fd, termios.TCSADRAIN, old)
-
-    print()
-    return selected
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -278,13 +223,13 @@ def step_optional_credentials(cwd: Path, enable_ai: bool, enable_google: bool) -
         openai_key = ask("  Enter your OPENAI_API_KEY: ")
         append_env(env_path, "OPENAI_API_KEY", openai_key)
 
-        models = [
-            ("gpt-4o-mini", "balanced quality and speed"),
-            ("gpt-5-nano", "smallest and fastest GPT-5 variant"),
-            ("gpt-5-mini", "higher quality than nano, still efficient"),
-        ]
-        idx = arrow_menu([(m, d) for m, d in models], "Select a language model")
-        model = models[idx][0]
+        print()
+        print("  Supported models:")
+        print("    1) gpt-4o-mini  — balanced quality and speed")
+        print("    2) gpt-5-nano   — smallest and fastest GPT-5 variant")
+        print("    3) gpt-5-mini   — higher quality than nano, still efficient")
+        choice = ask("  Select a model [1-3] (default 1): ")
+        model = {"2": "gpt-5-nano", "3": "gpt-5-mini"}.get(choice, "gpt-4o-mini")
         append_env(env_path, "AI_TEXT_EDITING_MODEL", model)
         success(f"AI enabled with model: {model}")
 
