@@ -33,6 +33,7 @@ class Course(models.Model):
     )
     target_audience = models.TextField(null=True, blank=True)
     is_public = models.BooleanField(default=True)
+    send_certificate = models.BooleanField(default=True)
 
     def __str__(self) -> str:
         return self.title
