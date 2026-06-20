@@ -824,6 +824,7 @@ class EventType(enum.StrEnum):
     ASSIGNMENT_SUBMITTED = "assignment_submitted"
     ASSIGNMENT_REVIEWED = "assignment_reviewed"
     CONTENT_SENT = "content_sent"
+    EMAIL_OPENED = "email_opened"
     REMINDER_SENT = "reminder_sent"
     COURSE_COMPLETED = "course_completed"
 
@@ -893,6 +894,15 @@ class ContentSentEvent(BaseModel):
     course_content_type: str
 
 
+class EmailOpenedEvent(BaseModel):
+    type: Literal[EventType.EMAIL_OPENED] = Field(
+        default=EventType.EMAIL_OPENED, exclude=True
+    )
+    course_content_id: int
+    course_content_title: str
+    course_content_type: str
+
+
 class Event(BaseModel):
     type: EventType
     timestamp: datetime
@@ -900,6 +910,7 @@ class Event(BaseModel):
         DeactivatedEvent
         | QuizSubmitedEvent
         | ContentSentEvent
+        | EmailOpenedEvent
         | AssignmentSubmitedEvent
         | AssignmentReviewdEvent
         | ReminderSentEvent
@@ -996,6 +1007,19 @@ class EnrollmentResponse(BaseModel):
                             )
                     # TODO:events for reminders and submissions for assignments
 
+                if delivery.opened_at and schedule_no == 1:
+                    events.append(
+                        Event(
+                            type=EventType.EMAIL_OPENED,
+                            timestamp=delivery.opened_at,
+                            event_data=EmailOpenedEvent(
+                                course_content_id=delivery.course_content.id,  # type: ignore[union-attr]
+                                course_content_title=delivery.course_content.title,  # type: ignore[union-attr]
+                                course_content_type=delivery.course_content.type,
+                            ),
+                        )
+                    )
+
                 if delivery.course_content.type == CourseContentType.QUIZ:
                     if (
                         delivery.reminder_state == ContentDelivery.ReminderStatus.SENT
@@ -1069,6 +1093,8 @@ class EnrollmentResponse(BaseModel):
                     event_data=DeactivatedEvent(reason=enrollment.deactivation_reason),  # type: ignore[arg-type]
                 )
             )
+
+        events.sort(key=lambda e: e.timestamp)
 
         return EnrollmentResponse.model_validate(
             {

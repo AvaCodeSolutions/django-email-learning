@@ -14,6 +14,7 @@ import AssignmentReturnedIcon from '@mui/icons-material/AssignmentReturned';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import MarkEmailReadOutlinedIcon from '@mui/icons-material/MarkEmailReadOutlined';
 import SearchIcon from '@mui/icons-material/Search';
 import SchoolIcon from '@mui/icons-material/School';
 import BackspaceIcon from '@mui/icons-material/Backspace';
@@ -66,6 +67,7 @@ function Learners(initialQs="") {
     'course_completed': {icon: <SchoolIcon />, color: "#0097a7", title: localeMessages["course_completed"]},
     'deactivated': {icon: <BackspaceIcon />, color: "#b71c1c", title: localeMessages["learner_deactivated"]},
     'reminder_sent': {icon: <NotificationsActiveIcon />, color: "#ae4ad6", title: localeMessages["reminder_sent"]},
+    'email_opened': {icon: <MarkEmailReadOutlinedIcon />, color: "#0288d1", title: localeMessages["email_opened"]},
     'assignment_submitted': {icon: <AssignmentReturnedIcon />, color: "#23bca8", title: localeMessages["assignment_submitted"]},
     'assignment_reviewed': {icon: <AssignmentIndIcon />, color: "#336eb7", title: localeMessages["assignment_reviewed"]},
   };
@@ -123,6 +125,9 @@ function Learners(initialQs="") {
                   <Box><Typography>{localeMessages["assignment_title"]}: {event.event_data.assignment_title}</Typography></Box>
                 </>}
                 { event.type === "content_sent" && <>
+                  <Box><Typography>{event.event_data.course_content_title}</Typography></Box>
+                </>}
+                { event.type === "email_opened" && <>
                   <Box><Typography>{event.event_data.course_content_title}</Typography></Box>
                 </>}
                 { event.type === "deactivated" && <>

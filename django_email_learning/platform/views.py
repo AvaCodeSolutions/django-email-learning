@@ -643,6 +643,7 @@ class Learners(BasePlatformView):
             "inactive": _("Inactive"),
             "practice_attempt": _("Practice Attempt"),
             "reminder_sent": _("Reminder Sent"),
+            "email_opened": _("Email Opened"),
             "quiz_title": _("Quiz Title"),
             "filter_by_course": _("Filter by Course"),
             "filter_by_status": _("Filter by Status"),
