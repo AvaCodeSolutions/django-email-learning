@@ -50,7 +50,7 @@ def test_valid_jwt_format_but_invalid_imap_api_key(superadmin_client):
 )
 def test_check_imap_with_valid_api_key(mock_run, superadmin_client):
     create_key_response = superadmin_client.post(
-        reverse("django_email_learning:api_platform:api_key_view")
+        reverse("django_email_learning:api_platform:api_keys_list")
     )
     response = superadmin_client.get(
         URL,
@@ -72,7 +72,7 @@ def test_check_imap_failed_triggers_job_execution_failed_metric(
     mock_run, mock_job_execution_failed, superadmin_client
 ):
     create_key_response = superadmin_client.post(
-        reverse("django_email_learning:api_platform:api_key_view")
+        reverse("django_email_learning:api_platform:api_keys_list")
     )
     response = superadmin_client.get(
         URL,

@@ -11,7 +11,7 @@ def second_organization(db):
 
 
 def test_update_session_view_as_viewer(viewer_client):
-    url = reverse("django_email_learning:api_platform:update_session_view")
+    url = reverse("django_email_learning:api_platform:update_session")
     response = viewer_client.post(
         url, {"active_organization_id": 1}, content_type="application/json"
     )

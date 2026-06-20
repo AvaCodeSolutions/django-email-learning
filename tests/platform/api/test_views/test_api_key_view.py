@@ -1,7 +1,7 @@
 from django.urls import reverse
 import pytest
 
-URL = reverse("django_email_learning:api_platform:api_key_view")
+URL = reverse("django_email_learning:api_platform:api_keys_list")
 
 
 def test_create_api_key(superadmin_client):

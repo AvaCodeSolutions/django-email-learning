@@ -2,7 +2,7 @@ from django.urls import reverse
 from django.core import mail
 import pytest
 
-url = reverse("django_email_learning:api_platform:get_or_create_user_by_email_view")
+url = reverse("django_email_learning:api_platform:get_or_create_user_by_email")
 
 
 @pytest.mark.parametrize(

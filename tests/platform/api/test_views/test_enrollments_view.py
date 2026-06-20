@@ -7,7 +7,7 @@ import uuid
 
 def get_url(organization_id: int, course_id: int) -> str:
     return reverse(
-        "django_email_learning:api_platform:enrollments_view",
+        "django_email_learning:api_platform:enrollments_list",
         kwargs={"organization_id": organization_id, "course_id": course_id},
     )
 

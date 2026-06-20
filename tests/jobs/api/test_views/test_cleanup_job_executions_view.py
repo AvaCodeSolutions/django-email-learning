@@ -53,7 +53,7 @@ def test_cleanup_job_executions_with_valid_api_key(
     mock_call_command, superadmin_client
 ):
     create_key_response = superadmin_client.post(
-        reverse("django_email_learning:api_platform:api_key_view")
+        reverse("django_email_learning:api_platform:api_keys_list")
     )
     response = superadmin_client.get(
         URL,
@@ -79,7 +79,7 @@ def test_cleanup_job_executions_failed_triggers_job_execution_failed_metric(
     mock_job_execution_failed, mock_call_command, superadmin_client
 ):
     create_key_response = superadmin_client.post(
-        reverse("django_email_learning:api_platform:api_key_view")
+        reverse("django_email_learning:api_platform:api_keys_list")
     )
     response = superadmin_client.get(
         URL,
@@ -97,7 +97,7 @@ def test_cleanup_job_executions_failed_triggers_job_execution_failed_metric(
 
 def test_cleanup_job_executions_returns_400_for_invalid_days(superadmin_client):
     create_key_response = superadmin_client.post(
-        reverse("django_email_learning:api_platform:api_key_view")
+        reverse("django_email_learning:api_platform:api_keys_list")
     )
     response = superadmin_client.get(
         f"{URL}?days=invalid",

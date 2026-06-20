@@ -3,14 +3,14 @@ import pytest
 
 
 URL = reverse(
-    "django_email_learning:api_platform:organization_users_view",
+    "django_email_learning:api_platform:organization_users_list",
     kwargs={"organization_id": 1},
 )
 
 
 def get_single_user_url(organization_id, user_id):
     return reverse(
-        "django_email_learning:api_platform:single_organization_user_view",
+        "django_email_learning:api_platform:organization_users_detail",
         kwargs={"organization_id": organization_id, "user_id": user_id},
     )
 
@@ -112,7 +112,7 @@ def test_create_organization_user_in_nonexistent_organization(
     superadmin_client, second_user
 ):
     url = reverse(
-        "django_email_learning:api_platform:organization_users_view",
+        "django_email_learning:api_platform:organization_users_list",
         kwargs={"organization_id": 9999},
     )
     response = superadmin_client.post(

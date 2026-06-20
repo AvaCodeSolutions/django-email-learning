@@ -17,14 +17,14 @@ REDIRECT_URL = reverse("django_email_learning:oauth_integrations:redirect_view")
 
 def oauth_group_list_url(session_id: str) -> str:
     return reverse(
-        "django_email_learning:api_platform:oauth_get_group_list_view",
+        "django_email_learning:api_platform:oauth_sessions_groups",
         kwargs={"organization_id": 1, "session_id": session_id},
     )
 
 
 def oauth_enroll_users_url(session_id: str) -> str:
     return reverse(
-        "django_email_learning:api_platform:oauth_group_enrollment_view",
+        "django_email_learning:api_platform:oauth_sessions_enroll",
         kwargs={"organization_id": 1, "session_id": session_id},
     )
 
@@ -41,7 +41,7 @@ def get_jwt(state: str = "test-state") -> str:
 
 def session_detail_url(session_id: str) -> str:
     return reverse(
-        "django_email_learning:api_platform:oauth_session_view",
+        "django_email_learning:api_platform:oauth_sessions_detail",
         kwargs={"organization_id": 1, "session_id": session_id},
     )
 

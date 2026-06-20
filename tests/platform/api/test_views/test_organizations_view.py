@@ -6,12 +6,12 @@ import pytest
 
 
 def get_url() -> str:
-    return reverse("django_email_learning:api_platform:organizations_view")
+    return reverse("django_email_learning:api_platform:organizations_list")
 
 
 def update_url(organization_id: int) -> str:
     return reverse(
-        "django_email_learning:api_platform:single_organization_view",
+        "django_email_learning:api_platform:organizations_detail",
         kwargs={"organization_id": organization_id},
     )
 
