@@ -259,7 +259,7 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
             );
             return;
         }
-        const endpoint = `${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/submitted_assignment/${submissionDetail.id}/review/`;
+        const endpoint = `${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/submitted_assignments/${submissionDetail.id}/review/`;
         setIsReviewSubmitting(true);
         setReviewError('');
         setReviewSuccess('');
