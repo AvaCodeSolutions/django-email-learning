@@ -122,7 +122,7 @@ function Course() {
         const endpoint = `${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/submitted_assignments/?status=pending_review`;
         apiClient.get(endpoint)
             .then(data => {
-                setPendingAssignmentsCount((data.submissions || []).length);
+                setPendingAssignmentsCount(data.count ?? (data.items || []).filter(s => s.status === 'pending_review').length);
             })
             .catch(error => {
                 console.error('Error fetching pending assignments count:', error);
