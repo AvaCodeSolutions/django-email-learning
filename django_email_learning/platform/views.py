@@ -193,6 +193,10 @@ class Courses(BasePlatformView):
             "course_is_public_helper_text": _(
                 "Public courses are visible on your organization's public pages. Turn this off to keep the course private."
             ),
+            "course_send_certificate": _("Send Certificate on Completion"),
+            "course_send_certificate_helper_text": _(
+                "When enabled, learners will receive a certificate email upon completing this course."
+            ),
             "external_references": _("External References"),
             "add_external_reference": _("Add Reference"),
             "external_references_helper_text": _(

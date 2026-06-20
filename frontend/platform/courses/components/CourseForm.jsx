@@ -38,6 +38,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     const [courseTargetAudience, setCourseTargetAudience] = useState("")
     const [courseLanguage, setCourseLanguage] = useState("")
     const [isPublic, setIsPublic] = useState(createMode)
+    const [sendCertificate, setSendCertificate] = useState(true)
     const [addImapConnection, setAddImapConnection] = useState(false)
     const [imapConnectionId, setImapConnectionId] = useState(null)
     const [addInstructors, setAddInstructors] = useState(false)
@@ -58,6 +59,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
         targetAudience: "",
         language: "",
         isPublic: true,
+        sendCertificate: true,
         imapConnectionId: null,
         imageServerPath: null,
         instructors: [],
@@ -87,6 +89,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setCourseTargetAudience(data.target_audience || "");
                 setCourseLanguage(data.language || "");
                 setIsPublic(data.is_public ?? true);
+                setSendCertificate(data.send_certificate ?? true);
                 setImageUrl(data.image);
                 setImageServerPath(data.image_path);
                 setInitialValues({
@@ -95,6 +98,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     targetAudience: data.target_audience || "",
                     language: data.language || "",
                     isPublic: data.is_public ?? true,
+                    sendCertificate: data.send_certificate ?? true,
                     imapConnectionId: data.imap_connection_id ?? null,
                     imageServerPath: data.image_path ?? null,
                     instructors: (data.instructors || []).map((i) => i.id),
@@ -247,6 +251,10 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             updatePayload.is_public = isPublic;
         }
 
+        if (sendCertificate !== initialValues.sendCertificate) {
+            updatePayload.send_certificate = sendCertificate;
+        }
+
         if (currentImapConnectionId !== initialValues.imapConnectionId) {
             if (currentImapConnectionId == null) {
                 updatePayload.reset_imap_connection = true;
@@ -278,6 +286,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     targetAudience: data.target_audience || trimmedTargetAudience,
                     language: data.language || courseLanguage,
                     isPublic: data.is_public ?? isPublic,
+                    sendCertificate: data.send_certificate ?? sendCertificate,
                     imapConnectionId: data.imap_connection_id ?? currentImapConnectionId,
                     imageServerPath: data.image_path ?? imageServerPath,
                 });
@@ -313,6 +322,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             target_audience: courseTargetAudience.trim(),
             language: courseLanguage,
             is_public: isPublic,
+            send_certificate: sendCertificate,
             imap_connection_id: imapConnectionId ? parseInt(imapConnectionId) : null,
             external_references: normalizedExternalReferences.length > 0 ? normalizedExternalReferences : null,
             image: imageServerPath ? imageServerPath : null,
@@ -331,6 +341,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setCourseTargetAudience("");
                 setCourseLanguage(languageOptions.length > 0 ? languageOptions[0].value : "");
                 setIsPublic(true);
+                setSendCertificate(true);
                 setExternalReferences([]);
                 setOriginalExternalReferences([]);
                 setExternalReferenceErrors([]);
@@ -393,6 +404,16 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     />
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                             {localeMessages["course_is_public_helper_text"]}
+                    </Typography>
+              </Box>
+              <Box sx={{ mt: 2 }}>
+                    <FormControlLabel
+                            control={<Switch checked={sendCertificate} onChange={(e) => setSendCertificate(e.target.checked)} dir={direction} />}
+                            label={localeMessages["course_send_certificate"]}
+                            sx={{ m: 0 }}
+                    />
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                            {localeMessages["course_send_certificate_helper_text"]}
                     </Typography>
               </Box>
               <Divider sx={{ my: 2 }} />

@@ -129,6 +129,7 @@ class CreateCourseRequest(BaseModel):
         ],
     )
     is_public: bool = Field(default=True, examples=[True])
+    send_certificate: bool = Field(default=True, examples=[True])
     instructors: Optional[list[int]] = Field(
         None,
         examples=[[1, 2, 3]],
@@ -159,6 +160,7 @@ class CreateCourseRequest(BaseModel):
             organization=organization,
             language=self.language,
             is_public=self.is_public,
+            send_certificate=self.send_certificate,
         )
         if imap_connection:
             course.imap_connection = imap_connection
@@ -221,6 +223,7 @@ class UpdateCourseRequest(BaseModel):
         ],
     )
     is_public: Optional[bool] = Field(None, examples=[True])
+    send_certificate: Optional[bool] = Field(None, examples=[True])
     instructors: Optional[list[int]] = Field(None, examples=[1, 2, 3])
 
     def to_django_model(self, course_id: int) -> Course:
@@ -260,6 +263,8 @@ class UpdateCourseRequest(BaseModel):
                 course.external_references.create(name=ref["name"], url=ref["url"])
         if self.is_public is not None:
             course.is_public = self.is_public
+        if self.send_certificate is not None:
+            course.send_certificate = self.send_certificate
         if self.instructors is not None:
             instructors_to_remove = course.instructors.exclude(
                 org_user_id__in=self.instructors
@@ -307,6 +312,7 @@ class CourseResponse(BaseModel):
     target_audience: Optional[str] = None
     external_references: Optional[list[dict[str, str]]] = None
     is_public: bool
+    send_certificate: bool
     instructors: Optional[list[InstructorResponse]] = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -340,6 +346,7 @@ class CourseResponse(BaseModel):
                 if course.external_references.exists()
                 else None,
                 "is_public": course.is_public,
+                "send_certificate": course.send_certificate,
                 "instructors": [
                     InstructorResponse(
                         display_name=instructor.org_user.display_name

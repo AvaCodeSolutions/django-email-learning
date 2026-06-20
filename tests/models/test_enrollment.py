@@ -1,8 +1,12 @@
 from django_email_learning.models import Enrollment
 from django.core.exceptions import ValidationError
 from freezegun import freeze_time
-from unittest.mock import patch
+from unittest.mock import patch, call
 import pytest
+
+
+def immediately(func):
+    func()
 
 
 def test_enrollment_minimal_save(learner, course):
@@ -185,3 +189,40 @@ def test_schedule_first_content_delivery_atomic_transaction(
         assert (
             deliveries.count() == 0
         )  # Delivery should be deleted if no schedule created
+
+
+# ---------------------------------------------------------------------------
+# graduate — send_certificate
+# ---------------------------------------------------------------------------
+
+
+@patch(
+    "django_email_learning.models.enrollments.transaction.on_commit",
+    side_effect=immediately,
+)
+@patch(
+    "django_email_learning.models.enrollments.Enrollment.send_certificate_form",
+    autospec=True,
+)
+def test_graduate_sends_certificate_when_enabled(
+    mock_send, mock_on_commit, active_enrollment
+):
+    active_enrollment.graduate()
+    mock_send.assert_called_once()
+
+
+@patch(
+    "django_email_learning.models.enrollments.transaction.on_commit",
+    side_effect=immediately,
+)
+@patch(
+    "django_email_learning.models.enrollments.Enrollment.send_certificate_form",
+    autospec=True,
+)
+def test_graduate_does_not_send_certificate_when_disabled(
+    mock_send, mock_on_commit, active_enrollment
+):
+    active_enrollment.course.send_certificate = False
+    active_enrollment.course.save()
+    active_enrollment.graduate()
+    mock_send.assert_not_called()
