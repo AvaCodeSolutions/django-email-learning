@@ -1106,7 +1106,7 @@ class LearnersView(PaginatedApiMixin, View):
             # can access status and progress_percentage without extra DB queries.
             learner_qs = learner_qs.prefetch_related(
                 Prefetch(
-                    "enrollment_set",
+                    "enrollments",
                     queryset=Enrollment.objects.filter(course_id=course_id),
                     to_attr="_course_enrollment",
                 )
