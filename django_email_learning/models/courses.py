@@ -51,7 +51,7 @@ class Course(models.Model):
 
     @property
     def enrollments_count(self) -> dict[str, int]:
-        qs = self.enrollment_set.aggregate(
+        qs = self.enrollments.aggregate(
             unverified=models.Count(
                 "id", filter=models.Q(status=EnrollmentStatus.UNVERIFIED)
             ),

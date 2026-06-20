@@ -49,8 +49,8 @@ class Learner(models.Model):
     @property
     def enrollments_count(self) -> dict[str, int]:
         return {
-            "total": self.enrollment_set.count(),
-            "completed": self.enrollment_set.filter(
+            "total": self.enrollments.count(),
+            "completed": self.enrollments.filter(
                 status=EnrollmentStatus.COMPLETED
             ).count(),
         }
@@ -79,8 +79,12 @@ class Enrollment(models.Model):
         EnrollmentStatus.COMPLETED: [],
         EnrollmentStatus.DEACTIVATED: [],
     }
-    learner = models.ForeignKey(Learner, on_delete=models.CASCADE)
-    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    learner = models.ForeignKey(
+        Learner, related_name="enrollments", on_delete=models.CASCADE
+    )
+    course = models.ForeignKey(
+        Course, related_name="enrollments", on_delete=models.CASCADE
+    )
     enrolled_at = models.DateTimeField(auto_now_add=True)
     activated_at = models.DateTimeField(null=True, blank=True)
     final_state_at = models.DateTimeField(null=True, blank=True)
