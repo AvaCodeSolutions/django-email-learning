@@ -10,20 +10,20 @@ from django_email_learning.personalised.api.views import (
 app_name = "django_email_learning"
 
 urlpatterns = [
-    path("quiz/", QuizSubmissionView.as_view(), name="quiz_submission"),
-    path("quiz-amp/", AmpQuizSubmissionView.as_view(), name="quiz_amp_submission"),
+    path("quizzes/", QuizSubmissionView.as_view(), name="quiz_submission"),
+    path("quizzes/amp/", AmpQuizSubmissionView.as_view(), name="quiz_amp_submission"),
     path(
-        "assignment/",
+        "assignments/",
         AssignmentSubmissionView.as_view(),
         name="assignment_submission",
     ),
     path(
-        "file-upload/",
+        "file-uploads/",
         FileUploadView.as_view(),
         name="file_upload",
     ),
     path(
-        "certificate-form/",
+        "certificate-forms/",
         SubmitCertificateFormView.as_view(),
         name="submit_certificate_form",
     ),

@@ -29,8 +29,8 @@ const defaultAppContext = {
     assignment: sampleAssignment,
     token: 'test-token',
     csrfToken: 'csrf-token',
-    apiEndpoint: '/api/assignment/submit/',
-    fileUploadApiEndpoint: '/api/file/upload/',
+    apiEndpoint: '/api/assignments/submit/',
+    fileUploadApiEndpoint: '/api/file-uploads/',
     localeMessages: sampleLocaleMessages,
     direction: 'ltr',
 };
@@ -115,7 +115,7 @@ describe('Assignment', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
         await waitFor(() => expect(global.fetch).toHaveBeenCalledOnce());
         const [url, options] = global.fetch.mock.calls[0];
-        expect(url).toBe('/api/assignment/submit/');
+        expect(url).toBe('/api/assignments/submit/');
         expect(options.method).toBe('POST');
         expect(options.headers['X-CSRFToken']).toBe('csrf-token');
         const body = JSON.parse(options.body);

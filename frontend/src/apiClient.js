@@ -15,7 +15,7 @@ import { getCookie } from './utils.js';
  *
  *   // Multipart upload (pass a FormData object; Content-Type is omitted so the
  *   // browser sets it with the correct boundary)
- *   const result = await apiClient.upload('/api/organizations/1/file/', formData);
+ *   const result = await apiClient.upload('/api/organizations/1/files/', formData);
  */
 
 class ApiError extends Error {
