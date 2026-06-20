@@ -190,7 +190,7 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
         const formData = new FormData();
         formData.append('file', selectedFile);
 
-        apiClient.upload(`${apiBaseUrl}/organizations/${orgId}/file/`, formData)
+        apiClient.upload(`${apiBaseUrl}/organizations/${orgId}/files/`, formData)
             .then((data) => {
                 setUploadedImages((previousImages) => [...previousImages, data]);
                 event.target.value = '';
@@ -266,7 +266,7 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
         }
 
         setIsDeletingImage(true);
-        apiClient.del(`${apiBaseUrl}/organizations/${orgId}/file/`, {
+        apiClient.del(`${apiBaseUrl}/organizations/${orgId}/files/`, {
             file_path: imagePendingDelete.file_path,
             file_url: imagePendingDelete.file_url,
         })
