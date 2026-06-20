@@ -12,7 +12,7 @@ import pytest
 
 def get_url(organization_id: int) -> str:
     return reverse(
-        "django_email_learning:api_platform:course_view",
+        "django_email_learning:api_platform:courses_list",
         kwargs={"organization_id": organization_id},
     )
 
@@ -264,7 +264,7 @@ def test_update_course_success(superadmin_client):
     # Now, update the created course
     update_payload = valid_update_course_payload()
     update_url = reverse(
-        "django_email_learning:api_platform:single_course_view",
+        "django_email_learning:api_platform:courses_detail",
         kwargs={"organization_id": 1, "course_id": course_id},
     )
     update_response = superadmin_client.post(
@@ -302,7 +302,7 @@ def test_update_course_with_target_audience_and_external_references(superadmin_c
         },
     ]
     update_url = reverse(
-        "django_email_learning:api_platform:single_course_view",
+        "django_email_learning:api_platform:courses_detail",
         kwargs={"organization_id": 1, "course_id": course_id},
     )
     update_response = superadmin_client.post(
@@ -336,7 +336,7 @@ def test_update_course_replaces_external_references(superadmin_client):
         {"name": "Updated Docs", "url": "https://example.com/new-docs"}
     ]
     update_url = reverse(
-        "django_email_learning:api_platform:single_course_view",
+        "django_email_learning:api_platform:courses_detail",
         kwargs={"organization_id": 1, "course_id": course_id},
     )
     update_response = superadmin_client.post(
@@ -365,7 +365,7 @@ def test_slug_change_not_allowed(superadmin_client):
     )
     update_payload["slug"] = "new-slug"  # Attempt to change slug
     update_url = reverse(
-        "django_email_learning:api_platform:single_course_view",
+        "django_email_learning:api_platform:courses_detail",
         kwargs={"organization_id": 1, "course_id": course_id},
     )
     update_response = superadmin_client.post(
@@ -378,7 +378,7 @@ def test_slug_change_not_allowed(superadmin_client):
 def test_update_course_not_found(superadmin_client):
     update_payload = valid_update_course_payload()
     update_url = reverse(
-        "django_email_learning:api_platform:single_course_view",
+        "django_email_learning:api_platform:courses_detail",
         kwargs={"organization_id": 1, "course_id": 9999},
     )
     update_response = superadmin_client.post(
@@ -404,7 +404,7 @@ def test_update_course_reset_imap_connection_conflict(sample_course, superadmin_
         imap_connection_id=1, reset_imap_connection=True
     )
     update_url = reverse(
-        "django_email_learning:api_platform:single_course_view",
+        "django_email_learning:api_platform:courses_detail",
         kwargs={"organization_id": 1, "course_id": course_id},
     )
     update_response = superadmin_client.post(
@@ -420,7 +420,7 @@ def test_update_course_reset_imap_connection_conflict(sample_course, superadmin_
 
 def test_viewer_not_allowed_to_delete_course(sample_course, viewer_client):
     url = reverse(
-        "django_email_learning:api_platform:single_course_view",
+        "django_email_learning:api_platform:courses_detail",
         kwargs={"organization_id": 1, "course_id": sample_course["id"]},
     )
     delete_response = viewer_client.delete(url)
@@ -434,7 +434,7 @@ def test_editor_can_delete_course(sample_course, client):
     assert len(courses.json().get("courses")) == 1
 
     url = reverse(
-        "django_email_learning:api_platform:single_course_view",
+        "django_email_learning:api_platform:courses_detail",
         kwargs={"organization_id": 1, "course_id": sample_course["id"]},
     )
     delete_response = client.delete(url)
@@ -597,7 +597,7 @@ def test_get_single_course_response_includes_instructors(users, superadmin_clien
     course_id = create_response.json()["id"]
 
     get_url_single = reverse(
-        "django_email_learning:api_platform:single_course_view",
+        "django_email_learning:api_platform:courses_detail",
         kwargs={"organization_id": 1, "course_id": course_id},
     )
     get_response = superadmin_client.get(get_url_single)
@@ -617,7 +617,7 @@ def test_get_single_course_response_includes_instructors(users, superadmin_clien
 
 def _single_course_url(course_id: int) -> str:
     return reverse(
-        "django_email_learning:api_platform:single_course_view",
+        "django_email_learning:api_platform:courses_detail",
         kwargs={"organization_id": 1, "course_id": course_id},
     )
 

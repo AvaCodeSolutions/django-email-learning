@@ -4,7 +4,7 @@ from django_email_learning.models import Certificate
 
 def test_single_llearner_viewe(viewer_client, enrollment):
     url = reverse(
-        "django_email_learning:api_platform:single_learner_view",
+        "django_email_learning:api_platform:learners_detail",
         kwargs={"organization_id": 1, "learner_id": enrollment.learner.id},
     )
     response = viewer_client.get(url)
@@ -29,7 +29,7 @@ def test_single_learner_view_contains_certificate_url_when_certificate_exists(
         name_on_certificate="Jane Doe",
     )
     url = reverse(
-        "django_email_learning:api_platform:single_learner_view",
+        "django_email_learning:api_platform:learners_detail",
         kwargs={"organization_id": 1, "learner_id": enrollment.learner.id},
     )
 
@@ -45,7 +45,7 @@ def test_single_learner_view_contains_certificate_url_when_certificate_exists(
 
 def test_single_learner_view_not_accessible_for_no_role(anonymous_client, enrollment):
     url = reverse(
-        "django_email_learning:api_platform:single_learner_view",
+        "django_email_learning:api_platform:learners_detail",
         kwargs={"organization_id": 1, "learner_id": enrollment.learner.id},
     )
     response = anonymous_client.get(url)

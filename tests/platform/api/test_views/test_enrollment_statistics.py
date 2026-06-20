@@ -4,7 +4,7 @@ from django.urls import reverse
 def test_enrollment_statistics(course, enrollments_factory, superadmin_client):
     enrollments_factory(course=course, status="unverified", count=3)
     url = reverse(
-        "django_email_learning:api_platform:enrollments_statistics_view",
+        "django_email_learning:api_platform:enrollments_statistics",
         args=[course.organization.id, course.id],
     )
 

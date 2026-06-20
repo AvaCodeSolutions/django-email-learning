@@ -4,7 +4,7 @@ from django_email_learning.models import EnrollmentStatus
 
 def get_url(enrollment_id):
     return reverse(
-        "django_email_learning:api_platform:enrollment_view",
+        "django_email_learning:api_platform:enrollments_detail",
         kwargs={"enrollment_id": enrollment_id, "organization_id": 1},
     )
 

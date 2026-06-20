@@ -5,7 +5,7 @@ import uuid
 
 
 URL = reverse(
-    "django_email_learning:api_platform:learners_view", kwargs={"organization_id": 1}
+    "django_email_learning:api_platform:learners_list", kwargs={"organization_id": 1}
 )
 
 

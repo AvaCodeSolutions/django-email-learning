@@ -7,7 +7,7 @@ import pytest
 
 def get_url(organization_id: int) -> str:
     return reverse(
-        "django_email_learning:api_platform:file_view",
+        "django_email_learning:api_platform:files_list",
         kwargs={"organization_id": organization_id},
     )
 

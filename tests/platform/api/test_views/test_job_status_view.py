@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.utils import timezone
 from datetime import timedelta
 
-URL = reverse("django_email_learning:api_platform:jobs_status_view")
+URL = reverse("django_email_learning:api_platform:jobs_status")
 
 
 def test_job_health_status_view(viewer_client, job_factory):
