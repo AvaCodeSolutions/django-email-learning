@@ -283,6 +283,17 @@ class Courses(BasePlatformView):
             "instructor_photo": _("Instructor Photo"),
             "add_instructor": _("Add Instructor"),
             "instructor_add_failed": _("Failed to add instructor. Please try again."),
+            "none": _("None"),
+            "imap_connection_failed": _(
+                "Failed to create IMAP connection. Please try again."
+            ),
+            "folder_name_cannot_be_empty": _("Folder name cannot be empty."),
+            "folder_already_added": _("Folder already added."),
+            "add_folder": _("Add folder"),
+            "inbox_required_helper_text": _(
+                "'inbox' is required and cannot be removed."
+            ),
+            "server_error": _("Server error occurred. Please try again later."),
         }
 
 
@@ -504,6 +515,12 @@ class CourseView(BasePlatformView):
             "requires_text_submission": _("Requires Text Submission"),
             "requires_file_submission": _("Requires File Submission"),
             "save_failed": _("Unable to save. Please try again."),
+            "question_cannot_be_empty": _("Question QUESTION_NUMBER cannot be empty."),
+            "error_creating_quiz": _("Error creating quiz. Please try again."),
+            "error_updating_quiz": _("Error updating quiz. Please try again."),
+            "reminder_interval_days_required": _(
+                "Reminder interval days must be greater than 0 when reminders are enabled."
+            ),
         }
 
     def get_app_context(self) -> Dict[str, Any]:
@@ -549,6 +566,12 @@ class Organizations(BasePlatformView):
             "are_you_sure_delete_org": _(
                 'Are you sure you want to delete the organization "ORGANIZATION_NAME"? All course content and users in this organization will also be deleted.'
             ),
+            "invalid_url_helper_text": _(
+                "Enter a valid URL starting with http:// or https://"
+            ),
+            "website": _("Website"),
+            "linkedin_page": _("LinkedIn page"),
+            "youtube_channel": _("YouTube channel"),
         }
 
 

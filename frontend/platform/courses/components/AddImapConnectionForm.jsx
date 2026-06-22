@@ -64,7 +64,7 @@ function AddImapConnectionForm({onChangeCallback, activeOrganizationId, initialI
             value={imapConnectionId || ''}
             onChange={(event) => handleImapConnectionChange(event.target.value)}
           >
-            <MenuItem value={null}>None</MenuItem>
+            <MenuItem value={null}>{localeMessages["none"]}</MenuItem>
             {imapConnections.map((connection) => (
               <MenuItem key={connection.id} value={connection.id} style={{ fontWeight: connection.id === imapConnectionId ? 'bold' : 'normal' }}>
                 {connection.email}

@@ -76,7 +76,7 @@ const QuestionForm = ({question, index, eventHandler}) => {
                             onChange={(e) => setQuestionText(e.target.value)}
                             onKeyDown={(e) => {if (e.key === 'Enter') { editQuestion(); }}}
                             autoFocus
-                            helperText={!questionText ? "Question can not be empty": ""}
+                            helperText={!questionText ? localeMessages["question_cannot_be_empty"].replace("QUESTION_NUMBER", index + 1) : ""}
                         />
                     )}
                 </Grid>
@@ -94,7 +94,7 @@ const QuestionForm = ({question, index, eventHandler}) => {
                             fullWidth
                             inputRef={optionInputRef}
                             variant="outlined"
-                            label="Option Text"
+                            label={localeMessages["option_text"]}
                             sx={{ mt: 1, width: '100%' }}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
