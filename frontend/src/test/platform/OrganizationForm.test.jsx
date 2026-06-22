@@ -21,6 +21,10 @@ const localeMessages = {
   upload_button_label: 'Upload',
   uploaded_image_alt: 'Uploaded image',
   remove_image: 'Remove',
+  website: 'Website',
+  linkedin_page: 'LinkedIn page',
+  youtube_channel: 'YouTube channel',
+  invalid_url_helper_text: 'Enter a valid URL starting with http:// or https://',
 };
 
 const createProps = {

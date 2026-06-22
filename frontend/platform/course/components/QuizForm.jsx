@@ -134,7 +134,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             successCallback();
         })
         .catch(error => {
-            setErrorMessage("Error creating quiz. Please try again.");
+            setErrorMessage(localeMessages["error_creating_quiz"]);
             console.error('Error creating quiz:', error);
         });
 
@@ -155,17 +155,17 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             return false;
         }
         if (hasDeadline && (Number(deadlineDays) === 0 || deadlineDays === "")) {
-            setErrorMessage(localeMessages["deadline_cannot_be_zero"] || "Deadline cannot be 0 when deadline is enabled");
+            setErrorMessage(localeMessages["deadline_cannot_be_zero"]);
             return false;
         }
         if (!hasDeadline && hasReminderInterval && (Number(reminderIntervalDays) <= 0 || reminderIntervalDays === "")) {
-            setErrorMessage(localeMessages["reminder_interval_days_required"] || "Reminder interval days must be greater than 0 when reminders are enabled.");
+            setErrorMessage(localeMessages["reminder_interval_days_required"]);
             return false;
         }
         for (let i = 0; i < questions.length; i++) {
             const question = questions[i];
             if (question.text.trim() === "") {
-                setErrorMessage(`Question ${i + 1} cannot be empty.`);
+                setErrorMessage(localeMessages["question_cannot_be_empty"].replace("QUESTION_NUMBER", i + 1));
                 return false;
             }
             const options = question.options || [];
@@ -237,7 +237,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             successCallback();
         })
         .catch(error => {
-            setErrorMessage("Error updating quiz. Please try again.");
+            setErrorMessage(localeMessages["error_updating_quiz"]);
             console.error('Error updating quiz:', error);
         });
     }
@@ -319,7 +319,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                 <Box sx={{ mb: 2, border: '1px solid', borderColor: 'grey.300', borderRadius: 1, p: 2 }}>
                     <Grid container spacing={2} sx={{ alignItems: 'center' }}>
                         <Grid size={{ xs: 12, md: 8 }}>
-                            <RequiredTextField inputRef={questionInputRef} label="Question" value={newQuestion} onChange={(e) => setNewQuestion(e.target.value)} sx={{ width: '100%' }} onKeyDown={(e) => {
+                            <RequiredTextField inputRef={questionInputRef} label={localeMessages["question"]} value={newQuestion} onChange={(e) => setNewQuestion(e.target.value)} sx={{ width: '100%' }} onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                     addToQuestions();
                                 }
@@ -381,7 +381,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                             placement="top-start"
                         >
                             <RequiredTextField
-                                label="percentage"
+                                label={localeMessages["percentage"]}
                                 type="number"
                                 value={requiredScore}
                                 onChange={(e) => setRequiredScore(e.target.value)}
@@ -403,7 +403,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                                 </InputLabel>
                                 <Box sx={{ display: 'flex', gap: 1 }}>
                                     <RequiredTextField
-                                        label="Period"
+                                        label={localeMessages["period"]}
                                         type="number"
                                         value={waitingPeriod}
                                         onChange={(e) => setWaitingPeriod(e.target.value)}
@@ -418,8 +418,8 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                                         sx={{ minWidth: '100px' }}
                                         disabled={userRole === 'viewer'}
                                     >
-                                        <MenuItem value="days">Days</MenuItem>
-                                        <MenuItem value="hours">Hours</MenuItem>
+                                        <MenuItem value="days">{localeMessages["days"]}</MenuItem>
+                                        <MenuItem value="hours">{localeMessages["hours"]}</MenuItem>
                                     </Select>
                                 </Box>
                             </Box>
@@ -458,7 +458,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                                 placement="top-start"
                             >
                                 <RequiredTextField
-                                    label="Days"
+                                    label={localeMessages["days"]}
                                     type="number"
                                     value={deadlineDays}
                                     onChange={(e) => {
@@ -505,7 +505,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                                     />
                                 </Box>
                                 <RequiredTextField
-                                    label="Days"
+                                    label={localeMessages["days"]}
                                     type="number"
                                     value={reminderIntervalDays}
                                     onChange={(e) => {

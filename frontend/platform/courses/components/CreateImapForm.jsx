@@ -47,7 +47,7 @@ const CreateImapForm = ({ onSuccess, activeOrganizationId }) => {
         })
         .catch((error) => {
             console.error('Error creating IMAP connection:', error);
-            setErrorMessage("Failed to create IMAP connection. Please try again.");
+            setErrorMessage(localeMessages["imap_connection_failed"]);
         });
     };
 
@@ -59,11 +59,11 @@ const CreateImapForm = ({ onSuccess, activeOrganizationId }) => {
     const handleAddFolder = () => {
         const normalizedFolder = folderInput.trim();
         if (!normalizedFolder) {
-            setFolderHelperText("Folder name cannot be empty.");
+            setFolderHelperText(localeMessages["folder_name_cannot_be_empty"]);
             return;
         }
         if (folders.includes(normalizedFolder)) {
-            setFolderHelperText("Folder already added.");
+            setFolderHelperText(localeMessages["folder_already_added"]);
             return;
         }
         setFolders((prevFolders) => [...prevFolders, normalizedFolder]);
@@ -123,7 +123,7 @@ const CreateImapForm = ({ onSuccess, activeOrganizationId }) => {
             <Stack direction="row" spacing={1}>
                 <Tooltip title={localeMessages["add_folder_helper_text"]}>
                 <TextField
-                    label="Add folder"
+                    label={localeMessages["add_folder"]}
                     size="small"
                     fullWidth
                     value={folderInput}
@@ -139,7 +139,7 @@ const CreateImapForm = ({ onSuccess, activeOrganizationId }) => {
                             handleAddFolder();
                         }
                     }}
-                    helperText={folderHelperText || "'inbox' is required and cannot be removed."}
+                    helperText={folderHelperText || localeMessages["inbox_required_helper_text"]}
                     error={Boolean(folderHelperText)}
                 /></Tooltip>
                 <Button variant="outlined" size="small" onClick={handleAddFolder} sx={{ boxShadow: 'none', height: '40px' }}>

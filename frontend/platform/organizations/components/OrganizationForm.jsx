@@ -57,21 +57,21 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
         }
 
         if (!validateOptionalUrl(website)) {
-            setWebsiteHelperText("Enter a valid URL starting with http:// or https://");
+            setWebsiteHelperText(localeMessages["invalid_url_helper_text"]);
             valid = false;
         } else {
             setWebsiteHelperText("");
         }
 
         if (!validateOptionalUrl(linkedinPage)) {
-            setLinkedinPageHelperText("Enter a valid URL starting with http:// or https://");
+            setLinkedinPageHelperText(localeMessages["invalid_url_helper_text"]);
             valid = false;
         } else {
             setLinkedinPageHelperText("");
         }
 
         if (!validateOptionalUrl(youtubeChannel)) {
-            setYoutubeChannelHelperText("Enter a valid URL starting with http:// or https://");
+            setYoutubeChannelHelperText(localeMessages["invalid_url_helper_text"]);
             valid = false;
         } else {
             setYoutubeChannelHelperText("");
@@ -142,9 +142,9 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
             { errorMessage && <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert> }
             <RequiredTextField label={localeMessages["name"]} helperText={nameHelperText} fullWidth margin="normal" value={name} onChange={(e) => setName(e.target.value)} />
             <RequiredTextField label={localeMessages["description"]} helperText={descriptionHelperText} fullWidth margin="normal" multiline rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
-            <TextField label="Website" type="url" fullWidth margin="normal" value={website} error={Boolean(websiteHelperText)} helperText={websiteHelperText} onChange={(e) => setWebsite(e.target.value)} />
-            <TextField label="LinkedIn page" type="url" fullWidth margin="normal" value={linkedinPage} error={Boolean(linkedinPageHelperText)} helperText={linkedinPageHelperText} onChange={(e) => setLinkedinPage(e.target.value)} />
-            <TextField label="YouTube channel" type="url" fullWidth margin="normal" value={youtubeChannel} error={Boolean(youtubeChannelHelperText)} helperText={youtubeChannelHelperText} onChange={(e) => setYoutubeChannel(e.target.value)} />
+            <TextField label={localeMessages["website"]} type="url" fullWidth margin="normal" value={website} error={Boolean(websiteHelperText)} helperText={websiteHelperText} onChange={(e) => setWebsite(e.target.value)} />
+            <TextField label={localeMessages["linkedin_page"]} type="url" fullWidth margin="normal" value={linkedinPage} error={Boolean(linkedinPageHelperText)} helperText={linkedinPageHelperText} onChange={(e) => setLinkedinPage(e.target.value)} />
+            <TextField label={localeMessages["youtube_channel"]} type="url" fullWidth margin="normal" value={youtubeChannel} error={Boolean(youtubeChannelHelperText)} helperText={youtubeChannelHelperText} onChange={(e) => setYoutubeChannel(e.target.value)} />
             <Divider sx={{ my: 2 }} />
             <Box sx={{ mt: 1 }}>
                 <FormControlLabel

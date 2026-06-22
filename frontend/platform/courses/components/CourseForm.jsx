@@ -302,7 +302,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 failureCallback(error.body);
             } else {
                 if (error instanceof apiClient.ApiError && error.status >= 500) {
-                    setErrorMessage("Server error occurred. Please try again later.");
+                    setErrorMessage(localeMessages["server_error"]);
                 }
                 failureCallback(error);
             }
@@ -355,7 +355,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 failureCallback(error.body);
             } else {
                 if (error instanceof apiClient.ApiError && error.status >= 500) {
-                    setErrorMessage("Server error occurred. Please try again later.");
+                    setErrorMessage(localeMessages["server_error"]);
                 }
                 failureCallback(error);
             }
@@ -529,7 +529,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 }} />
               </Box>
                             <Box sx={{ mt: 2, textAlign: 'right' }}>
-                <Button onClick={cancelCallback} sx={{ mr: 1 }}>Cancel</Button>
+                <Button onClick={cancelCallback} sx={{ mr: 1 }}>{localeMessages["cancel"]}</Button>
                 { createMode && <Button variant="contained" onClick={() => handleCreateCourse()} sx={{ boxShadow: 'none' }}>{localeMessages["create"]}</Button> }
                 { !createMode && <Button variant="contained" onClick={() => handleUpdateCourse()} sx={{ boxShadow: 'none' }}>{localeMessages["update"]}</Button> }
               </Box></>}
