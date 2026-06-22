@@ -66,7 +66,7 @@ describe('Courses', () => {
   it('renders the page with course table headers after organization is set', async () => {
     setupFetch([]);
     renderWithProviders(<Courses />, {
-      appContext: { localeMessages, userRole: 'editor' },
+      appContext: { localeMessages, userRole: 'editor', availableFeatures: ['create_course'] },
     });
     await waitFor(() => expect(screen.getByText('Acme')).toBeInTheDocument());
     // Simulate org selection by waiting for loading to finish
@@ -76,7 +76,7 @@ describe('Courses', () => {
   it('shows "No courses found." when no courses are returned', async () => {
     setupFetch([]);
     renderWithProviders(<Courses />, {
-      appContext: { localeMessages, userRole: 'editor' },
+      appContext: { localeMessages, userRole: 'editor', availableFeatures: ['create_course'] },
     });
     await waitFor(() => expect(screen.getByText('No courses found.')).toBeInTheDocument());
   });
@@ -93,14 +93,14 @@ describe('Courses', () => {
       },
     ]);
     renderWithProviders(<Courses />, {
-      appContext: { localeMessages, userRole: 'editor' },
+      appContext: { localeMessages, userRole: 'editor', availableFeatures: ['create_course'] },
     });
     await waitFor(() => expect(screen.getByText('Django Basics')).toBeInTheDocument());
   });
 
   it('shows Add Course button for non-viewer role', async () => {
     renderWithProviders(<Courses />, {
-      appContext: { localeMessages, userRole: 'editor' },
+      appContext: { localeMessages, userRole: 'editor', availableFeatures: ['create_course'] },
     });
     await waitFor(() =>
       expect(screen.getByRole('button', { name: /Add Course/ })).toBeInTheDocument()
