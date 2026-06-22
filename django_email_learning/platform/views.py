@@ -17,6 +17,7 @@ from django_email_learning.services.utils import PRIVATE_FILE_STORAGE
 from django_email_learning.services import jwt_service
 from typing import Dict, Any
 from django.conf import settings
+from django_email_learning.platform.features import PlatformFeature
 
 
 DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
@@ -86,6 +87,7 @@ class BasePlatformView(TemplateView):
                     )
                 ),
                 "aiTextEditingModel": AI_CONFIGURATIONS.get("TEXT_EDITING_MODEL"),
+                "availableFeatures": [f.value for f in self.get_available_features()],
                 "customLogo": {
                     "horizontalLight": DJANGO_EMAIL_LEARNING_SETTINGS.get("LOGO", {})
                     .get("HORIZONTAL_LOCKUP", {})
@@ -134,6 +136,16 @@ class BasePlatformView(TemplateView):
             "activeOrganizationId": active_organization_id,
             "favicon": DJANGO_EMAIL_LEARNING_SETTINGS.get("FAVICON"),
         }
+
+    def get_available_features(self) -> set[PlatformFeature]:
+        features: set[PlatformFeature] = {PlatformFeature.CREATE_COURSE}
+        if AI_CONFIGURATIONS.get("TEXT_EDITING_MODEL"):
+            features.add(PlatformFeature.AI_EDIT)
+        if DJANGO_EMAIL_LEARNING_SETTINGS.get("GOOGLE_OAUTH", {}).get(
+            "CLIENT_ID"
+        ) and apps.is_installed("django_email_learning.oauth_integrations"):
+            features.add(PlatformFeature.GOOGLE_WORKSPACE_ENROLL)
+        return features
 
     def get_locale_messages(self) -> Dict[str, str]:
         return {}
@@ -295,9 +307,6 @@ class CourseView(BasePlatformView):
         context["appContext"]["direction"] = (
             "rtl" if get_language_info(course.language)["bidi"] else "ltr"
         )
-        context["appContext"]["showGoogleWorkspaceImport"] = bool(
-            DJANGO_EMAIL_LEARNING_SETTINGS.get("GOOGLE_OAUTH", {}).get("CLIENT_ID")
-        ) and apps.is_installed("django_email_learning.oauth_integrations")
         context["page_title"] = _("Course: %(title)s") % {"title": course.title}
         return context
 

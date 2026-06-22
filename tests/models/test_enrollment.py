@@ -1,7 +1,7 @@
 from django_email_learning.models import Enrollment
 from django.core.exceptions import ValidationError
 from freezegun import freeze_time
-from unittest.mock import patch, call
+from unittest.mock import patch
 import pytest
 
 

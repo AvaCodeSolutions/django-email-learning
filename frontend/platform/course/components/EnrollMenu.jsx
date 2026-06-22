@@ -8,7 +8,7 @@ import apiClient from '../../../src/apiClient.js';
 
 
 const EnrollMenu = ({successCallback}) => {
-    const {courseId, localeMessages, direction, apiBaseUrl, userRole, showGoogleWorkspaceImport } = useAppContext();
+    const {courseId, localeMessages, direction, apiBaseUrl, userRole, availableFeatures = [] } = useAppContext();
     const [enrollMenuAnchorEl, setEnrollMenuAnchorEl] = useState(null);
     const [manualEnrollOpen, setManualEnrollOpen] = useState(false);
     const [googleWorkspaceDialogOpen, setGoogleWorkspaceDialogOpen] = useState(false);
@@ -325,7 +325,7 @@ const EnrollMenu = ({successCallback}) => {
                 <MenuItem onClick={openManualEnrollDialog} sx={{ fontSize: '0.87rem', px: 1 }}>
                     {localeMessages['manual_email']}
                 </MenuItem>
-                {userRole === 'admin' && showGoogleWorkspaceImport === true && (
+                {userRole === 'admin' && availableFeatures.includes('google_workspace_enroll') && (
                     <MenuItem onClick={openGoogleWorkspaceDialog} sx={{ fontSize: '0.87rem', px: 1 }}>
                         {localeMessages['from_google_workspace']}
                     </MenuItem>

@@ -60,11 +60,12 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
         userRole,
         aiTextEditModel,
         aiTextEditingModel,
+        availableFeatures = [],
     } = useAppContext();
     const direction = defaultDirection || appDirection;
     const configuredAiModel = aiTextEditModel || aiTextEditingModel;
     const hasAiPermission = userRole === 'admin' || userRole === 'editor';
-    const hasAiFeatureEnabled = Boolean(configuredAiModel);
+    const hasAiFeatureEnabled = Boolean(configuredAiModel) && availableFeatures.includes('ai_edit');
     const aiBaseUrl = apiBaseUrl?.includes('/api/platform')
         ? apiBaseUrl.replace('/api/platform', '/api/ai')
         : '/email_learning/api/ai';

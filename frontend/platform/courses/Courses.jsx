@@ -38,7 +38,7 @@ function Courses() {
   const [courses, setCourses] = useState([])
   const [organizationId, setOrganizationId] = useState(null);
   const [queryParameters, setQueryParameters] = useState("");
-  const { direction, localeMessages, apiBaseUrl, platformBaseUrl, userRole, languageOptions = [] } = useAppContext();
+  const { direction, localeMessages, apiBaseUrl, platformBaseUrl, userRole, languageOptions = [], availableFeatures = [] } = useAppContext();
   const [coursesAreLoaded, setCoursesAreLoaded] = useState(false);
 
   const getLanguageLabel = (languageCode) => {
@@ -119,7 +119,7 @@ function Courses() {
     >
       <Grid size={{xs: 12}} sx={{ py: 2, pl: { xs: 0, sm: 2 } }}>
         <Box sx={{ p: { xs: 1, sm: 2 }, backgroundColor: 'background.box', boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.04)', borderRadius: { xs: 0, sm: 2 }, minHeight: 300 }}>
-        {userRole !== 'viewer' && <Button variant="contained" startIcon={<SchoolIcon sx={{ marginLeft: direction === 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
+        {userRole !== 'viewer' && availableFeatures.includes('create_course') && <Button variant="contained" startIcon={<SchoolIcon sx={{ marginLeft: direction === 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
           setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><CourseForm
             successCallback={handleCourseCreated}
             failureCallback={handleCourseCreationFailed}
