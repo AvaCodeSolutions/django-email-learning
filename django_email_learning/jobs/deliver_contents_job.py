@@ -219,6 +219,11 @@ class DeliverContentsJob:
                         logger.info(
                             f"Scheduled next delivery {next_delivery.id} for enrollment {delivery_schedule.delivery.enrollment.id}"
                         )
+                    else:
+                        logger.info(
+                            f"No more content to schedule for enrollment {delivery_schedule.delivery.enrollment.id}"
+                        )
+                        delivery_schedule.delivery.enrollment.graduate()
 
     def send_lesson_content(self, delivery_schedule: DeliverySchedule) -> bool:
         if not delivery_schedule.delivery.course_content.lesson:
