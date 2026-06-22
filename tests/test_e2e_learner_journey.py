@@ -205,7 +205,7 @@ class NonBlockingAssignmentAsLastContentTest(TransactionTestCase):
             is_published=True,
         )
 
-    def test_non_blocking_assignment_as_last_content_should_graduate_but_does_not(
+    def test_non_blocking_assignment_as_last_content_graduates_enrollment(
         self,
     ) -> None:
         EnrollCommand(
@@ -232,15 +232,5 @@ class NonBlockingAssignmentAsLastContentTest(TransactionTestCase):
         self.assertEqual(delivery.times_delivered, 1)
 
         enrollment.refresh_from_db()
-
-        # This is the bug: the enrollment should be COMPLETED here, matching
-        # the behaviour of a course that ends on a lesson, but it is not.
-        # If this assertion starts failing, the upstream gap has been fixed
-        # and this test (and its docstring) should be updated/removed.
-        self.assertEqual(
-            enrollment.status,
-            EnrollmentStatus.ACTIVE,
-            "If this fails, the non-blocking-assignment graduation gap in "
-            "DeliverContentsJob.process_delivery() has been fixed upstream - "
-            "update this test to assert COMPLETED instead.",
-        )
+        self.assertEqual(enrollment.status, EnrollmentStatus.COMPLETED)
+        self.assertIsNotNone(enrollment.final_state_at)
