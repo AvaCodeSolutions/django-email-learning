@@ -152,6 +152,7 @@ class BasePlatformView(TemplateView):
             features.add(PlatformFeature.GOOGLE_WORKSPACE_ENROLL)
         if getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("NEWSLETTERS"):
             features.add(PlatformFeature.NEWSLETTERS)
+            features.add(PlatformFeature.CREATE_NEWSLETTER)
         return features
 
     def get_locale_messages(self) -> Dict[str, str]:
