@@ -145,6 +145,8 @@ class BasePlatformView(TemplateView):
             "CLIENT_ID"
         ) and apps.is_installed("django_email_learning.oauth_integrations"):
             features.add(PlatformFeature.GOOGLE_WORKSPACE_ENROLL)
+        if getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("NEWSLETTERS"):
+            features.add(PlatformFeature.NEWSLETTERS)
         return features
 
     def get_locale_messages(self) -> Dict[str, str]:

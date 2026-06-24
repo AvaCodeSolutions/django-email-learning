@@ -53,3 +53,27 @@ def test_is_organization_admin_false_for_non_admin_in_active_org(db, users):
 
     assert response.status_code == 200
     assert response.context["appContext"]["isOrganizationAdmin"] is False
+
+
+def test_newsletters_feature_absent_by_default(db, users):
+    client = Client()
+    client.force_login(users["organization_admin"])
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert "newsletters" not in response.context["appContext"]["availableFeatures"]
+
+
+def test_newsletters_feature_present_when_setting_enabled(db, users, settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "NEWSLETTERS": True,
+    }
+    client = Client()
+    client.force_login(users["organization_admin"])
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert "newsletters" in response.context["appContext"]["availableFeatures"]
