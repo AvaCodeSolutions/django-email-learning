@@ -357,11 +357,16 @@ function Newsletter() {
                             <Tab value="sent" icon={<DoneAllIcon fontSize="small" />} iconPosition="start" label={localeMessages['sent']} />
                             <Tab value="all" icon={<ListIcon fontSize="small" />} iconPosition="start" label={localeMessages['all']} />
                         </Tabs>
-                        {isOrganizationAdmin && (
-                            <Button variant="contained" color="secondary" onClick={openCreate}>
-                                {localeMessages['create_sendout']}
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Button variant="outlined" href={`${platformBaseUrl}/organizations/${organizationId}/newsletters/${newsletterId}/subscribers/`}>
+                                {localeMessages['newsletter_subscribers']}
                             </Button>
-                        )}
+                            {isOrganizationAdmin && (
+                                <Button variant="contained" color="secondary" onClick={openCreate}>
+                                    {localeMessages['create_sendout']}
+                                </Button>
+                            )}
+                        </Box>
                     </Box>
 
                     <Box sx={{ p: { xs: 1, sm: 2 }, borderTop: 1, borderColor: 'divider' }}>
