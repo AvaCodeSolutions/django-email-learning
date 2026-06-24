@@ -53,6 +53,7 @@ from django_email_learning.models import (
     Newsletter,
     OrganizationUser,
     Organization,
+    Sendout,
 )
 from django_email_learning.decorators import (
     accessible_for,
@@ -1430,3 +1431,108 @@ class SingleNewsletterView(View):
             return JsonResponse({}, status=204)
         except Newsletter.DoesNotExist:
             return JsonResponse({"error": "Newsletter not found."}, status=404)
+
+
+@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
+@method_decorator(accessible_for(roles={"admin"}), name="post")
+class SendoutView(View):
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            newsletter = Newsletter.objects.get(
+                id=kwargs["newsletter_id"],
+                organization_id=kwargs["organization_id"],
+            )
+        except Newsletter.DoesNotExist:
+            return JsonResponse({"error": "Newsletter not found."}, status=404)
+
+        status_filter = request.GET.get("status", Sendout.Status.SCHEDULED)
+        sendouts = newsletter.sendouts.all()
+        if status_filter in (
+            Sendout.Status.SCHEDULED,
+            Sendout.Status.SENT,
+            Sendout.Status.FAILED,
+        ):
+            sendouts = sendouts.filter(status=status_filter)
+
+        return JsonResponse(
+            {
+                "sendouts": [
+                    serializers.SendoutResponse.model_validate(s).model_dump()
+                    for s in sendouts.order_by("scheduled_at")
+                ]
+            },
+            status=200,
+        )
+
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            newsletter = Newsletter.objects.get(
+                id=kwargs["newsletter_id"],
+                organization_id=kwargs["organization_id"],
+            )
+        except Newsletter.DoesNotExist:
+            return JsonResponse({"error": "Newsletter not found."}, status=404)
+
+        try:
+            payload = json.loads(request.body)
+            data = serializers.CreateSendoutRequest.model_validate(payload)
+            sendout = Sendout.objects.create(
+                newsletter=newsletter,
+                subject=data.subject,
+                body=data.body,
+                scheduled_at=data.scheduled_at,
+            )
+            return JsonResponse(
+                serializers.SendoutResponse.model_validate(sendout).model_dump(),
+                status=201,
+            )
+        except ValidationError as e:
+            return JsonResponse({"error": e.json()}, status=400)
+
+
+@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
+@method_decorator(accessible_for(roles={"admin"}), name="patch")
+class SingleSendoutView(View):
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            sendout = Sendout.objects.get(
+                id=kwargs["sendout_id"],
+                newsletter_id=kwargs["newsletter_id"],
+                newsletter__organization_id=kwargs["organization_id"],
+            )
+        except Sendout.DoesNotExist:
+            return JsonResponse({"error": "Sendout not found."}, status=404)
+        return JsonResponse(
+            serializers.SendoutDetailResponse.model_validate(sendout).model_dump(),
+            status=200,
+        )
+
+    def patch(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            sendout = Sendout.objects.get(
+                id=kwargs["sendout_id"],
+                newsletter_id=kwargs["newsletter_id"],
+                newsletter__organization_id=kwargs["organization_id"],
+            )
+        except Sendout.DoesNotExist:
+            return JsonResponse({"error": "Sendout not found."}, status=404)
+
+        if sendout.status == Sendout.Status.SENT:
+            return JsonResponse(
+                {"error": "Cannot edit a sendout that has already been sent."},
+                status=409,
+            )
+
+        try:
+            payload = json.loads(request.body)
+            data = serializers.UpdateSendoutRequest.model_validate(payload)
+            sendout.subject = data.subject
+            sendout.body = data.body
+            sendout.scheduled_at = data.scheduled_at
+            sendout.save(update_fields=["subject", "body", "scheduled_at"])
+            return JsonResponse(
+                serializers.SendoutDetailResponse.model_validate(sendout).model_dump(),
+                status=200,
+            )
+        except ValidationError as e:
+            return JsonResponse({"error": e.json()}, status=400)
