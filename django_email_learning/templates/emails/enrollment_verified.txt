@@ -13,5 +13,9 @@
 
 {% translate "Welcome aboard!" %}
 
+{% if newsletter_title %}
+{% blocktranslate %}You have also been subscribed to the {{ newsletter_title }} newsletter. To unsubscribe, visit: {{ newsletter_unsubscribe_url }}{% endblocktranslate %}
+
+{% endif %}
 {% translate "Best regards," %}
 {% blocktranslate %}The {{ organization_name }} Team{% endblocktranslate %}

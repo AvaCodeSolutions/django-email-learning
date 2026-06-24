@@ -135,7 +135,7 @@ class OrganizationView(TemplateView):
                 "course_set",
                 queryset=Course.objects.filter(
                     enabled=True, is_public=True
-                ).select_related("imap_connection"),
+                ).select_related("imap_connection", "newsletter"),
                 to_attr="courses",
             ),
         )
@@ -159,6 +159,10 @@ class OrganizationView(TemplateView):
                     else None,
                     language=course.language,
                     is_rtl=course_lang_info["bidi"],
+                    newsletter_id=course.newsletter_id,
+                    newsletter_title=course.newsletter.title
+                    if course.newsletter
+                    else None,
                 )
                 courses.append(course_data)
             organization_data = OrganizationSerializer(
@@ -229,6 +233,7 @@ class OrganizationView(TemplateView):
                     "newsletter_select_one": _(
                         "Please select at least one newsletter."
                     ),
+                    "subscribe_to_newsletter": _("Subscribe to NEWSLETTER_TITLE"),
                 },
             }
             context["organization_name"] = organization.name

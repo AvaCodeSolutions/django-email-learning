@@ -26,7 +26,7 @@ class EnrollView(View):
         try:
             serlizer = EnrollmentRequest.model_validate(payload)
             try:
-                Course.objects.get(
+                course = Course.objects.get(
                     slug=serlizer.course_slug,
                     organization_id=serlizer.organization_id,
                     is_public=True,
@@ -42,13 +42,20 @@ class EnrollView(View):
 
             try:
                 command.execute()
-                return JsonResponse({"status": "enrolled"}, status=200)
             except EnrollmentAlreadyExistsError as e:
                 logger.info(f"Enrollment already exists: {e}")
                 return JsonResponse({"status": "already_enrolled"}, status=200)
             except BlockedEmailError as e:
                 logger.error(f"Blocked email error: {e}")
                 return JsonResponse({"error": str(e)}, status=403)
+
+            if serlizer.subscribe_to_newsletter and course.newsletter_id:
+                NewsletterSubscriber.objects.get_or_create(
+                    newsletter_id=course.newsletter_id,
+                    email=serlizer.email,
+                )
+
+            return JsonResponse({"status": "enrolled"}, status=200)
 
         except ValidationError as e:
             return JsonResponse({"error": str(e)}, status=400)

@@ -24,6 +24,10 @@
 
 <h3 class="email-subtitle">{% translate "Welcome aboard!" %}</h3>
 
+{% if newsletter_title %}
+<p class="email-paragraph">{% blocktranslate %}You have also been subscribed to the <strong>{{ newsletter_title }}</strong> newsletter. If you did not intend to subscribe, you can <a href="{{ newsletter_unsubscribe_url }}">unsubscribe here</a>.{% endblocktranslate %}</p>
+{% endif %}
+
 <p class="email-paragraph">{% translate "Best regards," %}<br>
 {% blocktranslate %}The {{ organization_name }} Team{% endblocktranslate %}</p>
 {% endblock %}

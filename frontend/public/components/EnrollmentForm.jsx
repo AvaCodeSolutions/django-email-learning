@@ -1,16 +1,17 @@
 import React, { useEffect } from 'react';
-import { Alert, Box, Button, CircularProgress, Typography, Dialog } from '@mui/material';
+import { Alert, Box, Button, Checkbox, CircularProgress, FormControlLabel, Typography, Dialog } from '@mui/material';
 import RequiredTextField from  '../../src/components/RequiredTextField.jsx';
 import { useAppContext } from '../../src/render.jsx';
 import apiClient from '../../src/apiClient.js';
 
 
-const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, onCancle, onComplete, autoFocusEmail = false}) => {
+const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, onCancle, onComplete, autoFocusEmail = false, newsletter_id = null, newsletter_title = null}) => {
 
     const emailRef = React.useRef('');
     const [errorMessage, setErrorMessage] = React.useState('');
     const [isProcessing, setIsProcessing] = React.useState(false);
     const [showReloadDialog, setShowReloadDialog] = React.useState(false);
+    const [subscribeToNewsletter, setSubscribeToNewsletter] = React.useState(true);
     const { localeMessages, termsOfServiceUrl } = useAppContext();
 
     React.useEffect(() => {
@@ -47,6 +48,7 @@ const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, o
                 email: emailRef.current.value,
                 course_slug: course_slug,
                 organization_id: organization_id,
+                subscribe_to_newsletter: newsletter_id ? subscribeToNewsletter : false,
             })
             .then(() => {
                 // Handle success
@@ -93,6 +95,19 @@ const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, o
             </Typography>
         )}
         <input type="hidden" name="course_slug" value={course_slug} />
+        {newsletter_id && newsletter_title && (
+            <FormControlLabel
+                sx={{ mt: 1, display: 'block' }}
+                control={
+                    <Checkbox
+                        checked={subscribeToNewsletter}
+                        onChange={e => setSubscribeToNewsletter(e.target.checked)}
+                        size="small"
+                    />
+                }
+                label={localeMessages['subscribe_to_newsletter']?.replace('NEWSLETTER_TITLE', newsletter_title) || `Subscribe to ${newsletter_title}`}
+            />
+        )}
         <Box sx={{ mt: 1.5, textAlign: 'right' }}>
         <Button variant="outlined" sx={{ mx: 1 }} onClick={onCancle}>
             {localeMessages['cancel']}

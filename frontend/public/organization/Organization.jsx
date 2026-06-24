@@ -28,7 +28,7 @@ function Organization() {
 
     const showModalForCourse = (course) => {
         // Logic to show modal for specific course
-        setModalContent(<EnrollmentForm course_title={course.title} course_slug={course.slug} organization_id={organization.id} endpoint={enrollApiUrl} autoFocusEmail={true} onCancle={() => {setDisplayModal(false); setModalContent(null);}} onComplete={() => completeEnrollment(course)} />);
+        setModalContent(<EnrollmentForm course_title={course.title} course_slug={course.slug} organization_id={organization.id} endpoint={enrollApiUrl} autoFocusEmail={true} onCancle={() => {setDisplayModal(false); setModalContent(null);}} onComplete={() => completeEnrollment(course)} newsletter_id={course.newsletter_id || null} newsletter_title={course.newsletter_title || null} />);
         setDisplayModal(true);
     }
 
