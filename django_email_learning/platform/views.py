@@ -145,6 +145,8 @@ class BasePlatformView(TemplateView):
             "CLIENT_ID"
         ) and apps.is_installed("django_email_learning.oauth_integrations"):
             features.add(PlatformFeature.GOOGLE_WORKSPACE_ENROLL)
+        if getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("NEWSLETTERS"):
+            features.add(PlatformFeature.NEWSLETTERS)
         return features
 
     def get_locale_messages(self) -> Dict[str, str]:
@@ -628,6 +630,23 @@ class SingleOrganization(BasePlatformView):
             "upload_button_label": _("Upload Image"),
             "remove_image": _("Remove Image"),
             "uploaded_image_alt": _("User Photo"),
+            "members": _("Members"),
+            "newsletters": _("Newsletters"),
+            "no_newsletters": _("No newsletters yet."),
+            "create_newsletter": _("Create Newsletter"),
+            "newsletter_title": _("Title"),
+            "newsletter_language": _("Language"),
+            "newsletter_subscribers": _("Subscribers"),
+            "newsletter_title_required": _("Title is required."),
+            "newsletter_create_error": _(
+                "Failed to create newsletter. Please try again."
+            ),
+            "newsletter_duplicate_error": _(
+                "A newsletter with this title already exists."
+            ),
+            "newsletter_delete_confirmation": _(
+                "Are you sure you want to delete NEWSLETTER_TITLE? This will also remove all its subscribers and scheduled sendouts."
+            ),
         }
 
 

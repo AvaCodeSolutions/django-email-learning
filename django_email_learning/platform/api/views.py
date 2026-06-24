@@ -50,6 +50,7 @@ from django_email_learning.models import (
     JobExecution,
     JobName,
     Learner,
+    Newsletter,
     OrganizationUser,
     Organization,
 )
@@ -1373,3 +1374,59 @@ class JobsStatus(View):
 class RootView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         return JsonResponse({"message": "Email Learning API is running."}, status=200)
+
+
+@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
+@method_decorator(accessible_for(roles={"admin"}), name="post")
+class NewsletterView(View):
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        newsletters = Newsletter.objects.filter(
+            organization_id=kwargs["organization_id"]
+        ).prefetch_related("subscribers")
+        return JsonResponse(
+            {
+                "newsletters": [
+                    serializers.NewsletterResponse.from_django_model(n).model_dump()
+                    for n in newsletters
+                ]
+            },
+            status=200,
+        )
+
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            payload = json.loads(request.body)
+            serializer = serializers.CreateNewsletterRequest.model_validate(payload)
+            newsletter = serializer.to_django_model(
+                organization_id=kwargs["organization_id"]
+            )
+            newsletter.save()
+            return JsonResponse(
+                serializers.NewsletterResponse.from_django_model(
+                    newsletter
+                ).model_dump(),
+                status=201,
+            )
+        except ValidationError as e:
+            return JsonResponse({"error": e.json()}, status=400)
+        except IntegrityError:
+            return JsonResponse(
+                {
+                    "error": "A newsletter with this title already exists for the organization."
+                },
+                status=409,
+            )
+
+
+@method_decorator(accessible_for(roles={"admin"}), name="delete")
+class SingleNewsletterView(View):
+    def delete(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            newsletter = Newsletter.objects.get(
+                id=kwargs["newsletter_id"],
+                organization_id=kwargs["organization_id"],
+            )
+            newsletter.delete()
+            return JsonResponse({}, status=204)
+        except Newsletter.DoesNotExist:
+            return JsonResponse({"error": "Newsletter not found."}, status=404)
