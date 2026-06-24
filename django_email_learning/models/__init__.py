@@ -21,3 +21,4 @@ from .deliveries import ContentDelivery, DeliverySchedule
 from .jobs import JobExecution, JobName, JobStatus
 from .submissions import QuizSubmission, AssignmentSubmission, AssignmentFeedback
 from .api_keys import ApiKey
+from .newsletters import Newsletter, NewsletterSubscriber
