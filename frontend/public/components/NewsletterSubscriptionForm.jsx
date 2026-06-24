@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getCookie } from '../../src/utils.js';
 import { Alert, Box, Button, Checkbox, FormControlLabel, FormGroup, TextField, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
@@ -33,7 +34,10 @@ export default function NewsletterSubscriptionForm({ newsletters, subscribeApiUr
         try {
             const res = await fetch(subscribeApiUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
                 body: JSON.stringify({ email: email.trim(), newsletter_ids: selectedIds }),
             });
             if (res.ok) {
