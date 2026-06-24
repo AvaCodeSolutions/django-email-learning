@@ -1,8 +1,11 @@
 from django.views import View
 from django.http import JsonResponse
 from pydantic import ValidationError
-from django_email_learning.models import Course
-from django_email_learning.public.api.serializers import EnrollmentRequest
+from django_email_learning.models import Course, Newsletter, NewsletterSubscriber
+from django_email_learning.public.api.serializers import (
+    EnrollmentRequest,
+    NewsletterSubscribeRequest,
+)
 from django_email_learning.services.command_models.enroll_command import EnrollCommand
 from django_email_learning.services.command_models.exceptions.blocked_email_error import (
     BlockedEmailError,
@@ -49,3 +52,33 @@ class EnrollView(View):
 
         except ValidationError as e:
             return JsonResponse({"error": str(e)}, status=400)
+
+
+class NewsletterSubscribeView(View):
+    def post(self, request, organization_id: int, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        payload = json.loads(request.body)
+        try:
+            data = NewsletterSubscribeRequest.model_validate(payload)
+        except ValidationError as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+        valid_ids = set(
+            Newsletter.objects.filter(
+                id__in=data.newsletter_ids,
+                organization_id=organization_id,
+            ).values_list("id", flat=True)
+        )
+
+        invalid = set(data.newsletter_ids) - valid_ids
+        if invalid:
+            return JsonResponse(
+                {"error": "One or more newsletter IDs are invalid."}, status=400
+            )
+
+        for newsletter_id in valid_ids:
+            NewsletterSubscriber.objects.get_or_create(
+                newsletter_id=newsletter_id,
+                email=data.email,
+            )
+
+        return JsonResponse({"status": "subscribed"}, status=200)

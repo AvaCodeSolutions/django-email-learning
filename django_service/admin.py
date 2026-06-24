@@ -17,6 +17,7 @@ from django_email_learning.models import (
     AssignmentSubmission,
     Newsletter,
     Sendout,
+    NewsletterSubscriber,
 )
 
 from django_email_learning.oauth_integrations.models import Session
@@ -80,3 +81,4 @@ admin.site.register(AssignmentSubmission)
 admin.site.register(AssignmentFeedback)
 admin.site.register(Newsletter)
 admin.site.register(Sendout)
+admin.site.register(NewsletterSubscriber)
