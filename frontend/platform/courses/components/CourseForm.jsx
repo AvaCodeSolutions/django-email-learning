@@ -2,6 +2,7 @@ import { Alert, Box, Button, Divider, IconButton, MenuItem, Stack, TextField, To
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import RequiredTextField  from '../../../src/components/RequiredTextField.jsx';
 import AddImapConnectionForm from '../components/AddImapConnectionForm.jsx';
+import AddNewsletterForm from '../components/AddNewsletterForm.jsx';
 import AddInstructorsSection from '../components/AddInstructorsSection.jsx';
 import { useAppContext } from '../../../src/render.jsx';
 import ImageUpload from '../../../src/components/ImageUpload.jsx';
@@ -31,7 +32,9 @@ const externalReferencesChanged = (originalReferences, currentReferences) => {
 };
 
 function CourseForm({successCallback, failureCallback, cancelCallback, activeOrganizationId, createMode, courseId}) {
-    const { localeMessages, apiBaseUrl, direction, languageOptions = [] } = useAppContext();
+    const { localeMessages, apiBaseUrl, direction, languageOptions = [], availableFeatures = [] } = useAppContext();
+    const newslettersEnabled = availableFeatures.includes('newsletters');
+    const createNewsletterEnabled = availableFeatures.includes('create_newsletter');
     const [courseTitle, setCourseTitle] = useState("")
     const [courseSlug, setCourseSlug] = useState("")
     const [courseDescription, setCourseDescription] = useState("")
@@ -41,6 +44,8 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     const [sendCertificate, setSendCertificate] = useState(true)
     const [addImapConnection, setAddImapConnection] = useState(false)
     const [imapConnectionId, setImapConnectionId] = useState(null)
+    const [addNewsletter, setAddNewsletter] = useState(false)
+    const [newsletterId, setNewsletterId] = useState(null)
     const [addInstructors, setAddInstructors] = useState(false)
     const [selectedInstructorIds, setSelectedInstructorIds] = useState([])
     const [titleHelperText, setTitleHelperText] = useState("")
@@ -61,6 +66,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
         isPublic: true,
         sendCertificate: true,
         imapConnectionId: null,
+        newsletterId: null,
         imageServerPath: null,
         instructors: [],
     })
@@ -100,6 +106,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     isPublic: data.is_public ?? true,
                     sendCertificate: data.send_certificate ?? true,
                     imapConnectionId: data.imap_connection_id ?? null,
+                    newsletterId: data.newsletter_id ?? null,
                     imageServerPath: data.image_path ?? null,
                     instructors: (data.instructors || []).map((i) => i.id),
                 });
@@ -112,6 +119,10 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 if (data.imap_connection_id) {
                     setImapConnectionId(data.imap_connection_id);
                     setAddImapConnection(true);
+                }
+                if (data.newsletter_id) {
+                    setNewsletterId(data.newsletter_id);
+                    setAddNewsletter(true);
                 }
                 const initialInstructors = (data.instructors || []).map((i) => i.id);
                 setSelectedInstructorIds(initialInstructors);
@@ -225,6 +236,9 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
         const currentImapConnectionId = addImapConnection && imapConnectionId != null
             ? parseInt(imapConnectionId)
             : null;
+        const currentNewsletterId = addNewsletter && newsletterId != null
+            ? parseInt(newsletterId)
+            : null;
         const updatePayload = {
             image: imageServerPath === initialValues.imageServerPath
                 ? 'SKIP'
@@ -263,6 +277,14 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             }
         }
 
+        if (currentNewsletterId !== initialValues.newsletterId) {
+            if (currentNewsletterId == null) {
+                updatePayload.reset_newsletter = true;
+            } else {
+                updatePayload.newsletter_id = currentNewsletterId;
+            }
+        }
+
         if (externalReferencesChanged(originalExternalReferences, normalizedExternalReferences)) {
             updatePayload.external_references = normalizedExternalReferences;
         }
@@ -288,6 +310,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     isPublic: data.is_public ?? isPublic,
                     sendCertificate: data.send_certificate ?? sendCertificate,
                     imapConnectionId: data.imap_connection_id ?? currentImapConnectionId,
+                    newsletterId: data.newsletter_id ?? currentNewsletterId,
                     imageServerPath: data.image_path ?? imageServerPath,
                 });
                 setOriginalExternalReferences(normalizeExternalReferences(data.external_references || normalizedExternalReferences));
@@ -324,6 +347,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             is_public: isPublic,
             send_certificate: sendCertificate,
             imap_connection_id: imapConnectionId ? parseInt(imapConnectionId) : null,
+            newsletter_id: addNewsletter && newsletterId ? parseInt(newsletterId) : null,
             external_references: normalizedExternalReferences.length > 0 ? normalizedExternalReferences : null,
             image: imageServerPath ? imageServerPath : null,
             instructors: addInstructors && selectedInstructorIds.length > 0 ? selectedInstructorIds : null,
@@ -502,6 +526,26 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                         initialImapConnectionId={imapConnectionId}
                     />
               </Box>}
+              {newslettersEnabled && (<>
+                <FormControlLabel
+                    control={<Switch onChange={() => setAddNewsletter(!addNewsletter)} checked={addNewsletter} dir={direction} />}
+                    label={localeMessages["add_newsletter"]} sx={{ m: 0 }} />
+                <Tooltip title={localeMessages["newsletter_tooltip"]}>
+                    <IconButton size="small">
+                        <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                </Tooltip>
+                {addNewsletter && (
+                    <Box sx={{ py: 2 }}>
+                        <AddNewsletterForm
+                            onChangeCallback={(id) => setNewsletterId(id)}
+                            activeOrganizationId={activeOrganizationId}
+                            initialNewsletterIdId={newsletterId}
+                            showCreate={createNewsletterEnabled}
+                        />
+                    </Box>
+                )}
+              </>)}
               <Divider sx={{ my: 2 }} />
               <Box sx={{ mt: 1 }}>
                 <FormControlLabel

@@ -231,6 +231,17 @@ class Courses(BasePlatformView):
                 "The slug is a unique identifier for the course used in URLs and API endpoints. It should be lowercase, contain no spaces (use hyphens instead), and be unique across all courses for your organization. Once set, the slug cannot be changed."
             ),
             "slug_no_space": _("Slug cannot contain spaces. Use hyphens instead."),
+            "add_newsletter": _("Link Newsletter"),
+            "newsletter_tooltip": _(
+                "Link this course to a newsletter. Subscribers of the linked newsletter can be automatically enrolled when the auto-enroll feature is enabled."
+            ),
+            "new_newsletter": _("New Newsletter"),
+            "newsletter": _("Newsletter"),
+            "newsletter_title": _("Title"),
+            "newsletter_language": _("Language"),
+            "newsletter_create_error": _(
+                "Failed to create newsletter. Please try again."
+            ),
             "add_imap_connection": _("Add IMAP Connection"),
             "imap_connection_tooltip": _(
                 "You don't need an IMAP connection to build your course, but you will need one if you want your users to interact via email. For example, they can enroll, verify their enrollmnent or drop out just by sending a message. This is a great solution if your audience has limited platform access."
@@ -325,6 +336,12 @@ class CourseView(BasePlatformView):
         }
         context["appContext"]["direction"] = (
             "rtl" if get_language_info(course.language)["bidi"] else "ltr"
+        )
+        organization_id = self.get_or_set_active_organization()
+        context["appContext"]["newsletters"] = list(
+            Newsletter.objects.filter(organization_id=organization_id).values(
+                "id", "title"
+            )
         )
         context["page_title"] = _("Course: %(title)s") % {"title": course.title}
         return context

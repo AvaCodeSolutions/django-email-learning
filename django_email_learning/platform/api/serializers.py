@@ -22,6 +22,7 @@ from django_email_learning.models import (
     InboxFolder,
     Assignment,
     Lesson,
+    Newsletter,
     Quiz,
     Question,
     Answer,
@@ -108,6 +109,7 @@ class CreateCourseRequest(BaseModel):
         None, examples=["A beginner's course on Python programming."]
     )
     imap_connection_id: Optional[int] = Field(None, examples=[1])
+    newsletter_id: Optional[int] = Field(None, examples=[1])
     image: Optional[str] = Field(None, examples=["/path/to/course_image.png"])
     language: str = Field(min_length=2, max_length=10, examples=["en"])
     target_audience: Optional[str] = Field(
@@ -164,6 +166,15 @@ class CreateCourseRequest(BaseModel):
         )
         if imap_connection:
             course.imap_connection = imap_connection
+        if self.newsletter_id:
+            try:
+                course.newsletter = Newsletter.objects.get(
+                    id=self.newsletter_id, organization=organization
+                )
+            except Newsletter.DoesNotExist:
+                raise ValueError(
+                    f"Newsletter with id {self.newsletter_id} does not exist."
+                )
         if self.instructors:
             course.save()  # Save course before adding instructors
             for instructor_id in self.instructors:
@@ -200,8 +211,10 @@ class UpdateCourseRequest(BaseModel):
         None, examples=["A beginner's course on Python programming."]
     )
     imap_connection_id: Optional[int] = Field(None, examples=[1])
+    newsletter_id: Optional[int] = Field(None, examples=[1])
     enabled: Optional[bool] = Field(None, examples=[True])
     reset_imap_connection: Optional[bool] = Field(None, examples=[False])
+    reset_newsletter: Optional[bool] = Field(None, examples=[False])
     image: Optional[str] = Field(None, examples=["/path/to/course_image.png"])
     language: Optional[str] = Field(None, min_length=2, max_length=10, examples=["en"])
     target_audience: Optional[str] = Field(
@@ -247,6 +260,10 @@ class UpdateCourseRequest(BaseModel):
             course.enabled = self.enabled
         if self.reset_imap_connection:
             course.imap_connection = None
+        if self.newsletter_id is not None:
+            course.newsletter = Newsletter.objects.get(id=self.newsletter_id)
+        if self.reset_newsletter:
+            course.newsletter = None
         if self.image is not None:
             if self.image != "SKIP":
                 course.replace_image(self.image)
@@ -303,6 +320,7 @@ class CourseResponse(BaseModel):
     description: Optional[str]
     organization_id: int
     imap_connection_id: Optional[int]
+    newsletter_id: Optional[int] = None
     enabled: bool
     enrollments_count: dict[str, int]
     image: Optional[str] = None
@@ -332,6 +350,7 @@ class CourseResponse(BaseModel):
                 "imap_connection_id": course.imap_connection.id
                 if course.imap_connection
                 else None,
+                "newsletter_id": course.newsletter_id,
                 "enabled": course.enabled,
                 "enrollments_count": course.enrollments_count,
                 "image": abs_url_builder(course.image.url) if course.image else None,
