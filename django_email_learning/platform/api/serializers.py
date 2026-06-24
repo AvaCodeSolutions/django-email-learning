@@ -1366,3 +1366,37 @@ class AssignmentSubmissionSummaryResponse(BaseModel):
             if submission.reviewer
             else None,  # type: ignore[union-attr]
         )
+
+
+class NewsletterResponse(BaseModel):
+    id: int
+    title: str
+    language: str
+    organization_id: int
+    subscriber_count: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+    @staticmethod
+    def from_django_model(newsletter: Any) -> "NewsletterResponse":
+        return NewsletterResponse(
+            id=newsletter.id,
+            title=newsletter.title,
+            language=newsletter.language,
+            organization_id=newsletter.organization_id,
+            subscriber_count=newsletter.subscribers.count(),
+        )
+
+
+class CreateNewsletterRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+    language: str = Field(min_length=2, max_length=10)
+
+    def to_django_model(self, organization_id: int) -> Any:
+        from django_email_learning.models import Newsletter
+
+        return Newsletter(
+            title=self.title,
+            language=self.language,
+            organization_id=organization_id,
+        )
