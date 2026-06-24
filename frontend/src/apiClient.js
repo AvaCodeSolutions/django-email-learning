@@ -67,6 +67,7 @@ async function request(url, { method = 'GET', body, isUpload = false } = {}) {
 const apiClient = {
   get: (url) => request(url, { method: 'GET' }),
   post: (url, body) => request(url, { method: 'POST', body }),
+  patch: (url, body) => request(url, { method: 'PATCH', body }),
   del: (url, body) => request(url, { method: 'DELETE', body }),
   upload: (url, formData) => request(url, { method: 'POST', body: formData, isUpload: true }),
   ApiError,

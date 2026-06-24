@@ -1,3 +1,4 @@
+import './styles.scss'
 
 import { useEffect, useState } from 'react';
 import Text from '@tiptap/extension-text'
@@ -187,8 +188,8 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
     };
 
     const openImageEditDialog = () => {
-        const { src = '', alt = '' } = editor.getAttributes('image');
-        setImageFormValues({ src, alt });
+        const { src, alt } = editor.getAttributes('image');
+        setImageFormValues({ src: src ?? '', alt: alt ?? '' });
         setIsImageDialogOpen(true);
     };
 

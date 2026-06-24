@@ -4,7 +4,9 @@ from django_email_learning.platform.api.views import (
     ApiKeyView,
     GetOrCreateUserByEmail,
     NewsletterView,
+    SendoutView,
     SingleNewsletterView,
+    SingleSendoutView,
     SendLessonToPlatformUser,
     SingleApiKeyView,
     CourseView,
@@ -65,6 +67,16 @@ urlpatterns = [
         "organizations/<int:organization_id>/newsletters/<int:newsletter_id>/",
         SingleNewsletterView.as_view(),
         name="newsletters_detail",
+    ),
+    path(
+        "organizations/<int:organization_id>/newsletters/<int:newsletter_id>/sendouts/",
+        SendoutView.as_view(),
+        name="sendouts_list",
+    ),
+    path(
+        "organizations/<int:organization_id>/newsletters/<int:newsletter_id>/sendouts/<int:sendout_id>/",
+        SingleSendoutView.as_view(),
+        name="sendouts_detail",
     ),
     path(
         "organizations/<int:organization_id>/courses/<int:course_id>/",

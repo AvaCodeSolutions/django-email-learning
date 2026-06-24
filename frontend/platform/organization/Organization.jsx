@@ -12,7 +12,7 @@ import TableCell from "@mui/material/TableCell";
 import Typography from "@mui/material/Typography";
 import LinearProgress from "@mui/material/LinearProgress";
 import Dialog from "@mui/material/Dialog";
-import { Tabs, Tab } from "@mui/material";
+import { Tabs, Tab, Link } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import PeopleIcon from '@mui/icons-material/People';
@@ -31,7 +31,8 @@ function Organization() {
     const [organization, setOrganization] = useState(null);
     const [organizationUsers, setOrganizationUsers] = useState([]);
     const [newsletters, setNewsletters] = useState([]);
-    const [activeTab, setActiveTab] = useState('members');
+    const initialTab = new URLSearchParams(window.location.search).get('tab') || 'members';
+    const [activeTab, setActiveTab] = useState(initialTab);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogContent, setDialogContent] = useState(null);
 
@@ -199,7 +200,9 @@ function Organization() {
                                                 <TableBody>
                                                     {newsletters.map((nl) => (
                                                         <TableRow key={nl.id}>
-                                                            <TableCell>{nl.title}</TableCell>
+                                                            <TableCell>
+                                                                <Link href={`${platformBaseUrl}/organizations/${organizationId}/newsletters/${nl.id}/`} color="secondary.dark">{nl.title}</Link>
+                                                            </TableCell>
                                                             <TableCell>{nl.language}</TableCell>
                                                             <TableCell>{nl.subscriber_count}</TableCell>
                                                             {isOrganizationAdmin && (

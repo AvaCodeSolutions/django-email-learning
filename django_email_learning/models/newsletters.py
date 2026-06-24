@@ -45,3 +45,27 @@ class NewsletterSubscriber(models.Model):
                 fields=["newsletter", "email"], name="unique_subscriber_per_newsletter"
             )
         ]
+
+
+class Sendout(models.Model):
+    class Status(models.TextChoices):
+        SCHEDULED = "scheduled", "Scheduled"
+        SENT = "sent", "Sent"
+        FAILED = "failed", "Failed"
+
+    newsletter = models.ForeignKey(
+        Newsletter, on_delete=models.CASCADE, related_name="sendouts"
+    )
+    subject = models.CharField(max_length=500)
+    body = models.TextField()
+    scheduled_at = models.DateTimeField()
+    sent_at = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.SCHEDULED, db_index=True
+    )
+    retry_count = models.PositiveSmallIntegerField(default=0)
+    max_retries = models.PositiveSmallIntegerField(default=3)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f"{self.subject} — {self.newsletter.title} ({self.status})"

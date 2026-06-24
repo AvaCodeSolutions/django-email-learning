@@ -1400,3 +1400,38 @@ class CreateNewsletterRequest(BaseModel):
             language=self.language,
             organization_id=organization_id,
         )
+
+
+class SendoutResponse(BaseModel):
+    id: int
+    subject: str
+    scheduled_at: datetime
+    sent_at: Optional[datetime] = None
+    status: str
+    retry_count: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CreateSendoutRequest(BaseModel):
+    subject: str = Field(min_length=1, max_length=500)
+    body: str = Field(min_length=1)
+    scheduled_at: datetime
+
+
+class UpdateSendoutRequest(BaseModel):
+    subject: str = Field(min_length=1, max_length=500)
+    body: str = Field(min_length=1)
+    scheduled_at: datetime
+
+
+class SendoutDetailResponse(BaseModel):
+    id: int
+    subject: str
+    body: str
+    scheduled_at: datetime
+    sent_at: Optional[datetime] = None
+    status: str
+    retry_count: int
+
+    model_config = ConfigDict(from_attributes=True)
