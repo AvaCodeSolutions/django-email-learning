@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import render from '../../src/render.jsx';
 import Layout from '../components/Layout.jsx';
 import EnrollmentForm from '../components/EnrollmentForm.jsx';
+import NewsletterSubscriptionForm from '../components/NewsletterSubscriptionForm.jsx';
 import { Alert, Box, Button, Card, CardContent, CardMedia, Dialog, Grid, Stack, Typography, Link } from '@mui/material';
 import LanguageIcon from '@mui/icons-material/Language';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
@@ -18,7 +19,7 @@ function Organization() {
     const [courses, setCourses] = useState([]);
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
-    const { organization, enrollApiUrl, localeMessages } = useAppContext();
+    const { organization, enrollApiUrl, newsletterSubscribeApiUrl, newsletters = [], localeMessages } = useAppContext();
 
     useEffect(() => {
         const initialCourses = (organization.courses || []).map((course) => ({ ...course, enrolled: false }));
@@ -233,6 +234,14 @@ function Organization() {
                 </Box>
             )}
         </Box>
+
+        {newsletters.length > 0 && (
+            <NewsletterSubscriptionForm
+                newsletters={newsletters}
+                subscribeApiUrl={newsletterSubscribeApiUrl}
+                localeMessages={localeMessages}
+            />
+        )}
 
         <Dialog open={displayModal} onClose={() => setDisplayModal(false)} fullWidth maxWidth="sm">
             {modalContent}

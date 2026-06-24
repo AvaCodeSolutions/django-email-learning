@@ -5,7 +5,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.middleware.csrf import get_token
 from django.db.models import Prefetch
-from django_email_learning.models import Organization, Course
+from django_email_learning.models import Newsletter, Organization, Course
 from django.utils.translation import get_language_info, get_language
 from django.http import Http404
 from django.urls import reverse
@@ -166,11 +166,22 @@ class OrganizationView(TemplateView):
                 linkedin_page=organization.linkedin_page,
             )
             enroll_api_path = reverse("django_email_learning:api_public:enroll")
+            subscribe_api_path = reverse(
+                "django_email_learning:api_public:newsletter_subscribe",
+                kwargs={"organization_id": organization_id},
+            )
+            newsletters = list(
+                Newsletter.objects.filter(organization_id=organization_id).values(
+                    "id", "title"
+                )
+            )
             current_lang_code = get_language()
             lang_info = get_language_info(current_lang_code)
             context["appContext"] = {
                 "organization": organization_data.model_dump(),
                 "enrollApiUrl": f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{enroll_api_path}",
+                "newsletterSubscribeApiUrl": f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{subscribe_api_path}",
+                "newsletters": newsletters,
                 "direction": "rtl" if lang_info["bidi"] else "ltr",
                 "termsOfServiceUrl": get_terms_of_service_url(),
                 "localeMessages": {
@@ -198,6 +209,17 @@ class OrganizationView(TemplateView):
                     "website": _("Website"),
                     "terms_of_service_confirmation": _(
                         "By enrolling, you agree to our <a href='TERMS_OF_SERVICE_URL' target='_blank'>Terms of Service</a>."
+                    ),
+                    "newsletters": _("Newsletters"),
+                    "newsletter_subscribe": _("Subscribe"),
+                    "newsletter_subscribe_success": _(
+                        "You have been successfully subscribed."
+                    ),
+                    "newsletter_subscribe_error": _(
+                        "Subscription failed. Please try again."
+                    ),
+                    "newsletter_select_one": _(
+                        "Please select at least one newsletter."
                     ),
                 },
             }
