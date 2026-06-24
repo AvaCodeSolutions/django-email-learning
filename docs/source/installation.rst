@@ -412,6 +412,29 @@ Optional integer controlling how many threads the ``deliver_contents`` job uses 
    Set ``DELIVERY_WORKERS`` to a value your SMTP provider can handle — most transactional email services impose per-second rate limits. A value between 2 and 10 is typical. Each worker uses its own database connection, so ensure your database connection pool is sized accordingly.
 
 
+**NEWSLETTERS**
+
+Optional configuration for the newsletter feature.
+
+- ``FROM_EMAIL``: The sender address used for newsletter sendouts. Overrides the top-level ``FROM_EMAIL`` and Django's ``DEFAULT_FROM_EMAIL`` for newsletter emails specifically. Useful when newsletters are sent from a different address than course emails.
+- ``MAX_SUBSCRIBER_PER_NEWSLETTER``: The maximum number of subscribers allowed per newsletter. Defaults to ``500``. Once a newsletter reaches this limit it is hidden from the public subscription form and new subscriptions via the API are rejected with a ``400`` error. Existing subscribers are never affected.
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
+        'NEWSLETTERS': {
+            'FROM_EMAIL': 'newsletter@yourdomain.com',
+            'MAX_SUBSCRIBER_PER_NEWSLETTER': 1000,
+        },
+    }
+
+.. note::
+   ``MAX_SUBSCRIBER_PER_NEWSLETTER`` is enforced at the view level on both ``OrganizationView`` and ``NewsletterSubscribeView``. You can override ``get_max_subscribers()`` on either view class to apply custom limits (e.g. per-organisation quotas).
+
+
 Email Backend Configuration
 ---------------------------
 
