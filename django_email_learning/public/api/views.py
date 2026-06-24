@@ -55,6 +55,15 @@ class EnrollView(View):
 
 
 class NewsletterSubscribeView(View):
+    def get_max_subscribers(self) -> int:
+        from django.conf import settings
+
+        return (
+            getattr(settings, "DJANGO_EMAIL_LEARNING", {})
+            .get("NEWSLETTERS", {})
+            .get("MAX_SUBSCRIBER_PER_NEWSLETTER", 500)
+        )
+
     def post(self, request, organization_id: int, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         payload = json.loads(request.body)
         try:
@@ -62,20 +71,37 @@ class NewsletterSubscribeView(View):
         except ValidationError as e:
             return JsonResponse({"error": str(e)}, status=400)
 
-        valid_ids = set(
-            Newsletter.objects.filter(
+        newsletters = {
+            n.id: n
+            for n in Newsletter.objects.filter(
                 id__in=data.newsletter_ids,
                 organization_id=organization_id,
-            ).values_list("id", flat=True)
-        )
+            )
+        }
 
-        invalid = set(data.newsletter_ids) - valid_ids
+        invalid = set(data.newsletter_ids) - set(newsletters)
         if invalid:
             return JsonResponse(
                 {"error": "One or more newsletter IDs are invalid."}, status=400
             )
 
-        for newsletter_id in valid_ids:
+        max_subscribers = self.get_max_subscribers()
+        for newsletter in newsletters.values():
+            already_subscribed = NewsletterSubscriber.objects.filter(
+                newsletter=newsletter, email=data.email
+            ).exists()
+            if (
+                not already_subscribed
+                and newsletter.subscribers.count() >= max_subscribers
+            ):
+                return JsonResponse(
+                    {
+                        "error": f'Newsletter "{newsletter.title}" has reached its maximum number of subscribers.'
+                    },
+                    status=400,
+                )
+
+        for newsletter_id in newsletters:
             NewsletterSubscriber.objects.get_or_create(
                 newsletter_id=newsletter_id,
                 email=data.email,

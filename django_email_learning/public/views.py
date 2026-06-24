@@ -115,6 +115,13 @@ def build_single_course_json_ld(  # type: ignore[no-untyped-def]
 class OrganizationView(TemplateView):
     template_name = "public/organization.html"
 
+    def get_max_subscribers(self) -> int:
+        return (
+            getattr(settings, "DJANGO_EMAIL_LEARNING", {})
+            .get("NEWSLETTERS", {})
+            .get("MAX_SUBSCRIBER_PER_NEWSLETTER", 500)
+        )
+
     def get_context_data(self, **kwargs) -> dict:  # type: ignore[no-untyped-def]
         get_token(self.request)  # Ensure CSRF token is set in cookies
         organization_id: int = kwargs.get("organization_id")  # type: ignore[assignment]
@@ -170,11 +177,12 @@ class OrganizationView(TemplateView):
                 "django_email_learning:api_public:newsletter_subscribe",
                 kwargs={"organization_id": organization_id},
             )
-            newsletters = list(
-                Newsletter.objects.filter(organization_id=organization_id).values(
-                    "id", "title"
-                )
-            )
+            max_subscribers = self.get_max_subscribers()
+            newsletters = [
+                {"id": n.id, "title": n.title}
+                for n in Newsletter.objects.filter(organization_id=organization_id)
+                if n.subscribers.count() < max_subscribers
+            ]
             current_lang_code = get_language()
             lang_info = get_language_info(current_lang_code)
             context["appContext"] = {
