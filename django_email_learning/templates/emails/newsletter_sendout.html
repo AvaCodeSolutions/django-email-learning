@@ -2,6 +2,8 @@
 {% load i18n %}
 
 {% block content %}
+<h2 class="email-title">{{ subject }}</h2>
+
 {{ body|safe }}
 
 <div class="email-divider-note">
