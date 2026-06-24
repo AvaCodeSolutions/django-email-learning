@@ -103,6 +103,7 @@ function NewsletterSubscribers() {
 
                     {loading && <LinearProgress />}
 
+                    <Box sx={{ px: { xs: 1, sm: 2 } }}>
                     <TableContainer>
                         <Table size="small">
                             <TableHead>
@@ -137,6 +138,7 @@ function NewsletterSubscribers() {
                             </TableBody>
                         </Table>
                     </TableContainer>
+                    </Box>
 
                     {totalPages > 1 && (
                         <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
