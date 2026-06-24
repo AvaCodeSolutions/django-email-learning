@@ -35,11 +35,12 @@ class EmailTemplatePreview(TemplateView):
             "assignment_review",
             "quiz_reminder",
             "deactivation_deadline_passed",
+            "newsletter_sendout",
         ]:
             raise ValueError(
                 "Invalid template name. Allowed values are: 'certificate_form', 'enrollment_verified', "
                 "'enrollment_verification', 'lesson', 'password_reset', 'quiz', 'assignment', "
-                "'assignment_reminder', 'assignment_review', 'quiz_reminder', 'deactivation_deadline_passed'."
+                "'assignment_reminder', 'assignment_review', 'quiz_reminder', 'deactivation_deadline_passed', 'newsletter_sendout'."
             )
 
         return [f"emails/{template_name}.html"]
@@ -60,6 +61,7 @@ class EmailTemplatePreview(TemplateView):
             "verification_link": "https://example.com/verify",
             "verification_code": "ABC123",
             "imap_email_address": "test@test.com",
+            "subject": "Welcome to the course!",
             "lesson": lesson,
             "quiz": quiz,
             "unsubscribe_link": "https://example.com/unsubscribe",
@@ -79,7 +81,10 @@ class EmailTemplatePreview(TemplateView):
                 "comment": "Please update your code to handle edge cases.",
             },
             "link": "https://example.com/assignment/1",
+            "newsletter_title": "Weekly Newsletter",
+            "body": "Welcome to our weekly newsletter! Here are the latest updates and news from our organization.",
             "deadline_time": timezone.now(),
+            "unsubscribe_url": "https://example.com/unsubscribe",
             "assignment": assignment,
             "next_content": content.get_next() if content else None,
             "content_title": "assignment programming exercise",
