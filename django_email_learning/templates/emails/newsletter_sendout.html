@@ -1,0 +1,13 @@
+{% extends "emails/base.html" %}
+{% load i18n %}
+
+{% block content %}
+<h2 class="email-title">{{ subject }}</h2>
+
+{{ body|safe }}
+
+<div class="email-divider-note">
+    <p>{% blocktranslate %}You are receiving this email because you subscribed to <strong>{{ newsletter_title }}</strong>.{% endblocktranslate %}</p>
+    <p><a href="{{ unsubscribe_url }}">{% translate "Unsubscribe" %}</a></p>
+</div>
+{% endblock %}
