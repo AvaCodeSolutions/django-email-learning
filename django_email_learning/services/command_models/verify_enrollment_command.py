@@ -1,7 +1,11 @@
 from django_email_learning.services.command_models.abstract_command import (
     AbstractCommand,
 )
-from django_email_learning.models import Enrollment, EnrollmentStatus
+from django_email_learning.models import (
+    Enrollment,
+    EnrollmentStatus,
+    NewsletterSubscriber,
+)
 from pydantic import Field
 
 from django_email_learning.services.command_models.exceptions.invalid_enrollment_error import (
@@ -14,8 +18,8 @@ from django_email_learning.services.email_sender_service import email_sender_ser
 from django_email_learning.services.metrics_service import metric_service
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from django.utils.translation import gettext as _
 from django.conf import settings
+from django.urls import reverse
 from typing import Literal
 
 
@@ -63,6 +67,15 @@ class VerifyEnrollmentCommand(AbstractCommand):
             enrollment.course.slug, enrollment.course.organization.id
         )
 
+        # Auto-subscribe to linked newsletter (idempotent)
+        newsletter = enrollment.course.newsletter
+        newsletter_subscriber = None
+        if newsletter:
+            newsletter_subscriber, _ = NewsletterSubscriber.objects.get_or_create(
+                newsletter=newsletter,
+                email=enrollment.learner.email,
+            )
+
         # Send confirmation email
         subject = _("Enrollment Verified")
         course_image_url = None
@@ -74,13 +87,26 @@ class VerifyEnrollmentCommand(AbstractCommand):
                 site_base_url = settings.DJANGO_EMAIL_LEARNING["SITE_BASE_URL"]
                 course_image_url = f"{site_base_url}".rstrip("/") + image_url
 
-        body = render_to_string(
-            "emails/enrollment_verified.txt",
-            {
-                "course_title": enrollment.course.title,
-                "organization_name": enrollment.course.organization.name,
-            },
-        )
+        newsletter_unsubscribe_url = None
+        if newsletter_subscriber:
+            site_base_url = str(settings.DJANGO_EMAIL_LEARNING["SITE_BASE_URL"]).rstrip(
+                "/"
+            )
+            unsubscribe_path = reverse(
+                "django_email_learning:public:newsletter_unsubscribe",
+                kwargs={"token": newsletter_subscriber.unsubscribe_token},
+            )
+            newsletter_unsubscribe_url = f"{site_base_url}{unsubscribe_path}"
+
+        email_ctx = {
+            "course_title": enrollment.course.title,
+            "organization_name": enrollment.course.organization.name,
+        }
+        if newsletter_unsubscribe_url:
+            email_ctx["newsletter_title"] = newsletter.title  # type: ignore[union-attr]
+            email_ctx["newsletter_unsubscribe_url"] = newsletter_unsubscribe_url
+
+        body = render_to_string("emails/enrollment_verified.txt", email_ctx)
 
         email = EmailMultiAlternatives(
             subject=subject,
@@ -90,11 +116,7 @@ class VerifyEnrollmentCommand(AbstractCommand):
         )
         html_content = render_to_string(
             "emails/enrollment_verified.html",
-            {
-                "course_title": enrollment.course.title,
-                "organization_name": enrollment.course.organization.name,
-                "course_image_url": course_image_url,
-            },
+            {**email_ctx, "course_image_url": course_image_url},
         )
         email.attach_alternative(html_content, "text/html")
 

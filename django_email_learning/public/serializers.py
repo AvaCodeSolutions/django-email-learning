@@ -13,6 +13,8 @@ class PublicCourseSerializer(BaseModel):
     lessons: list[str] = []
     target_audience: str | None = None
     external_references: list[dict[str, str]] | None = None
+    newsletter_id: int | None = None
+    newsletter_title: str | None = None
 
     @field_serializer("description")
     def serialize_description_with_br(self, description: str | None) -> str | None:

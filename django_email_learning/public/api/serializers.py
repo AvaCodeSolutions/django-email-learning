@@ -7,6 +7,7 @@ class EnrollmentRequest(BaseModel):
     organization_id: int
     email: str
     course_slug: str = Field(min_length=1)
+    subscribe_to_newsletter: bool = False
 
     @field_validator("email")
     def validate_email(cls, v: str) -> str:
