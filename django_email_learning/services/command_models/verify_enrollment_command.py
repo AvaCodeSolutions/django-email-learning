@@ -20,6 +20,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.urls import reverse
+from django.utils.translation import gettext as _
 from typing import Literal
 
 
@@ -71,7 +72,10 @@ class VerifyEnrollmentCommand(AbstractCommand):
         newsletter = enrollment.course.newsletter
         newsletter_subscriber = None
         if newsletter:
-            newsletter_subscriber, _ = NewsletterSubscriber.objects.get_or_create(
+            (
+                newsletter_subscriber,
+                _created,
+            ) = NewsletterSubscriber.objects.get_or_create(
                 newsletter=newsletter,
                 email=enrollment.learner.email,
             )
