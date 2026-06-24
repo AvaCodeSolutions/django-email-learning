@@ -7,6 +7,7 @@ from django.urls import reverse
 from PIL import Image
 
 from django_email_learning.models.imap_connections import ImapConnection
+from django_email_learning.models.newsletters import Newsletter
 from .organizations import Organization, OrganizationUser
 from .enums.enrollment_status import EnrollmentStatus
 from django_email_learning.services import jwt_service
@@ -23,6 +24,13 @@ class Course(models.Model):
     enabled = models.BooleanField(default=False)
     imap_connection = models.ForeignKey(
         ImapConnection, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    newsletter = models.ForeignKey(
+        Newsletter,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="courses",
     )
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     image = models.ImageField(upload_to="course_images/", null=True, blank=True)
