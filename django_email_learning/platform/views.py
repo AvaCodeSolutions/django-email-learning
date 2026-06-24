@@ -718,6 +718,42 @@ class NewsletterDetailView(BasePlatformView):
 
 @method_decorator(login_required, name="dispatch")
 @method_decorator(is_an_organization_member(), name="dispatch")
+class NewsletterSubscribersView(BasePlatformView):
+    template_name = "platform/newsletter_subscribers.html"
+
+    def get_context_data(self, **kwargs):  # type: ignore[no-untyped-def]
+        context = super().get_context_data(**kwargs)
+        newsletter = Newsletter.objects.get(
+            pk=self.kwargs["newsletter_id"],
+            organization_id=self.kwargs["organization_id"],
+        )
+        context["appContext"]["newsletterId"] = newsletter.id
+        context["appContext"]["newsletterTitle"] = newsletter.title
+        context["appContext"]["organizationId"] = newsletter.organization_id
+        context["page_title"] = _("Subscribers: %(title)s") % {
+            "title": newsletter.title
+        }
+        return context
+
+    def get_locale_messages(self) -> Dict[str, str]:
+        return {
+            "subscribers": _("Subscribers"),
+            "email": _("Email"),
+            "subscribed_at": _("Subscribed At"),
+            "no_subscribers": _("No subscribers yet."),
+            "delete": _("Delete"),
+            "confirm_delete": _("Confirm Delete"),
+            "delete_subscriber_warning": _(
+                "Are you sure you want to remove this subscriber?"
+            ),
+            "cancel": _("Cancel"),
+            "export_csv": _("Export CSV"),
+            "actions": _("Actions"),
+        }
+
+
+@method_decorator(login_required, name="dispatch")
+@method_decorator(is_an_organization_member(), name="dispatch")
 class Learners(BasePlatformView):
     template_name = "platform/learners.html"
 

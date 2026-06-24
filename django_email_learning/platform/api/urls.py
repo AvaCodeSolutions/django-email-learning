@@ -7,6 +7,9 @@ from django_email_learning.platform.api.views import (
     SendoutView,
     SingleNewsletterView,
     SingleSendoutView,
+    SubscriberView,
+    SingleSubscriberView,
+    SubscribersCsvExportView,
     SendLessonToPlatformUser,
     SingleApiKeyView,
     CourseView,
@@ -77,6 +80,21 @@ urlpatterns = [
         "organizations/<int:organization_id>/newsletters/<int:newsletter_id>/sendouts/<int:sendout_id>/",
         SingleSendoutView.as_view(),
         name="sendouts_detail",
+    ),
+    path(
+        "organizations/<int:organization_id>/newsletters/<int:newsletter_id>/subscribers/",
+        SubscriberView.as_view(),
+        name="newsletter_subscribers_list",
+    ),
+    path(
+        "organizations/<int:organization_id>/newsletters/<int:newsletter_id>/subscribers/<int:subscriber_id>/",
+        SingleSubscriberView.as_view(),
+        name="newsletter_subscriber_detail",
+    ),
+    path(
+        "organizations/<int:organization_id>/newsletters/<int:newsletter_id>/subscribers/export.csv",
+        SubscribersCsvExportView.as_view(),
+        name="newsletter_subscribers_csv",
     ),
     path(
         "organizations/<int:organization_id>/courses/<int:course_id>/",

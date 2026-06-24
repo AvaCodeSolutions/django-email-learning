@@ -1,10 +1,12 @@
+import csv
+import io
 from django.views import View
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db.utils import IntegrityError
 from django.db.models.functions import TruncDate
 from django.db.models import Count, Prefetch
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models, transaction
 from django.conf import settings
@@ -51,6 +53,7 @@ from django_email_learning.models import (
     JobName,
     Learner,
     Newsletter,
+    NewsletterSubscriber,
     OrganizationUser,
     Organization,
     Sendout,
@@ -1536,3 +1539,62 @@ class SingleSendoutView(View):
             )
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
+
+
+@method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
+class SubscriberView(PaginatedApiMixin, View):
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        # Override to cap page_size at 30
+        request.GET = request.GET.copy()
+        page_size = min(int(request.GET.get("page_size", 30)), 30)
+        request.GET["page_size"] = str(page_size)
+        return super().get(request, *args, **kwargs)
+
+    def get_query_set(self, request):  # type: ignore[no-untyped-def]
+        return NewsletterSubscriber.objects.filter(
+            newsletter_id=self.kwargs["newsletter_id"],
+            newsletter__organization_id=self.kwargs["organization_id"],
+        ).order_by("subscribed_at")
+
+    def get_item_serializer_class(self):  # type: ignore[no-untyped-def]
+        return serializers.NewsletterSubscriberResponse
+
+
+@method_decorator(accessible_for(roles={"admin"}), name="delete")
+class SingleSubscriberView(View):
+    def delete(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            subscriber = NewsletterSubscriber.objects.get(
+                id=kwargs["subscriber_id"],
+                newsletter_id=kwargs["newsletter_id"],
+                newsletter__organization_id=kwargs["organization_id"],
+            )
+        except NewsletterSubscriber.DoesNotExist:
+            return JsonResponse({"error": "Subscriber not found."}, status=404)
+        subscriber.delete()
+        return JsonResponse({}, status=204)
+
+
+@method_decorator(accessible_for(roles={"admin"}), name="get")
+class SubscribersCsvExportView(View):
+    def get(self, request, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
+        try:
+            newsletter = Newsletter.objects.get(
+                id=kwargs["newsletter_id"],
+                organization_id=kwargs["organization_id"],
+            )
+        except Newsletter.DoesNotExist:
+            return JsonResponse({"error": "Newsletter not found."}, status=404)
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["id", "email", "subscribed_at"])
+        for sub in newsletter.subscribers.all().order_by("subscribed_at"):
+            writer.writerow([sub.id, sub.email, sub.subscribed_at.isoformat()])
+
+        response = HttpResponse(output.getvalue(), content_type="text/csv")
+        safe_title = newsletter.title.replace('"', "")
+        response[
+            "Content-Disposition"
+        ] = f'attachment; filename="{safe_title}_subscribers.csv"'
+        return response
