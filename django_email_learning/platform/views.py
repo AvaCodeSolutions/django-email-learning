@@ -644,6 +644,9 @@ class SingleOrganization(BasePlatformView):
             "newsletter_duplicate_error": _(
                 "A newsletter with this title already exists."
             ),
+            "newsletter_delete_confirmation": _(
+                "Are you sure you want to delete NEWSLETTER_TITLE? This will also remove all its subscribers and scheduled sendouts."
+            ),
         }
 
 

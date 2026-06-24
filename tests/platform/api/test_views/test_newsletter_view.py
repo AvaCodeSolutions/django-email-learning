@@ -121,3 +121,44 @@ def test_create_newsletter_empty_title(superadmin_client):
         get_url(1), json.dumps(payload), content_type="application/json"
     )
     assert response.status_code == 400
+
+
+# --- DELETE ---
+
+
+def get_detail_url(organization_id: int, newsletter_id: int) -> str:
+    return reverse(
+        "django_email_learning:api_platform:newsletters_detail",
+        kwargs={"organization_id": organization_id, "newsletter_id": newsletter_id},
+    )
+
+
+def test_delete_newsletter_success(superadmin_client, newsletter):
+    response = superadmin_client.delete(get_detail_url(1, newsletter.id))
+    assert response.status_code == 204
+    assert not Newsletter.objects.filter(pk=newsletter.pk).exists()
+
+
+def test_delete_newsletter_unauthenticated(anonymous_client, newsletter):
+    response = anonymous_client.delete(get_detail_url(1, newsletter.id))
+    assert response.status_code == 401
+
+
+@pytest.mark.parametrize(
+    "client,expected_status",
+    [("editor", 403), ("viewer", 403), ("platform_admin", 204)],
+    indirect=["client"],
+)
+def test_delete_newsletter_role_access(client, expected_status, newsletter):
+    response = client.delete(get_detail_url(1, newsletter.id))
+    assert response.status_code == expected_status
+
+
+def test_delete_newsletter_not_found(superadmin_client):
+    response = superadmin_client.delete(get_detail_url(1, 99999))
+    assert response.status_code == 404
+
+
+def test_delete_newsletter_wrong_org(superadmin_client, newsletter):
+    response = superadmin_client.delete(get_detail_url(999, newsletter.id))
+    assert response.status_code == 404

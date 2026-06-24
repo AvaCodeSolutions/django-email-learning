@@ -25,6 +25,7 @@ import render, { useAppContext } from "../../src/render";
 const UserForm = lazy(() => import("./components/UserForm.jsx"));
 const DeleteUserDialog = lazy(() => import("./components/DeleteUserDialog.jsx"));
 const NewsletterForm = lazy(() => import("./components/NewsletterForm.jsx"));
+const DeleteNewsletterDialog = lazy(() => import("./components/DeleteNewsletterDialog.jsx"));
 
 function Organization() {
     const [organization, setOrganization] = useState(null);
@@ -192,6 +193,7 @@ function Organization() {
                                                         <TableCell>{localeMessages["newsletter_title"]}</TableCell>
                                                         <TableCell>{localeMessages["newsletter_language"]}</TableCell>
                                                         <TableCell>{localeMessages["newsletter_subscribers"]}</TableCell>
+                                                        {userRole === 'admin' && <TableCell align={direction === 'rtl' ? 'left' : 'right'}>{localeMessages["actions"]}</TableCell>}
                                                     </TableRow>
                                                 </TableHead>
                                                 <TableBody>
@@ -200,6 +202,20 @@ function Organization() {
                                                             <TableCell>{nl.title}</TableCell>
                                                             <TableCell>{nl.language}</TableCell>
                                                             <TableCell>{nl.subscriber_count}</TableCell>
+                                                            {userRole === 'admin' && (
+                                                                <TableCell align={direction === 'rtl' ? 'left' : 'right'}>
+                                                                    <IconButton
+                                                                        aria-label={`Delete ${nl.title}`}
+                                                                        onClick={() => showDialog(
+                                                                            <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
+                                                                                <DeleteNewsletterDialog newsletter={nl} onClose={closeDialog} onSuccess={refreshNewsletters} />
+                                                                            </Suspense>
+                                                                        )}
+                                                                    >
+                                                                        <DeleteIcon fontSize="small" />
+                                                                    </IconButton>
+                                                                </TableCell>
+                                                            )}
                                                         </TableRow>
                                                     ))}
                                                 </TableBody>

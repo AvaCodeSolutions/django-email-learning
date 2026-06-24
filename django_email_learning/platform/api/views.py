@@ -1416,3 +1416,17 @@ class NewsletterView(View):
                 },
                 status=409,
             )
+
+
+@method_decorator(accessible_for(roles={"admin"}), name="delete")
+class SingleNewsletterView(View):
+    def delete(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            newsletter = Newsletter.objects.get(
+                id=kwargs["newsletter_id"],
+                organization_id=kwargs["organization_id"],
+            )
+            newsletter.delete()
+            return JsonResponse({}, status=204)
+        except Newsletter.DoesNotExist:
+            return JsonResponse({"error": "Newsletter not found."}, status=404)
