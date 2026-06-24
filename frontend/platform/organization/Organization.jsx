@@ -35,7 +35,7 @@ function Organization() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogContent, setDialogContent] = useState(null);
 
-    const { localeMessages, direction, userRole, apiBaseUrl, platformBaseUrl, organizationId, availableFeatures = [] } = useAppContext();
+    const { localeMessages, direction, userRole, isOrganizationAdmin, apiBaseUrl, platformBaseUrl, organizationId, availableFeatures = [] } = useAppContext();
 
     const newslettersEnabled = availableFeatures.includes('newsletters');
 
@@ -171,7 +171,7 @@ function Organization() {
                         {/* Newsletters tab */}
                         {newslettersEnabled && activeTab === 'newsletters' && (
                             <>
-                                {userRole === 'admin' && (
+                                {isOrganizationAdmin && (
                                     <Button
                                         variant="contained"
                                         color="secondary"
@@ -193,7 +193,7 @@ function Organization() {
                                                         <TableCell>{localeMessages["newsletter_title"]}</TableCell>
                                                         <TableCell>{localeMessages["newsletter_language"]}</TableCell>
                                                         <TableCell>{localeMessages["newsletter_subscribers"]}</TableCell>
-                                                        {userRole === 'admin' && <TableCell align={direction === 'rtl' ? 'left' : 'right'}>{localeMessages["actions"]}</TableCell>}
+                                                        {isOrganizationAdmin && <TableCell align={direction === 'rtl' ? 'left' : 'right'}>{localeMessages["actions"]}</TableCell>}
                                                     </TableRow>
                                                 </TableHead>
                                                 <TableBody>
@@ -202,7 +202,7 @@ function Organization() {
                                                             <TableCell>{nl.title}</TableCell>
                                                             <TableCell>{nl.language}</TableCell>
                                                             <TableCell>{nl.subscriber_count}</TableCell>
-                                                            {userRole === 'admin' && (
+                                                            {isOrganizationAdmin && (
                                                                 <TableCell align={direction === 'rtl' ? 'left' : 'right'}>
                                                                     <IconButton
                                                                         aria-label={`Delete ${nl.title}`}
