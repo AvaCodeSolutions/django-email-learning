@@ -630,6 +630,7 @@ class SingleOrganization(BasePlatformView):
             "upload_button_label": _("Upload Image"),
             "remove_image": _("Remove Image"),
             "uploaded_image_alt": _("User Photo"),
+            "members": _("Members"),
             "newsletters": _("Newsletters"),
             "no_newsletters": _("No newsletters yet."),
             "create_newsletter": _("Create Newsletter"),
