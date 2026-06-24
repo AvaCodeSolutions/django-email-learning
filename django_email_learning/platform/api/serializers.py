@@ -1435,3 +1435,11 @@ class SendoutDetailResponse(BaseModel):
     retry_count: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class NewsletterSubscriberResponse(BaseModel):
+    id: int
+    email: str
+    subscribed_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
