@@ -39,6 +39,7 @@ function Organization() {
     const { localeMessages, direction, userRole, isOrganizationAdmin, apiBaseUrl, platformBaseUrl, organizationId, availableFeatures = [] } = useAppContext();
 
     const newslettersEnabled = availableFeatures.includes('newsletters');
+    const createNewsletterEnabled = availableFeatures.includes('create_newsletter');
 
     const refreshUsers = () => {
         apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/users/`)
@@ -172,7 +173,7 @@ function Organization() {
                         {/* Newsletters tab */}
                         {newslettersEnabled && activeTab === 'newsletters' && (
                             <>
-                                {isOrganizationAdmin && (
+                                {createNewsletterEnabled && isOrganizationAdmin && (
                                     <Button
                                         variant="contained"
                                         color="secondary"
