@@ -170,7 +170,7 @@ All newsletter settings live under the `DJANGO_EMAIL_LEARNING` dictionary:
 |-----|---------|-------------|
 | `NEWSLETTERS.FROM_EMAIL` | `FROM_EMAIL` → `webmaster@localhost` | Sender address for newsletter emails |
 | `NEWSLETTERS.MAX_RETRIES` | `3` | Per-subscriber delivery retry limit before a delivery is permanently failed |
-| `NEWSLETTERS.MAX_SUBSCRIBERS` | unlimited | Maximum subscribers allowed per newsletter |
+| `NEWSLETTERS.MAX_SUBSCRIBERS` | unlimited | Maximum subscribers allowed per newsletter (can be overridden per-view by subclassing and overriding `get_max_subscribers()`) |
 | `SENDOUT_QUEUE` | `DatabaseSendoutQueue` | Import path to a custom queue class (must implement `TaskQueueProtocol[SendoutDelivery]`) |
 | `SITE_BASE_URL` | `""` | Base URL prepended to the unsubscribe link in every email |
 

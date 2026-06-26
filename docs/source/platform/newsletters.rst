@@ -56,6 +56,19 @@ All newsletter settings are nested under ``DJANGO_EMAIL_LEARNING`` in your Djang
         "SITE_BASE_URL": "https://example.com",
     }
 
+``MAX_SUBSCRIBERS`` sets a global cap applied to all newsletters. If you need a different limit per newsletter or per organisation, you can subclass the subscription view and override ``get_max_subscribers()``:
+
+.. code-block:: python
+
+    from django_email_learning.public.views import NewsletterSubscribeView
+
+    class MySubscribeView(NewsletterSubscribeView):
+        def get_max_subscribers(self) -> int:
+            # e.g. look up a per-newsletter quota from your own model
+            return self.newsletter.custom_limit
+
+The same hook exists on the public API subscription view (``django_email_learning.public.api.views``) if you are using the API endpoint instead.
+
 Failure handling
 ----------------
 
