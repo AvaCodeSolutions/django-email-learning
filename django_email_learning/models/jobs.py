@@ -10,6 +10,7 @@ class JobName(StrEnum):
     DELIVER_CONTENTS = "deliver_contents"
     SEND_REMINDERS = "send_reminders"
     DEACTIVATE_ENROLLMENTS = "deactivate_enrollments"
+    SEND_NEWSLETTERS = "send_newsletters"
 
 
 class JobStatus(StrEnum):
