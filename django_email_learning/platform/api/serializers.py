@@ -1427,7 +1427,6 @@ class SendoutResponse(BaseModel):
     scheduled_at: datetime
     sent_at: Optional[datetime] = None
     status: str
-    retry_count: int
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -1451,7 +1450,6 @@ class SendoutDetailResponse(BaseModel):
     scheduled_at: datetime
     sent_at: Optional[datetime] = None
     status: str
-    retry_count: int
 
     model_config = ConfigDict(from_attributes=True)
 
