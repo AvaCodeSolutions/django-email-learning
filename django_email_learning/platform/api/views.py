@@ -1453,7 +1453,6 @@ class SendoutView(View):
         if status_filter in (
             Sendout.Status.SCHEDULED,
             Sendout.Status.SENT,
-            Sendout.Status.FAILED,
         ):
             sendouts = sendouts.filter(status=status_filter)
 
