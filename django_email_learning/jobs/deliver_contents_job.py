@@ -5,9 +5,9 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from django.conf import settings
 from django.db import close_old_connections
 from django.utils import timezone
-from django.utils.module_loading import import_string
 
 from django_email_learning.jobs.job_metrics import track_job_execution
+from django_email_learning.jobs.queue_utils import resolve_queue
 from django_email_learning.models import (
     CourseContentType,
     DeliverySchedule,
@@ -16,7 +16,7 @@ from django_email_learning.models import (
     JobName,
     JobStatus,
 )
-from django_email_learning.ports.delivery_queue_protocol import DeliveryQueueProtocol
+from django_email_learning.ports.task_queue_protocol import TaskQueueProtocol
 from django_email_learning.services.command_models.send_assignment_command import (
     AssignmentNotFoundError,
     SendAssignmentCommand,
@@ -43,7 +43,9 @@ def _get_delivery_workers() -> int:
 
 class DeliverContentsJob:
     def __init__(self) -> None:
-        self.delivery_queue: DeliveryQueueProtocol = self.get_delivery_queue()
+        self.delivery_queue: TaskQueueProtocol[
+            DeliverySchedule
+        ] = self.get_delivery_queue()
 
     def run(self) -> None:
         job_execution = JobExecution.start_if_not_running(
@@ -144,25 +146,12 @@ class DeliverContentsJob:
 
     # ── queue / delivery logic (unchanged) ──────────────────────────────────
 
-    def get_delivery_queue(self) -> DeliveryQueueProtocol:
-        DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(
-            settings, "DJANGO_EMAIL_LEARNING", {}
+    def get_delivery_queue(self) -> TaskQueueProtocol[DeliverySchedule]:
+        from django_email_learning.services.defaults.database_delivery_queue import (
+            DatabaseDeliveryQueue,
         )
-        try:
-            configured_delivery_queue = import_string(
-                DJANGO_EMAIL_LEARNING_SETTINGS["DELIVERY_QUEUE"]
-            )
-            return (
-                configured_delivery_queue()
-                if isinstance(configured_delivery_queue, type)
-                else configured_delivery_queue
-            )
-        except KeyError:
-            from django_email_learning.services.defaults.database_delivery_queue import (
-                DatabaseDeliveryQueue,
-            )
 
-            return DatabaseDeliveryQueue()
+        return resolve_queue("DELIVERY_QUEUE", DatabaseDeliveryQueue)
 
     def process_delivery(self, delivery_schedule: DeliverySchedule) -> None:
         course_content = delivery_schedule.delivery.course_content

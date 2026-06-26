@@ -5,10 +5,10 @@ from django.db import transaction
 from django.utils import timezone
 
 from django_email_learning.models import DeliverySchedule, DeliveryStatus
-from django_email_learning.ports.delivery_queue_protocol import DeliveryQueueProtocol
+from django_email_learning.ports.task_queue_protocol import TaskQueueProtocol
 
 
-class DatabaseDeliveryQueue(DeliveryQueueProtocol):
+class DatabaseDeliveryQueue(TaskQueueProtocol[DeliverySchedule]):
     """
     Thread-safe delivery queue backed by the database.
 

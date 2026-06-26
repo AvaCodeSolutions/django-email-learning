@@ -25,7 +25,7 @@ def test_get_sendout_queue_uses_prebuilt_configured_object(settings):
     prebuilt_queue = Mock()
 
     with patch(
-        "django_email_learning.jobs.send_newsletters_job.import_string",
+        "django_email_learning.jobs.queue_utils.import_string",
         return_value=prebuilt_queue,
     ):
         job = SendNewslettersJob()

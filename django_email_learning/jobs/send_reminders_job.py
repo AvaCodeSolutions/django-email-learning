@@ -1,18 +1,16 @@
-from django_email_learning.ports.delivery_queue_protocol import DeliveryQueueProtocol
-from django_email_learning.models import ContentDelivery, DeliverySchedule
 from django_email_learning.jobs.job_metrics import track_job_execution
-
+from django_email_learning.jobs.queue_utils import resolve_queue
+from django_email_learning.models import ContentDelivery, DeliverySchedule
+from django_email_learning.models import JobExecution, JobName, JobStatus
+from django_email_learning.ports.task_queue_protocol import TaskQueueProtocol
 from django_email_learning.services.command_models.send_assignment_reminder_command import (
     SendAssignmentReminderCommand,
 )
-from django_email_learning.services.metrics_service import metric_service
-from django_email_learning.models import JobExecution, JobName, JobStatus
 from django_email_learning.services.command_models.send_quiz_reminder_command import (
-    SendQuizReminderCommand,
     QuizNotFoundError,
+    SendQuizReminderCommand,
 )
-from django.utils.module_loading import import_string
-from django.conf import settings
+from django_email_learning.services.metrics_service import metric_service
 from django.utils import timezone
 import logging
 
@@ -22,7 +20,9 @@ logger = logging.getLogger(__name__)
 
 class SendRemindersJob:
     def __init__(self) -> None:
-        self.reminder_queue: DeliveryQueueProtocol = self.get_reminder_queue()
+        self.reminder_queue: TaskQueueProtocol[
+            DeliverySchedule
+        ] = self.get_reminder_queue()
 
     def run(self) -> None:
         job_execution = JobExecution.start_if_not_running(
@@ -51,25 +51,12 @@ class SendRemindersJob:
             else:
                 self.process_reminder(delivery_schedule)
 
-    def get_reminder_queue(self) -> DeliveryQueueProtocol:
-        DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(
-            settings, "DJANGO_EMAIL_LEARNING", {}
+    def get_reminder_queue(self) -> TaskQueueProtocol[DeliverySchedule]:
+        from django_email_learning.services.defaults.database_reminder_queue import (
+            DatabaseReminderQueue,
         )
-        try:
-            configured_reminder_queue = import_string(
-                DJANGO_EMAIL_LEARNING_SETTINGS["REMINDER_QUEUE"]
-            )
-            return (
-                configured_reminder_queue()
-                if isinstance(configured_reminder_queue, type)
-                else configured_reminder_queue
-            )
-        except KeyError:
-            from django_email_learning.services.defaults.database_reminder_queue import (
-                DatabaseReminderQueue,
-            )
 
-            return DatabaseReminderQueue()
+        return resolve_queue("REMINDER_QUEUE", DatabaseReminderQueue)
 
     def process_reminder(self, delivery_schedule: DeliverySchedule) -> None:
         try:
