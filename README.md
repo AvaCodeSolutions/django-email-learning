@@ -142,41 +142,11 @@ The platform will be accessible at `your_preferred_path/platform/`.
 
 ### Newsletters
 
-django-email-learning includes a built-in newsletter system. Platform admins can create newsletters per organisation, grow a subscriber list, and schedule email campaigns (sendouts) that are delivered automatically.
-
-#### Quick start
-
-1. Create a newsletter from the platform UI under an organisation.
-2. Share the public subscription form (available on the organisation's public page) so users can subscribe.
-3. Schedule a sendout with a subject, rich-text body, and an optional send date.
-4. Run the delivery command (or trigger it via the API) to send emails to all active subscribers:
-
-```bash
-python manage.py send_newsletters
-```
-
-You can also trigger delivery via HTTP:
-
-```http
-GET /your_preferred_path/api/jobs/send_newsletters/
-Authorization: Bearer <API_KEY>
-```
-
-#### Configuration
-
-All newsletter settings live under the `DJANGO_EMAIL_LEARNING` dictionary:
-
-| Key | Default | Description |
-|-----|---------|-------------|
-| `NEWSLETTERS.FROM_EMAIL` | `FROM_EMAIL` → `webmaster@localhost` | Sender address for newsletter emails |
-| `NEWSLETTERS.MAX_RETRIES` | `3` | Per-subscriber delivery retry limit before a delivery is permanently failed |
-| `NEWSLETTERS.MAX_SUBSCRIBERS` | unlimited | Maximum subscribers allowed per newsletter (can be overridden per-view by subclassing and overriding `get_max_subscribers()`) |
-| `SENDOUT_QUEUE` | `DatabaseSendoutQueue` | Import path to a custom queue class (must implement `TaskQueueProtocol[SendoutDelivery]`) |
-| `SITE_BASE_URL` | `""` | Base URL prepended to the unsubscribe link in every email |
+django-email-learning includes a built-in newsletter system. Platform admins can create newsletters per organisation, grow a subscriber list, and schedule email campaigns (sendouts) that are delivered automatically. See the [Newsletter documentation](https://django-email-learning.readthedocs.io/en/latest/platform/newsletters.html) for the full configuration reference and usage guide.
 
 #### Optional: auto-subscribe on course enrollment
 
-Link a newsletter to a course in the platform UI (or via API). When a learner enrolls in that course they are automatically subscribed to the linked newsletter.
+Link a newsletter to a course in the platform UI (or via API). When a learner enrolls in that course they are automatically subscribed to the linked newsletter. Learners have the option to opt out by unchecking the subscription checkbox during enrollment.
 
 ### Content Delivery
 
