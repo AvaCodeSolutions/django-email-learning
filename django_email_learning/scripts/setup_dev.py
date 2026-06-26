@@ -607,7 +607,11 @@ DJANGO_EMAIL_LEARNING = {{
     "SITE_BASE_URL": os.environ.get("SITE_BASE_URL", "http://localhost:8000"),
     "JWT_SECRET_KEY": os.environ.get("JWT_SECRET_KEY"),
     "ENCRYPTION_SECRET_KEY": os.environ.get("ENCRYPTION_SECRET_KEY"),
-    "FROM_EMAIL": os.environ.get("FROM_EMAIL", "webmaster@localhost"),{ai_block}{google_block}
+    "FROM_EMAIL": os.environ.get("FROM_EMAIL", "webmaster@localhost"),
+    "NEWSLETTERS": {{
+        "FROM_EMAIL": os.environ.get("NEWSLETTER_FROM_EMAIL", "webmaster@localhost"),
+        "MAX_RETRIES": 3,
+    }},{ai_block}{google_block}
 }}
 """
 
