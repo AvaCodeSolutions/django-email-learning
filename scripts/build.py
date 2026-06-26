@@ -12,6 +12,8 @@ TEMPLATES = [
     ["platform", "learners"],
     ["platform", "settings_api_keys"],
     ["platform", "analytics"],
+    ["platform", "newsletter"],
+    ["platform", "newsletter_subscribers"],
     ["personalised", "quiz_public"],
     ["personalised", "assignment_public"],
     ["personalised", "command_result"],
