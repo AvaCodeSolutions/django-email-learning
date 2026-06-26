@@ -1494,6 +1494,7 @@ class SendoutView(View):
 
 @method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
 @method_decorator(accessible_for(roles={"admin"}), name="patch")
+@method_decorator(accessible_for(roles={"admin"}), name="delete")
 class SingleSendoutView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
@@ -1538,6 +1539,25 @@ class SingleSendoutView(View):
             )
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
+
+    def delete(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            sendout = Sendout.objects.get(
+                id=kwargs["sendout_id"],
+                newsletter_id=kwargs["newsletter_id"],
+                newsletter__organization_id=kwargs["organization_id"],
+            )
+        except Sendout.DoesNotExist:
+            return JsonResponse({"error": "Sendout not found."}, status=404)
+
+        if sendout.status == Sendout.Status.SENT:
+            return JsonResponse(
+                {"error": "Cannot delete a sendout that has already been sent."},
+                status=409,
+            )
+
+        sendout.delete()
+        return JsonResponse({}, status=204)
 
 
 @method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")

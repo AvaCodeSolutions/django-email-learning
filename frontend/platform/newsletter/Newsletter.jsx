@@ -52,6 +52,12 @@ function toLocalDatetimeValue(isoString) {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function defaultScheduledAt() {
+    const d = new Date();
+    d.setHours(d.getHours() + 1, 0, 0, 0);
+    return toLocalDatetimeValue(d.toISOString());
+}
+
 function SendoutDialog({ open, onClose, onSuccess, sendout, newsletterId, organizationId, localeMessages, apiBaseUrl, direction }) {
     const isEdit = Boolean(sendout);
     const [subject, setSubject] = useState('');
@@ -84,7 +90,7 @@ function SendoutDialog({ open, onClose, onSuccess, sendout, newsletterId, organi
         } else {
             setSubject('');
             setBody('');
-            setScheduledAt('');
+            setScheduledAt(defaultScheduledAt());
             setError('');
         }
     }, [open, sendout]);
@@ -219,7 +225,7 @@ function SendoutDialog({ open, onClose, onSuccess, sendout, newsletterId, organi
                         fullWidth
                         required
                         sx={{ mb: 2 }}
-                        slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: new Date().toISOString().slice(0, 16) } }}
+                        slotProps={{ inputLabel: { shrink: true } }}
                     />
                     <Box sx={{ mb: 1 }}>
                         <Typography variant="caption" color="text.secondary">{localeMessages['sendout_body']}</Typography>
@@ -303,6 +309,10 @@ function Newsletter() {
     const [activeTab, setActiveTab] = useState('scheduled');
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedSendout, setSelectedSendout] = useState(null);
+    const [deletingSendout, setDeletingSendout] = useState(null);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+    const [deleteError, setDeleteError] = useState('');
+    const [isDeleting, setIsDeleting] = useState(false);
     const theme = useTheme();
 
     const fetchSendouts = (status) => {
@@ -319,6 +329,17 @@ function Newsletter() {
     const openEdit = (s) => { setSelectedSendout(s); setDialogOpen(true); };
     const handleClose = () => setDialogOpen(false);
     const handleSuccess = () => { setDialogOpen(false); fetchSendouts(activeTab); };
+
+    const requestDeleteSendout = (s) => { setDeletingSendout(s); setDeleteError(''); setDeleteConfirmOpen(true); };
+    const cancelDelete = () => { setDeleteConfirmOpen(false); setDeletingSendout(null); setDeleteError(''); };
+    const confirmDelete = () => {
+        if (!deletingSendout) return;
+        setIsDeleting(true);
+        apiClient.del(`${apiBaseUrl}/organizations/${organizationId}/newsletters/${newsletterId}/sendouts/${deletingSendout.id}/`)
+            .then(() => { setDeleteConfirmOpen(false); setDeletingSendout(null); fetchSendouts(activeTab); })
+            .catch(() => setDeleteError(localeMessages['sendout_delete_error'] || 'Failed to delete sendout.'))
+            .finally(() => setIsDeleting(false));
+    };
 
     const formatDate = (isoString) => {
         if (!isoString) return '—';
@@ -378,7 +399,7 @@ function Newsletter() {
                                             <TableCell>{localeMessages['subject']}</TableCell>
                                             <TableCell>{localeMessages['scheduled_at']}</TableCell>
                                             <TableCell>{localeMessages['status']}</TableCell>
-                                            <TableCell>{localeMessages['retry_count']}</TableCell>
+                                            {isOrganizationAdmin && <TableCell />}
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
@@ -391,7 +412,19 @@ function Newsletter() {
                                                 </TableCell>
                                                 <TableCell>{formatDate(s.scheduled_at)}</TableCell>
                                                 <TableCell>{statusLabel(s.status)}</TableCell>
-                                                <TableCell>{s.retry_count}</TableCell>
+                                                {isOrganizationAdmin && (
+                                                    <TableCell align="right">
+                                                        {s.status !== 'sent' && (
+                                                            <IconButton
+                                                                aria-label={localeMessages['delete_sendout'] || 'Delete sendout'}
+                                                                size="small"
+                                                                onClick={() => requestDeleteSendout(s)}
+                                                            >
+                                                                <DeleteIcon fontSize="small" />
+                                                            </IconButton>
+                                                        )}
+                                                    </TableCell>
+                                                )}
                                             </TableRow>
                                         ))}
                                     </TableBody>
@@ -415,6 +448,20 @@ function Newsletter() {
                 apiBaseUrl={apiBaseUrl}
                 direction={direction}
             />
+
+            <Dialog open={deleteConfirmOpen} onClose={cancelDelete} maxWidth="xs" fullWidth>
+                <DialogTitle>{localeMessages['confirm_delete_sendout'] || 'Delete sendout?'}</DialogTitle>
+                <DialogContent>
+                    {deleteError && <Alert severity="error" sx={{ mb: 1 }}>{deleteError}</Alert>}
+                    <DialogContentText>
+                        {localeMessages['delete_sendout_warning'] || 'This action cannot be undone. Are you sure you want to delete this sendout?'}
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={cancelDelete} variant="outlined" disabled={isDeleting}>{localeMessages['cancel']}</Button>
+                    <Button onClick={confirmDelete} variant="contained" color="error" disabled={isDeleting}>{localeMessages['delete'] || 'Delete'}</Button>
+                </DialogActions>
+            </Dialog>
         </Base>
     );
 }
