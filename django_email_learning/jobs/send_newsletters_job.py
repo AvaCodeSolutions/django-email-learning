@@ -143,7 +143,7 @@ class SendNewslettersJob:
     ) -> None:
         try:
             unsubscribe_url = reverse(
-                "django_email_learning:newsletter_unsubscribe",
+                "django_email_learning:public:newsletter_unsubscribe",
                 kwargs={"token": unsubscribe_token},
             )
             conf: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
