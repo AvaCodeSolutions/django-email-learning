@@ -147,7 +147,7 @@ class SendNewslettersJob:
                 kwargs={"token": unsubscribe_token},
             )
             conf: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
-            base_url: str = conf.get("BASE_URL", "")
+            base_url: str = conf.get("SITE_BASE_URL", "")
             full_unsubscribe_url = f"{base_url.rstrip('/')}{unsubscribe_url}"
         except Exception:
             full_unsubscribe_url = ""
