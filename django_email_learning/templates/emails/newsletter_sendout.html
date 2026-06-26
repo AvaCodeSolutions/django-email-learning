@@ -8,6 +8,6 @@
 
 <div class="email-divider-note">
     <p>{% blocktranslate %}You are receiving this email because you subscribed to <strong>{{ newsletter_title }}</strong>.{% endblocktranslate %}</p>
-    <p><a href="{{ unsubscribe_url }}">{% translate "Unsubscribe" %}</a></p>
+    <p>{% blocktranslate %}If you no longer wish to receive these emails, you can <a href="{{ unsubscribe_url }}">unsubscribe from this newsletter</a>.{% endblocktranslate %}</p>
 </div>
 {% endblock %}
