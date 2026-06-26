@@ -140,6 +140,14 @@ The platform will be accessible at `your_preferred_path/platform/`.
 
 ## Usage
 
+### Newsletters
+
+django-email-learning includes a built-in newsletter system. Platform admins can create newsletters per organisation, grow a subscriber list, and schedule email campaigns (sendouts) that are delivered automatically. See the [Newsletter documentation](https://django-email-learning.readthedocs.io/en/latest/platform/newsletters.html) for the full configuration reference and usage guide.
+
+#### Optional: auto-subscribe on course enrollment
+
+Link a newsletter to a course in the platform UI (or via API). When a learner enrolls in that course they are automatically subscribed to the linked newsletter. Learners have the option to opt out by unchecking the subscription checkbox during enrollment.
+
 ### Content Delivery
 
 This app uses the email backend defined in Django settings to deliver course content. Assuming you have active courses and enrollments, you need to schedule a job that runs the content delivery management command periodically (e.g., using cron or a cloud scheduler).

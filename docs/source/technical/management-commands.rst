@@ -13,6 +13,7 @@ The project currently includes the following management commands:
 - ``deactivate_inactive_enrollments``
 - ``deliver_contents``
 - ``send_reminders``
+- ``send_newsletters``
 - ``rotate_encryption_key``
 
 check_imap_connections
@@ -143,3 +144,36 @@ This command:
 
 - Processes scheduled reminder notifications
 - Sends reminders for pending learner actions
+
+send_newsletters
+----------------
+
+The ``send_newsletters`` management command delivers scheduled newsletter sendouts to subscribers.
+
+Usage
+~~~~~
+
+.. code-block:: bash
+
+    python manage.py send_newsletters
+
+You can also trigger it via HTTP:
+
+.. code-block:: http
+
+    GET /your_preferred_path/api/jobs/send_newsletters/
+    Authorization: Bearer <API_KEY>
+
+Function
+~~~~~~~~
+
+This command:
+
+- Claims sendouts whose scheduled time has passed
+- Fan-outs each sendout to all current subscribers, creating per-subscriber ``SendoutDelivery`` records on first run (so subscribers added after scheduling still receive the email)
+- Sends an HTML + plain-text email to each subscriber with a personalised unsubscribe link
+- Retries failed deliveries on subsequent runs up to ``NEWSLETTERS.MAX_RETRIES`` (default 3)
+- Marks a sendout as **Sent** once at least one delivery succeeds (best-effort)
+- Emits a ``sendout_all_deliveries_failed`` metric and an ``ERROR`` log entry if every delivery permanently fails, keeping the sendout in **Scheduled** state for investigation
+
+See :doc:`../platform/newsletters` for configuration options.
