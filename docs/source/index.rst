@@ -22,6 +22,7 @@ Django Email Learning documentation
    platform/organizations
    platform/courses
    platform/learners
+   platform/newsletters
    platform/api_keys
 
 .. toctree::
