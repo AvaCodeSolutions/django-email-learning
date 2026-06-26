@@ -149,6 +149,7 @@ class SendNewslettersJob:
         msg = EmailMultiAlternatives(
             subject=sendout.subject,
             body=body,
+            from_email=email_sender_service.from_email,
             to=[email],
         )
         email_sender_service.send(msg)
