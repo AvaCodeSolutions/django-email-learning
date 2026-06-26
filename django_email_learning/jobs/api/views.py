@@ -2,6 +2,7 @@ from django.views import View
 from django_email_learning.decorators import check_api_key
 from django_email_learning.jobs.deliver_contents_job import DeliverContentsJob
 from django_email_learning.jobs.check_imap_job import CheckIMAPJob
+from django_email_learning.jobs.send_newsletters_job import SendNewslettersJob
 from django_email_learning.jobs.send_reminders_job import SendRemindersJob
 from django_email_learning.jobs.deactivate_inactive_enrollments_job import (
     DeactivateInactiveEnrollmentsJob,
@@ -76,6 +77,20 @@ class DeactivateInactiveEnrollmentsJobView(View):
                     "error": str(e),
                 },
                 status=500,
+            )
+
+
+@method_decorator(check_api_key(), name="get")
+class SendNewslettersJobView(View):
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            job = SendNewslettersJob()
+            job.run()
+            return JsonResponse({"status": "SendNewslettersJob triggered"}, status=202)
+        except Exception as e:
+            metric_service.job_execution_failed(job_name=JobName.SEND_NEWSLETTERS.value)
+            return JsonResponse(
+                {"status": "SendNewslettersJob failed", "error": str(e)}, status=500
             )
 
 

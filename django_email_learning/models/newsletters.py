@@ -51,7 +51,6 @@ class Sendout(models.Model):
     class Status(models.TextChoices):
         SCHEDULED = "scheduled", "Scheduled"
         SENT = "sent", "Sent"
-        FAILED = "failed", "Failed"
 
     newsletter = models.ForeignKey(
         Newsletter, on_delete=models.CASCADE, related_name="sendouts"
@@ -63,9 +62,43 @@ class Sendout(models.Model):
     status = models.CharField(
         max_length=20, choices=Status.choices, default=Status.SCHEDULED, db_index=True
     )
-    retry_count = models.PositiveSmallIntegerField(default=0)
-    max_retries = models.PositiveSmallIntegerField(default=3)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:
         return f"{self.subject} — {self.newsletter.title} ({self.status})"
+
+
+class SendoutDelivery(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        PROCESSING = "processing", "Processing"
+        SENT = "sent", "Sent"
+        FAILED = "failed", "Failed"
+
+    sendout = models.ForeignKey(
+        Sendout, on_delete=models.CASCADE, related_name="deliveries"
+    )
+    subscriber = models.ForeignKey(
+        NewsletterSubscriber,
+        on_delete=models.CASCADE,
+        related_name="sendout_deliveries",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    retry_count = models.PositiveSmallIntegerField(default=0)
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["sendout", "subscriber"],
+                name="unique_sendout_delivery_per_subscriber",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.sendout.subject} → {self.subscriber.email} ({self.status})"
