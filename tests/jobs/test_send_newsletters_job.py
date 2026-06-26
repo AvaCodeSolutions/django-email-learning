@@ -3,7 +3,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 from django.utils import timezone
 
-from django_email_learning.jobs.send_newsletters_job import SendNewslettersJob
+from django_email_learning.jobs.send_newsletters_job import (
+    SendNewslettersJob,
+    _get_newsletter_from_email,
+)
 from django_email_learning.models import (
     JobExecution,
     JobName,
@@ -241,3 +244,24 @@ def test_sendout_marked_sent_when_all_deliveries_done_best_effort(
 
     sendout.refresh_from_db()
     assert sendout.status == Sendout.Status.SENT
+
+
+# ── from_email resolution ────────────────────────────────────────────────────
+
+
+def test_from_email_uses_newsletters_specific_setting(settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        "FROM_EMAIL": "global@example.com",
+        "NEWSLETTERS": {"FROM_EMAIL": "newsletter@example.com"},
+    }
+    assert _get_newsletter_from_email() == "newsletter@example.com"
+
+
+def test_from_email_falls_back_to_global_from_email(settings):
+    settings.DJANGO_EMAIL_LEARNING = {"FROM_EMAIL": "global@example.com"}
+    assert _get_newsletter_from_email() == "global@example.com"
+
+
+def test_from_email_falls_back_to_default_when_nothing_configured(settings):
+    settings.DJANGO_EMAIL_LEARNING = {}
+    assert _get_newsletter_from_email() == "webmaster@localhost"

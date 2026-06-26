@@ -20,6 +20,17 @@ from django_email_learning.services.metrics_service import metric_service
 
 logger = logging.getLogger(__name__)
 
+_DEFAULT_FROM_EMAIL = "webmaster@localhost"
+
+
+def _get_newsletter_from_email() -> str:
+    conf: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
+    return (
+        conf.get("NEWSLETTERS", {}).get("FROM_EMAIL")
+        or conf.get("FROM_EMAIL")
+        or _DEFAULT_FROM_EMAIL
+    )
+
 
 def _get_max_retries() -> int:
     conf: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
@@ -149,7 +160,7 @@ class SendNewslettersJob:
         msg = EmailMultiAlternatives(
             subject=sendout.subject,
             body=body,
-            from_email=email_sender_service.from_email,
+            from_email=_get_newsletter_from_email(),
             to=[email],
         )
         email_sender_service.send(msg)
