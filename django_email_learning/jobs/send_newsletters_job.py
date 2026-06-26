@@ -5,9 +5,9 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.module_loading import import_string
 
 from django_email_learning.jobs.job_metrics import track_job_execution
+from django_email_learning.jobs.queue_utils import resolve_queue
 from django_email_learning.models import (
     JobExecution,
     JobName,
@@ -15,7 +15,7 @@ from django_email_learning.models import (
     Sendout,
     SendoutDelivery,
 )
-from django_email_learning.ports.sendout_queue_protocol import SendoutQueueProtocol
+from django_email_learning.ports.task_queue_protocol import TaskQueueProtocol
 from django_email_learning.services.email_sender_service import email_sender_service
 from django_email_learning.services.metrics_service import metric_service
 
@@ -40,7 +40,9 @@ def _get_max_retries() -> int:
 
 class SendNewslettersJob:
     def __init__(self) -> None:
-        self.sendout_queue: SendoutQueueProtocol = self._get_sendout_queue()
+        self.sendout_queue: TaskQueueProtocol[
+            SendoutDelivery
+        ] = self._get_sendout_queue()
 
     def run(self) -> None:
         job_execution = JobExecution.start_if_not_running(
@@ -67,25 +69,12 @@ class SendNewslettersJob:
                 return
             self.process_delivery(delivery)
 
-    def _get_sendout_queue(self) -> SendoutQueueProtocol:
-        django_email_learning_settings: dict = getattr(
-            settings, "DJANGO_EMAIL_LEARNING", {}
+    def _get_sendout_queue(self) -> TaskQueueProtocol[SendoutDelivery]:
+        from django_email_learning.services.defaults.database_sendout_queue import (
+            DatabaseSendoutQueue,
         )
-        try:
-            configured_queue = import_string(
-                django_email_learning_settings["SENDOUT_QUEUE"]
-            )
-            return (
-                configured_queue()
-                if isinstance(configured_queue, type)
-                else configured_queue
-            )
-        except KeyError:
-            from django_email_learning.services.defaults.database_sendout_queue import (
-                DatabaseSendoutQueue,
-            )
 
-            return DatabaseSendoutQueue()
+        return resolve_queue("SENDOUT_QUEUE", DatabaseSendoutQueue)
 
     def process_delivery(self, delivery: SendoutDelivery) -> None:
         try:

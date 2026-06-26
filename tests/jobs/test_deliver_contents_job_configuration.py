@@ -21,7 +21,7 @@ def test_get_delivery_queue_uses_prebuilt_configured_object(settings):
     prebuilt_queue = Mock()
 
     with patch(
-        "django_email_learning.jobs.deliver_contents_job.import_string",
+        "django_email_learning.jobs.queue_utils.import_string",
         return_value=prebuilt_queue,
     ):
         job = DeliverContentsJob()

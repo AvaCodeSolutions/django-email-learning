@@ -1,4 +1,4 @@
-from django_email_learning.ports.delivery_queue_protocol import DeliveryQueueProtocol
+from django_email_learning.ports.task_queue_protocol import TaskQueueProtocol
 from django_email_learning.models import (
     DeliverySchedule,
     DeliveryStatus,
@@ -13,7 +13,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class DatabaseReminderQueue(DeliveryQueueProtocol):
+class DatabaseReminderQueue(TaskQueueProtocol[DeliverySchedule]):
     ITERATOR_BATCH_SIZE = 50
 
     def __init__(self) -> None:

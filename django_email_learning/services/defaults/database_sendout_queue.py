@@ -6,7 +6,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from django_email_learning.models import Sendout, SendoutDelivery, NewsletterSubscriber
-from django_email_learning.ports.sendout_queue_protocol import SendoutQueueProtocol
+from django_email_learning.ports.task_queue_protocol import TaskQueueProtocol
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ def get_max_retries() -> int:
     return int(conf.get("NEWSLETTERS", {}).get("MAX_RETRIES", 3))
 
 
-class DatabaseSendoutQueue(SendoutQueueProtocol):
+class DatabaseSendoutQueue(TaskQueueProtocol[SendoutDelivery]):
     def __init__(self) -> None:
         self._iterator: Iterator[SendoutDelivery] = iter([])
 
