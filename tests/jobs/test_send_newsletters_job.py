@@ -3,7 +3,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 from django.utils import timezone
 
-from django_email_learning.jobs.send_newsletters_job import SendNewslettersJob
+from django_email_learning.jobs.send_newsletters_job import (
+    SendNewslettersJob,
+    _get_newsletter_from_email,
+)
 from django_email_learning.models import (
     JobExecution,
     JobName,
@@ -149,23 +152,39 @@ def test_process_delivery_failure_increments_retry_and_sets_pending(db, delivery
     assert delivery.retry_count == 1
 
 
-def test_process_delivery_marks_failed_after_max_retries(db, delivery, settings):
+def test_process_delivery_marks_failed_after_max_retries_when_others_succeeded(
+    db, sendout, newsletter, settings
+):
+    """A delivery that hits max retries stays FAILED when at least one sibling succeeded."""
     settings.DJANGO_EMAIL_LEARNING = {
         **settings.DJANGO_EMAIL_LEARNING,
         "NEWSLETTERS": {"MAX_RETRIES": 1},
     }
-    delivery.retry_count = 0
-    delivery.save()
+    sub_ok = NewsletterSubscriber.objects.create(
+        newsletter=newsletter, email="ok@x.com"
+    )
+    sub_bad = NewsletterSubscriber.objects.create(
+        newsletter=newsletter, email="bad@x.com"
+    )
+    SendoutDelivery.objects.create(
+        sendout=sendout, subscriber=sub_ok, status=SendoutDelivery.Status.SENT
+    )
+    d_fail = SendoutDelivery.objects.create(
+        sendout=sendout,
+        subscriber=sub_bad,
+        status=SendoutDelivery.Status.PROCESSING,
+        retry_count=0,
+    )
 
     with patch(
         "django_email_learning.jobs.send_newsletters_job.email_sender_service.send",
         side_effect=RuntimeError("smtp error"),
     ):
-        SendNewslettersJob().process_delivery(delivery)
+        SendNewslettersJob().process_delivery(d_fail)
 
-    delivery.refresh_from_db()
-    assert delivery.status == SendoutDelivery.Status.FAILED
-    assert delivery.retry_count == 1
+    d_fail.refresh_from_db()
+    assert d_fail.status == SendoutDelivery.Status.FAILED
+    assert d_fail.retry_count == 1
 
 
 def test_process_delivery_only_retries_failed_subscriber_not_others(
@@ -241,3 +260,62 @@ def test_sendout_marked_sent_when_all_deliveries_done_best_effort(
 
     sendout.refresh_from_db()
     assert sendout.status == Sendout.Status.SENT
+
+
+def test_sendout_stays_scheduled_and_resets_when_all_deliveries_fail(
+    db, sendout, newsletter, settings
+):
+    """If every delivery permanently fails the sendout stays SCHEDULED and
+    deliveries are reset to PENDING so the next run retries them all."""
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "NEWSLETTERS": {"MAX_RETRIES": 1},
+    }
+    sub = NewsletterSubscriber.objects.create(newsletter=newsletter, email="bad@x.com")
+    delivery = SendoutDelivery.objects.create(
+        sendout=sendout,
+        subscriber=sub,
+        status=SendoutDelivery.Status.PROCESSING,
+        retry_count=0,
+    )
+
+    with (
+        patch(
+            "django_email_learning.jobs.send_newsletters_job.email_sender_service.send",
+            side_effect=RuntimeError("smtp error"),
+        ),
+        patch(
+            "django_email_learning.jobs.send_newsletters_job.metric_service.sendout_all_deliveries_failed"
+        ) as mock_metric,
+    ):
+        SendNewslettersJob().process_delivery(delivery)
+
+    sendout.refresh_from_db()
+    delivery.refresh_from_db()
+    assert sendout.status == Sendout.Status.SCHEDULED
+    assert delivery.status == SendoutDelivery.Status.PENDING
+    assert delivery.retry_count == 0
+    mock_metric.assert_called_once_with(
+        sendout_id=sendout.id, newsletter_id=sendout.newsletter_id
+    )
+
+
+# ── from_email resolution ────────────────────────────────────────────────────
+
+
+def test_from_email_uses_newsletters_specific_setting(settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        "FROM_EMAIL": "global@example.com",
+        "NEWSLETTERS": {"FROM_EMAIL": "newsletter@example.com"},
+    }
+    assert _get_newsletter_from_email() == "newsletter@example.com"
+
+
+def test_from_email_falls_back_to_global_from_email(settings):
+    settings.DJANGO_EMAIL_LEARNING = {"FROM_EMAIL": "global@example.com"}
+    assert _get_newsletter_from_email() == "global@example.com"
+
+
+def test_from_email_falls_back_to_default_when_nothing_configured(settings):
+    settings.DJANGO_EMAIL_LEARNING = {}
+    assert _get_newsletter_from_email() == "webmaster@localhost"

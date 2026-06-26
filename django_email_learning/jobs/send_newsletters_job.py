@@ -2,6 +2,7 @@ import logging
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.module_loading import import_string
@@ -19,6 +20,17 @@ from django_email_learning.services.email_sender_service import email_sender_ser
 from django_email_learning.services.metrics_service import metric_service
 
 logger = logging.getLogger(__name__)
+
+_DEFAULT_FROM_EMAIL = "webmaster@localhost"
+
+
+def _get_newsletter_from_email() -> str:
+    conf: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
+    return (
+        conf.get("NEWSLETTERS", {}).get("FROM_EMAIL")
+        or conf.get("FROM_EMAIL")
+        or _DEFAULT_FROM_EMAIL
+    )
 
 
 def _get_max_retries() -> int:
@@ -107,7 +119,13 @@ class SendNewslettersJob:
         self._maybe_complete_sendout(delivery.sendout)
 
     def _maybe_complete_sendout(self, sendout: Sendout) -> None:
-        """Mark the sendout as SENT once no actionable deliveries remain (best-effort)."""
+        """Mark the sendout as SENT once no actionable deliveries remain (best-effort).
+
+        If every delivery permanently failed (zero sent) the sendout is kept as
+        SCHEDULED and all failed deliveries are reset to PENDING so the next job
+        run retries them — this signals a configuration-level issue rather than
+        individual bad addresses.
+        """
         max_retries = _get_max_retries()
         still_active = sendout.deliveries.filter(
             status__in=[
@@ -120,35 +138,66 @@ class SendNewslettersJob:
             retry_count__lt=max_retries,
         ).exists()
 
-        if not still_active and not retryable_failures:
+        if still_active or retryable_failures:
+            return
+
+        any_sent = sendout.deliveries.filter(
+            status=SendoutDelivery.Status.SENT
+        ).exists()
+        if any_sent:
             sendout.status = Sendout.Status.SENT
             sendout.sent_at = timezone.now()
             sendout.save()
             logger.info(f"Sendout {sendout.id} marked as sent (best-effort).")
+        else:
+            logger.error(
+                f"Sendout {sendout.id} for newsletter {sendout.newsletter_id}: "
+                "all deliveries permanently failed — possible email configuration issue. "
+                "Resetting deliveries for retry."
+            )
+            metric_service.sendout_all_deliveries_failed(
+                sendout_id=sendout.id,
+                newsletter_id=sendout.newsletter_id,
+            )
+            sendout.deliveries.filter(status=SendoutDelivery.Status.FAILED).update(
+                status=SendoutDelivery.Status.PENDING,
+                retry_count=0,
+            )
 
     def _send_to_subscriber(
         self, sendout: Sendout, email: str, unsubscribe_token: object
     ) -> None:
         try:
             unsubscribe_url = reverse(
-                "django_email_learning:newsletter_unsubscribe",
+                "django_email_learning:public:newsletter_unsubscribe",
                 kwargs={"token": unsubscribe_token},
             )
             conf: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
-            base_url: str = conf.get("BASE_URL", "")
+            base_url: str = conf.get("SITE_BASE_URL", "")
             full_unsubscribe_url = f"{base_url.rstrip('/')}{unsubscribe_url}"
         except Exception:
             full_unsubscribe_url = ""
 
-        body = (
+        plain_body = (
             f"{sendout.body}\n\n---\nTo unsubscribe, visit: {full_unsubscribe_url}"
             if full_unsubscribe_url
             else sendout.body
         )
 
+        context = {
+            "subject": sendout.subject,
+            "body": sendout.body,
+            "newsletter_title": sendout.newsletter.title,
+            "unsubscribe_url": full_unsubscribe_url,
+        }
+
         msg = EmailMultiAlternatives(
             subject=sendout.subject,
-            body=body,
+            body=plain_body,
+            from_email=_get_newsletter_from_email(),
             to=[email],
+        )
+        msg.attach_alternative(
+            render_to_string("emails/newsletter_sendout.html", context), "text/html"
         )
         email_sender_service.send(msg)

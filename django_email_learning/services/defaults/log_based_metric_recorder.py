@@ -228,3 +228,15 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
                 "job_name": job_name,
             },
         )
+
+    def sendout_all_deliveries_failed(
+        self, sendout_id: int, newsletter_id: int
+    ) -> None:
+        logger.error(
+            "All deliveries failed for sendout — possible email configuration issue",
+            extra={
+                "metric": "sendout_all_deliveries_failed",
+                "sendout_id": sendout_id,
+                "newsletter_id": newsletter_id,
+            },
+        )

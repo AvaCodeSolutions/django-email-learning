@@ -88,3 +88,8 @@ class MetricRecorderProtocol(Protocol):
 
     def job_execution_failed(self, job_name: str) -> None:
         ...
+
+    def sendout_all_deliveries_failed(
+        self, sendout_id: int, newsletter_id: int
+    ) -> None:
+        ...
