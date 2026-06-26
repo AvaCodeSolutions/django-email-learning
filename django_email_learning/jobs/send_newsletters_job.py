@@ -2,6 +2,7 @@ import logging
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.module_loading import import_string
@@ -151,16 +152,26 @@ class SendNewslettersJob:
         except Exception:
             full_unsubscribe_url = ""
 
-        body = (
+        plain_body = (
             f"{sendout.body}\n\n---\nTo unsubscribe, visit: {full_unsubscribe_url}"
             if full_unsubscribe_url
             else sendout.body
         )
 
+        context = {
+            "subject": sendout.subject,
+            "body": sendout.body,
+            "newsletter_title": sendout.newsletter.title,
+            "unsubscribe_url": full_unsubscribe_url,
+        }
+
         msg = EmailMultiAlternatives(
             subject=sendout.subject,
-            body=body,
+            body=plain_body,
             from_email=_get_newsletter_from_email(),
             to=[email],
+        )
+        msg.attach_alternative(
+            render_to_string("emails/newsletter_sendout.html", context), "text/html"
         )
         email_sender_service.send(msg)
