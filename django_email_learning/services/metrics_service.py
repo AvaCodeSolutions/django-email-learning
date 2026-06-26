@@ -123,5 +123,10 @@ class MetricsService:
     def job_execution_failed(self, job_name: str) -> None:
         self.metric_recorder.job_execution_failed(job_name)
 
+    def sendout_all_deliveries_failed(
+        self, sendout_id: int, newsletter_id: int
+    ) -> None:
+        self.metric_recorder.sendout_all_deliveries_failed(sendout_id, newsletter_id)
+
 
 metric_service = MetricsService()

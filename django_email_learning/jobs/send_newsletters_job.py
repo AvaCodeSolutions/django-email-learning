@@ -119,7 +119,13 @@ class SendNewslettersJob:
         self._maybe_complete_sendout(delivery.sendout)
 
     def _maybe_complete_sendout(self, sendout: Sendout) -> None:
-        """Mark the sendout as SENT once no actionable deliveries remain (best-effort)."""
+        """Mark the sendout as SENT once no actionable deliveries remain (best-effort).
+
+        If every delivery permanently failed (zero sent) the sendout is kept as
+        SCHEDULED and all failed deliveries are reset to PENDING so the next job
+        run retries them — this signals a configuration-level issue rather than
+        individual bad addresses.
+        """
         max_retries = _get_max_retries()
         still_active = sendout.deliveries.filter(
             status__in=[
@@ -132,11 +138,31 @@ class SendNewslettersJob:
             retry_count__lt=max_retries,
         ).exists()
 
-        if not still_active and not retryable_failures:
+        if still_active or retryable_failures:
+            return
+
+        any_sent = sendout.deliveries.filter(
+            status=SendoutDelivery.Status.SENT
+        ).exists()
+        if any_sent:
             sendout.status = Sendout.Status.SENT
             sendout.sent_at = timezone.now()
             sendout.save()
             logger.info(f"Sendout {sendout.id} marked as sent (best-effort).")
+        else:
+            logger.error(
+                f"Sendout {sendout.id} for newsletter {sendout.newsletter_id}: "
+                "all deliveries permanently failed — possible email configuration issue. "
+                "Resetting deliveries for retry."
+            )
+            metric_service.sendout_all_deliveries_failed(
+                sendout_id=sendout.id,
+                newsletter_id=sendout.newsletter_id,
+            )
+            sendout.deliveries.filter(status=SendoutDelivery.Status.FAILED).update(
+                status=SendoutDelivery.Status.PENDING,
+                retry_count=0,
+            )
 
     def _send_to_subscriber(
         self, sendout: Sendout, email: str, unsubscribe_token: object
