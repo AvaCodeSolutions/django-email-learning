@@ -52,6 +52,12 @@ function toLocalDatetimeValue(isoString) {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+function defaultScheduledAt() {
+    const d = new Date();
+    d.setHours(d.getHours() + 1, 0, 0, 0);
+    return toLocalDatetimeValue(d.toISOString());
+}
+
 function SendoutDialog({ open, onClose, onSuccess, sendout, newsletterId, organizationId, localeMessages, apiBaseUrl, direction }) {
     const isEdit = Boolean(sendout);
     const [subject, setSubject] = useState('');
@@ -84,7 +90,7 @@ function SendoutDialog({ open, onClose, onSuccess, sendout, newsletterId, organi
         } else {
             setSubject('');
             setBody('');
-            setScheduledAt('');
+            setScheduledAt(defaultScheduledAt());
             setError('');
         }
     }, [open, sendout]);
@@ -219,7 +225,7 @@ function SendoutDialog({ open, onClose, onSuccess, sendout, newsletterId, organi
                         fullWidth
                         required
                         sx={{ mb: 2 }}
-                        slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: new Date().toISOString().slice(0, 16) } }}
+                        slotProps={{ inputLabel: { shrink: true } }}
                     />
                     <Box sx={{ mb: 1 }}>
                         <Typography variant="caption" color="text.secondary">{localeMessages['sendout_body']}</Typography>
