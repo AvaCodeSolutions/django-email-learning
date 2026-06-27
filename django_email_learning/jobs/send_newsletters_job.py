@@ -1,4 +1,5 @@
 import logging
+from datetime import timedelta
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -152,6 +153,8 @@ class SendNewslettersJob:
                 status=SendoutDelivery.Status.PENDING,
                 retry_count=0,
             )
+            sendout.scheduled_at = timezone.now() + timedelta(minutes=10)
+            sendout.save(update_fields=["scheduled_at"])
 
     def _send_to_subscriber(
         self, sendout: Sendout, email: str, unsubscribe_token: object
