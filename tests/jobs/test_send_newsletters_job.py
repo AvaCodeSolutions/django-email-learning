@@ -1,3 +1,4 @@
+from datetime import timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -295,6 +296,8 @@ def test_sendout_stays_scheduled_and_resets_when_all_deliveries_fail(
     assert sendout.status == Sendout.Status.SCHEDULED
     assert delivery.status == SendoutDelivery.Status.PENDING
     assert delivery.retry_count == 0
+    assert sendout.scheduled_at > timezone.now()
+    assert sendout.scheduled_at <= timezone.now() + timedelta(minutes=11)
     mock_metric.assert_called_once_with(
         sendout_id=sendout.id, newsletter_id=sendout.newsletter_id
     )
