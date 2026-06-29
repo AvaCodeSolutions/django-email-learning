@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.2.2] — 2026-06-29
+
+### Fixed
+
+- **Org admin can now edit their organisation** — users with the `org_admin` role were incorrectly blocked from editing their organisation's name, description, logo, and other fields. The API was guarded by `is_platform_admin()` instead of the role-scoped `accessible_for` check, and the frontend edit button was hidden behind `isPlatformAdmin`. Both are now fixed: org admins can edit their own organisation but not others, and platform admins retain full access including delete.
+
+---
+
 ## [1.2.1] — 2026-06-29
 
 ### Added
