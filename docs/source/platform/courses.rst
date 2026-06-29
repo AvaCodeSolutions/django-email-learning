@@ -198,3 +198,43 @@ Quiz Configuration
 
 .. warning::
    **Random Selection Requirements**: When using random question selection, ensure your course has at least 6 questions to provide sufficient variety for different learners and retake scenarios.
+
+Customising Course Creation Access
+-----------------------------------
+
+``CourseView`` exposes a ``can_create_course(request, organization_id)`` hook that you
+can override in a subclass to add custom logic — for example, enforcing a per-organisation
+course limit based on a subscription plan:
+
+.. code-block:: python
+
+    from django_email_learning.platform.api.views import CourseView
+    from myapp.models import OrganisationPlan
+
+    class LimitedCourseView(CourseView):
+        def can_create_course(self, request, organization_id: int) -> bool:
+            plan = OrganisationPlan.objects.get(organization_id=organization_id)
+            return plan.course_count < plan.max_courses
+
+Wire ``LimitedCourseView`` into your URL conf in place of ``CourseView``.
+
+When ``can_create_course`` returns ``False``, the API responds with a ``403`` before
+any database work happens. The default implementation always returns ``True``, so
+behaviour is unchanged for users who do not override the hook.
+
+**Knowing the current state after a mutation**
+
+The create course (``201``) and delete course (``200``) responses both include a
+``can_create_course`` boolean field, evaluated after the operation completes:
+
+.. code-block:: json
+
+    {
+      "id": 42,
+      "title": "Python Course",
+      "...",
+      "can_create_course": false
+    }
+
+This allows the frontend to update its UI (e.g. disable the *Add Course* button)
+immediately after a create or delete, without an extra round-trip.

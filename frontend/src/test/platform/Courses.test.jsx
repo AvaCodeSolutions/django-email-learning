@@ -116,4 +116,38 @@ describe('Courses', () => {
       expect(screen.queryByRole('button', { name: /Add Course/ })).not.toBeInTheDocument()
     );
   });
+
+  it('disables Add Course button when create_course feature flag is absent', async () => {
+    renderWithProviders(<Courses />, {
+      appContext: { localeMessages, userRole: 'editor', availableFeatures: [] },
+    });
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Add Course/ })).toBeDisabled()
+    );
+  });
+
+  it('shows cannotCreateCourseMessage alert when canCreateCourse is false', async () => {
+    renderWithProviders(<Courses />, {
+      appContext: {
+        localeMessages,
+        userRole: 'editor',
+        availableFeatures: [],
+        cannotCreateCourseMessage: 'You have reached your course limit. <a href="/upgrade">Upgrade your plan</a>.',
+      },
+    });
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Add Course/ })).toBeDisabled()
+    );
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+  });
+
+  it('does not show alert when cannotCreateCourseMessage is not set', async () => {
+    renderWithProviders(<Courses />, {
+      appContext: { localeMessages, userRole: 'editor', availableFeatures: [] },
+    });
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Add Course/ })).toBeDisabled()
+    );
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
 });
