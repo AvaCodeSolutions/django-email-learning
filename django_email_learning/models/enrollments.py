@@ -28,6 +28,7 @@ class BlockedEmail(models.Model):
     Stores email addresses that are blocked from enrolling in any course.
     Emails are normalized to lowercase on save.
     """
+
     email = models.EmailField(unique=True)
 
     def __str__(self) -> str:
@@ -45,6 +46,7 @@ class Learner(models.Model):
     Each learner is uniquely identified by their email within an organization.
     A learner can have multiple enrollments across different courses.
     """
+
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     email = models.EmailField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -79,6 +81,7 @@ class Enrollment(models.Model):
     Each enrollment belongs to one learner and one course.
     A learner cannot have more than one active enrollment per course.
     """
+
     def __init__(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         super().__init__(*args, **kwargs)
         self._last_saved_status = self.status
@@ -298,6 +301,7 @@ class Certificate(models.Model):
     Each enrollment can have at most one certificate (OneToOne).
     Certificate number is generated from course, enrollment, and a random suffix.
     """
+
     enrollment = models.OneToOneField(
         Enrollment, on_delete=models.CASCADE, related_name="certificate"
     )
