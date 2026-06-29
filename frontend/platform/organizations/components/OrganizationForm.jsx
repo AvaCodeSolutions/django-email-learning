@@ -157,7 +157,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
                 </Typography>
             </Box>
             <Divider sx={{ my: 2 }} />
-            <ImageUpload initialUrl={initialLogoUrl} onUploadSuccess={(data) => {
+            <ImageUpload organizationId={organizationId} initialUrl={initialLogoUrl} onUploadSuccess={(data) => {
                 setLogoServerPath(data.file_path);
             }} onUploadError={(error) => {
                 setErrorMessage(localeMessages["logo_upload_failed"]);

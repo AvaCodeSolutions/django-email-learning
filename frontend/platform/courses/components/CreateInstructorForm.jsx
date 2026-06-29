@@ -92,6 +92,7 @@ const CreateInstructorForm = ({ onSuccess, activeOrganizationId }) => {
                 {localeMessages['instructor_photo']}
             </Typography>
             <ImageUpload
+                organizationId={activeOrganizationId}
                 initialUrl={photoUrl}
                 onUploadSuccess={(data) => {
                     setPhotoUrl(data.file_url);
