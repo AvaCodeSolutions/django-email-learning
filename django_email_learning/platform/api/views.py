@@ -77,35 +77,41 @@ logger = logging.getLogger(__name__)
 DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
 
 
+class CourseCreationMixin:
+    """Provides the can_create_course hook shared by CourseView and SingleCourseView."""
+
+    def can_create_course(self, request: HttpRequest, organization_id: int) -> bool:
+        """
+        Override to add custom course creation logic (e.g. plan limits, feature flags).
+        Return False to reject the request with a 403 before any DB work happens.
+        The result is also included in create and delete course responses so the
+        client always knows the current state after a mutation.
+        """
+        return True
+
+
 @method_decorator(ensure_csrf_cookie, name="get")
 @method_decorator(accessible_for(roles={"admin", "editor", "instructor"}), name="post")
 @method_decorator(
     accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get"
 )
-class CourseView(View):
-    def can_create_course(self, request: HttpRequest, organization_id: int) -> bool:  # type: ignore[no-untyped-def]
-        """
-        Override to add custom course creation logic (e.g. plan limits, feature flags).
-        Return False to reject the request with a 403 before any DB work happens.
-        """
-        return True
-
+class CourseView(CourseCreationMixin, View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
-        if not self.can_create_course(request, kwargs["organization_id"]):
+        organization_id = kwargs["organization_id"]
+        if not self.can_create_course(request, organization_id):
             return JsonResponse({"error": "Course creation not allowed."}, status=403)
         payload = json.loads(request.body)
         try:
             serializer = serializers.CreateCourseRequest.model_validate(payload)
-            course = serializer.to_django_model(
-                organization_id=kwargs["organization_id"]
-            )
+            course = serializer.to_django_model(organization_id=organization_id)
             course.save()
-            return JsonResponse(
-                serializers.CourseResponse.from_django_model(
-                    course, abs_url_builder=request.build_absolute_uri
-                ).model_dump(),
-                status=201,
+            response_data = serializers.CourseResponse.from_django_model(
+                course, abs_url_builder=request.build_absolute_uri
+            ).model_dump()
+            response_data["can_create_course"] = self.can_create_course(
+                request, organization_id
             )
+            return JsonResponse(response_data, status=201)
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
         except (IntegrityError, ValueError) as e:
@@ -402,7 +408,7 @@ class SingleCourseContentView(View):
 @method_decorator(
     accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get"
 )
-class SingleCourseView(View):
+class SingleCourseView(CourseCreationMixin, View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
             course = Course.objects.get(id=kwargs["course_id"])
@@ -439,8 +445,17 @@ class SingleCourseView(View):
     def delete(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
         try:
             course = Course.objects.get(id=kwargs["course_id"])
+            organization_id = course.organization_id
             course.delete()
-            return JsonResponse({"message": "Course deleted successfully"}, status=200)
+            return JsonResponse(
+                {
+                    "message": "Course deleted successfully",
+                    "can_create_course": self.can_create_course(
+                        request, organization_id
+                    ),
+                },
+                status=200,
+            )
         except Course.DoesNotExist:
             return JsonResponse({"error": "Course not found"}, status=404)
         except ValidationError as e:
@@ -1622,7 +1637,7 @@ class SubscribersCsvExportView(View):
 
         response = HttpResponse(output.getvalue(), content_type="text/csv")
         safe_title = newsletter.title.replace('"', "")
-        response[
-            "Content-Disposition"
-        ] = f'attachment; filename="{safe_title}_subscribers.csv"'
+        response["Content-Disposition"] = (
+            f'attachment; filename="{safe_title}_subscribers.csv"'
+        )
         return response

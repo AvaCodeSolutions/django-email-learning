@@ -288,9 +288,9 @@ def test_update_course_with_target_audience_and_external_references(superadmin_c
 
     # Now, update the created course with target audience and external references
     update_payload = valid_update_course_payload()
-    update_payload[
-        "target_audience"
-    ] = "Beginners with no prior programming experience."
+    update_payload["target_audience"] = (
+        "Beginners with no prior programming experience."
+    )
     update_payload["external_references"] = [
         {
             "name": "GitHub Repository",
@@ -819,11 +819,11 @@ def test_create_course_send_certificate_can_be_set_to_false(superadmin_client):
 # ---------------------------------------------------------------------------
 
 
-def test_can_create_course_hook_blocks_creation(superadmin_client, settings):
-    from django_email_learning.platform.api.views import CourseView
+def test_can_create_course_hook_blocks_creation(superadmin_client):
+    from django_email_learning.platform.api.views import CourseCreationMixin
     from unittest.mock import patch
 
-    with patch.object(CourseView, "can_create_course", return_value=False):
+    with patch.object(CourseCreationMixin, "can_create_course", return_value=False):
         payload = valid_create_course_payload(title="Blocked Course", slug="blocked")
         response = superadmin_client.post(
             get_url(1), json.dumps(payload), content_type="application/json"
@@ -839,6 +839,65 @@ def test_can_create_course_hook_allows_creation_by_default(superadmin_client):
         get_url(1), json.dumps(payload), content_type="application/json"
     )
     assert response.status_code == 201
+
+
+def test_create_course_response_includes_can_create_course_true_by_default(
+    superadmin_client,
+):
+    payload = valid_create_course_payload(title="Hook Course", slug="hook-course")
+    response = superadmin_client.post(
+        get_url(1), json.dumps(payload), content_type="application/json"
+    )
+    assert response.status_code == 201
+    assert "can_create_course" in response.json()
+    assert response.json()["can_create_course"] is True
+
+
+def test_create_course_response_can_create_course_reflects_hook(superadmin_client):
+    from django_email_learning.platform.api.views import CourseCreationMixin
+    from unittest.mock import patch
+
+    # First call (guard) returns True, second call (response field) returns False
+    with patch.object(
+        CourseCreationMixin, "can_create_course", side_effect=[True, False]
+    ):
+        payload = valid_create_course_payload(title="Last Course", slug="last-course")
+        response = superadmin_client.post(
+            get_url(1), json.dumps(payload), content_type="application/json"
+        )
+
+    assert response.status_code == 201
+    assert response.json()["can_create_course"] is False
+
+
+def test_delete_course_response_includes_can_create_course(
+    sample_course, superadmin_client
+):
+    url = reverse(
+        "django_email_learning:api_platform:courses_detail",
+        kwargs={"organization_id": 1, "course_id": sample_course["id"]},
+    )
+    response = superadmin_client.delete(url)
+    assert response.status_code == 200
+    assert "can_create_course" in response.json()
+    assert response.json()["can_create_course"] is True
+
+
+def test_delete_course_response_can_create_course_reflects_hook(
+    sample_course, superadmin_client
+):
+    from django_email_learning.platform.api.views import CourseCreationMixin
+    from unittest.mock import patch
+
+    url = reverse(
+        "django_email_learning:api_platform:courses_detail",
+        kwargs={"organization_id": 1, "course_id": sample_course["id"]},
+    )
+    with patch.object(CourseCreationMixin, "can_create_course", return_value=False):
+        response = superadmin_client.delete(url)
+
+    assert response.status_code == 200
+    assert response.json()["can_create_course"] is False
 
 
 def test_update_course_send_certificate(superadmin_client):
