@@ -18,7 +18,7 @@ const DeleteCoursePopup = ({ courseId, courseTitle, handleClose, handleSuccess})
               throw new Error(data.error)
             } else {
               console.log('Course state deleted successfully:', data);
-              handleSuccess();
+              handleSuccess(data);
               handleClose();
             }
         })

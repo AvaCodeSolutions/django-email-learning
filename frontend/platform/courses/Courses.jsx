@@ -40,6 +40,7 @@ function Courses() {
   const [queryParameters, setQueryParameters] = useState("");
   const { direction, localeMessages, apiBaseUrl, platformBaseUrl, userRole, languageOptions = [], availableFeatures = [] } = useAppContext();
   const [coursesAreLoaded, setCoursesAreLoaded] = useState(false);
+  const [canCreateCourse, setCanCreateCourse] = useState(availableFeatures.includes('create_course'));
 
   const getLanguageLabel = (languageCode) => {
     return languageOptions.find((languageOption) => languageOption.value === languageCode)?.label || languageCode;
@@ -86,6 +87,9 @@ function Courses() {
   const handleCourseCreated = (data) => {
     console.log('Course created successfully:', data);
     setCourses([...courses, data]);
+    if (data.can_create_course !== undefined) {
+      setCanCreateCourse(data.can_create_course);
+    }
     setDialogOpen(false);
   };
 
@@ -119,7 +123,7 @@ function Courses() {
     >
       <Grid size={{xs: 12}} sx={{ py: 2, pl: { xs: 0, sm: 2 } }}>
         <Box sx={{ p: { xs: 1, sm: 2 }, backgroundColor: 'background.box', boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.04)', borderRadius: { xs: 0, sm: 2 }, minHeight: 300 }}>
-        {userRole !== 'viewer' && availableFeatures.includes('create_course') && <Button variant="contained" startIcon={<SchoolIcon sx={{ marginLeft: direction === 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
+        {userRole !== 'viewer' && canCreateCourse && <Button variant="contained" startIcon={<SchoolIcon sx={{ marginLeft: direction === 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
           setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><CourseForm
             successCallback={handleCourseCreated}
             failureCallback={handleCourseCreationFailed}
@@ -159,9 +163,12 @@ function Courses() {
                     <IconButton onClick={() => {
                       showEditCourseDialog(course);}}><EditIcon fontSize="small" /></IconButton>
                     <IconButton aria-label={`Delete ${course.title}`} onClick={() => {
-                      setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><DeleteCoursePopup courseId={course.id} courseTitle={course.title} handleClose={() => setDialogOpen(false)} handleSuccess={() => {
+                      setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><DeleteCoursePopup courseId={course.id} courseTitle={course.title} handleClose={() => setDialogOpen(false)} handleSuccess={(data) => {
                         const index = courses.findIndex(item => item.id === course.id);
                         setCourses(courses.filter((_, i) => i !== index));
+                        if (data?.can_create_course !== undefined) {
+                          setCanCreateCourse(data.can_create_course);
+                        }
                     }} /></Suspense>);
                     setDialogOpen(true);
                   }}><DeleteIcon fontSize="small" /></IconButton>

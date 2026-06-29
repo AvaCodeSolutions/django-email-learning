@@ -116,4 +116,13 @@ describe('Courses', () => {
       expect(screen.queryByRole('button', { name: /Add Course/ })).not.toBeInTheDocument()
     );
   });
+
+  it('hides Add Course button when create_course feature flag is absent', async () => {
+    renderWithProviders(<Courses />, {
+      appContext: { localeMessages, userRole: 'editor', availableFeatures: [] },
+    });
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: /Add Course/ })).not.toBeInTheDocument()
+    );
+  });
 });

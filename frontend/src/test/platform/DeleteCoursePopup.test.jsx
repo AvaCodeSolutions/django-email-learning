@@ -52,18 +52,19 @@ describe('DeleteCoursePopup', () => {
     expect(defaultProps.handleClose).toHaveBeenCalled();
   });
 
-  it('calls handleSuccess and handleClose after successful deletion', async () => {
+  it('calls handleSuccess with response data and handleClose after successful deletion', async () => {
+    const responseData = { message: 'Course deleted successfully', can_create_course: true };
     global.fetch.mockResolvedValue({
       ok: true,
       status: 200,
-      json: () => Promise.resolve({}),
+      json: () => Promise.resolve(responseData),
     });
     const user = userEvent.setup();
     renderWithProviders(<DeleteCoursePopup {...defaultProps} />, {
       appContext: { localeMessages },
     });
     await user.click(screen.getByRole('button', { name: 'Delete' }));
-    await waitFor(() => expect(defaultProps.handleSuccess).toHaveBeenCalled());
+    await waitFor(() => expect(defaultProps.handleSuccess).toHaveBeenCalledWith(responseData));
     expect(defaultProps.handleClose).toHaveBeenCalled();
   });
 });
