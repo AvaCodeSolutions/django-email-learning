@@ -814,6 +814,33 @@ def test_create_course_send_certificate_can_be_set_to_false(superadmin_client):
     assert Course.objects.get(id=response.json()["id"]).send_certificate is False
 
 
+# ---------------------------------------------------------------------------
+# can_create_course hook
+# ---------------------------------------------------------------------------
+
+
+def test_can_create_course_hook_blocks_creation(superadmin_client, settings):
+    from django_email_learning.platform.api.views import CourseView
+    from unittest.mock import patch
+
+    with patch.object(CourseView, "can_create_course", return_value=False):
+        payload = valid_create_course_payload(title="Blocked Course", slug="blocked")
+        response = superadmin_client.post(
+            get_url(1), json.dumps(payload), content_type="application/json"
+        )
+
+    assert response.status_code == 403
+    assert "error" in response.json()
+
+
+def test_can_create_course_hook_allows_creation_by_default(superadmin_client):
+    payload = valid_create_course_payload(title="Allowed Course", slug="allowed")
+    response = superadmin_client.post(
+        get_url(1), json.dumps(payload), content_type="application/json"
+    )
+    assert response.status_code == 201
+
+
 def test_update_course_send_certificate(superadmin_client):
     create_response = superadmin_client.post(
         get_url(1),
