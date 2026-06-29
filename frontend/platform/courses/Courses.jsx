@@ -4,6 +4,7 @@ import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Link from '@mui/material/Link';
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Dialog from '@mui/material/Dialog';
@@ -38,7 +39,7 @@ function Courses() {
   const [courses, setCourses] = useState([])
   const [organizationId, setOrganizationId] = useState(null);
   const [queryParameters, setQueryParameters] = useState("");
-  const { direction, localeMessages, apiBaseUrl, platformBaseUrl, userRole, languageOptions = [], availableFeatures = [] } = useAppContext();
+  const { direction, localeMessages, apiBaseUrl, platformBaseUrl, userRole, languageOptions = [], availableFeatures = [], cannotCreateCourseMessage } = useAppContext();
   const [coursesAreLoaded, setCoursesAreLoaded] = useState(false);
   const [canCreateCourse, setCanCreateCourse] = useState(availableFeatures.includes('create_course'));
 
@@ -123,15 +124,29 @@ function Courses() {
     >
       <Grid size={{xs: 12}} sx={{ py: 2, pl: { xs: 0, sm: 2 } }}>
         <Box sx={{ p: { xs: 1, sm: 2 }, backgroundColor: 'background.box', boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.04)', borderRadius: { xs: 0, sm: 2 }, minHeight: 300 }}>
-        {userRole !== 'viewer' && canCreateCourse && <Button variant="contained" startIcon={<SchoolIcon sx={{ marginLeft: direction === 'rtl' ? 1 : 0 }} />} sx={{ marginBottom: 2 }} onClick={() => {
-          setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><CourseForm
-            successCallback={handleCourseCreated}
-            failureCallback={handleCourseCreationFailed}
-            cancelCallback={() => setDialogOpen(false)}
-            activeOrganizationId={organizationId}
-            createMode={true}
-          /></Suspense>);
-          setDialogOpen(true);}}>{localeMessages["add_course"]}</Button>}
+        {userRole !== 'viewer' && <>
+          <Button
+            variant="contained"
+            disabled={!canCreateCourse}
+            startIcon={<SchoolIcon sx={{ marginLeft: direction === 'rtl' ? 1 : 0 }} />}
+            sx={{ marginBottom: cannotCreateCourseMessage && !canCreateCourse ? 1 : 2 }}
+            onClick={() => {
+              setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><CourseForm
+                successCallback={handleCourseCreated}
+                failureCallback={handleCourseCreationFailed}
+                cancelCallback={() => setDialogOpen(false)}
+                activeOrganizationId={organizationId}
+                createMode={true}
+              /></Suspense>);
+              setDialogOpen(true);
+            }}
+          >{localeMessages["add_course"]}</Button>
+          {!canCreateCourse && cannotCreateCourseMessage && (
+            <Alert severity="info" sx={{ marginBottom: 2 }}>
+              <span dangerouslySetInnerHTML={{ __html: cannotCreateCourseMessage }} />
+            </Alert>
+          )}
+        </>}
         {coursesAreLoaded ? <TableContainer component={Paper}>
           <Table aria-label={localeMessages["courses"]}>
             <TableHead>
