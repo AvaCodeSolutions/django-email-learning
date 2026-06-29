@@ -6,7 +6,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db.utils import IntegrityError
 from django.db.models.functions import TruncDate
 from django.db.models import Count, Prefetch
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models, transaction
 from django.conf import settings
@@ -83,7 +83,16 @@ DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING"
     accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get"
 )
 class CourseView(View):
+    def can_create_course(self, request: HttpRequest, organization_id: int) -> bool:  # type: ignore[no-untyped-def]
+        """
+        Override to add custom course creation logic (e.g. plan limits, feature flags).
+        Return False to reject the request with a 403 before any DB work happens.
+        """
+        return True
+
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        if not self.can_create_course(request, kwargs["organization_id"]):
+            return JsonResponse({"error": "Course creation not allowed."}, status=403)
         payload = json.loads(request.body)
         try:
             serializer = serializers.CreateCourseRequest.model_validate(payload)
