@@ -89,7 +89,7 @@ describe('ImageUpload', () => {
     });
     const onUploadSuccess = vi.fn();
     const { container } = renderWithProviders(
-      <ImageUpload onUploadSuccess={onUploadSuccess} onUploadError={vi.fn()} initialUrl={null} />
+      <ImageUpload organizationId={42} onUploadSuccess={onUploadSuccess} onUploadError={vi.fn()} initialUrl={null} />
     );
     fireEvent.change(container.querySelector('input[type="file"]'), {
       target: { files: [new File(['data'], 'photo.png', { type: 'image/png' })] },
@@ -102,6 +102,10 @@ describe('ImageUpload', () => {
       })
     );
     expect(screen.getByAltText('Uploaded image')).toHaveAttribute('src', '/media/img.png');
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/organizations/42/files/'),
+      expect.any(Object)
+    );
   });
 
   it('calls onUploadError when the server returns an error response', async () => {

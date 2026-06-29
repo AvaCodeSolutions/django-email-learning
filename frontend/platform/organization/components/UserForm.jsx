@@ -156,6 +156,7 @@ const UserForm = ({ onClose, organizationId, refreshUsers, user = null }) => {
                     {localeMessages["photo"]}
                 </Typography>
                 <ImageUpload
+                    organizationId={organizationId}
                     initialUrl={photoUrl}
                     onUploadSuccess={(data) => {
                         setPhotoUrl(data.file_url);

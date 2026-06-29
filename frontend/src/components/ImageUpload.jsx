@@ -6,7 +6,7 @@ import { getCookie } from '../utils.js';
 import { useAppContext } from '../render.jsx';
 
 
-const ImageUpload = ({ onUploadSuccess, onUploadError, initialUrl }) => {
+const ImageUpload = ({ onUploadSuccess, onUploadError, initialUrl, organizationId }) => {
     console.log("Rendering ImageUpload component with initialUrl:", initialUrl);
     const [imageFile, setImageFile] = useState(null);
     const [imageUrl, setImageUrl] = useState(initialUrl);
@@ -25,7 +25,7 @@ const ImageUpload = ({ onUploadSuccess, onUploadError, initialUrl }) => {
 
     useEffect(() => {
         if (imageFile) {
-            fetch(`${apiBaseUrl}/organizations/1/files/`, {
+            fetch(`${apiBaseUrl}/organizations/${organizationId}/files/`, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': getCookie('csrftoken'),

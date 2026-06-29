@@ -567,7 +567,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 />
               </Box>}
               <Box>
-                <ImageUpload initialUrl={imageUrl} onUploadSuccess={(data) => {
+                <ImageUpload organizationId={activeOrganizationId} initialUrl={imageUrl} onUploadSuccess={(data) => {
                     setImageUrl(data.file_url);
                     setImageServerPath(data.file_path);
                 }} />
