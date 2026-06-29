@@ -1637,7 +1637,7 @@ class SubscribersCsvExportView(View):
 
         response = HttpResponse(output.getvalue(), content_type="text/csv")
         safe_title = newsletter.title.replace('"', "")
-        response["Content-Disposition"] = (
-            f'attachment; filename="{safe_title}_subscribers.csv"'
-        )
+        response[
+            "Content-Disposition"
+        ] = f'attachment; filename="{safe_title}_subscribers.csv"'
         return response
