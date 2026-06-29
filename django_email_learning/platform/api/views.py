@@ -865,7 +865,7 @@ class SingleOrganizationUserView(View):
             return JsonResponse({"error": str(e)}, status=409)
 
 
-@method_decorator(is_platform_admin(), name="post")
+@method_decorator(accessible_for(roles={"admin"}), name="post")
 @method_decorator(is_platform_admin(), name="delete")
 @method_decorator(
     accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get"
