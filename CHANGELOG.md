@@ -6,6 +6,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.2.1] — 2026-06-29
+
+### Added
+
+- **`can_create_course` in create and delete responses** — the `POST /courses/` (create) and `DELETE /courses/{id}/` (delete) API responses now include a `can_create_course: bool` field, evaluated after the operation completes. This allows the frontend to update its UI immediately after a mutation without an extra round-trip.
+- **Frontend reacts to `can_create_course`** — the *Add Course* button is now disabled (rather than hidden) when `can_create_course` is `false`, and re-enables automatically after a course is deleted if the hook permits it.
+- **Customisable blocked-state message** — library users can set `cannotCreateCourseMessage` in the app context to a plain string or HTML (including links) which is displayed as an info alert below the disabled button. Useful for directing users to an upgrade page when a plan limit is reached.
+
+---
+
 ## [1.2.0] — 2026-06-29
 
 ### Added
