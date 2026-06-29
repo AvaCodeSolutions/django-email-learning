@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.2.3] — 2026-06-29
+
+### Fixed
+
+- **`ImageUpload` component uploaded to wrong organisation** — the component hardcoded `/organizations/1/files/` in its upload URL, causing image uploads to always target org 1 regardless of the active organisation. An `organizationId` prop has been added and all four call sites (`OrganizationForm`, `UserForm`, `CourseForm`, `CreateInstructorForm`) now pass the correct org ID.
+
+---
+
 ## [1.2.2] — 2026-06-29
 
 ### Fixed
