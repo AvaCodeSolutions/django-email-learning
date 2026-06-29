@@ -185,10 +185,31 @@ def test_update_organizations_view_optional_social_fields(superadmin_client):
     assert organization.youtube_channel == "https://www.youtube.com/@existing-org"
 
 
-@pytest.mark.parametrize("client", ["viewer", "editor"], indirect=True)
-def test_edit_organization_requires_platform_admin_or_superadmin(client):
+@pytest.mark.parametrize("client", ["viewer", "editor", "instructor"], indirect=True)
+def test_edit_organization_forbidden_for_non_admin_roles(client):
     payload = {"name": "Updated Org", "description": "Updated description"}
     response = client.post(update_url(1), data=payload, content_type="application/json")
+    assert response.status_code == 403
+
+
+def test_edit_organization_allowed_for_org_admin(org_admin_client):
+    payload = {"name": "Org Admin Updated", "description": "Updated by org admin"}
+    response = org_admin_client.post(
+        update_url(1), data=payload, content_type="application/json"
+    )
+    assert response.status_code == 200
+    assert response.json().get("name") == "Org Admin Updated"
+
+
+def test_edit_organization_forbidden_for_org_admin_of_different_org(
+    org_admin_client, second_organization
+):
+    payload = {"name": "Should Fail", "description": "Wrong org"}
+    response = org_admin_client.post(
+        update_url(second_organization.id),
+        data=payload,
+        content_type="application/json",
+    )
     assert response.status_code == 403
 
 

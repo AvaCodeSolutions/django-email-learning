@@ -30,7 +30,8 @@ import { lazy, Suspense } from "react";
 const OrganizationForm = lazy(() => import("./components/OrganizationForm.jsx"));
 
 function Organizations() {
-  const { localeMessages, direction, apiBaseUrl, platformBaseUrl, isPlatformAdmin } = useAppContext();
+  const { localeMessages, direction, apiBaseUrl, platformBaseUrl, isPlatformAdmin, isOrganizationAdmin } = useAppContext();
+  const canEditOrganization = isPlatformAdmin || isOrganizationAdmin;
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogContent, setDialogContent] = useState(null);
   const [organizations, setOrganizations] = useState([]);
@@ -127,7 +128,7 @@ function Organizations() {
                   </TableCell>
                   <TableCell>
                     { org.is_public ? <IconButton onClick={() => goToUrl(org.public_url)}><PublicIcon fontSize="small"/></IconButton> : <IconButton disabled><PublicIcon fontSize="small" sx={{ color: 'grey.300' }}/></IconButton> }
-                    { isPlatformAdmin && <><IconButton onClick={() => {
+                    { canEditOrganization && <IconButton onClick={() => {
                       setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><OrganizationForm
                         successCallback={handleSuccessFormSubmission}
                         failureCallback={handleFailedFormSubmission}
@@ -143,8 +144,8 @@ function Organizations() {
                         organizationId={org.id}
                       /></Suspense>);
                       setDialogOpen(true);
-                    }}><EditIcon fontSize="small"/></IconButton>
-                    <IconButton onClick={() => deleteConfirmationDialog(org)}><DeleteIcon fontSize="small" /></IconButton></>}
+                    }}><EditIcon fontSize="small"/></IconButton>}
+                    { isPlatformAdmin && <IconButton onClick={() => deleteConfirmationDialog(org)}><DeleteIcon fontSize="small" /></IconButton>}
                   </TableCell>
                 </TableRow>
               ))}
