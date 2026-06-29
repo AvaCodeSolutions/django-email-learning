@@ -24,6 +24,10 @@ logger = logging.getLogger(__name__)
 
 
 class BlockedEmail(models.Model):
+    """
+    Stores email addresses that are blocked from enrolling in any course.
+    Emails are normalized to lowercase on save.
+    """
     email = models.EmailField(unique=True)
 
     def __str__(self) -> str:
@@ -36,6 +40,11 @@ class BlockedEmail(models.Model):
 
 
 class Learner(models.Model):
+    """
+    Represents a student belonging to an Organization.
+    Each learner is uniquely identified by their email within an organization.
+    A learner can have multiple enrollments across different courses.
+    """
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     email = models.EmailField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -63,6 +72,13 @@ class Learner(models.Model):
 
 
 class Enrollment(models.Model):
+    """
+    Tracks a learner's progress through a course.
+    Follows a 4-state FSM: UNVERIFIED -> ACTIVE -> COMPLETED | DEACTIVATED.
+    State transitions are enforced in clean() and save().
+    Each enrollment belongs to one learner and one course.
+    A learner cannot have more than one active enrollment per course.
+    """
     def __init__(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         super().__init__(*args, **kwargs)
         self._last_saved_status = self.status
@@ -277,6 +293,11 @@ class Enrollment(models.Model):
 
 
 class Certificate(models.Model):
+    """
+    Issued to a learner upon completing a course enrollment.
+    Each enrollment can have at most one certificate (OneToOne).
+    Certificate number is generated from course, enrollment, and a random suffix.
+    """
     enrollment = models.OneToOneField(
         Enrollment, on_delete=models.CASCADE, related_name="certificate"
     )
