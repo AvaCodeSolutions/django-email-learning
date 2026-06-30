@@ -1,0 +1,216 @@
+import enum
+import re
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from typing import Optional, Callable, Any
+from django.urls import reverse
+from django_email_learning.models import Organization, OrganizationUser
+from django_email_learning.services.storage_tools import (
+    move_file,
+    FileDoesNotExistError,
+)
+
+
+class GetOrCreateUserRequest(BaseModel):
+    email: str = Field(min_length=1, examples=["user@example.com"])
+    organization_id: int = Field(gt=0, examples=[1])
+
+    @field_validator("email")
+    def validate_email(cls, email: str) -> str:
+        email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+        if not re.match(email_regex, email):
+            raise ValueError("Invalid email format")
+        return email
+
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class OrganizationResponse(BaseModel):
+    id: int
+    name: str
+    logo: Optional[str] = None
+    logo_path: Optional[str] = None
+    description: Optional[str] = None
+    public_url: str
+    website: Optional[str] = None
+    youtube_channel: Optional[str] = None
+    linkedin_page: Optional[str] = None
+    is_public: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+    @staticmethod
+    def from_django_model(
+        organization: Organization, abs_url_builder: Callable
+    ) -> "OrganizationResponse":
+        url = reverse(
+            "django_email_learning:public:organization_view",
+            kwargs={"organization_id": organization.id},
+        )
+        return OrganizationResponse.model_validate(
+            {
+                "id": organization.id,
+                "name": organization.name,
+                "logo": abs_url_builder(organization.logo.url)
+                if organization.logo
+                else None,
+                "logo_path": organization.logo.name if organization.logo else None,
+                "description": organization.description,
+                "public_url": abs_url_builder(url),
+                "website": organization.website,
+                "youtube_channel": organization.youtube_channel,
+                "linkedin_page": organization.linkedin_page,
+                "is_public": organization.is_public,
+            }
+        )
+
+
+class CreateOrganizationRequest(BaseModel):
+    name: str = Field(min_length=1, examples=["AvaCode"])
+    description: Optional[str] = Field(
+        None, examples=["A description of the organization."]
+    )
+    logo: Optional[str] = Field(None, examples=["/path/to/logo.png"])
+    website: Optional[str] = Field(None, examples=["https://example.com"])
+    youtube_channel: Optional[str] = Field(
+        None, examples=["https://youtube.com/channel/xyz"]
+    )
+    linkedin_page: Optional[str] = Field(
+        None, examples=["https://linkedin.com/company/xyz"]
+    )
+    is_public: bool = Field(default=True, examples=[True])
+
+    def to_django_model(self) -> Organization:
+        organization = Organization(
+            name=self.name,
+            description=self.description,
+            website=self.website,
+            youtube_channel=self.youtube_channel,
+            linkedin_page=self.linkedin_page,
+            is_public=self.is_public,
+        )
+        organization.save()
+        organization.refresh_from_db()
+        if self.logo:
+            try:
+                allowed_extensions = [".jpg", ".jpeg", ".png", ".svg"]
+                if not any(
+                    self.logo.lower().endswith(ext) for ext in allowed_extensions
+                ):
+                    raise ValueError(
+                        "Logo must be an image file with a valid extension."
+                    )
+                final_path = move_file(
+                    self.logo,
+                    f"organization_logos/{organization.id}/{self.logo.split('/')[-1]}",
+                )
+                organization.logo = final_path
+                organization.save()
+            except FileDoesNotExistError:
+                raise ValueError("Logo file does not exist.")
+
+        return organization
+
+
+class UpdateOrganizationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: Optional[str] = Field(None, min_length=1, examples=["AvaCode"])
+    description: Optional[str] = Field(
+        None, examples=["A description of the organization."]
+    )
+    website: Optional[str] = Field(None, examples=["https://example.com"])
+    youtube_channel: Optional[str] = Field(
+        None, examples=["https://youtube.com/channel/xyz"]
+    )
+    linkedin_page: Optional[str] = Field(
+        None, examples=["https://linkedin.com/company/xyz"]
+    )
+    logo: Optional[str] = Field(None, examples=["/path/to/logo.png"])
+    remove_logo: Optional[bool] = Field(None, examples=[True])
+    is_public: Optional[bool] = Field(None, examples=[True])
+
+
+class UserRole(enum.StrEnum):
+    ADMIN = "admin"
+    EDITOR = "editor"
+    INSTRUCTOR = "instructor"
+    VIEWER = "viewer"
+
+
+class AddOrganizationUserRequest(BaseModel):
+    user_id: int = Field(gt=0, examples=[1])
+    role: UserRole = Field(min_length=1, examples=[UserRole.ADMIN])
+    display_name: Optional[str] = Field(None, examples=["John Doe"])
+    photo: Optional[str] = Field(None, examples=["/path/to/photo.png"])
+
+    @model_validator(mode="before")
+    def validate_instructor_display_name(cls, values: dict) -> dict:
+        role = values.get("role")
+        display_name = values.get("display_name")
+        if role == UserRole.INSTRUCTOR and not display_name:
+            raise ValueError("Instructor role requires a display name.")
+        return values
+
+
+class UpdateOrganizationUserRequest(BaseModel):
+    role: UserRole = Field(min_length=1, examples=[UserRole.ADMIN])
+    display_name: Optional[str] = Field(None, examples=["John Doe"])
+    photo: Optional[str] = Field(None, examples=["/path/to/photo.png"])
+
+    @model_validator(mode="before")
+    def validate_instructor_display_name(cls, values: dict) -> dict:
+        role = values.get("role")
+        display_name = values.get("display_name")
+        if role == UserRole.INSTRUCTOR and not display_name:
+            raise ValueError("Instructor role requires a display name.")
+        return values
+
+
+class OrganizationUserResponse(BaseModel):
+    id: int
+    user_id: int
+    organization_id: int
+    email: str
+    role: UserRole
+    can_act_as_instructor: bool
+    display_name: Optional[str] = None
+    photo: Optional[str] = None
+    photo_url: Optional[str] = None
+
+    @staticmethod
+    def from_django_model(
+        org_user: OrganizationUser, request: Any
+    ) -> "OrganizationUserResponse":
+        return OrganizationUserResponse(
+            id=org_user.id,
+            user_id=org_user.user.id,
+            organization_id=org_user.organization.id,
+            email=org_user.user.email,
+            role=UserRole(org_user.role),
+            can_act_as_instructor=org_user.can_act_as_instructor(),
+            display_name=org_user.display_name,
+            photo=org_user.photo.name if org_user.photo else None,
+            photo_url=request.build_absolute_uri(org_user.photo.url)
+            if org_user.photo
+            else None,
+        )
+
+
+class UpdateSessionRequest(BaseModel):
+    active_organization_id: int = Field(examples=[1])
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class SessionInfo(BaseModel):
+    active_organization_id: int
+
+    @classmethod
+    def populate_from_session(cls, session):  # type: ignore[no-untyped-def]
+        return super().model_validate(
+            {"active_organization_id": session.get("active_organization_id")}
+        )
