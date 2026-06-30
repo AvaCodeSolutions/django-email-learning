@@ -6,6 +6,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.2.4] — 2026-06-30
+
+### Changed
+
+- **Split `platform/api/views.py` into domain modules** — the 600+ line flat file has been replaced with a `platform/api/views/` package grouping views by domain (`courses`, `learners`, `organisations`, `newsletters`, `oauth`, `assignments`, `misc`). All existing imports and URL configs are unchanged.
+- **Split `platform/views.py` into domain modules** — same treatment for the platform-facing views, now organised under `platform/views/` (`base`, `courses`, `learners`, `organisations`, `newsletters`, `misc`).
+- **Split `platform/api/serializers.py` into domain modules** — the 1462-line flat serializers file is now a `platform/api/serializers/` package with one module per domain plus a `common.py` for shared types that prevents circular imports. All 60+ classes remain importable from the same path.
+- **Ruff configuration** — added `[tool.ruff]` config to `pyproject.toml` with `target-version = "py312"`, isort rule set (`I`), and `known-first-party` for consistent import ordering across the codebase.
+- **ESLint updated to v10.6.0.**
+
+---
+
 ## [1.2.3] — 2026-06-29
 
 ### Fixed
