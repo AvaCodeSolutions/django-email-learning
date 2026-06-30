@@ -9,7 +9,7 @@ from django_email_learning.platform.api.views import SendLessonToPlatformUser
 
 
 @pytest.mark.parametrize("user_key", ["editor_user", "organization_admin"])
-@patch("django_email_learning.platform.api.views.SendLessonCommand")
+@patch("django_email_learning.platform.api.views.courses.SendLessonCommand")
 def test_send_lesson_to_platform_user_sends_email_for_allowed_roles(
     mock_send_lesson_command,
     db,
@@ -34,7 +34,7 @@ def test_send_lesson_to_platform_user_sends_email_for_allowed_roles(
     mock_send_lesson_command.return_value.execute.assert_called_once_with()
 
 
-@patch("django_email_learning.platform.api.views.SendLessonCommand")
+@patch("django_email_learning.platform.api.views.courses.SendLessonCommand")
 def test_send_lesson_to_platform_user_forbidden_for_viewer(
     mock_send_lesson_command,
     db,
@@ -54,7 +54,7 @@ def test_send_lesson_to_platform_user_forbidden_for_viewer(
     mock_send_lesson_command.assert_not_called()
 
 
-@patch("django_email_learning.platform.api.views.SendLessonCommand")
+@patch("django_email_learning.platform.api.views.courses.SendLessonCommand")
 def test_send_lesson_to_platform_user_unauthorized_for_anonymous(
     mock_send_lesson_command,
     db,

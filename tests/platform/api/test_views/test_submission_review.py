@@ -273,7 +273,9 @@ def test_submission_review_response_includes_expected_fields(
     assert payload["status"] == AssignmentSubmission.SubmissionStatus.REJECTED
 
 
-@patch("django_email_learning.platform.api.views.SendAssignmentReviewCommand")
+@patch(
+    "django_email_learning.platform.api.views.assignments.SendAssignmentReviewCommand"
+)
 def test_submission_review_calls_review_command_when_status_changes(
     mock_send_assignment_review_command,
     instructor_client,
@@ -298,7 +300,9 @@ def test_submission_review_calls_review_command_when_status_changes(
     mock_send_assignment_review_command.return_value.execute.assert_called_once_with()
 
 
-@patch("django_email_learning.platform.api.views.SendAssignmentReviewCommand")
+@patch(
+    "django_email_learning.platform.api.views.assignments.SendAssignmentReviewCommand"
+)
 def test_submission_review_does_not_call_review_command_when_status_unchanged_and_no_comment(
     mock_send_assignment_review_command,
     instructor_client,
@@ -322,7 +326,9 @@ def test_submission_review_does_not_call_review_command_when_status_unchanged_an
     mock_send_assignment_review_command.assert_not_called()
 
 
-@patch("django_email_learning.platform.api.views.SendAssignmentReviewCommand")
+@patch(
+    "django_email_learning.platform.api.views.assignments.SendAssignmentReviewCommand"
+)
 def test_submission_review_calls_review_command_when_comment_is_provided_even_if_status_unchanged(
     mock_send_assignment_review_command,
     instructor_client,
