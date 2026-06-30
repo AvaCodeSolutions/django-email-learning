@@ -1,7 +1,7 @@
+import pytest
 from django.core.exceptions import ValidationError
 
 from django_email_learning.models.organizations import OrganizationUser
-import pytest
 
 
 def test_instructor_organization_user_requires_display_name(db, users):

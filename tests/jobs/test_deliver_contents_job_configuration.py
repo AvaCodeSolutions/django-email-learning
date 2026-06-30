@@ -5,9 +5,7 @@ from tests.jobs.delivery_queue_mock import DeliveryQueueMock
 
 
 def test_get_delivery_queue_instantiates_configured_class(settings):
-    settings.DJANGO_EMAIL_LEARNING = {
-        "DELIVERY_QUEUE": "tests.jobs.delivery_queue_mock.DeliveryQueueMock"
-    }
+    settings.DJANGO_EMAIL_LEARNING = {"DELIVERY_QUEUE": "tests.jobs.delivery_queue_mock.DeliveryQueueMock"}
 
     job = DeliverContentsJob()
 
@@ -15,9 +13,7 @@ def test_get_delivery_queue_instantiates_configured_class(settings):
 
 
 def test_get_delivery_queue_uses_prebuilt_configured_object(settings):
-    settings.DJANGO_EMAIL_LEARNING = {
-        "DELIVERY_QUEUE": "tests.jobs.delivery_queue_mock.DeliveryQueueMock"
-    }
+    settings.DJANGO_EMAIL_LEARNING = {"DELIVERY_QUEUE": "tests.jobs.delivery_queue_mock.DeliveryQueueMock"}
     prebuilt_queue = Mock()
 
     with patch(

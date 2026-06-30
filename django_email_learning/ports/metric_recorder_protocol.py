@@ -1,4 +1,5 @@
 from typing import Protocol
+
 from django_email_learning.models.enums.deactivation_reason import DeactivationReason
 
 
@@ -9,19 +10,13 @@ class MetricRecorderProtocol(Protocol):
     def quiz_sent(self, course_slug: str, organization_id: int, quiz_id: int) -> None:
         ...
 
-    def assignment_sent(
-        self, course_slug: str, organization_id: int, assignment_id: int
-    ) -> None:
+    def assignment_sent(self, course_slug: str, organization_id: int, assignment_id: int) -> None:
         ...
 
-    def quiz_reminder_sent(
-        self, course_slug: str, organization_id: int, quiz_id: int
-    ) -> None:
+    def quiz_reminder_sent(self, course_slug: str, organization_id: int, quiz_id: int) -> None:
         ...
 
-    def assignment_reminder_sent(
-        self, course_slug: str, organization_id: int, assignment_id: int
-    ) -> None:
+    def assignment_reminder_sent(self, course_slug: str, organization_id: int, assignment_id: int) -> None:
         ...
 
     def assignment_review_sent(
@@ -32,17 +27,13 @@ class MetricRecorderProtocol(Protocol):
     ) -> None:
         ...
 
-    def lesson_sent(
-        self, course_slug: str, organization_id: int, lesson_id: int
-    ) -> None:
+    def lesson_sent(self, course_slug: str, organization_id: int, lesson_id: int) -> None:
         ...
 
     def user_enrollment_activated(self, course_slug: str, organization_id: int) -> None:
         ...
 
-    def user_enrollment_deactivated(
-        self, course_slug: str, organization_id: int, reason: DeactivationReason
-    ) -> None:
+    def user_enrollment_deactivated(self, course_slug: str, organization_id: int, reason: DeactivationReason) -> None:
         ...
 
     def user_completed_course(self, course_slug: str, organization_id: int) -> None:
@@ -75,9 +66,7 @@ class MetricRecorderProtocol(Protocol):
     def reminder_schedule_blocked(self, content_id: int) -> None:
         ...
 
-    def imap_command_handling_failed(
-        self, imap_connection_id: int, organization_id: int
-    ) -> None:
+    def imap_command_handling_failed(self, imap_connection_id: int, organization_id: int) -> None:
         ...
 
     def job_execution_started(self, job_name: str) -> None:
@@ -89,7 +78,5 @@ class MetricRecorderProtocol(Protocol):
     def job_execution_failed(self, job_name: str) -> None:
         ...
 
-    def sendout_all_deliveries_failed(
-        self, sendout_id: int, newsletter_id: int
-    ) -> None:
+    def sendout_all_deliveries_failed(self, sendout_id: int, newsletter_id: int) -> None:
         ...

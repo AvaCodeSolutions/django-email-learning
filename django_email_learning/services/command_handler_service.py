@@ -1,9 +1,10 @@
+from pydantic import ValidationError
+
 from django_email_learning.services.command_models.command_request import CommandRequest
 from django_email_learning.services.command_models.enroll_command import EnrollCommand
 from django_email_learning.services.command_models.unsubscribe_command import (
     UnsubscribeCommand,
 )
-from pydantic import ValidationError
 
 
 class InvalidCommandError(Exception):

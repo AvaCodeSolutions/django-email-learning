@@ -1,8 +1,10 @@
-from django_email_learning.models import JobName
-from django_email_learning.platform.api.views import JobHealthStatus
+from datetime import timedelta
+
 from django.urls import reverse
 from django.utils import timezone
-from datetime import timedelta
+
+from django_email_learning.models import JobName
+from django_email_learning.platform.api.views import JobHealthStatus
 
 URL = reverse("django_email_learning:api_platform:jobs_status")
 
@@ -32,9 +34,7 @@ def test_job_health_status_view_no_executions(viewer_client):
     assert job_info["job_health_status"] == JobHealthStatus.CRITICAL.value
 
 
-def test_job_health_status_view_execution_in_default_warning(
-    viewer_client, job_factory
-):
+def test_job_health_status_view_execution_in_default_warning(viewer_client, job_factory):
     # Create a job execution with started_at more than 15 minutes ago but less than 45 minutes ago
     past_time = timezone.now() - timedelta(minutes=40)
     job_execution = job_factory(name=JobName.DELIVER_CONTENTS)
@@ -85,9 +85,7 @@ def test_job_health_status_view_execution_in_success(viewer_client, job_factory)
     assert job_info["job_health_status"] == JobHealthStatus.SUCCESS.value
 
 
-def test_job_health_status_view_configred_success_threshold(
-    viewer_client, job_factory, settings
-):
+def test_job_health_status_view_configred_success_threshold(viewer_client, job_factory, settings):
     # Override settings for this test
     settings.DJANGO_EMAIL_LEARNING["JOB_HEALTH_SUCCESS_THRESHOLD_MINUTES"] = 20
 

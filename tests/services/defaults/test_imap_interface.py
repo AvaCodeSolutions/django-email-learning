@@ -25,9 +25,7 @@ def _build_email_message(subject: str, from_email: str = "sender@example.com"):
 def test_enroll_executes_enroll_command_for_existing_course(db, course):
     interface = ImapInterface()
 
-    with patch(
-        "django_email_learning.services.defaults.imap_interface.EnrollCommand"
-    ) as enroll_command_cls:
+    with patch("django_email_learning.services.defaults.imap_interface.EnrollCommand") as enroll_command_cls:
         interface._enroll(
             "student@example.com",
             course.slug,
@@ -60,9 +58,7 @@ def test_enroll_handles_known_command_errors(db, course):
         EnrollmentAlreadyExistsError("exists"),
         BlockedEmailError("blocked"),
     ]:
-        with patch(
-            "django_email_learning.services.defaults.imap_interface.EnrollCommand"
-        ) as enroll_command_cls:
+        with patch("django_email_learning.services.defaults.imap_interface.EnrollCommand") as enroll_command_cls:
             enroll_command_cls.return_value.execute.side_effect = exception
             interface._enroll(
                 "student@example.com",
@@ -78,9 +74,7 @@ def test_verify_executes_verify_command_for_matching_enrollment(db, enrollment):
     enrollment.course.save()
     enrollment.save()
 
-    with patch(
-        "django_email_learning.services.defaults.imap_interface.VerifyEnrollmentCommand"
-    ) as verify_command_cls:
+    with patch("django_email_learning.services.defaults.imap_interface.VerifyEnrollmentCommand") as verify_command_cls:
         interface._verify(
             enrollment.learner.email,
             enrollment.activation_code,
@@ -112,9 +106,7 @@ def test_verify_skips_when_unverified_enrollment_not_found(db, enrollment, caplo
 def test_drop_executes_unsubscribe_command(db, course):
     interface = ImapInterface()
 
-    with patch(
-        "django_email_learning.services.defaults.imap_interface.UnsubscribeCommand"
-    ) as unsubscribe_cls:
+    with patch("django_email_learning.services.defaults.imap_interface.UnsubscribeCommand") as unsubscribe_cls:
         interface._drop(
             "student@example.com",
             course.slug,
@@ -137,9 +129,7 @@ def test_handle_email_message_dispatches_to_enroll_handler(db, course):
     with patch.object(interface, "_enroll") as enroll_spy:
         interface.handle_email_message(email_message, course.imap_connection)
 
-    enroll_spy.assert_called_once_with(
-        "sender@example.com", course.slug, course.imap_connection
-    )
+    enroll_spy.assert_called_once_with("sender@example.com", course.slug, course.imap_connection)
 
 
 def test_handle_email_message_rejects_invalid_subject_format(db, course, caplog):

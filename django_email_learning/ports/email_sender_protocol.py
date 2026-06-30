@@ -1,4 +1,5 @@
 from typing import Protocol
+
 from django.core.mail import EmailMultiAlternatives
 
 

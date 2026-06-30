@@ -1,17 +1,18 @@
+from io import StringIO
+
+from django.core.management import call_command
+from django.http import JsonResponse
+from django.utils.decorators import method_decorator
 from django.views import View
+
 from django_email_learning.decorators import check_api_key
-from django_email_learning.jobs.deliver_contents_job import DeliverContentsJob
 from django_email_learning.jobs.check_imap_job import CheckIMAPJob
-from django_email_learning.jobs.send_newsletters_job import SendNewslettersJob
-from django_email_learning.jobs.send_reminders_job import SendRemindersJob
 from django_email_learning.jobs.deactivate_inactive_enrollments_job import (
     DeactivateInactiveEnrollmentsJob,
 )
-from django.utils.decorators import method_decorator
-from django.http import JsonResponse
-from django.core.management import call_command
-from io import StringIO
-
+from django_email_learning.jobs.deliver_contents_job import DeliverContentsJob
+from django_email_learning.jobs.send_newsletters_job import SendNewslettersJob
+from django_email_learning.jobs.send_reminders_job import SendRemindersJob
 from django_email_learning.models import JobName
 from django_email_learning.services.metrics_service import metric_service
 
@@ -25,9 +26,7 @@ class DeliverContentsJobView(View):
             return JsonResponse({"status": "DeliverContentsJob triggered"}, status=202)
         except Exception as e:
             metric_service.job_execution_failed(job_name=JobName.DELIVER_CONTENTS.value)
-            return JsonResponse(
-                {"status": "DeliverContentsJob failed", "error": str(e)}, status=500
-            )
+            return JsonResponse({"status": "DeliverContentsJob failed", "error": str(e)}, status=500)
 
 
 @method_decorator(check_api_key(), name="get")
@@ -39,9 +38,7 @@ class CheckIMAPJobView(View):
             return JsonResponse({"status": "CheckIMAPJob triggered"}, status=202)
         except Exception as e:
             metric_service.job_execution_failed(job_name=JobName.CHECK_IMAP.value)
-            return JsonResponse(
-                {"status": "CheckIMAPJob failed", "error": str(e)}, status=500
-            )
+            return JsonResponse({"status": "CheckIMAPJob failed", "error": str(e)}, status=500)
 
 
 @method_decorator(check_api_key(), name="get")
@@ -53,9 +50,7 @@ class SendQuizRemindersJobView(View):
             return JsonResponse({"status": "SendRemidersJob triggered"}, status=202)
         except Exception as e:
             metric_service.job_execution_failed(job_name=JobName.SEND_REMINDERS.value)
-            return JsonResponse(
-                {"status": "SendRemidersJob failed", "error": str(e)}, status=500
-            )
+            return JsonResponse({"status": "SendRemidersJob failed", "error": str(e)}, status=500)
 
 
 @method_decorator(check_api_key(), name="get")
@@ -64,13 +59,9 @@ class DeactivateInactiveEnrollmentsJobView(View):
         try:
             job = DeactivateInactiveEnrollmentsJob()
             job.run()
-            return JsonResponse(
-                {"status": "DeactivateInactiveEnrollmentsJob triggered"}, status=202
-            )
+            return JsonResponse({"status": "DeactivateInactiveEnrollmentsJob triggered"}, status=202)
         except Exception as e:
-            metric_service.job_execution_failed(
-                job_name=JobName.DEACTIVATE_ENROLLMENTS.value
-            )
+            metric_service.job_execution_failed(job_name=JobName.DEACTIVATE_ENROLLMENTS.value)
             return JsonResponse(
                 {
                     "status": "DeactivateInactiveEnrollmentsJob failed",
@@ -89,9 +80,7 @@ class SendNewslettersJobView(View):
             return JsonResponse({"status": "SendNewslettersJob triggered"}, status=202)
         except Exception as e:
             metric_service.job_execution_failed(job_name=JobName.SEND_NEWSLETTERS.value)
-            return JsonResponse(
-                {"status": "SendNewslettersJob failed", "error": str(e)}, status=500
-            )
+            return JsonResponse({"status": "SendNewslettersJob failed", "error": str(e)}, status=500)
 
 
 @method_decorator(check_api_key(), name="get")

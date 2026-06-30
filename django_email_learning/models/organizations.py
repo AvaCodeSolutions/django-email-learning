@@ -1,10 +1,10 @@
 from typing import Any
 
-from django.urls import reverse
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.contrib.auth import get_user_model
+from django.urls import reverse
 
 User = get_user_model()
 
@@ -42,9 +42,7 @@ class OrganizationUser(models.Model):
         VIEWER = "viewer", "Viewer"
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="memberships")
-    organization = models.ForeignKey(
-        Organization, on_delete=models.CASCADE, related_name="members"
-    )
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="members")
     role = models.CharField(
         max_length=50,
         choices=Roles.choices,
@@ -79,8 +77,4 @@ class OrganizationUser(models.Model):
         super().save(*args, **kwargs)
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["user", "organization"], name="unique_user_organization"
-            )
-        ]
+        constraints = [models.UniqueConstraint(fields=["user", "organization"], name="unique_user_organization")]

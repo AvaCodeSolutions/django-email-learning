@@ -1,7 +1,9 @@
 import enum
 from datetime import datetime
+from typing import Any, Literal, Optional
+
 from pydantic import BaseModel, ConfigDict, Field
-from typing import Optional, Literal, Any
+
 from django_email_learning.models import AssignmentSubmission
 from django_email_learning.platform.api.serializers.common import (
     InstructorResponse,
@@ -91,11 +93,8 @@ class AssignmentSubmissionResponse(BaseModel):
             status=AssignmentSubmission.SubmissionStatus(submission.status),
             reviewed_at=submission.reviewed_at,
             reviewed_by=InstructorResponse(
-                display_name=submission.reviewer.display_name
-                or submission.reviewer.user.email,  # type: ignore[union-attr]
-                photo=request.build_absolute_uri(submission.reviewer.photo.url)
-                if submission.reviewer.photo
-                else None,
+                display_name=submission.reviewer.display_name or submission.reviewer.user.email,  # type: ignore[union-attr]
+                photo=request.build_absolute_uri(submission.reviewer.photo.url) if submission.reviewer.photo else None,
             )
             if submission.reviewer
             else None,  # type: ignore[union-attr]
@@ -146,7 +145,5 @@ class AssignmentSubmissionSummaryResponse(BaseModel):
             submitted_at=submission.submitted_at,
             status=AssignmentSubmission.SubmissionStatus(submission.status),
             reviewed_at=submission.reviewed_at,
-            reviewed_by=submission.reviewer.display_name
-            if submission.reviewer
-            else None,  # type: ignore[union-attr]
+            reviewed_by=submission.reviewer.display_name if submission.reviewer else None,  # type: ignore[union-attr]
         )

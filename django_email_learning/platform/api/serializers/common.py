@@ -1,7 +1,9 @@
 """Shared serializer types imported by multiple domain modules."""
 
+from typing import Any, Optional
+
 from pydantic import BaseModel, ConfigDict, field_serializer
-from typing import Optional, Any
+
 from django_email_learning.models import EnrollmentStatus
 
 

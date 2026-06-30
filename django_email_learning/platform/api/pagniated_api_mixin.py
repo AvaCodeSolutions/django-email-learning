@@ -1,6 +1,7 @@
-from django.http import JsonResponse
-from django.db.models import QuerySet
 from typing import Any
+
+from django.db.models import QuerySet
+from django.http import JsonResponse
 
 
 class PaginatedApiMixin:
@@ -40,6 +41,4 @@ class PaginatedApiMixin:
         raise NotImplementedError("Subclasses must implement get_query_set method")
 
     def get_item_serializer_class(self) -> Any:
-        raise NotImplementedError(
-            "Subclasses must implement get_item_serializer_class method"
-        )
+        raise NotImplementedError("Subclasses must implement get_item_serializer_class method")

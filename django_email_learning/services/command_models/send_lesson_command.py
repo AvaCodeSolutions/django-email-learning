@@ -1,19 +1,20 @@
-from django_email_learning.services.command_models.abstract_command import (
-    AbstractCommand,
-)
+from typing import Literal
+
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.urls import reverse
+
 from django_email_learning.models import (
     CourseContent,
     Enrollment,
     EnrollmentStatus,
 )
+from django_email_learning.services.command_models.abstract_command import (
+    AbstractCommand,
+)
 from django_email_learning.services.email_sender_service import email_sender_service
 from django_email_learning.services.metrics_service import MetricsService
-from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
-from django.urls import reverse
-from django.conf import settings
-from typing import Literal
-
 from django_email_learning.services.utils import mask_email
 
 
@@ -30,12 +31,8 @@ class SendLessonCommand(AbstractCommand):
         metric_service = MetricsService()
         content = CourseContent.objects.get(id=self.content_id)
         if not content.lesson:
-            raise LessonNotFoundError(
-                f"CourseContent with ID {self.content_id} has no associated lesson"
-            )
-        self.logger.info(
-            f"Sending lesson with ID {content.lesson.id} to email {mask_email(self.email)}"
-        )
+            raise LessonNotFoundError(f"CourseContent with ID {self.content_id} has no associated lesson")
+        self.logger.info(f"Sending lesson with ID {content.lesson.id} to email {mask_email(self.email)}")
 
         lesson = content.lesson
 
@@ -52,13 +49,10 @@ class SendLessonCommand(AbstractCommand):
         next_content = content.get_next()
 
         conf = settings.DJANGO_EMAIL_LEARNING
-        delivery = (
-            enrollment.content_deliveries.filter(course_content=content).first()
-            if enrollment
-            else None
-        )
+        delivery = enrollment.content_deliveries.filter(course_content=content).first() if enrollment else None
         track_open_url = (
-            f"{conf['SITE_BASE_URL']}{reverse('django_email_learning:personalised:track_open', kwargs={'hash_value': delivery.hash_value})}"
+            f"{conf['SITE_BASE_URL']}"
+            f"{reverse('django_email_learning:personalised:track_open', kwargs={'hash_value': delivery.hash_value})}"
             if delivery
             else None
         )
@@ -70,9 +64,7 @@ class SendLessonCommand(AbstractCommand):
             "next_content": next_content,
             "course_slug": content.course.slug,
             "support_imap_interface": content.course.imap_connection is not None,
-            "imap_email_address": content.course.imap_connection.email
-            if content.course.imap_connection
-            else None,
+            "imap_email_address": content.course.imap_connection.email if content.course.imap_connection else None,
             "track_open_url": track_open_url,
         }
         payload = render_to_string("emails/lesson.txt", context)
@@ -83,9 +75,7 @@ class SendLessonCommand(AbstractCommand):
             from_email=email_sender_service.from_email,
             to=[self.email],
         )
-        email_message.attach_alternative(
-            render_to_string("emails/lesson.html", context), "text/html"
-        )
+        email_message.attach_alternative(render_to_string("emails/lesson.html", context), "text/html")
 
         email_sender_service.send(email_message)
         metric_service.lesson_sent(

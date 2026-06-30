@@ -1,8 +1,8 @@
 import json
 
 import pytest
-from django_email_learning.ai.language_models import LanguageModel
 
+from django_email_learning.ai.language_models import LanguageModel
 
 INPUT_TEXT = "Draft text which is long enough to pass validation"
 
@@ -64,9 +64,7 @@ def test_edit_text_accepts_markup_in_input(editor_client, monkeypatch):
     }
 
 
-@pytest.mark.parametrize(
-    "client", ["editor", "platform_admin", "org_admin"], indirect=["client"]
-)
+@pytest.mark.parametrize("client", ["editor", "platform_admin", "org_admin"], indirect=["client"])
 def test_edit_text_accessible_for_editor_and_admin(client, monkeypatch):
     class DummyAdapter:
         def edit_text(self, text: str, model: str) -> str:

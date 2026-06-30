@@ -1,7 +1,7 @@
-from django_email_learning.models import Enrollment
-from django.urls import reverse
 import pytest
+from django.urls import reverse
 
+from django_email_learning.models import Enrollment
 
 URL = reverse("django_email_learning:api_public:enroll")
 
@@ -19,9 +19,7 @@ def test_enroll_view_creates_enrollment(anonymous_client, course):
     }
     response = anonymous_client.post(URL, data=payload, content_type="application/json")
     assert response.status_code == 200
-    assert Enrollment.objects.filter(
-        learner__email="test@example.com", course=course
-    ).exists()
+    assert Enrollment.objects.filter(learner__email="test@example.com", course=course).exists()
 
 
 @pytest.mark.parametrize(

@@ -1,4 +1,5 @@
 from django.urls import path
+
 from django_email_learning.public.api.views import EnrollView, NewsletterSubscribeView
 
 app_name = "django_email_learning"

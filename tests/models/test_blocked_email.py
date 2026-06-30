@@ -1,6 +1,7 @@
 import pytest
-from django_email_learning.models import BlockedEmail
 from django.core.exceptions import ValidationError
+
+from django_email_learning.models import BlockedEmail
 
 
 def test_invalid_email_raises_error():

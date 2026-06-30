@@ -1,35 +1,32 @@
 import csv
 import io
 import json
-from django.views import View
-from django.utils.decorators import method_decorator
+
 from django.db.utils import IntegrityError
 from django.http import HttpResponse, JsonResponse
+from django.utils.decorators import method_decorator
+from django.views import View
 from pydantic import ValidationError
-from django_email_learning.platform.api import serializers
-from django_email_learning.platform.api.pagniated_api_mixin import PaginatedApiMixin
+
+from django_email_learning.decorators import accessible_for
 from django_email_learning.models import (
     Newsletter,
     NewsletterSubscriber,
     Sendout,
 )
-from django_email_learning.decorators import accessible_for
+from django_email_learning.platform.api import serializers
+from django_email_learning.platform.api.pagniated_api_mixin import PaginatedApiMixin
 
 
 @method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
 @method_decorator(accessible_for(roles={"admin"}), name="post")
 class NewsletterView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
-        newsletters = Newsletter.objects.filter(
-            organization_id=kwargs["organization_id"]
-        ).prefetch_related("subscribers")
+        newsletters = Newsletter.objects.filter(organization_id=kwargs["organization_id"]).prefetch_related(
+            "subscribers"
+        )
         return JsonResponse(
-            {
-                "newsletters": [
-                    serializers.NewsletterResponse.from_django_model(n).model_dump()
-                    for n in newsletters
-                ]
-            },
+            {"newsletters": [serializers.NewsletterResponse.from_django_model(n).model_dump() for n in newsletters]},
             status=200,
         )
 
@@ -37,23 +34,17 @@ class NewsletterView(View):
         try:
             payload = json.loads(request.body)
             serializer = serializers.CreateNewsletterRequest.model_validate(payload)
-            newsletter = serializer.to_django_model(
-                organization_id=kwargs["organization_id"]
-            )
+            newsletter = serializer.to_django_model(organization_id=kwargs["organization_id"])
             newsletter.save()
             return JsonResponse(
-                serializers.NewsletterResponse.from_django_model(
-                    newsletter
-                ).model_dump(),
+                serializers.NewsletterResponse.from_django_model(newsletter).model_dump(),
                 status=201,
             )
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
         except IntegrityError:
             return JsonResponse(
-                {
-                    "error": "A newsletter with this title already exists for the organization."
-                },
+                {"error": "A newsletter with this title already exists for the organization."},
                 status=409,
             )
 
@@ -249,7 +240,5 @@ class SubscribersCsvExportView(View):
 
         response = HttpResponse(output.getvalue(), content_type="text/csv")
         safe_title = newsletter.title.replace('"', "")
-        response[
-            "Content-Disposition"
-        ] = f'attachment; filename="{safe_title}_subscribers.csv"'
+        response["Content-Disposition"] = f'attachment; filename="{safe_title}_subscribers.csv"'
         return response

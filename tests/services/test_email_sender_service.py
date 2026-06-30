@@ -47,9 +47,7 @@ def test_email_sender_service_uses_default_sender_when_setting_missing(settings)
 
 
 def test_email_sender_service_uses_default_from_email_when_missing_from_email(settings):
-    settings.DJANGO_EMAIL_LEARNING = {
-        "EMAIL_SENDER": "tests.services.test_email_sender_service.ConfiguredEmailSender"
-    }
+    settings.DJANGO_EMAIL_LEARNING = {"EMAIL_SENDER": "tests.services.test_email_sender_service.ConfiguredEmailSender"}
     settings.DEFAULT_FROM_EMAIL = "default@example.com"
 
     service = EmailSenderService()
@@ -58,9 +56,7 @@ def test_email_sender_service_uses_default_from_email_when_missing_from_email(se
 
 
 def test_email_sender_service_raises_when_no_from_email_available(settings):
-    settings.DJANGO_EMAIL_LEARNING = {
-        "EMAIL_SENDER": "tests.services.test_email_sender_service.ConfiguredEmailSender"
-    }
+    settings.DJANGO_EMAIL_LEARNING = {"EMAIL_SENDER": "tests.services.test_email_sender_service.ConfiguredEmailSender"}
     settings.DEFAULT_FROM_EMAIL = ""
 
     with pytest.raises(ValueError):

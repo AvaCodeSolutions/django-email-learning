@@ -1,10 +1,12 @@
-from django_email_learning.services.command_models.verify_enrollment_command import (
-    VerifyEnrollmentCommand,
-)
+import pytest
+from django.conf import settings
+from django.core import mail
+from pydantic import ValidationError
+
 from django_email_learning.models import (
-    EnrollmentStatus,
     ContentDelivery,
     DeliverySchedule,
+    EnrollmentStatus,
 )
 from django_email_learning.services.command_models.exceptions.invalid_enrollment_error import (
     InvalidEnrollmentError,
@@ -12,10 +14,9 @@ from django_email_learning.services.command_models.exceptions.invalid_enrollment
 from django_email_learning.services.command_models.exceptions.invalid_verification_code_error import (
     InvalidVerificationCodeError,
 )
-from pydantic import ValidationError
-from django.core import mail
-from django.conf import settings
-import pytest
+from django_email_learning.services.command_models.verify_enrollment_command import (
+    VerifyEnrollmentCommand,
+)
 
 
 def test_verify_enrollment_command_initialization():
@@ -62,9 +63,7 @@ def test_verify_enrollment_command_execute(db, enrollment, course_lesson_content
     assert enrollment.activation_code is None
     assert enrollment.activated_at is not None
 
-    delivery = ContentDelivery.objects.get(
-        enrollment=enrollment, course_content=course_lesson_content
-    )
+    delivery = ContentDelivery.objects.get(enrollment=enrollment, course_content=course_lesson_content)
     assert DeliverySchedule.objects.filter(delivery=delivery).exists()
 
     # Check that a confirmation email was sent
@@ -74,9 +73,7 @@ def test_verify_enrollment_command_execute(db, enrollment, course_lesson_content
     assert "Enrollment Verified" in sent_email.subject
 
 
-def test_verify_enrollment_command_includes_course_image_in_html_email(
-    db, enrollment, course_lesson_content
-):
+def test_verify_enrollment_command_includes_course_image_in_html_email(db, enrollment, course_lesson_content):
     enrollment.course.image = "course_images/course-cover.jpg"
     enrollment.course.save(update_fields=["image"])
 
@@ -93,16 +90,11 @@ def test_verify_enrollment_command_includes_course_image_in_html_email(
 
     html_body, mime_type = sent_email.alternatives[0]
     assert mime_type == "text/html"
-    expected_image_url = (
-        f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL'].rstrip('/')}"
-        f"{enrollment.course.image.url}"
-    )
+    expected_image_url = f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL'].rstrip('/')}{enrollment.course.image.url}"
     assert f'src="{expected_image_url}"' in html_body
 
 
-def test_verify_enrollment_command_renders_html_without_course_image(
-    db, enrollment, course_lesson_content
-):
+def test_verify_enrollment_command_renders_html_without_course_image(db, enrollment, course_lesson_content):
     enrollment.course.image = None
     enrollment.course.save(update_fields=["image"])
 

@@ -1,8 +1,8 @@
 from datetime import timedelta
-
-from django.db import models, transaction, IntegrityError
-from django.utils import timezone
 from enum import StrEnum
+
+from django.db import IntegrityError, models, transaction
+from django.utils import timezone
 
 
 class JobName(StrEnum):
@@ -20,9 +20,7 @@ class JobStatus(StrEnum):
 
 
 class JobExecution(models.Model):
-    job_name = models.CharField(
-        max_length=200, choices=[(job.value, job.name) for job in JobName]
-    )
+    job_name = models.CharField(max_length=200, choices=[(job.value, job.name) for job in JobName])
     started_at = models.DateTimeField(auto_now_add=True)
     finished_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(
@@ -40,9 +38,7 @@ class JobExecution(models.Model):
         ]
 
     @classmethod
-    def start_if_not_running(
-        cls, job_name: str, stale_after_hours: int = 2
-    ) -> "JobExecution | None":
+    def start_if_not_running(cls, job_name: str, stale_after_hours: int = 2) -> "JobExecution | None":
         try:
             with transaction.atomic():
                 stale_cutoff = timezone.now() - timedelta(hours=stale_after_hours)
@@ -60,6 +56,4 @@ class JobExecution(models.Model):
             return None
 
     def __str__(self) -> str:
-        return (
-            f"Job: {self.job_name} started at {self.started_at} - Status: {self.status}"
-        )
+        return f"Job: {self.job_name} started at {self.started_at} - Status: {self.status}"

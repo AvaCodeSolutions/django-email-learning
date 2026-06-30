@@ -1,6 +1,7 @@
 from django.urls import path
+
 from django_email_learning.public.newsletter_views import NewsletterUnsubscribeView
-from django_email_learning.public.views import OrganizationView, CourseView
+from django_email_learning.public.views import CourseView, OrganizationView
 
 app_name = "django_email_learning"
 

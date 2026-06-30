@@ -1,5 +1,7 @@
-from django.urls import reverse
 import json
+
+from django.urls import reverse
+
 from django_email_learning.models import CourseContent
 
 
@@ -17,15 +19,11 @@ def test_reorder_course_contents_view_success(
     assert course_lesson_content.priority == 1
     assert course_quiz_content.priority == 2
 
-    ordered_content_ids = [
-        content.id for content in [course_quiz_content, course_lesson_content]
-    ]
+    ordered_content_ids = [content.id for content in [course_quiz_content, course_lesson_content]]
 
     data = {"ordered_content_ids": ordered_content_ids}
 
-    response = superadmin_client.post(
-        url, json.dumps(data), content_type="application/json"
-    )
+    response = superadmin_client.post(url, json.dumps(data), content_type="application/json")
 
     assert response.status_code == 200
 
@@ -51,9 +49,7 @@ def test_reorder_course_contents_view_invalid_request(
 
     data = {"ordered_content": ordered_content_ids}
 
-    response = superadmin_client.post(
-        url, json.dumps(data), content_type="application/json"
-    )
+    response = superadmin_client.post(url, json.dumps(data), content_type="application/json")
 
     assert response.status_code == 400
 
@@ -73,9 +69,7 @@ def test_viewer_cannot_reorder_course_contents(
 
     data = {"ordered_content_ids": ordered_content_ids}
 
-    response = viewer_client.post(
-        url, json.dumps(data), content_type="application/json"
-    )
+    response = viewer_client.post(url, json.dumps(data), content_type="application/json")
 
     assert response.status_code == 403
 
@@ -92,9 +86,7 @@ def test_reorder_course_contents_view_nonexistent_course(
 
     data = {"ordered_content_ids": ordered_content_ids}
 
-    response = superadmin_client.post(
-        url, json.dumps(data), content_type="application/json"
-    )
+    response = superadmin_client.post(url, json.dumps(data), content_type="application/json")
 
     assert response.status_code == 404
 
@@ -114,8 +106,6 @@ def test_anonymous_user_cannot_reorder_course_contents(
 
     data = {"ordered_content_ids": ordered_content_ids}
 
-    response = anonymous_client.post(
-        url, json.dumps(data), content_type="application/json"
-    )
+    response = anonymous_client.post(url, json.dumps(data), content_type="application/json")
 
     assert response.status_code == 401

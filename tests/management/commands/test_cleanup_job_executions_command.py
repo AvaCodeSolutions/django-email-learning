@@ -44,10 +44,7 @@ def test_dry_run_reports_candidates_without_deleting(db) -> None:
     stdout = StringIO()
     call_command("cleanup_job_executions", days=2, dry_run=True, stdout=stdout)
 
-    assert (
-        "Dry run: 1 completed/staled job executions older than 2 days"
-        in stdout.getvalue()
-    )
+    assert "Dry run: 1 completed/staled job executions older than 2 days" in stdout.getvalue()
     assert JobExecution.objects.filter(pk=old_execution.pk).exists()
 
 
@@ -78,10 +75,7 @@ def test_deletes_only_old_completed_rows(db) -> None:
     stdout = StringIO()
     call_command("cleanup_job_executions", days=2, stdout=stdout)
 
-    assert (
-        "Deleted 1 completed/staled job executions older than 2 days"
-        in stdout.getvalue()
-    )
+    assert "Deleted 1 completed/staled job executions older than 2 days" in stdout.getvalue()
     assert not JobExecution.objects.filter(pk=old_completed.pk).exists()
     assert JobExecution.objects.filter(pk=old_running.pk).exists()
     assert JobExecution.objects.filter(pk=no_finished_at.pk).exists()

@@ -1,8 +1,8 @@
-from django.core.management.base import BaseCommand
-from django_email_learning.jobs.deliver_contents_job import DeliverContentsJob
-from django.core.management.base import CommandParser
 import logging
 
+from django.core.management.base import BaseCommand, CommandParser
+
+from django_email_learning.jobs.deliver_contents_job import DeliverContentsJob
 from django_email_learning.models import JobName
 from django_email_learning.services.metrics_service import metric_service
 
@@ -25,9 +25,7 @@ class Command(BaseCommand):
                 format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
             )
         else:
-            logging.basicConfig(
-                level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-            )
+            logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
         logger = logging.getLogger(__name__)
 
@@ -38,21 +36,15 @@ class Command(BaseCommand):
             job = DeliverContentsJob()
             job.run()
 
-            self.stdout.write(
-                self.style.SUCCESS("Content delivery job completed successfully")
-            )
+            self.stdout.write(self.style.SUCCESS("Content delivery job completed successfully"))
             logger.info("DeliverContentsJob completed successfully")
 
         except KeyboardInterrupt:
-            self.stdout.write(
-                self.style.WARNING("Content delivery job interrupted by user")
-            )
+            self.stdout.write(self.style.WARNING("Content delivery job interrupted by user"))
             logger.warning("DeliverContentsJob interrupted by user")
 
         except Exception as e:
             metric_service.job_execution_failed(job_name=JobName.DELIVER_CONTENTS.value)
-            self.stdout.write(
-                self.style.ERROR(f"Content delivery job failed: {str(e)}")
-            )
+            self.stdout.write(self.style.ERROR(f"Content delivery job failed: {str(e)}"))
             logger.error(f"DeliverContentsJob failed: {str(e)}", exc_info=True)
             raise

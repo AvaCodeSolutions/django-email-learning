@@ -1,5 +1,6 @@
-from django_email_learning.models import Quiz, Question, Answer
 import pytest
+
+from django_email_learning.models import Answer, Question, Quiz
 
 
 def quiz_with_n_questions(n) -> Quiz:

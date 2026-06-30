@@ -1,21 +1,25 @@
-from django_email_learning.jobs.deliver_contents_job import DeliverContentsJob
-from django_email_learning.jobs.deliver_contents_job import SendLessonCommand
+from unittest.mock import patch
+
+import pytest
+
+import django_email_learning.jobs.deliver_contents_job as deliver_contents_job_module
+from django_email_learning.jobs.deliver_contents_job import (
+    DeliverContentsJob,
+    SendLessonCommand,
+)
 from django_email_learning.models import (
-    DeliverySchedule,
     ContentDelivery,
     Course,
     CourseContent,
-    EnrollmentStatus,
-    Enrollment,
+    DeliverySchedule,
     DeliveryStatus,
+    Enrollment,
+    EnrollmentStatus,
     JobExecution,
     JobName,
     JobStatus,
 )
 from tests.jobs.delivery_queue_mock import DeliveryQueueMock
-from unittest.mock import patch
-import pytest
-import django_email_learning.jobs.deliver_contents_job as deliver_contents_job_module
 
 
 @pytest.fixture
@@ -42,18 +46,12 @@ def test_deliver_contents_job_runs_with_tasks(
     enrollment.save()
 
     # Delivery for the first nrollment on the lesson content - only one content - should graduate after delivery
-    delivery = ContentDelivery.objects.create(
-        enrollment=enrollment, course_content=course_lesson_content
-    )
+    delivery = ContentDelivery.objects.create(enrollment=enrollment, course_content=course_lesson_content)
 
     delivery_schedule1 = DeliverySchedule.objects.create(delivery=delivery)
     # Delivery for the second enrollment on another course with next content available
-    course2 = Course.objects.create(
-        title="Test Course", slug="test-course", organization_id=1
-    )
-    enrollment2 = Enrollment.objects.create(
-        learner=enrollment.learner, course=course2, status=EnrollmentStatus.ACTIVE
-    )
+    course2 = Course.objects.create(title="Test Course", slug="test-course", organization_id=1)
+    enrollment2 = Enrollment.objects.create(learner=enrollment.learner, course=course2, status=EnrollmentStatus.ACTIVE)
     course_content_2 = CourseContent.objects.create(
         course=course2,
         priority=1,
@@ -70,9 +68,7 @@ def test_deliver_contents_job_runs_with_tasks(
         quiz=course_quiz_content.quiz,
         waiting_period=3600,
     )
-    delivery2 = ContentDelivery.objects.create(
-        enrollment=enrollment2, course_content=course_content_2
-    )
+    delivery2 = ContentDelivery.objects.create(enrollment=enrollment2, course_content=course_content_2)
     delivery_schedule2 = DeliverySchedule.objects.create(
         delivery=delivery2,
     )
@@ -82,9 +78,7 @@ def test_deliver_contents_job_runs_with_tasks(
     delivery_queue_mock.add_task(delivery_schedule2)
 
     # before the job run there is no content delivery for course_content_3
-    assert not ContentDelivery.objects.filter(
-        enrollment=enrollment2, course_content=course_content_3
-    ).exists()
+    assert not ContentDelivery.objects.filter(enrollment=enrollment2, course_content=course_content_3).exists()
 
     # Before running the job, both delivery schedules should be in SCHEDULED status
     assert delivery_schedule1.status == DeliveryStatus.SCHEDULED
@@ -109,9 +103,7 @@ def test_deliver_contents_job_runs_with_tasks(
     enrollment2.refresh_from_db()
     assert enrollment2.status == EnrollmentStatus.ACTIVE
     # A new ContentDelivery for the next content (quiz) should be created for the second enrollment
-    assert ContentDelivery.objects.filter(
-        enrollment=enrollment2, course_content=course_content_3
-    ).exists()
+    assert ContentDelivery.objects.filter(enrollment=enrollment2, course_content=course_content_3).exists()
 
 
 def test_deliver_contents_job_blocks_after_3_failed_attempts(
@@ -121,13 +113,9 @@ def test_deliver_contents_job_blocks_after_3_failed_attempts(
     enrollment.status = EnrollmentStatus.ACTIVE
     enrollment.save()
 
-    delivery = ContentDelivery.objects.create(
-        enrollment=enrollment, course_content=course_lesson_content
-    )
+    delivery = ContentDelivery.objects.create(enrollment=enrollment, course_content=course_lesson_content)
 
-    delivery_schedule = DeliverySchedule.objects.create(
-        delivery=delivery, failed_attempts=3
-    )
+    delivery_schedule = DeliverySchedule.objects.create(delivery=delivery, failed_attempts=3)
 
     # Add task to the mock delivery queue
     delivery_queue_mock.add_task(delivery_schedule)
@@ -152,9 +140,7 @@ def test_deliver_contents_job_blocks_after_3_failed_attempts(
     delivery_schedule.refresh_from_db()
     assert delivery_schedule.status == DeliveryStatus.BLOCKED
     assert delivery_schedule.failed_attempts == 3
-    metric_blocked_spy.assert_called_once_with(
-        delivery_schedule.delivery.course_content.id
-    )
+    metric_blocked_spy.assert_called_once_with(delivery_schedule.delivery.course_content.id)
 
 
 def test_deliver_contents_job_reschedules_failed_delivery_and_increments_attempts(
@@ -164,13 +150,9 @@ def test_deliver_contents_job_reschedules_failed_delivery_and_increments_attempt
     enrollment.status = EnrollmentStatus.ACTIVE
     enrollment.save()
 
-    delivery = ContentDelivery.objects.create(
-        enrollment=enrollment, course_content=course_lesson_content
-    )
+    delivery = ContentDelivery.objects.create(enrollment=enrollment, course_content=course_lesson_content)
 
-    delivery_schedule = DeliverySchedule.objects.create(
-        delivery=delivery, failed_attempts=1
-    )
+    delivery_schedule = DeliverySchedule.objects.create(delivery=delivery, failed_attempts=1)
 
     original_time = delivery_schedule.time
 
@@ -194,16 +176,12 @@ def test_deliver_contents_job_reschedules_failed_delivery_and_increments_attempt
     assert delivery_schedule.time > original_time
 
 
-def test_unhandled_exception_during_delivery_processing(
-    db, delivery_queue_mock, enrollment, course_lesson_content
-):
+def test_unhandled_exception_during_delivery_processing(db, delivery_queue_mock, enrollment, course_lesson_content):
     # Create mock DeliverySchedule object
     enrollment.status = EnrollmentStatus.ACTIVE
     enrollment.save()
 
-    delivery = ContentDelivery.objects.create(
-        enrollment=enrollment, course_content=course_lesson_content
-    )
+    delivery = ContentDelivery.objects.create(enrollment=enrollment, course_content=course_lesson_content)
 
     delivery_schedule = DeliverySchedule.objects.create(delivery=delivery)
 
@@ -248,9 +226,7 @@ def test_deliver_contents_job_triggers_finished_metric(db, delivery_queue_mock):
     assert isinstance(call_kwargs.kwargs["execution_time"], int)
 
 
-def test_deliver_contents_job_does_not_emit_start_or_finish_metrics_when_already_running(
-    db, delivery_queue_mock
-):
+def test_deliver_contents_job_does_not_emit_start_or_finish_metrics_when_already_running(db, delivery_queue_mock):
     JobExecution.objects.create(
         job_name=JobName.DELIVER_CONTENTS.value,
         status=JobStatus.RUNNING.value,

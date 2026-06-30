@@ -1,10 +1,13 @@
-from django.utils.decorators import method_decorator
-from django_email_learning.decorators import accessible_for
+import json
+
 from django.http import JsonResponse
+from django.utils.decorators import method_decorator
 from django.views import View
 from pydantic import ValidationError
+
+from django_email_learning.decorators import accessible_for
+
 from .serializers import EditTextRequest
-import json
 
 
 @method_decorator(accessible_for(roles={"admin", "editor"}), name="post")

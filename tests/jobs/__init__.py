@@ -1,5 +1,6 @@
-from django_email_learning.jobs.deliver_contents_job import DeliverContentsJob
 import pytest
+
+from django_email_learning.jobs.deliver_contents_job import DeliverContentsJob
 
 
 @pytest.fixture

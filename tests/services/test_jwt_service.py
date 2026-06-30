@@ -1,8 +1,10 @@
-from django_email_learning.services import jwt_service
-from freezegun import freeze_time
 import datetime
+
 import jwt
 import pytest
+from freezegun import freeze_time
+
+from django_email_learning.services import jwt_service
 
 
 def test_jwt_service_generate_and_decode_jwt():
@@ -31,9 +33,7 @@ def test_jwt_service_token_expiration():
 def test_jwt_service_invalid_token():
     payload = {"user_id": 789}
     payload_copy = payload.copy()
-    payload_copy["exp"] = datetime.datetime.now(datetime.UTC) + datetime.timedelta(
-        seconds=3600
-    )
+    payload_copy["exp"] = datetime.datetime.now(datetime.UTC) + datetime.timedelta(seconds=3600)
     # Create an invalid token by altering the signature
     invalid_token = jwt.encode(
         payload_copy,

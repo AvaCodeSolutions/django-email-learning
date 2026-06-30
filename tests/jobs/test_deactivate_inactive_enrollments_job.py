@@ -50,9 +50,7 @@ def test_deactivate_inactive_enrollments_job_exits_when_already_running(db):
     metric_finished_spy.assert_not_called()
 
 
-def test_deactivate_inactive_enrollments_job_deactivates_expired_quiz_delivery(
-    db, enrollment, course_quiz_content
-):
+def test_deactivate_inactive_enrollments_job_deactivates_expired_quiz_delivery(db, enrollment, course_quiz_content):
     enrollment.status = EnrollmentStatus.ACTIVE
     enrollment.save()
 
@@ -98,9 +96,7 @@ def test_deactivate_inactive_enrollments_job_deactivates_expired_quiz_delivery(
     assert job_execution.finished_at is not None
 
 
-def test_deactivate_inactive_enrollments_job_skips_non_quiz_deliveries(
-    db, enrollment, course_lesson_content
-):
+def test_deactivate_inactive_enrollments_job_skips_non_quiz_deliveries(db, enrollment, course_lesson_content):
     enrollment.status = EnrollmentStatus.ACTIVE
     enrollment.save()
 

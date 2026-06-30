@@ -5,9 +5,7 @@ from tests.jobs.imap_interface_mock import ImapInterfaceMock
 
 
 def test_get_imap_interface_instantiates_configured_class(settings):
-    settings.DJANGO_EMAIL_LEARNING = {
-        "IMAP_INTERFACE": "tests.jobs.imap_interface_mock.ImapInterfaceMock"
-    }
+    settings.DJANGO_EMAIL_LEARNING = {"IMAP_INTERFACE": "tests.jobs.imap_interface_mock.ImapInterfaceMock"}
 
     job = CheckIMAPJob()
 
@@ -15,9 +13,7 @@ def test_get_imap_interface_instantiates_configured_class(settings):
 
 
 def test_get_imap_interface_uses_prebuilt_configured_object(settings):
-    settings.DJANGO_EMAIL_LEARNING = {
-        "IMAP_INTERFACE": "tests.jobs.imap_interface_mock.ImapInterfaceMock"
-    }
+    settings.DJANGO_EMAIL_LEARNING = {"IMAP_INTERFACE": "tests.jobs.imap_interface_mock.ImapInterfaceMock"}
     prebuilt_interface = Mock()
 
     with patch(

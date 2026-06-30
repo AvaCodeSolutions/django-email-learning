@@ -1,14 +1,12 @@
 from django.urls import reverse
+
 from django_email_learning.models import AssignmentSubmission, ContentDelivery
 from django_email_learning.services import jwt_service
-
 
 URL = reverse("django_email_learning:api_personalised:assignment_submission")
 
 
-def test_assignment_submission_api_valid_token(
-    active_enrollment, course_assignment_content, anonymous_client
-):
+def test_assignment_submission_api_valid_token(active_enrollment, course_assignment_content, anonymous_client):
     content_delivery = ContentDelivery.objects.create(
         enrollment=active_enrollment,
         course_content=course_assignment_content,
@@ -36,9 +34,7 @@ def test_assignment_submission_api_valid_token(
     assert submission.text_submission == "My assignment answer"
 
 
-def test_assignment_submission_api_invalid_token(
-    active_enrollment, course_assignment_content, anonymous_client
-):
+def test_assignment_submission_api_invalid_token(active_enrollment, course_assignment_content, anonymous_client):
     ContentDelivery.objects.create(
         enrollment=active_enrollment,
         course_content=course_assignment_content,

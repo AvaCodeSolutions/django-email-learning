@@ -5,7 +5,7 @@ from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
-from django_email_learning.models import Sendout, SendoutDelivery, NewsletterSubscriber
+from django_email_learning.models import NewsletterSubscriber, Sendout, SendoutDelivery
 from django_email_learning.ports.task_queue_protocol import TaskQueueProtocol
 
 logger = logging.getLogger(__name__)
@@ -43,16 +43,11 @@ class DatabaseSendoutQueue(TaskQueueProtocol[SendoutDelivery]):
         # that doesn't already have one (idempotent via ignore_conflicts).
         for sendout_id in due_ids:
             subscriber_ids = list(
-                NewsletterSubscriber.objects.filter(
-                    newsletter__sendouts__id=sendout_id
-                ).values_list("id", flat=True)
+                NewsletterSubscriber.objects.filter(newsletter__sendouts__id=sendout_id).values_list("id", flat=True)
             )
             if subscriber_ids:
                 SendoutDelivery.objects.bulk_create(
-                    [
-                        SendoutDelivery(sendout_id=sendout_id, subscriber_id=sid)
-                        for sid in subscriber_ids
-                    ],
+                    [SendoutDelivery(sendout_id=sendout_id, subscriber_id=sid) for sid in subscriber_ids],
                     ignore_conflicts=True,
                 )
 
@@ -78,9 +73,7 @@ class DatabaseSendoutQueue(TaskQueueProtocol[SendoutDelivery]):
             if not delivery_ids:
                 return iter([])
 
-            SendoutDelivery.objects.filter(id__in=delivery_ids).update(
-                status=SendoutDelivery.Status.PROCESSING
-            )
+            SendoutDelivery.objects.filter(id__in=delivery_ids).update(status=SendoutDelivery.Status.PROCESSING)
 
         return (
             SendoutDelivery.objects.filter(id__in=delivery_ids)

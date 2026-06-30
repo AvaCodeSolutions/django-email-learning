@@ -1,9 +1,11 @@
-from django.db import models
-from .organizations import Organization
-from .mixin_models import EncryptionMixin
-from cryptography.fernet import InvalidToken
 import ipaddress
 import re
+
+from cryptography.fernet import InvalidToken
+from django.db import models
+
+from .mixin_models import EncryptionMixin
+from .organizations import Organization
 
 
 def is_domain_or_ip(value: str) -> None:
@@ -45,9 +47,7 @@ class ImapConnection(EncryptionMixin):
 
 
 class InboxFolder(models.Model):
-    imap_connection = models.ForeignKey(
-        ImapConnection, on_delete=models.CASCADE, related_name="folders"
-    )
+    imap_connection = models.ForeignKey(ImapConnection, on_delete=models.CASCADE, related_name="folders")
     folder_name = models.CharField(max_length=200)
 
     def __str__(self) -> str:

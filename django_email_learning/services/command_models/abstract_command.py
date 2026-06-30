@@ -1,6 +1,7 @@
-from abc import ABC, abstractmethod
-from pydantic import BaseModel
 import logging
+from abc import ABC, abstractmethod
+
+from pydantic import BaseModel
 
 
 class AbstractCommand(ABC, BaseModel):

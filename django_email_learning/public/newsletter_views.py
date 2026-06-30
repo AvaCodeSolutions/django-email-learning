@@ -10,9 +10,7 @@ from django_email_learning.models import NewsletterSubscriber
 class NewsletterUnsubscribeView(View):
     def get(self, request: HttpRequest, token: uuid.UUID) -> HttpResponse:
         try:
-            subscriber = NewsletterSubscriber.objects.select_related("newsletter").get(
-                unsubscribe_token=token
-            )
+            subscriber = NewsletterSubscriber.objects.select_related("newsletter").get(unsubscribe_token=token)
         except NewsletterSubscriber.DoesNotExist:
             return render(
                 request,

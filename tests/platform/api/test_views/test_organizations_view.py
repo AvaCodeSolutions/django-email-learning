@@ -1,8 +1,9 @@
-from django_email_learning.models import Organization
-from django.test import override_settings
-from django.core.files.storage import default_storage
-from django.urls import reverse
 import pytest
+from django.core.files.storage import default_storage
+from django.test import override_settings
+from django.urls import reverse
+
+from django_email_learning.models import Organization
 
 
 def get_url() -> str:
@@ -29,9 +30,7 @@ def test_get_organizations_view_as_superadmin(superadmin_client):
     assert len(response.json().get("organizations")) == 2
 
 
-@pytest.mark.parametrize(
-    "client", ["viewer", "editor", "platform_admin"], indirect=True
-)
+@pytest.mark.parametrize("client", ["viewer", "editor", "platform_admin"], indirect=True)
 def test_get_organizations_view_as_organization_user(client):
     response = client.get(get_url())
     assert response.status_code == 200
@@ -52,9 +51,7 @@ def test_post_organizations_view_as_superadmin(superadmin_client):
         "linkedin_page": "https://www.linkedin.com/company/new-org",
         "youtube_channel": "https://www.youtube.com/@new-org",
     }
-    response = superadmin_client.post(
-        get_url(), data=payload, content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(), data=payload, content_type="application/json")
     assert response.status_code == 201
     assert response.json().get("name") == "New Org"
     assert response.json().get("website") == payload["website"]
@@ -65,9 +62,7 @@ def test_post_organizations_view_as_superadmin(superadmin_client):
 def test_post_organizations_view_optional_social_fields(superadmin_client):
     payload = {"name": "Optional Org", "description": "Optional fields omitted"}
 
-    response = superadmin_client.post(
-        get_url(), data=payload, content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(), data=payload, content_type="application/json")
 
     assert response.status_code == 201
     assert response.json().get("website") is None
@@ -82,27 +77,21 @@ def test_post_organizations_view_optional_social_fields(superadmin_client):
 
 @pytest.fixture
 def existing_logo_path():
-    with override_settings(
-        STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}}
-    ):
+    with override_settings(STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}}):
         logo_path = "test_logo.png"
         with default_storage.open(logo_path, "w") as f:
             f.write("dummy image content")
         yield logo_path
 
 
-def test_create_organization_for_existing_logo_file(
-    superadmin_client, existing_logo_path
-):
+def test_create_organization_for_existing_logo_file(superadmin_client, existing_logo_path):
     # Create a dummy logo file in the default storage
     payload = {
         "name": "OrgName",
         "description": "Organization with existing logo file",
         "logo": existing_logo_path,
     }
-    response = superadmin_client.post(
-        get_url(), data=payload, content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(), data=payload, content_type="application/json")
     assert response.status_code == 201
     assert response.json().get("name") == "OrgName"
     assert response.json().get("logo").endswith(f"/{existing_logo_path}")
@@ -117,9 +106,7 @@ def test_post_organizations_view_as_organization_user(client):
 
 def test_post_organizations_view_as_anonymous(anonymous_client):
     payload = {"name": "Anonymous Org", "description": "Should not be created"}
-    response = anonymous_client.post(
-        get_url(), data=payload, content_type="application/json"
-    )
+    response = anonymous_client.post(get_url(), data=payload, content_type="application/json")
     assert response.status_code == 401
 
 
@@ -139,9 +126,7 @@ def test_update_organizations_view(superadmin_client, existing_logo_path):
         "linkedin_page": "https://www.linkedin.com/company/updated-org",
         "youtube_channel": "https://www.youtube.com/@updated-org",
     }
-    response = superadmin_client.post(
-        update_url(organization.id), data=payload, content_type="application/json"
-    )
+    response = superadmin_client.post(update_url(organization.id), data=payload, content_type="application/json")
     assert response.status_code == 200
 
     assert response.json().get("name") == "Updated Org"
@@ -170,9 +155,7 @@ def test_update_organizations_view_optional_social_fields(superadmin_client):
         "description": "Updated without changing social links",
     }
 
-    response = superadmin_client.post(
-        update_url(organization.id), data=payload, content_type="application/json"
-    )
+    response = superadmin_client.post(update_url(organization.id), data=payload, content_type="application/json")
 
     assert response.status_code == 200
     assert response.json().get("website") == organization.website
@@ -194,16 +177,12 @@ def test_edit_organization_forbidden_for_non_admin_roles(client):
 
 def test_edit_organization_allowed_for_org_admin(org_admin_client):
     payload = {"name": "Org Admin Updated", "description": "Updated by org admin"}
-    response = org_admin_client.post(
-        update_url(1), data=payload, content_type="application/json"
-    )
+    response = org_admin_client.post(update_url(1), data=payload, content_type="application/json")
     assert response.status_code == 200
     assert response.json().get("name") == "Org Admin Updated"
 
 
-def test_edit_organization_forbidden_for_org_admin_of_different_org(
-    org_admin_client, second_organization
-):
+def test_edit_organization_forbidden_for_org_admin_of_different_org(org_admin_client, second_organization):
     payload = {"name": "Should Fail", "description": "Wrong org"}
     response = org_admin_client.post(
         update_url(second_organization.id),
@@ -233,9 +212,7 @@ def test_create_private_organization(superadmin_client):
         "description": "This organization is private",
         "is_public": False,
     }
-    response = superadmin_client.post(
-        get_url(), data=payload, content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(), data=payload, content_type="application/json")
     assert response.status_code == 201
     assert response.json().get("is_public") is False
 
@@ -248,9 +225,7 @@ def test_update_organization_to_private(superadmin_client):
         "description": organization.description,
         "is_public": False,
     }
-    response = superadmin_client.post(
-        update_url(organization.id), data=payload, content_type="application/json"
-    )
+    response = superadmin_client.post(update_url(organization.id), data=payload, content_type="application/json")
     assert response.status_code == 200
     assert response.json().get("is_public") is False
 

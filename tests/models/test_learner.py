@@ -1,6 +1,7 @@
-from django.core.exceptions import ValidationError
-from django_email_learning.models import Learner
 import pytest
+from django.core.exceptions import ValidationError
+
+from django_email_learning.models import Learner
 
 
 def test_create_learner(db):
@@ -26,12 +27,8 @@ def test_learner_unique_together_email_constraint(db):
     Learner.objects.create(email="user@example.com", organization_id=1)
     with pytest.raises(ValidationError) as exc_info:
         Learner.objects.create(email="USER@EXAMPLE.COM", organization_id=1)
-    assert "Learner with this Organization and Email already exists." in str(
-        exc_info.value
-    )
-    learner_count = Learner.objects.filter(
-        email__iexact="user@example.com", organization_id=1
-    ).count()
+    assert "Learner with this Organization and Email already exists." in str(exc_info.value)
+    learner_count = Learner.objects.filter(email__iexact="user@example.com", organization_id=1).count()
     assert learner_count == 1
 
 

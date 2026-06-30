@@ -1,14 +1,12 @@
 from django.urls import reverse
+
 from django_email_learning.models import ContentDelivery
 from django_email_learning.services import jwt_service
-
 
 URL = reverse("django_email_learning:personalised:assignment_public_view")
 
 
-def test_assignment_public_view_valid_token(
-    active_enrollment, course_assignment_content, anonymous_client
-):
+def test_assignment_public_view_valid_token(active_enrollment, course_assignment_content, anonymous_client):
     course_assignment_content.is_published = True
     course_assignment_content.save()
 

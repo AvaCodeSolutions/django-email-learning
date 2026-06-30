@@ -1,21 +1,23 @@
 import logging
+from typing import Any, Dict
+
 from django.apps import apps
+from django.conf import settings
 from django.conf.global_settings import LANGUAGES
-from django.views.generic import TemplateView
-from django.utils.translation import get_language_info, get_language
 from django.contrib.auth.decorators import login_required
-from django.utils.decorators import method_decorator
-from django.utils.translation import gettext as _
 from django.urls import reverse
+from django.utils.decorators import method_decorator
+from django.utils.translation import get_language, get_language_info, gettext as _
+from django.views.generic import TemplateView
+
 from django_email_learning.models import (
     Organization,
     OrganizationUser,
 )
-from django_email_learning.services import jwt_service  # noqa: F401 — re-exported for views that import from here
 from django_email_learning.platform.features import PlatformFeature
-from typing import Dict, Any
-from django.conf import settings
-
+from django_email_learning.services import (
+    jwt_service,  # noqa: F401 — re-exported for views that import from here
+)
 
 DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
 AI_CONFIGURATIONS: dict = DJANGO_EMAIL_LEARNING_SETTINGS.get("AI", {})
@@ -50,7 +52,12 @@ class BasePlatformView(TemplateView):
                 "apiBaseUrl": reverse("django_email_learning:api_platform:root")[:-1],
                 "platformBaseUrl": reverse("django_email_learning:platform:root")[:-1],
                 "analyticsBaseUrl": {
-                    "base": f"{reverse('django_email_learning:api_analytics:enrollments_over_time', kwargs={'organization_id': active_organization_id}).rsplit('/enrollments', 1)[0]}",
+                    "base": (
+                        reverse(
+                            "django_email_learning:api_analytics:enrollments_over_time",
+                            kwargs={"organization_id": active_organization_id},
+                        ).rsplit("/enrollments", 1)[0]
+                    ),
                     "orgId": active_organization_id,
                 },
                 "sidebarCustomComponent": {
@@ -122,13 +129,13 @@ class BasePlatformView(TemplateView):
                     "last_run": _("Last Run:"),
                     "never_run": _("This job has never been executed."),
                     "content_delivery_tooltip": _(
-                        "This job should run on a regular schedule to ensure timely content delivery. Configure a cron job or cloud scheduler to execute it at appropriate intervals, such as every five minutes."
+                        "This job should run on a regular schedule to ensure timely content delivery."
+                        " Configure a cron job or cloud scheduler to execute it at appropriate intervals,"
+                        " such as every five minutes."
                     ),
                 }
                 | self.get_locale_messages(),
-                "languageOptions": [
-                    {"value": code, "label": name} for code, name in LANGUAGES
-                ],
+                "languageOptions": [{"value": code, "label": name} for code, name in LANGUAGES],
             },
             "activeOrganizationId": active_organization_id,
             "favicon": DJANGO_EMAIL_LEARNING_SETTINGS.get("FAVICON"),
@@ -138,9 +145,9 @@ class BasePlatformView(TemplateView):
         features: set[PlatformFeature] = {PlatformFeature.CREATE_COURSE}
         if AI_CONFIGURATIONS.get("TEXT_EDITING_MODEL"):
             features.add(PlatformFeature.AI_EDIT)
-        if DJANGO_EMAIL_LEARNING_SETTINGS.get("GOOGLE_OAUTH", {}).get(
-            "CLIENT_ID"
-        ) and apps.is_installed("django_email_learning.oauth_integrations"):
+        if DJANGO_EMAIL_LEARNING_SETTINGS.get("GOOGLE_OAUTH", {}).get("CLIENT_ID") and apps.is_installed(
+            "django_email_learning.oauth_integrations"
+        ):
             features.add(PlatformFeature.GOOGLE_WORKSPACE_ENROLL)
         if getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("NEWSLETTERS"):
             features.add(PlatformFeature.NEWSLETTERS)

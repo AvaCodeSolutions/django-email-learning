@@ -1,5 +1,7 @@
+from typing import Any, Literal, Optional
+
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
-from typing import Optional, Literal, Any
+
 from django_email_learning.models import QuizSelectionStrategy
 
 MIN_QUIZ_DEADLINE = 0  # Allow 0 to indicate no deadline
@@ -29,9 +31,7 @@ class QuestionCreate(BaseModel):
 
     @field_validator("answers")
     @classmethod
-    def at_least_one_correct_answer(
-        cls, answers: list[AnswerCreate]
-    ) -> list[AnswerCreate]:
+    def at_least_one_correct_answer(cls, answers: list[AnswerCreate]) -> list[AnswerCreate]:
         correct_answers = [answer for answer in answers if answer.is_correct]
         if not correct_answers:
             raise ValueError("At least one answer must be marked as correct.")
@@ -51,9 +51,7 @@ class QuestionObject(BaseModel):
 
     @field_serializer("answers")
     def serialize_answers(self, answers: Any) -> list[dict]:
-        return [
-            AnswerObject.model_validate(answer).model_dump() for answer in answers.all()
-        ]
+        return [AnswerObject.model_validate(answer).model_dump() for answer in answers.all()]
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -64,9 +62,7 @@ class UpdateQuiz(BaseModel):
     required_score: Optional[int] = Field(ge=0, examples=[80], default=None)
     selection_strategy: Optional[QuizSelectionStrategy] = None
     limited_attempts: Optional[bool] = None
-    deadline_days: Optional[int] = Field(
-        ge=MIN_QUIZ_DEADLINE, examples=[14], default=None
-    )
+    deadline_days: Optional[int] = Field(ge=MIN_QUIZ_DEADLINE, examples=[14], default=None)
     is_blocking: Optional[bool] = None
     reminder_interval_days: Optional[int] = Field(default=None, examples=[3])
 
@@ -98,9 +94,6 @@ class QuizResponse(BaseModel):
 
     @field_serializer("questions")
     def serialize_questions(self, questions: Any) -> list[dict]:
-        return [
-            QuestionObject.model_validate(question).model_dump()
-            for question in questions.all()
-        ]
+        return [QuestionObject.model_validate(question).model_dump() for question in questions.all()]
 
     model_config = ConfigDict(from_attributes=True)

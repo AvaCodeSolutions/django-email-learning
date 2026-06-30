@@ -1,21 +1,24 @@
-import logging
 import base64
+import logging
 from typing import TYPE_CHECKING
+
+from django.conf import settings
 
 from django_email_learning.oauth_integrations.models import Session
 from django_email_learning.services.jwt_service import decode_jwt
+
 from .base_group_enrollment_handler import BaseGroupEnrollmentHandler, Group, User
-from django.conf import settings
 
 if TYPE_CHECKING:
     from google_auth_oauthlib.flow import Flow  # type: ignore
-from django.urls import reverse
-from django.utils import timezone
+import json
+from typing import Literal
+from urllib import error, parse, request as urlrequest
+
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
-from urllib import error, parse, request as urlrequest
-from typing import Literal
-import json
+from django.urls import reverse
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -38,12 +41,8 @@ class GoogleGroupEnrollmentHandler(BaseGroupEnrollmentHandler):
         flow = Flow.from_client_config(
             client_config={
                 "web": {
-                    "client_id": DJANGO_EMAIL_LEARNING_SETTINGS.get(
-                        "GOOGLE_OAUTH", {}
-                    ).get("CLIENT_ID"),
-                    "client_secret": DJANGO_EMAIL_LEARNING_SETTINGS.get(
-                        "GOOGLE_OAUTH", {}
-                    ).get("CLIENT_SECRET"),
+                    "client_id": DJANGO_EMAIL_LEARNING_SETTINGS.get("GOOGLE_OAUTH", {}).get("CLIENT_ID"),
+                    "client_secret": DJANGO_EMAIL_LEARNING_SETTINGS.get("GOOGLE_OAUTH", {}).get("CLIENT_SECRET"),
                     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
                     "token_uri": "https://oauth2.googleapis.com/token",
                 }
@@ -54,9 +53,9 @@ class GoogleGroupEnrollmentHandler(BaseGroupEnrollmentHandler):
             ],
             state=self.state,
         )
-        flow.redirect_uri = DJANGO_EMAIL_LEARNING_SETTINGS.get(
-            "SITE_BASE_URL", "http://localhost:8000"
-        ) + reverse("django_email_learning:oauth_integrations:redirect_view")
+        flow.redirect_uri = DJANGO_EMAIL_LEARNING_SETTINGS.get("SITE_BASE_URL", "http://localhost:8000") + reverse(
+            "django_email_learning:oauth_integrations:redirect_view"
+        )
         return flow
 
     def get_authorization_url(self, state: str) -> str:
@@ -73,13 +72,9 @@ class GoogleGroupEnrollmentHandler(BaseGroupEnrollmentHandler):
 
     def handle_redirect(self) -> str:
         if not self.code or not self.state:
-            raise ValueError(
-                "Authorization code and state are required to enroll from Google Directory"
-            )
+            raise ValueError("Authorization code and state are required to enroll from Google Directory")
         if not self.code_verifier:
-            raise ValueError(
-                "Code verifier is required to enroll from Google Directory"
-            )
+            raise ValueError("Code verifier is required to enroll from Google Directory")
 
         flow = self._build_flow()
         flow.code_verifier = self.code_verifier
@@ -99,14 +94,10 @@ class GoogleGroupEnrollmentHandler(BaseGroupEnrollmentHandler):
         if not session:
             raise ValueError("Session not found for state: {}".format(self.state))
         if not session.access_token:
-            raise ValueError(
-                "Access token not found in session for state: {}".format(self.state)
-            )
+            raise ValueError("Access token not found in session for state: {}".format(self.state))
 
         access_token = decode_jwt(session.access_token)["access_token"]
-        url = (
-            "https://www.googleapis.com/admin/directory/v1/groups?customer=my_customer"
-        )
+        url = "https://www.googleapis.com/admin/directory/v1/groups?customer=my_customer"
         req = urlrequest.Request(
             url,
             headers={
@@ -134,9 +125,7 @@ class GoogleGroupEnrollmentHandler(BaseGroupEnrollmentHandler):
             raise ValueError(f"Session not found for state: {session_id}")
 
         if not session.access_token:
-            raise ValueError(
-                f"Access token not found in session for state: {session_id}"
-            )
+            raise ValueError(f"Access token not found in session for state: {session_id}")
 
         access_token = decode_jwt(session.access_token)["access_token"]
 
@@ -178,16 +167,11 @@ class GoogleGroupEnrollmentHandler(BaseGroupEnrollmentHandler):
                     with urlrequest.urlopen(req) as response:
                         payload = json.loads(response.read().decode("utf-8"))
                 except error.HTTPError as e:
-                    raise ValueError(
-                        f"Google Directory API request failed {e.code}: {e.reason}"
-                    )
+                    raise ValueError(f"Google Directory API request failed {e.code}: {e.reason}")
 
                 members = payload.get("members", [])
                 for member in members:
-                    if (
-                        member.get("type") == "USER"
-                        and member.get("status") == "ACTIVE"
-                    ):
+                    if member.get("type") == "USER" and member.get("status") == "ACTIVE":
                         user_ids.add(member["id"])
                 page_token = payload.get("nextPageToken")
                 if not page_token:
@@ -240,16 +224,12 @@ class GoogleGroupEnrollmentHandler(BaseGroupEnrollmentHandler):
         return user_ids
 
     def _get_user(self, user_id: str) -> User | None:
-        user_endpoint = (
-            f"https://admin.googleapis.com/admin/directory/v1/users/{user_id}"
-        )
+        user_endpoint = f"https://admin.googleapis.com/admin/directory/v1/users/{user_id}"
         session = Session.objects.get(session_id=self.state)
         if not session:
             raise ValueError(f"Session not found for state: {self.state}")
         if not session.access_token:
-            raise ValueError(
-                f"Access token not found in session for state: {self.state}"
-            )
+            raise ValueError(f"Access token not found in session for state: {self.state}")
         req = urlrequest.Request(
             user_endpoint,
             headers={
@@ -294,8 +274,6 @@ class GoogleGroupEnrollmentHandler(BaseGroupEnrollmentHandler):
                     logger.debug(file_path)
                     return User(email=email, photo_path=file_path)
         except error.HTTPError:
-            logging.warning(
-                f"Failed to retrieve photo for user {email} with id {user_id}"
-            )
+            logging.warning(f"Failed to retrieve photo for user {email} with id {user_id}")
 
         return User(email=email, photo_path=None)

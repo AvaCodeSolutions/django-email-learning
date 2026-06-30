@@ -105,21 +105,13 @@ class FullLearnerJourneyTest(TransactionTestCase):
         # 3. Run the delivery job - should send the lesson and schedule the quiz
         DeliverContentsJob().run()
 
-        lesson_delivery = enrollment.content_deliveries.get(
-            course_content=self.lesson_content
-        )
+        lesson_delivery = enrollment.content_deliveries.get(course_content=self.lesson_content)
         self.assertEqual(lesson_delivery.times_delivered, 1)
-        self.assertTrue(
-            enrollment.content_deliveries.filter(
-                course_content=self.quiz_content
-            ).exists()
-        )
+        self.assertTrue(enrollment.content_deliveries.filter(course_content=self.quiz_content).exists())
 
         # 4. Run the job again - should send the quiz
         DeliverContentsJob().run()
-        quiz_delivery = enrollment.content_deliveries.get(
-            course_content=self.quiz_content
-        )
+        quiz_delivery = enrollment.content_deliveries.get(course_content=self.quiz_content)
         self.assertEqual(quiz_delivery.times_delivered, 1)
         self.assertIsNotNone(quiz_delivery.link)
 
@@ -138,9 +130,7 @@ class FullLearnerJourneyTest(TransactionTestCase):
                 "answers": [
                     {
                         "id": self.question.id,
-                        "answers": [
-                            a.id for a in self.question.answers.filter(is_correct=True)
-                        ],
+                        "answers": [a.id for a in self.question.answers.filter(is_correct=True)],
                     }
                     for qid in question_ids
                     if qid == self.question.id
@@ -158,9 +148,7 @@ class FullLearnerJourneyTest(TransactionTestCase):
         self.assertIsNotNone(enrollment.final_state_at)
 
         # 7. Certificate form email should have been sent via the on_commit hook
-        certificate_emails = [
-            m for m in mail.outbox if "certificate" in m.subject.lower()
-        ]
+        certificate_emails = [m for m in mail.outbox if "certificate" in m.subject.lower()]
         self.assertEqual(
             len(certificate_emails),
             1,
@@ -226,9 +214,7 @@ class NonBlockingAssignmentAsLastContentTest(TransactionTestCase):
         # Deliver the only (non-blocking) assignment - the last content in the course
         DeliverContentsJob().run()
 
-        delivery = enrollment.content_deliveries.get(
-            course_content=self.assignment_content
-        )
+        delivery = enrollment.content_deliveries.get(course_content=self.assignment_content)
         self.assertEqual(delivery.times_delivered, 1)
 
         enrollment.refresh_from_db()

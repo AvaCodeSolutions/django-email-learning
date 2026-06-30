@@ -1,5 +1,6 @@
-from django_email_learning.personalised.api.serializers import QuizSubmissionRequest
 import pytest
+
+from django_email_learning.personalised.api.serializers import QuizSubmissionRequest
 
 
 def test_quiz_submission_request_serializer_fields():

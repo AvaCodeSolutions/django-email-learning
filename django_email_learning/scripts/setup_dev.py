@@ -18,7 +18,6 @@ import time
 import venv
 from pathlib import Path
 
-
 # ── colours ──────────────────────────────────────────────────────────────────
 
 BOLD = "\033[1m"
@@ -148,10 +147,7 @@ def step_project_name() -> tuple[str, str]:
     name = re.sub(r"[^a-z0-9_]", "", name) or "myproject"
     success(f"Project name: {name}")
 
-    prefix = (
-        ask("  URL prefix for django-email-learning (default: email-learning): ")
-        or "email-learning"
-    )
+    prefix = ask("  URL prefix for django-email-learning (default: email-learning): ") or "email-learning"
     # strip leading/trailing slashes
     prefix = prefix.strip("/")
     success(f"URL prefix: /{prefix}/")
@@ -161,28 +157,19 @@ def step_project_name() -> tuple[str, str]:
 def step_choose_features(url_prefix: str) -> tuple[bool, bool]:
     header("3/7  Optional features")
 
-    print(
-        "  AI text-editing lets instructors improve lesson content with AI assistance."
-    )
+    print("  AI text-editing lets instructors improve lesson content with AI assistance.")
     print(f"  {CYAN}▸ Requires an OpenAI account and API key:{RESET}")
     print(f"  {CYAN}  https://platform.openai.com/api-keys{RESET}")
     enable_ai = ask("  Enable AI text-editing features? (y/N) ").lower() == "y"
 
     print()
-    print(
-        "  Google Workspace group enrollment lets you bulk-enrol learners from a\n"
-        "  Google Workspace directory."
-    )
-    print(
-        f"  {CYAN}▸ Requires a GCP project with an OAuth 2.0 Web Application credential.{RESET}"
-    )
+    print("  Google Workspace group enrollment lets you bulk-enrol learners from a\n  Google Workspace directory.")
+    print(f"  {CYAN}▸ Requires a GCP project with an OAuth 2.0 Web Application credential.{RESET}")
     print(f"  {CYAN}  Set the authorised redirect URI to:{RESET}")
     print(f"  {CYAN}    http://localhost:8000/{url_prefix}/oauth/redirect/{RESET}")
     print(f"  {CYAN}  Then copy the Client ID and Secret from:{RESET}")
     print(f"  {CYAN}  https://console.cloud.google.com/apis/credentials{RESET}")
-    enable_google = (
-        ask("  Enable Google Workspace group enrollment? (y/N) ").lower() == "y"
-    )
+    enable_google = ask("  Enable Google Workspace group enrollment? (y/N) ").lower() == "y"
     return enable_ai, enable_google
 
 
@@ -195,9 +182,7 @@ def step_install(python: str, enable_ai: bool, enable_google: bool) -> None:
         run(pip + ["django"])
     success("🦄 Django installed")
 
-    extras = ",".join(
-        filter(None, ["ai" if enable_ai else "", "google" if enable_google else ""])
-    )
+    extras = ",".join(filter(None, ["ai" if enable_ai else "", "google" if enable_google else ""]))
     package = f"django-email-learning[{extras}]" if extras else "django-email-learning"
     emoji = "🚀" if extras else "🦄"
 
@@ -620,15 +605,9 @@ DJANGO_EMAIL_LEARNING = {{
 
 def print_done(project_name: str, url_prefix: str) -> None:
     print()
-    print(
-        f"{GREEN}{BOLD}╔══════════════════════════════════════════════════════════════╗{RESET}"
-    )
-    print(
-        f"{GREEN}{BOLD}║     🎉  django-email-learning is ready!                     ║{RESET}"
-    )
-    print(
-        f"{GREEN}{BOLD}╚══════════════════════════════════════════════════════════════╝{RESET}"
-    )
+    print(f"{GREEN}{BOLD}╔══════════════════════════════════════════════════════════════╗{RESET}")
+    print(f"{GREEN}{BOLD}║     🎉  django-email-learning is ready!                     ║{RESET}")
+    print(f"{GREEN}{BOLD}╚══════════════════════════════════════════════════════════════╝{RESET}")
     print()
     print(f"  Project: {BOLD}{project_name}{RESET}")
     print()
@@ -643,25 +622,15 @@ def print_done(project_name: str, url_prefix: str) -> None:
     print("    • Admin:      http://localhost:8000/admin/")
     print("    • Login:      http://localhost:8000/accounts/login/")
     print()
-    print(
-        f"  {YELLOW}⚠  Email backend is set to Console — no emails will be sent.{RESET}"
-    )
-    print(
-        f"  {YELLOW}   Emails will appear in this terminal instead of in an inbox.{RESET}"
-    )
-    print(
-        f"  {YELLOW}   To test with real emails in dev, configure an SMTP backend or{RESET}"
-    )
-    print(
-        f"  {YELLOW}   a service like Mailpit, Mailtrap, or SendGrid's sandbox mode.{RESET}"
-    )
+    print(f"  {YELLOW}⚠  Email backend is set to Console — no emails will be sent.{RESET}")
+    print(f"  {YELLOW}   Emails will appear in this terminal instead of in an inbox.{RESET}")
+    print(f"  {YELLOW}   To test with real emails in dev, configure an SMTP backend or{RESET}")
+    print(f"  {YELLOW}   a service like Mailpit, Mailtrap, or SendGrid's sandbox mode.{RESET}")
     print()
     print("  These are development defaults only. Before going to production,")
     print("  review the full installation guide for configuration options:")
     print()
-    print(
-        f"  {CYAN}📖 https://django-email-learning.readthedocs.io/en/latest/installation.html{RESET}"
-    )
+    print(f"  {CYAN}📖 https://django-email-learning.readthedocs.io/en/latest/installation.html{RESET}")
     print()
     print("  To start the dev server:")
     print(f"  {BOLD}  source .venv/bin/activate{RESET}")
@@ -675,12 +644,8 @@ def print_done(project_name: str, url_prefix: str) -> None:
 def main() -> None:
     global QUIET  # noqa: PLW0603
 
-    parser = argparse.ArgumentParser(
-        description="Bootstrap a django-email-learning dev project"
-    )
-    parser.add_argument(
-        "-q", "--quiet", action="store_true", help="Suppress decorative output (for CI)"
-    )
+    parser = argparse.ArgumentParser(description="Bootstrap a django-email-learning dev project")
+    parser.add_argument("-q", "--quiet", action="store_true", help="Suppress decorative output (for CI)")
     args = parser.parse_args()
     QUIET = args.quiet
 

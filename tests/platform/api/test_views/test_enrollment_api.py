@@ -1,4 +1,5 @@
 from django.urls import reverse
+
 from django_email_learning.models import EnrollmentStatus
 
 
@@ -36,18 +37,9 @@ def test_enrollment_api_expected_payload(viewer_client, content_delivery):
         if event["type"] == "content_sent":
             assert "event_data" in event
             content_sent_event_found = True
-            assert (
-                event["event_data"]["course_content_id"]
-                == content_delivery.course_content.id
-            )
-            assert (
-                event["event_data"]["course_content_title"]
-                == content_delivery.course_content.title
-            )
-            assert (
-                event["event_data"]["course_content_type"]
-                == content_delivery.course_content.type
-            )
+            assert event["event_data"]["course_content_id"] == content_delivery.course_content.id
+            assert event["event_data"]["course_content_title"] == content_delivery.course_content.title
+            assert event["event_data"]["course_content_type"] == content_delivery.course_content.type
 
     assert content_sent_event_found
 
@@ -69,13 +61,6 @@ def test_enrollment_api_email_opened_event(viewer_client, content_delivery):
     response = viewer_client.get(url)
     assert response.status_code == 200
     data = response.json()
-    email_opened_event = next(
-        (e for e in data["events"] if e["type"] == "email_opened"), None
-    )
-    assert (
-        email_opened_event is not None
-    ), f"email_opened event not found in {[e['type'] for e in data['events']]}"
-    assert (
-        email_opened_event["event_data"]["course_content_id"]
-        == content_delivery.course_content.id
-    )
+    email_opened_event = next((e for e in data["events"] if e["type"] == "email_opened"), None)
+    assert email_opened_event is not None, f"email_opened event not found in {[e['type'] for e in data['events']]}"
+    assert email_opened_event["event_data"]["course_content_id"] == content_delivery.course_content.id

@@ -1,9 +1,11 @@
-from django.core.management.base import BaseCommand, CommandParser, OutputWrapper
+import logging
 from typing import Any
+
+from django.core.management.base import BaseCommand, CommandParser, OutputWrapper
 from django.db import transaction
+
 from django_email_learning.models import ApiKey, ImapConnection
 from django_email_learning.models.mixin_models import EncryptionMixin
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +29,7 @@ def _re_encrypt(
         try:
             # Decrypt with old key
             import base64
+
             from cryptography.fernet import Fernet
             from cryptography.hazmat.primitives import hashes
             from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -41,27 +44,16 @@ def _re_encrypt(
                 key = base64.urlsafe_b64encode(kdf.derive(secret.encode()))
                 return Fernet(key)
 
-            plaintext = (
-                _fernet(old_secret, obj.salt).decrypt(encrypted.encode()).decode()
-            )
-            new_encrypted = (
-                _fernet(new_secret, obj.salt).encrypt(plaintext.encode()).decode()
-            )
+            plaintext = _fernet(old_secret, obj.salt).decrypt(encrypted.encode()).decode()
+            new_encrypted = _fernet(new_secret, obj.salt).encrypt(plaintext.encode()).decode()
 
             if not dry_run:
                 model_class.objects.filter(pk=obj.pk).update(**{field: new_encrypted})  # type: ignore[attr-defined]
 
             updated += 1
-            stdout.write(
-                f"  {'[dry-run] ' if dry_run else ''}Re-encrypted {model_class.__name__} "
-                f"pk={obj.pk}"
-            )
+            stdout.write(f"  {'[dry-run] ' if dry_run else ''}Re-encrypted {model_class.__name__} pk={obj.pk}")
         except Exception as e:
-            stdout.write(
-                style.ERROR(
-                    f"  Failed to re-encrypt {model_class.__name__} pk={obj.pk}: {e}"
-                )
-            )
+            stdout.write(style.ERROR(f"  Failed to re-encrypt {model_class.__name__} pk={obj.pk}: {e}"))
             raise
 
     return updated
@@ -97,22 +89,12 @@ class Command(BaseCommand):
         dry_run: bool = options["dry_run"]
 
         if old_key == new_key:
-            self.stdout.write(
-                self.style.WARNING("Old and new keys are identical — nothing to do.")
-            )
+            self.stdout.write(self.style.WARNING("Old and new keys are identical — nothing to do."))
             return
 
-        self.stdout.write(
-            self.style.WARNING(
-                "WARNING: Ensure you have a database backup before proceeding."
-            )
-        )
+        self.stdout.write(self.style.WARNING("WARNING: Ensure you have a database backup before proceeding."))
         if dry_run:
-            self.stdout.write(
-                self.style.WARNING(
-                    "Running in DRY-RUN mode — no changes will be written."
-                )
-            )
+            self.stdout.write(self.style.WARNING("Running in DRY-RUN mode — no changes will be written."))
 
         # Models and their encrypted field
         targets: list[tuple[type[EncryptionMixin], str]] = [
@@ -142,9 +124,7 @@ class Command(BaseCommand):
 
         except _DryRunRollback:
             self.stdout.write(
-                self.style.WARNING(
-                    f"\nDry run complete. {total} record(s) would be updated. No changes written."
-                )
+                self.style.WARNING(f"\nDry run complete. {total} record(s) would be updated. No changes written.")
             )
             return
 

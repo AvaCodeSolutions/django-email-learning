@@ -1,8 +1,8 @@
-from django.core.management.base import BaseCommand
-from django_email_learning.jobs.send_reminders_job import SendRemindersJob
-from django.core.management.base import CommandParser
 import logging
 
+from django.core.management.base import BaseCommand, CommandParser
+
+from django_email_learning.jobs.send_reminders_job import SendRemindersJob
 from django_email_learning.models import JobName
 from django_email_learning.services.metrics_service import metric_service
 
@@ -25,9 +25,7 @@ class Command(BaseCommand):
                 format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
             )
         else:
-            logging.basicConfig(
-                level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-            )
+            logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
         logger = logging.getLogger(__name__)
 
@@ -38,15 +36,11 @@ class Command(BaseCommand):
             job = SendRemindersJob()
             job.run()
 
-            self.stdout.write(
-                self.style.SUCCESS("Send reminders job completed successfully")
-            )
+            self.stdout.write(self.style.SUCCESS("Send reminders job completed successfully"))
             logger.info("SendRemindersJob completed successfully")
 
         except KeyboardInterrupt:
-            self.stdout.write(
-                self.style.WARNING("Send reminders job interrupted by user")
-            )
+            self.stdout.write(self.style.WARNING("Send reminders job interrupted by user"))
             logger.warning("SendRemindersJob interrupted by user")
 
         except Exception as e:

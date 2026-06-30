@@ -1,10 +1,12 @@
+from typing import Dict
+
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
-from django_email_learning.models import Newsletter
+
 from django_email_learning.decorators import is_an_organization_member
+from django_email_learning.models import Newsletter
 from django_email_learning.platform.views.base import BasePlatformView
-from typing import Dict
 
 
 @method_decorator(login_required, name="dispatch")
@@ -61,9 +63,7 @@ class NewsletterDetailView(BasePlatformView):
             "uploaded_image_used_in_editor_error": _(
                 "This image is already used in the editor content. Remove it from the content before deleting the file."
             ),
-            "uploaded_image_delete_failed": _(
-                "Failed to delete image file. Please try again."
-            ),
+            "uploaded_image_delete_failed": _("Failed to delete image file. Please try again."),
             "newsletter_subscribers": _("Subscribers"),
         }
 
@@ -82,9 +82,7 @@ class NewsletterSubscribersView(BasePlatformView):
         context["appContext"]["newsletterId"] = newsletter.id
         context["appContext"]["newsletterTitle"] = newsletter.title
         context["appContext"]["organizationId"] = newsletter.organization_id
-        context["page_title"] = _("Subscribers: %(title)s") % {
-            "title": newsletter.title
-        }
+        context["page_title"] = _("Subscribers: %(title)s") % {"title": newsletter.title}
         return context
 
     def get_locale_messages(self) -> Dict[str, str]:
@@ -95,9 +93,7 @@ class NewsletterSubscribersView(BasePlatformView):
             "no_subscribers": _("No subscribers yet."),
             "delete": _("Delete"),
             "confirm_delete": _("Confirm Delete"),
-            "delete_subscriber_warning": _(
-                "Are you sure you want to remove this subscriber?"
-            ),
+            "delete_subscriber_warning": _("Are you sure you want to remove this subscriber?"),
             "cancel": _("Cancel"),
             "export_csv": _("Export CSV"),
             "actions": _("Actions"),

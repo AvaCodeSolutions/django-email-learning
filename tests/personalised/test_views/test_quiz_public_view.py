@@ -1,6 +1,6 @@
-from django_email_learning.services import jwt_service
 from django.urls import reverse
 
+from django_email_learning.services import jwt_service
 
 URL = reverse("django_email_learning:personalised:quiz_public_view")
 
@@ -27,9 +27,7 @@ def test_quiz_public_view_invalid_token(anonymous_client):
     assert "The link is not valid" in response.content.decode()
 
 
-def test_can_be_submited_multiple_times_if_not_passed_and_attempts_not_limited(
-    content_delivery, anonymous_client
-):
+def test_can_be_submited_multiple_times_if_not_passed_and_attempts_not_limited(content_delivery, anonymous_client):
     quiz = content_delivery.course_content.quiz
     quiz.limited_attempts = False
     quiz.save()
@@ -58,9 +56,7 @@ def test_can_be_submited_multiple_times_if_not_passed_and_attempts_not_limited(
     assert response.status_code == 200
 
 
-def test_cannot_be_submited_multiple_times_if_passed_and_attempts_not_limited(
-    content_delivery, anonymous_client
-):
+def test_cannot_be_submited_multiple_times_if_passed_and_attempts_not_limited(content_delivery, anonymous_client):
     quiz = content_delivery.course_content.quiz
     quiz.limited_attempts = False
     quiz.required_score = 0  # Set required score to 0 to ensure passing

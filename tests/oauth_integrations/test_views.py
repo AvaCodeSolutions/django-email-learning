@@ -1,15 +1,15 @@
 import json
 from unittest.mock import patch
 
+import pytest
 from django.urls import reverse
-from django_email_learning.services import jwt_service
 
-from django_email_learning.oauth_integrations.models import Session, SessionState
 from django_email_learning.oauth_integrations.group_enrollment.base_group_enrollment_handler import (
     Group,
     User,
 )
-import pytest
+from django_email_learning.oauth_integrations.models import Session, SessionState
+from django_email_learning.services import jwt_service
 
 SESSIONS_URL = reverse("django_email_learning:oauth_integrations:sessions_view")
 REDIRECT_URL = reverse("django_email_learning:oauth_integrations:redirect_view")
@@ -66,9 +66,7 @@ def test_create_session_unauthorized(anonymous_client, course):
     assert response.json() == {"error": "Unauthorized"}
 
 
-@pytest.mark.parametrize(
-    "client", ["editor", "viewer", "instructor"], indirect=["client"]
-)
+@pytest.mark.parametrize("client", ["editor", "viewer", "instructor"], indirect=["client"])
 def test_create_session_forbidden_for_editor(client, course):
     response = client.post(
         SESSIONS_URL,
@@ -156,13 +154,9 @@ def test_redirect_missing_code_sets_failed_state(db, anonymous_client):
     assert "Missing code parameter." in response.content.decode()
 
 
-def test_redirect_success_completes_session_and_executes_command(
-    anonymous_client, course
-):
+def test_redirect_success_completes_session_and_executes_command(anonymous_client, course):
     session_id = "test-session-id"
-    session = Session.objects.create(
-        session_id=session_id, jwt_token=get_jwt(state=session_id)
-    )
+    session = Session.objects.create(session_id=session_id, jwt_token=get_jwt(state=session_id))
     decoded_request = {
         "provider_and_purpose": "google_group_enrollment",
         "course_id": course.id,
@@ -178,9 +172,7 @@ def test_redirect_success_completes_session_and_executes_command(
         ) as mocked_handle,
     ):
         mocked_handle.return_value = "test-access-token"
-        response = anonymous_client.get(
-            f"{REDIRECT_URL}?state={session.session_id}&code=test-code"
-        )
+        response = anonymous_client.get(f"{REDIRECT_URL}?state={session.session_id}&code=test-code")
 
     session.refresh_from_db()
     assert response.status_code == 200
@@ -199,9 +191,7 @@ def test_redirect_invalid_token_marks_failed(db, anonymous_client):
         "django_email_learning.oauth_integrations.views.decode_jwt",
         side_effect=Exception("bad token"),
     ):
-        response = anonymous_client.get(
-            f"{REDIRECT_URL}?state={session.session_id}&code=test-code"
-        )
+        response = anonymous_client.get(f"{REDIRECT_URL}?state={session.session_id}&code=test-code")
 
     session.refresh_from_db()
     assert response.status_code == 400
@@ -288,9 +278,7 @@ def test_enroll_users_unauthorized(db, anonymous_client):
     assert response.json() == {"error": "Unauthorized"}
 
 
-@pytest.mark.parametrize(
-    "client", ["editor", "viewer", "instructor"], indirect=["client"]
-)
+@pytest.mark.parametrize("client", ["editor", "viewer", "instructor"], indirect=["client"])
 def test_enroll_users_forbidden_for_editor(db, client):
     response = client.post(
         oauth_enroll_users_url("any-session"),
@@ -336,12 +324,8 @@ def test_enroll_users_success(db, org_admin_client, course):
             "django_email_learning.oauth_integrations.group_enrollment.google_group_enrollment_handler.GoogleGroupEnrollmentHandler.get_users_to_enroll",
             return_value=users_to_enroll,
         ),
-        patch(
-            "django_email_learning.platform.api.views.oauth.EnrollCommand"
-        ) as mock_enroll,
-        patch(
-            "django_email_learning.platform.api.views.oauth.VerifyEnrollmentCommand"
-        ) as mock_verify,
+        patch("django_email_learning.platform.api.views.oauth.EnrollCommand") as mock_enroll,
+        patch("django_email_learning.platform.api.views.oauth.VerifyEnrollmentCommand") as mock_verify,
     ):
         mock_enroll.return_value.execute.return_value = None
         mock_verify.return_value.execute.return_value = None

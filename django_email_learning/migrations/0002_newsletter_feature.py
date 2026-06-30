@@ -6,8 +6,9 @@ Combines what was previously 0002_newsletter_models, 0003_sendout_model,
 migration so that new installs only apply one file.
 """
 
-import django.db.models.deletion
 import uuid
+
+import django.db.models.deletion
 from django.db import migrations, models
 
 

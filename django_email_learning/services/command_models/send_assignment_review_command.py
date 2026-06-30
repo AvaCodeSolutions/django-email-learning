@@ -1,15 +1,17 @@
+from typing import Literal, Optional
+
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils.translation import gettext as _
+from pydantic import ConfigDict
+
+from django_email_learning.models import AssignmentSubmission
 from django_email_learning.services.command_models.abstract_command import (
     AbstractCommand,
 )
-from django_email_learning.models import AssignmentSubmission
 from django_email_learning.services.email_sender_service import email_sender_service
 from django_email_learning.services.metrics_service import metric_service
-from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
-from typing import Literal, Optional
-from pydantic import ConfigDict
-from django.utils.translation import gettext as _
-from django.conf import settings
 from django_email_learning.services.utils import mask_email
 
 
@@ -41,35 +43,24 @@ class SendAssignmentReviewCommand(AbstractCommand):
 
         assignment = self.submission.assignment
 
-        if (
-            self.submission.status
-            == AssignmentSubmission.SubmissionStatus.REQUESTING_CHANGES
-        ):
-            subject = _(
-                "Update Required: Feedback on your assignment '{assignment_title}'"
-            ).format(assignment_title=assignment.title)
-            message = _(
-                "Your assignment has been reviewed, but changes are required before it can be approved."
+        if self.submission.status == AssignmentSubmission.SubmissionStatus.REQUESTING_CHANGES:
+            subject = _("Update Required: Feedback on your assignment '{assignment_title}'").format(
+                assignment_title=assignment.title
             )
+            message = _("Your assignment has been reviewed, but changes are required before it can be approved.")
             if feedback:
-                message += _(
-                    " Please see the feedback below for more details and update your submission accordingly."
-                )
+                message += _(" Please see the feedback below for more details and update your submission accordingly.")
             else:
                 message += _(" Please update your submission.")
             change_requested = True
             title_prefix = _("Change Requested")
         elif self.submission.status == AssignmentSubmission.SubmissionStatus.APPROVED:
-            subject = _("Your assignment has been approved").format(
-                assignment_title=assignment.title
-            )
+            subject = _("Your assignment has been approved").format(assignment_title=assignment.title)
             message = _("Your assignment has been reviewed and approved. Great job!")
             change_requested = False
             title_prefix = _("Approved")
         elif self.submission.status == AssignmentSubmission.SubmissionStatus.REJECTED:
-            subject = _("Your assignment has been rejected").format(
-                assignment_title=assignment.title
-            )
+            subject = _("Your assignment has been rejected").format(assignment_title=assignment.title)
             message = _("Your assignment has been reviewed and rejected.")
             if feedback:
                 message += _(" Please see the feedback below for more details.")
@@ -87,12 +78,8 @@ class SendAssignmentReviewCommand(AbstractCommand):
             "title_prefix": title_prefix,
             "feedback": {
                 "provider": {
-                    "name": feedback.provided_by.display_name
-                    if feedback.provided_by.display_name
-                    else _("Instructor"),
-                    "photo": f"{site_base_url}{feedback.provided_by.photo.url}"
-                    if feedback.provided_by.photo
-                    else None,
+                    "name": feedback.provided_by.display_name if feedback.provided_by.display_name else _("Instructor"),
+                    "photo": f"{site_base_url}{feedback.provided_by.photo.url}" if feedback.provided_by.photo else None,
                 }
                 if feedback.provided_by
                 else None,
@@ -112,9 +99,7 @@ class SendAssignmentReviewCommand(AbstractCommand):
             from_email=email_sender_service.from_email,
             to=[email],
         )
-        email_message.attach_alternative(
-            render_to_string("emails/assignment_review.html", context), "text/html"
-        )
+        email_message.attach_alternative(render_to_string("emails/assignment_review.html", context), "text/html")
 
         try:
             email_sender_service.send(email_message)
@@ -125,6 +110,7 @@ class SendAssignmentReviewCommand(AbstractCommand):
             )
         except Exception as e:
             self.logger.error(
-                f"Failed to send assignment review for assignment with ID {assignment.id} to email {mask_email(email)}: {str(e)}"
+                f"Failed to send assignment review for assignment with ID {assignment.id}"
+                f" to email {mask_email(email)}: {str(e)}"
             )
             raise e

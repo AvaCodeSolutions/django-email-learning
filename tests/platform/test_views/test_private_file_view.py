@@ -1,10 +1,11 @@
-import pytest
-from django.urls import reverse
-from django.core.files.base import ContentFile
-from django_email_learning.services import jwt_service
-from django_email_learning.services.utils import PRIVATE_FILE_STORAGE
 import datetime
 
+import pytest
+from django.core.files.base import ContentFile
+from django.urls import reverse
+
+from django_email_learning.services import jwt_service
+from django_email_learning.services.utils import PRIVATE_FILE_STORAGE
 
 URL = reverse("django_email_learning:platform:private_file_view")
 ORG_ID = 1
@@ -83,9 +84,7 @@ def test_editor_and_viewer_cannot_access_private_file(client, stored_file):
     assert response.status_code == 404
 
 
-@pytest.mark.parametrize(
-    "client", ["superadmin", "org_admin", "instructor"], indirect=["client"]
-)
+@pytest.mark.parametrize("client", ["superadmin", "org_admin", "instructor"], indirect=["client"])
 def test_authorised_roles_can_access_private_file(client, stored_file):
     token = make_token()
     response = client.get(URL, {"token": token})

@@ -1,4 +1,5 @@
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
+
 from pydantic import BaseModel
 
 
@@ -31,29 +32,27 @@ class BaseGroupEnrollmentHandler(ABC, BaseModel):
         """
         Handles the OAuth redirect and returns the access_token
         """
-        raise NotImplementedError(
-            "Subclasses must implement the handle_redirect method"
-        )
+        raise NotImplementedError("Subclasses must implement the handle_redirect method")
 
     @abstractmethod
     def get_authorization_url(self, state: str) -> str:
         """
         Returns the authorization URL to redirect the user to for OAuth authentication
         """
-        raise NotImplementedError(
-            "Subclasses must implement the get_authorization_url method"
-        )
+        raise NotImplementedError("Subclasses must implement the get_authorization_url method")
 
     @abstractmethod
     def get_groups(self) -> list[Group] | None:
         """
-        List the groups that exists in an organization. If the external system does not have a concept of groups, return None.
+        List the groups that exists in an organization. If the external system does not have a concept of groups,
+        return None.
         """
         raise NotImplementedError("Subclasses must implement the get_groups method")
 
     @abstractmethod
     def get_users_to_enroll(self, groups: set[str]) -> set[User]:
         """
-        Enrolls the users in the specified course based on the groups they belong to. If groups is None, enroll all users.
+        Enrolls the users in the specified course based on the groups they belong to.
+        If groups is None, enroll all users.
         """
         raise NotImplementedError("Subclasses must implement the enroll_user method")

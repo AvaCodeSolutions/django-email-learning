@@ -1,10 +1,11 @@
+import logging
+
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_migrate
 from django.dispatch import receiver
-from django_email_learning.apps import PLATFORM_ADMIN_GROUP_NAME
 
-import logging
+from django_email_learning.apps import PLATFORM_ADMIN_GROUP_NAME
 
 logger = logging.getLogger(__name__)
 
@@ -14,31 +15,15 @@ def create_platform_admin_group(sender, **kwargs) -> None:  # type: ignore[no-un
     if sender.name != "django_email_learning":
         return
 
-    organization_ct = ContentType.objects.get(
-        app_label="django_email_learning", model="organization"
-    )
-    organization_user_ct = ContentType.objects.get(
-        app_label="django_email_learning", model="organizationuser"
-    )
-    course_ct = ContentType.objects.get(
-        app_label="django_email_learning", model="course"
-    )
-    imap_connection_ct = ContentType.objects.get(
-        app_label="django_email_learning", model="imapconnection"
-    )
-    lesson_ct = ContentType.objects.get(
-        app_label="django_email_learning", model="lesson"
-    )
+    organization_ct = ContentType.objects.get(app_label="django_email_learning", model="organization")
+    organization_user_ct = ContentType.objects.get(app_label="django_email_learning", model="organizationuser")
+    course_ct = ContentType.objects.get(app_label="django_email_learning", model="course")
+    imap_connection_ct = ContentType.objects.get(app_label="django_email_learning", model="imapconnection")
+    lesson_ct = ContentType.objects.get(app_label="django_email_learning", model="lesson")
     quiz_ct = ContentType.objects.get(app_label="django_email_learning", model="quiz")
-    question_ct = ContentType.objects.get(
-        app_label="django_email_learning", model="question"
-    )
-    answer_ct = ContentType.objects.get(
-        app_label="django_email_learning", model="answer"
-    )
-    course_content_ct = ContentType.objects.get(
-        app_label="django_email_learning", model="coursecontent"
-    )
+    question_ct = ContentType.objects.get(app_label="django_email_learning", model="question")
+    answer_ct = ContentType.objects.get(app_label="django_email_learning", model="answer")
+    course_content_ct = ContentType.objects.get(app_label="django_email_learning", model="coursecontent")
 
     perms = Permission.objects.filter(
         content_type__in=[
@@ -83,9 +68,7 @@ def create_platform_admin_group(sender, **kwargs) -> None:  # type: ignore[no-un
         ],
     )
 
-    platform_admin_group, created = Group.objects.get_or_create(
-        name=PLATFORM_ADMIN_GROUP_NAME
-    )
+    platform_admin_group, created = Group.objects.get_or_create(name=PLATFORM_ADMIN_GROUP_NAME)
     platform_admin_group.permissions.set(perms)
     logger.info(f"{PLATFORM_ADMIN_GROUP_NAME} group created.")
 

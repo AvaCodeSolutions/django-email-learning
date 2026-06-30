@@ -36,25 +36,17 @@ logger = logging.getLogger(__name__)
 
 def _get_delivery_workers() -> int:
     """Return the configured number of delivery worker threads (default 1)."""
-    return int(
-        getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("DELIVERY_WORKERS", 1)
-    )
+    return int(getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("DELIVERY_WORKERS", 1))
 
 
 class DeliverContentsJob:
     def __init__(self) -> None:
-        self.delivery_queue: TaskQueueProtocol[
-            DeliverySchedule
-        ] = self.get_delivery_queue()
+        self.delivery_queue: TaskQueueProtocol[DeliverySchedule] = self.get_delivery_queue()
 
     def run(self) -> None:
-        job_execution = JobExecution.start_if_not_running(
-            job_name=JobName.DELIVER_CONTENTS.value
-        )
+        job_execution = JobExecution.start_if_not_running(job_name=JobName.DELIVER_CONTENTS.value)
         if job_execution is None:
-            logger.warning(
-                "Another instance of DeliverContentsJob is already running. Exiting this run."
-            )
+            logger.warning("Another instance of DeliverContentsJob is already running. Exiting this run.")
             return
         self._run_job(job_execution)
 
@@ -130,19 +122,12 @@ class DeliverContentsJob:
             self._block_delivery(delivery_schedule, e)
             raise
 
-    def _block_delivery(
-        self, delivery_schedule: DeliverySchedule, exc: Exception
-    ) -> None:
+    def _block_delivery(self, delivery_schedule: DeliverySchedule, exc: Exception) -> None:
         """Mark a delivery as BLOCKED and emit a metric."""
         delivery_schedule.status = DeliveryStatus.BLOCKED
         delivery_schedule.save()
-        metric_service.delivery_schedule_blocked(
-            delivery_schedule.delivery.course_content.id
-        )
-        logger.exception(
-            f"Error processing delivery schedule {delivery_schedule.id}: {exc}. "
-            "Marking as BLOCKED."
-        )
+        metric_service.delivery_schedule_blocked(delivery_schedule.delivery.course_content.id)
+        logger.exception(f"Error processing delivery schedule {delivery_schedule.id}: {exc}. Marking as BLOCKED.")
 
     # ── queue / delivery logic (unchanged) ──────────────────────────────────
 
@@ -156,9 +141,7 @@ class DeliverContentsJob:
     def process_delivery(self, delivery_schedule: DeliverySchedule) -> None:
         course_content = delivery_schedule.delivery.course_content
         if not course_content.is_published:
-            logger.warning(
-                f"CourseContent {course_content.id} is not published. Canceling the delivery."
-            )
+            logger.warning(f"CourseContent {course_content.id} is not published. Canceling the delivery.")
             delivery_schedule.status = DeliveryStatus.CANCELED
             delivery_schedule.save()
             return
@@ -170,14 +153,11 @@ class DeliverContentsJob:
                     f"Lesson content delivered for DeliverySchedule ID {delivery_schedule.id}. Scheduling next content."
                 )
                 next_delivery = delivery_schedule.delivery.schedule_next_delivery()
+                enrollment_id = delivery_schedule.delivery.enrollment.id
                 if next_delivery:
-                    logger.info(
-                        f"Scheduled next delivery {next_delivery.id} for enrollment {delivery_schedule.delivery.enrollment.id}"
-                    )
+                    logger.info(f"Scheduled next delivery {next_delivery.id} for enrollment {enrollment_id}")
                 else:
-                    logger.info(
-                        f"No more content to schedule for enrollment {delivery_schedule.delivery.enrollment.id}"
-                    )
+                    logger.info(f"No more content to schedule for enrollment {enrollment_id}")
                     delivery_schedule.delivery.enrollment.graduate()
 
         elif course_content.type == CourseContentType.QUIZ:
@@ -190,10 +170,7 @@ class DeliverContentsJob:
                     f"Quiz content delivered for DeliverySchedule ID {delivery_schedule.id}. "
                     "Next content scheduling is deferred until quiz completion."
                 )
-        elif (
-            course_content.type == CourseContentType.ASSIGNMENT
-            and course_content.assignment is not None
-        ):
+        elif course_content.type == CourseContentType.ASSIGNMENT and course_content.assignment is not None:
             is_delivered = self.send_assignment_content(delivery_schedule)
 
             # For assignment we don't schedule next content automatically,
@@ -201,17 +178,15 @@ class DeliverContentsJob:
             if is_delivered:
                 if not course_content.assignment.is_blocking:
                     logger.info(
-                        f"Non-blocking assignment content delivered for DeliverySchedule ID {delivery_schedule.id}. Scheduling next content."
+                        f"Non-blocking assignment content "
+                        f"delivered for DeliverySchedule ID {delivery_schedule.id}. Scheduling next content."
                     )
                     next_delivery = delivery_schedule.delivery.schedule_next_delivery()
+                    enrollment_id = delivery_schedule.delivery.enrollment.id
                     if next_delivery:
-                        logger.info(
-                            f"Scheduled next delivery {next_delivery.id} for enrollment {delivery_schedule.delivery.enrollment.id}"
-                        )
+                        logger.info(f"Scheduled next delivery {next_delivery.id} for enrollment {enrollment_id}")
                     else:
-                        logger.info(
-                            f"No more content to schedule for enrollment {delivery_schedule.delivery.enrollment.id}"
-                        )
+                        logger.info(f"No more content to schedule for enrollment {enrollment_id}")
                         delivery_schedule.delivery.enrollment.graduate()
 
     def send_lesson_content(self, delivery_schedule: DeliverySchedule) -> bool:
@@ -235,14 +210,13 @@ class DeliverContentsJob:
 
         except LessonNotFoundError:
             logger.error(
-                f"Lesson with ID {delivery_schedule.delivery.course_content.lesson.id} not found. Canceling the delivery."
+                f"Lesson with ID {delivery_schedule.delivery.course_content.lesson.id} not found. "
+                f"Canceling the delivery."
             )
             delivery_schedule.status = DeliveryStatus.CANCELED
             delivery_schedule.save()
         except Exception as e:
-            logger.exception(
-                f"Failed to send lesson content for DeliverySchedule ID {delivery_schedule.id}: {str(e)}"
-            )
+            logger.exception(f"Failed to send lesson content for DeliverySchedule ID {delivery_schedule.id}: {str(e)}")
             self.handle_failed_delivery(delivery_schedule)
         return False
 
@@ -250,9 +224,7 @@ class DeliverContentsJob:
         if not delivery_schedule.delivery.course_content.quiz:
             delivery_schedule.status = DeliveryStatus.CANCELED
             delivery_schedule.save()
-            logger.error(
-                f"DeliverySchedule ID {delivery_schedule.id} has no associated quiz. Canceling the delivery."
-            )
+            logger.error(f"DeliverySchedule ID {delivery_schedule.id} has no associated quiz. Canceling the delivery.")
             return False
 
         try:
@@ -278,9 +250,7 @@ class DeliverContentsJob:
             delivery_schedule.status = DeliveryStatus.CANCELED
             delivery_schedule.save()
         except Exception as e:
-            logger.exception(
-                f"Failed to send quiz content for DeliverySchedule ID {delivery_schedule.id}: {str(e)}"
-            )
+            logger.exception(f"Failed to send quiz content for DeliverySchedule ID {delivery_schedule.id}: {str(e)}")
             self.handle_failed_delivery(delivery_schedule)
         return False
 
@@ -311,7 +281,8 @@ class DeliverContentsJob:
             return True
         except AssignmentNotFoundError:
             logger.error(
-                f"Assignment with ID {delivery_schedule.delivery.course_content.assignment.id} not found. Canceling the delivery."
+                f"Assignment with ID {delivery_schedule.delivery.course_content.assignment.id} not found. "
+                f"Canceling the delivery."
             )
             delivery_schedule.status = DeliveryStatus.CANCELED
             delivery_schedule.save()
@@ -331,9 +302,7 @@ class DeliverContentsJob:
             )
             delivery_schedule.status = DeliveryStatus.BLOCKED
             delivery_schedule.save()
-            metric_service.delivery_schedule_blocked(
-                delivery_schedule.delivery.course_content.id
-            )
+            metric_service.delivery_schedule_blocked(delivery_schedule.delivery.course_content.id)
         else:
             delivery_schedule.time += datetime.timedelta(minutes=60)
             delivery_schedule.failed_attempts += 1

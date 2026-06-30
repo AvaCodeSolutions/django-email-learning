@@ -1,6 +1,7 @@
-from django.urls import reverse
-from django_email_learning.models import Organization
 import pytest
+from django.urls import reverse
+
+from django_email_learning.models import Organization
 
 
 @pytest.fixture(autouse=True)
@@ -12,8 +13,6 @@ def second_organization(db):
 
 def test_update_session_view_as_viewer(viewer_client):
     url = reverse("django_email_learning:api_platform:update_session")
-    response = viewer_client.post(
-        url, {"active_organization_id": 1}, content_type="application/json"
-    )
+    response = viewer_client.post(url, {"active_organization_id": 1}, content_type="application/json")
     assert response.status_code == 200
     assert response.json().get("active_organization_id") == 1

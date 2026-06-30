@@ -1,7 +1,8 @@
-from django_email_learning.services import jwt_service
-from django.urls import reverse
 from unittest.mock import patch
 
+from django.urls import reverse
+
+from django_email_learning.services import jwt_service
 
 URL = reverse("django_email_learning:personalised:unsubscribe")
 
@@ -49,10 +50,7 @@ def test_unsubscribe_valid_token_confirmation(command, enrollment, anonymous_cli
         == "Are you sure you want to unsubscribe from our mailing list?"
     )
     assert "confirmUrl" in response.context["appContext"]
-    assert (
-        response.context["appContext"]["confirmUrl"]
-        == f"{URL}?token={token}&confirm=true"
-    )
+    assert response.context["appContext"]["confirmUrl"] == f"{URL}?token={token}&confirm=true"
 
 
 def test_unsubscribe_invalid_token(anonymous_client):

@@ -1,10 +1,12 @@
+from typing import Dict
+
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
-from django_email_learning.models import Organization
+
 from django_email_learning.decorators import is_an_organization_member
+from django_email_learning.models import Organization
 from django_email_learning.platform.views.base import BasePlatformView
-from typing import Dict
 
 
 @method_decorator(login_required, name="dispatch")
@@ -44,11 +46,10 @@ class Organizations(BasePlatformView):
             "uploaded_image_alt": _("Organization Logo"),
             "private": _("Private"),
             "are_you_sure_delete_org": _(
-                'Are you sure you want to delete the organization "ORGANIZATION_NAME"? All course content and users in this organization will also be deleted.'
+                'Are you sure you want to delete the organization "ORGANIZATION_NAME"?'
+                " All course content and users in this organization will also be deleted."
             ),
-            "invalid_url_helper_text": _(
-                "Enter a valid URL starting with http:// or https://"
-            ),
+            "invalid_url_helper_text": _("Enter a valid URL starting with http:// or https://"),
             "website": _("Website"),
             "linkedin_page": _("LinkedIn page"),
             "youtube_channel": _("YouTube channel"),
@@ -64,9 +65,7 @@ class SingleOrganization(BasePlatformView):
         context = super().get_context_data(**kwargs)
         organization = Organization.objects.get(pk=self.kwargs["organization_id"])
         context["organization"] = organization
-        context["page_title"] = _("Organization: %(name)s") % {
-            "name": organization.name
-        }
+        context["page_title"] = _("Organization: %(name)s") % {"name": organization.name}
         context["appContext"]["organizationId"] = organization.id
         return context
 
@@ -91,17 +90,14 @@ class SingleOrganization(BasePlatformView):
             "instructor_role_description": _(
                 "All editor permissions, plus access to learners and assignment review and approval."
             ),
-            "admin_role_description": _(
-                "Full access, including creating users and organizations."
-            ),
+            "admin_role_description": _("Full access, including creating users and organizations."),
             "email": _("Email"),
             "delete_user_with_email": _("Deleting USER_EMAIL"),
-            "user_delete_confirmation": _(
-                "Are you sure you want to remove USER_EMAIL from this organization?"
-            ),
+            "user_delete_confirmation": _("Are you sure you want to remove USER_EMAIL from this organization?"),
             "actions": _("Actions"),
             "delete_note": _(
-                "Note: Removing a user from this organization will not delete their account. To permanently delete the user's account, you must do so separately within the Django Admin"
+                "Note: Removing a user from this organization will not delete their account."
+                " To permanently delete the user's account, you must do so separately within the Django Admin"
             ),
             "cancel": _("Cancel"),
             "delete": _("Delete"),
@@ -116,13 +112,10 @@ class SingleOrganization(BasePlatformView):
             "newsletter_language": _("Language"),
             "newsletter_subscribers": _("Subscribers"),
             "newsletter_title_required": _("Title is required."),
-            "newsletter_create_error": _(
-                "Failed to create newsletter. Please try again."
-            ),
-            "newsletter_duplicate_error": _(
-                "A newsletter with this title already exists."
-            ),
+            "newsletter_create_error": _("Failed to create newsletter. Please try again."),
+            "newsletter_duplicate_error": _("A newsletter with this title already exists."),
             "newsletter_delete_confirmation": _(
-                "Are you sure you want to delete NEWSLETTER_TITLE? This will also remove all its subscribers and scheduled sendouts."
+                "Are you sure you want to delete NEWSLETTER_TITLE?"
+                " This will also remove all its subscribers and scheduled sendouts."
             ),
         }

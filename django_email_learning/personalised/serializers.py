@@ -1,9 +1,10 @@
+from typing import Any
+
 from pydantic import (
     BaseModel,
     ConfigDict,
     field_serializer,
 )
-from typing import Any
 
 
 class PublicAnswerSerializer(BaseModel):
@@ -22,10 +23,7 @@ class PublicQuestionSerializer(BaseModel):
 
     @field_serializer("answers")
     def serialize_answers(self, answers: Any) -> list[dict]:
-        return [
-            PublicAnswerSerializer.model_validate(answer).model_dump()
-            for answer in answers.all()
-        ]
+        return [PublicAnswerSerializer.model_validate(answer).model_dump() for answer in answers.all()]
 
 
 class PublicQuizSerializer(BaseModel):
@@ -37,7 +35,4 @@ class PublicQuizSerializer(BaseModel):
 
     @field_serializer("questions")
     def serialize_questions(self, questions: Any) -> list[dict]:
-        return [
-            PublicQuestionSerializer.model_validate(question).model_dump()
-            for question in questions.all()
-        ]
+        return [PublicQuestionSerializer.model_validate(question).model_dump() for question in questions.all()]

@@ -1,7 +1,6 @@
 from django.apps import AppConfig
 from django.core import checks
 
-
 PLATFORM_ADMIN_GROUP_NAME = "Platform Admin"
 
 
@@ -9,9 +8,7 @@ def check_site_base_url_config(app_configs, **kwargs):  # type: ignore[no-untype
     errors = []
     from django.conf import settings
 
-    if not hasattr(settings, "DJANGO_EMAIL_LEARNING") or not isinstance(
-        settings.DJANGO_EMAIL_LEARNING, dict
-    ):
+    if not hasattr(settings, "DJANGO_EMAIL_LEARNING") or not isinstance(settings.DJANGO_EMAIL_LEARNING, dict):
         errors.append(
             checks.Error(
                 "DJANGO_EMAIL_LEARNING is not set in settings or is not a dictionary.",

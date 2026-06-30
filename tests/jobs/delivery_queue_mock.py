@@ -1,5 +1,5 @@
-from django_email_learning.ports.task_queue_protocol import TaskQueueProtocol
 from django_email_learning.models import DeliverySchedule
+from django_email_learning.ports.task_queue_protocol import TaskQueueProtocol
 
 
 class DeliveryQueueMock(TaskQueueProtocol[DeliverySchedule]):

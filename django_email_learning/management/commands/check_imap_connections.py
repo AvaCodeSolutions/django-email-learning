@@ -1,9 +1,10 @@
-from django.core.management.base import BaseCommand
-from django_email_learning.jobs.check_imap_job import CheckIMAPJob
-from django.core.management.base import CommandParser
-from django_email_learning.services.metrics_service import metric_service
-from django_email_learning.models import JobName
 import logging
+
+from django.core.management.base import BaseCommand, CommandParser
+
+from django_email_learning.jobs.check_imap_job import CheckIMAPJob
+from django_email_learning.models import JobName
+from django_email_learning.services.metrics_service import metric_service
 
 
 class Command(BaseCommand):
@@ -24,9 +25,7 @@ class Command(BaseCommand):
                 format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
             )
         else:
-            logging.basicConfig(
-                level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-            )
+            logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
         logger = logging.getLogger(__name__)
 
@@ -37,9 +36,7 @@ class Command(BaseCommand):
             job = CheckIMAPJob()
             job.run()
 
-            self.stdout.write(
-                self.style.SUCCESS("Check IMAP job completed successfully")
-            )
+            self.stdout.write(self.style.SUCCESS("Check IMAP job completed successfully"))
             logger.info("Check IMAP job completed successfully")
 
         except KeyboardInterrupt:

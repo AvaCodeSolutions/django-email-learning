@@ -1,12 +1,14 @@
+import uuid
+
+import pytest
 from django.urls import reverse
+
 from django_email_learning.models import (
     AssignmentSubmission,
     ContentDelivery,
     Enrollment,
     Learner,
 )
-import pytest
-import uuid
 
 
 def get_url(organization_id: int, course_id: int) -> str:
@@ -27,9 +29,7 @@ def get_url(organization_id: int, course_id: int) -> str:
     ],
     indirect=["client"],
 )
-def test_submitted_assignments_view_get_role_access(
-    client, expected_status, course_assignment_content, enrollment
-):
+def test_submitted_assignments_view_get_role_access(client, expected_status, course_assignment_content, enrollment):
     delivery = ContentDelivery.objects.create(
         enrollment=enrollment,
         course_content=course_assignment_content,
@@ -94,9 +94,7 @@ def test_submitted_assignments_view_returns_expected_list_fields(
     assert item["reviewed_by"] is None
 
 
-def test_submitted_assignments_view_filters_by_status(
-    org_admin_client, course_assignment_content, enrollment
-):
+def test_submitted_assignments_view_filters_by_status(org_admin_client, course_assignment_content, enrollment):
     delivery_approved = ContentDelivery.objects.create(
         enrollment=enrollment,
         course_content=course_assignment_content,
@@ -150,9 +148,7 @@ def test_submitted_assignments_view_filters_by_status(
     assert submissions[0]["status"] == AssignmentSubmission.SubmissionStatus.APPROVED
 
 
-def test_submitted_assignments_view_filters_by_learner_id(
-    org_admin_client, course_assignment_content, enrollment
-):
+def test_submitted_assignments_view_filters_by_learner_id(org_admin_client, course_assignment_content, enrollment):
     delivery_first = ContentDelivery.objects.create(
         enrollment=enrollment,
         course_content=course_assignment_content,
@@ -202,9 +198,7 @@ def test_submitted_assignments_view_filters_by_learner_id(
     assert submissions[0]["id"] == first_submission.id
 
 
-def test_submitted_assignments_view_pagination(
-    org_admin_client, course_assignment_content, enrollment
-):
+def test_submitted_assignments_view_pagination(org_admin_client, course_assignment_content, enrollment):
     second_learner = Learner.objects.create(
         email=f"{uuid.uuid4().hex}@example.com",
         organization_id=course_assignment_content.course.organization_id,

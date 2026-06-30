@@ -1,7 +1,8 @@
+from django.core import mail
+
 from django_email_learning.services.command_models.send_quiz_command import (
     SendQuizCommand,
 )
-from django.core import mail
 
 
 def test_send_quiz_command(db, course_quiz_content):

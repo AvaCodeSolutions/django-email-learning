@@ -18,9 +18,7 @@ def detail_url(organization_id: int, newsletter_id: int, sendout_id: int) -> str
 
 @pytest.fixture()
 def newsletter(db):
-    return Newsletter.objects.create(
-        title="Weekly Digest", language="en", organization_id=1
-    )
+    return Newsletter.objects.create(title="Weekly Digest", language="en", organization_id=1)
 
 
 @pytest.fixture()

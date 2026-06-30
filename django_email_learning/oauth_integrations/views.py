@@ -1,9 +1,9 @@
 import json
+import logging
 
-from django.http import JsonResponse, HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
-from django.utils.translation import get_language, get_language_info
-from django.utils.translation import gettext as _
+from django.utils.translation import get_language, get_language_info, gettext as _
 from django.views import View
 from pydantic import ValidationError
 
@@ -17,7 +17,6 @@ from django_email_learning.services.jwt_service import (
 
 from .models import Session, SessionState
 from .serializers import CreateSessionRequest
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -112,9 +111,7 @@ class RedirectView(View):
             )
 
         try:
-            session = Session.objects.get(
-                session_id=session_id, state=SessionState.PENDING
-            )
+            session = Session.objects.get(session_id=session_id, state=SessionState.PENDING)
         except Session.DoesNotExist:
             return _command_result_response(
                 request,
@@ -150,9 +147,7 @@ class RedirectView(View):
             return _command_result_response(
                 request,
                 page_title=_("Authorization Complete"),
-                success_message=_(
-                    "Google authorization completed successfully. You can close this window."
-                ),
+                success_message=_("Google authorization completed successfully. You can close this window."),
                 status_code=200,
             )
         except InvalidTokenException:

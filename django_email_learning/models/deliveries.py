@@ -1,18 +1,19 @@
-from django.db import models
-from django.utils import timezone
-from typing import Optional
-from .enrollments import Enrollment
-from .course_contents import CourseContent, QuizSelectionStrategy
-from .enums.delivery_status import DeliveryStatus
-import uuid
 import base64
-from datetime import timedelta
-from django_email_learning.services import jwt_service
-from django.conf import settings
-from django.urls import reverse
-from datetime import datetime
 import logging
+import uuid
+from datetime import datetime, timedelta
+from typing import Optional
 
+from django.conf import settings
+from django.db import models
+from django.urls import reverse
+from django.utils import timezone
+
+from django_email_learning.services import jwt_service
+
+from .course_contents import CourseContent, QuizSelectionStrategy
+from .enrollments import Enrollment
+from .enums.delivery_status import DeliveryStatus
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +26,7 @@ class ContentDelivery(models.Model):
         SENT = "sent", "Sent"
         BLOCKED = "blocked", "Blocked"
 
-    enrollment = models.ForeignKey(
-        Enrollment, on_delete=models.CASCADE, related_name="content_deliveries"
-    )
+    enrollment = models.ForeignKey(Enrollment, on_delete=models.CASCADE, related_name="content_deliveries")
     course_content = models.ForeignKey(CourseContent, on_delete=models.CASCADE)
     hash_value = models.CharField(max_length=64, null=True, blank=True)
     remind_at = models.DateTimeField(null=True, blank=True)
@@ -55,9 +54,7 @@ class ContentDelivery(models.Model):
         return self.delivery_schedules.filter(status=DeliveryStatus.DELIVERED).count()  # type: ignore[misc]
 
     def update_hash(self) -> None:
-        self.hash_value = (
-            base64.urlsafe_b64encode(uuid.uuid4().bytes).decode().rstrip("=")
-        )
+        self.hash_value = base64.urlsafe_b64encode(uuid.uuid4().bytes).decode().rstrip("=")
         self.save()
 
     def schedule_next_delivery(self) -> Optional["ContentDelivery"]:
@@ -98,30 +95,19 @@ class ContentDelivery(models.Model):
             delivery=self,
         )
         schedule.generate_link()
-        logger.info(
-            f"Repeat delivery scheduled for ContentDelivery ID {self.id} in {days} days."
-        )
+        logger.info(f"Repeat delivery scheduled for ContentDelivery ID {self.id} in {days} days.")
         return True
 
     def calculate_remind_at(self) -> Optional[datetime]:
         if self.course_content.quiz or self.course_content.assignment:
-            if (
-                self.course_content.deadline_days
-                and self.course_content.deadline_days > 0
-            ):
+            if self.course_content.deadline_days and self.course_content.deadline_days > 0:
                 if self.course_content.deadline_days > 1:
-                    return timezone.now() + timedelta(
-                        days=self.course_content.deadline_days - 1
-                    )
+                    return timezone.now() + timedelta(days=self.course_content.deadline_days - 1)
                 else:
-                    return timezone.now() + timedelta(
-                        hours=(self.course_content.deadline_days * 24) - 10
-                    )
+                    return timezone.now() + timedelta(hours=(self.course_content.deadline_days * 24) - 10)
             else:
                 if self.course_content.reminder_interval_days:
-                    return timezone.now() + timedelta(
-                        days=self.course_content.reminder_interval_days
-                    )
+                    return timezone.now() + timedelta(days=self.course_content.reminder_interval_days)
         return None
 
     def calculate_valid_until(self) -> Optional[datetime]:
@@ -132,9 +118,7 @@ class ContentDelivery(models.Model):
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self.full_clean()
         if not self.hash_value:
-            self.hash_value = (
-                base64.urlsafe_b64encode(uuid.uuid4().bytes).decode().rstrip("=")
-            )
+            self.hash_value = base64.urlsafe_b64encode(uuid.uuid4().bytes).decode().rstrip("=")
         if not self.pk:  # Only auto populate remind_at and valid_untill when the delivery is first created
             self.remind_at = self.calculate_remind_at()
             self.valid_until = self.calculate_valid_until()
@@ -148,9 +132,7 @@ class ContentDelivery(models.Model):
 
 
 class DeliverySchedule(models.Model):
-    delivery = models.ForeignKey(
-        ContentDelivery, on_delete=models.CASCADE, related_name="delivery_schedules"
-    )
+    delivery = models.ForeignKey(ContentDelivery, on_delete=models.CASCADE, related_name="delivery_schedules")
     time = models.DateTimeField(default=timezone.now, db_index=True)
     link = models.URLField(null=True, blank=True, max_length=500)
     status = models.CharField(
@@ -179,13 +161,8 @@ class DeliverySchedule(models.Model):
             exp = datetime.max.replace(tzinfo=timezone.get_current_timezone())
 
         if self.delivery.course_content.quiz:
-            if (
-                self.delivery.course_content.quiz.selection_strategy
-                == QuizSelectionStrategy.RANDOM_QUESTIONS.value
-            ):
-                payload[
-                    "question_ids"
-                ] = self.delivery.course_content.quiz.random_question_ids()  # type: ignore[assignment]
+            if self.delivery.course_content.quiz.selection_strategy == QuizSelectionStrategy.RANDOM_QUESTIONS.value:
+                payload["question_ids"] = self.delivery.course_content.quiz.random_question_ids()  # type: ignore[assignment]
 
             token = jwt_service.generate_jwt(payload=payload, exp=exp)
             quiz_path = reverse("django_email_learning:personalised:quiz_public_view")
@@ -195,9 +172,7 @@ class DeliverySchedule(models.Model):
             return link
         elif self.delivery.course_content.assignment:
             token = jwt_service.generate_jwt(payload=payload, exp=exp)
-            assignment_path = reverse(
-                "django_email_learning:personalised:assignment_public_view"
-            )
+            assignment_path = reverse("django_email_learning:personalised:assignment_public_view")
             link = f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{assignment_path}?token={token}"
             self.link = link
             self.save()
@@ -207,7 +182,10 @@ class DeliverySchedule(models.Model):
             return ""
 
     def __str__(self) -> str:
-        return f"Delivery for {self.delivery.course_content.title} to {self.delivery.enrollment.learner.email} at {self.time} - Status: {self.status}"
+        return (
+            f"Delivery for {self.delivery.course_content.title} to {self.delivery.enrollment.learner.email} "
+            f"at {self.time} - Status: {self.status}"
+        )
 
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         if self.status == DeliveryStatus.DELIVERED and not self.delivered_at:

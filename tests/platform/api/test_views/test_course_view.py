@@ -1,13 +1,15 @@
-from django.urls import reverse
-from django_email_learning.models import (
-    Organization,
-    OrganizationUser,
-    CourseInstructor,
-)
-from django_email_learning.models import Course
 import json
 import uuid
+
 import pytest
+from django.urls import reverse
+
+from django_email_learning.models import (
+    Course,
+    CourseInstructor,
+    Organization,
+    OrganizationUser,
+)
 
 
 def get_url(organization_id: int) -> str:
@@ -19,9 +21,7 @@ def get_url(organization_id: int) -> str:
 
 def test_create_course_success(superadmin_client):
     payload = valid_create_course_payload()
-    response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert response.status_code == 201
     assert "id" in response.json()
     assert response.json()["title"] == payload["title"]
@@ -46,9 +46,7 @@ def test_create_course_with_target_audience_and_external_references(superadmin_c
             "url": "https://django-email-learning.readthedocs.io/",
         },
     ]
-    response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert response.status_code == 201
     assert response.json()["target_audience"] == payload["target_audience"]
     assert response.json()["external_references"] == payload["external_references"]
@@ -56,9 +54,7 @@ def test_create_course_with_target_audience_and_external_references(superadmin_c
 
 def test_create_course_not_authenticated(anonymous_client):
     payload = valid_create_course_payload()
-    response = anonymous_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response = anonymous_client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert response.status_code == 401
     assert response.json() == {"error": "Unauthorized"}
 
@@ -69,9 +65,7 @@ def test_create_course_not_authenticated(anonymous_client):
     indirect=["client"],
 )
 def test_create_course_user_access(client, expected_status):
-    payload = json.dumps(
-        valid_create_course_payload(uuid.uuid4().hex, uuid.uuid4().hex)
-    )
+    payload = json.dumps(valid_create_course_payload(uuid.uuid4().hex, uuid.uuid4().hex))
     response = client.post(get_url(1), payload, content_type="application/json")
     assert response.status_code == expected_status
 
@@ -93,23 +87,17 @@ def test_create_course_user_access(client, expected_status):
     ],
 )
 def test_create_course_invalid_payload(superadmin_client, payload):
-    response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert response.status_code == 400
     assert "error" in response.json()
 
 
 def test_create_course_existing_slug(superadmin_client):
     payload = valid_create_course_payload(slug="existing-slug")
-    response1 = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response1 = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert response1.status_code == 201
 
-    response2 = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response2 = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert response2.status_code == 409
     assert "error" in response2.json()
 
@@ -117,9 +105,7 @@ def test_create_course_existing_slug(superadmin_client):
 def test_platform_admin_can_create_only_for_its_organization(platform_admin_client):
     payload = valid_create_course_payload()
     url = get_url(2)  # organization_id=2 which platform_admin doesn't belong to
-    response = platform_admin_client.post(
-        url, json.dumps(payload), content_type="application/json"
-    )
+    response = platform_admin_client.post(url, json.dumps(payload), content_type="application/json")
     assert response.status_code == 403
     assert response.json() == {"error": "Forbidden"}
 
@@ -156,9 +142,7 @@ def create_courses(superadmin_client):
     )
 
 
-def test_get_courses_return_only_courses_of_organization(
-    create_courses, superadmin_client
-):
+def test_get_courses_return_only_courses_of_organization(create_courses, superadmin_client):
     org_1_url = get_url(1)
     org_2_url = get_url(2)
 
@@ -190,9 +174,7 @@ def test_get_courses_return_only_courses_of_organization(
     assert "enrollments_count" in response.json()["courses"][0]
 
 
-def test_get_courses_user_access(
-    create_courses, platform_admin_client, anonymous_client
-):
+def test_get_courses_user_access(create_courses, platform_admin_client, anonymous_client):
     org_1_url = get_url(1)
     org_2_url = get_url(2)
 
@@ -216,9 +198,7 @@ def test_get_courses_user_access(
         ("invalid", None, 2),
     ],
 )
-def test_get_courses_filter_by_enabled(
-    create_courses, superadmin_client, enabled, title, length
-):
+def test_get_courses_filter_by_enabled(create_courses, superadmin_client, enabled, title, length):
     # Enable one of the courses
     course_2 = Course.objects.get(title="org_1:course_2")
     course_2.enabled = True
@@ -255,9 +235,7 @@ def test_get_courses_filter_by_is_public(course, superadmin_client):
 def test_update_course_success(superadmin_client):
     # First, create a course to update
     create_payload = valid_create_course_payload()
-    create_response = superadmin_client.post(
-        get_url(1), json.dumps(create_payload), content_type="application/json"
-    )
+    create_response = superadmin_client.post(get_url(1), json.dumps(create_payload), content_type="application/json")
     assert create_response.status_code == 201
     course_id = create_response.json()["id"]
 
@@ -267,9 +245,7 @@ def test_update_course_success(superadmin_client):
         "django_email_learning:api_platform:courses_detail",
         kwargs={"organization_id": 1, "course_id": course_id},
     )
-    update_response = superadmin_client.post(
-        update_url, json.dumps(update_payload), content_type="application/json"
-    )
+    update_response = superadmin_client.post(update_url, json.dumps(update_payload), content_type="application/json")
     assert update_response.status_code == 200
     assert update_response.json()["id"] == course_id
     assert update_response.json()["title"] == update_payload["title"]
@@ -280,17 +256,13 @@ def test_update_course_success(superadmin_client):
 def test_update_course_with_target_audience_and_external_references(superadmin_client):
     # First, create a course to update
     create_payload = valid_create_course_payload()
-    create_response = superadmin_client.post(
-        get_url(1), json.dumps(create_payload), content_type="application/json"
-    )
+    create_response = superadmin_client.post(get_url(1), json.dumps(create_payload), content_type="application/json")
     assert create_response.status_code == 201
     course_id = create_response.json()["id"]
 
     # Now, update the created course with target audience and external references
     update_payload = valid_update_course_payload()
-    update_payload[
-        "target_audience"
-    ] = "Beginners with no prior programming experience."
+    update_payload["target_audience"] = "Beginners with no prior programming experience."
     update_payload["external_references"] = [
         {
             "name": "GitHub Repository",
@@ -305,18 +277,11 @@ def test_update_course_with_target_audience_and_external_references(superadmin_c
         "django_email_learning:api_platform:courses_detail",
         kwargs={"organization_id": 1, "course_id": course_id},
     )
-    update_response = superadmin_client.post(
-        update_url, json.dumps(update_payload), content_type="application/json"
-    )
+    update_response = superadmin_client.post(update_url, json.dumps(update_payload), content_type="application/json")
     assert update_response.status_code == 200
     assert update_response.json()["id"] == course_id
-    assert (
-        update_response.json()["target_audience"] == update_payload["target_audience"]
-    )
-    assert (
-        update_response.json()["external_references"]
-        == update_payload["external_references"]
-    )
+    assert update_response.json()["target_audience"] == update_payload["target_audience"]
+    assert update_response.json()["external_references"] == update_payload["external_references"]
 
 
 def test_update_course_replaces_external_references(superadmin_client):
@@ -325,52 +290,37 @@ def test_update_course_replaces_external_references(superadmin_client):
         {"name": "Old Docs", "url": "https://example.com/old-docs"},
         {"name": "Old Repo", "url": "https://example.com/old-repo"},
     ]
-    create_response = superadmin_client.post(
-        get_url(1), json.dumps(create_payload), content_type="application/json"
-    )
+    create_response = superadmin_client.post(get_url(1), json.dumps(create_payload), content_type="application/json")
     assert create_response.status_code == 201
     course_id = create_response.json()["id"]
 
     update_payload = valid_update_course_payload()
-    update_payload["external_references"] = [
-        {"name": "Updated Docs", "url": "https://example.com/new-docs"}
-    ]
+    update_payload["external_references"] = [{"name": "Updated Docs", "url": "https://example.com/new-docs"}]
     update_url = reverse(
         "django_email_learning:api_platform:courses_detail",
         kwargs={"organization_id": 1, "course_id": course_id},
     )
-    update_response = superadmin_client.post(
-        update_url, json.dumps(update_payload), content_type="application/json"
-    )
+    update_response = superadmin_client.post(update_url, json.dumps(update_payload), content_type="application/json")
 
     assert update_response.status_code == 200
-    assert (
-        update_response.json()["external_references"]
-        == update_payload["external_references"]
-    )
+    assert update_response.json()["external_references"] == update_payload["external_references"]
 
 
 def test_slug_change_not_allowed(superadmin_client):
     # First, create a course to update
     create_payload = valid_create_course_payload()
-    create_response = superadmin_client.post(
-        get_url(1), json.dumps(create_payload), content_type="application/json"
-    )
+    create_response = superadmin_client.post(get_url(1), json.dumps(create_payload), content_type="application/json")
     assert create_response.status_code == 201
     course_id = create_response.json()["id"]
 
     # Now, update the created course
-    update_payload = valid_update_course_payload(
-        title="New Title", description="New Description"
-    )
+    update_payload = valid_update_course_payload(title="New Title", description="New Description")
     update_payload["slug"] = "new-slug"  # Attempt to change slug
     update_url = reverse(
         "django_email_learning:api_platform:courses_detail",
         kwargs={"organization_id": 1, "course_id": course_id},
     )
-    update_response = superadmin_client.post(
-        update_url, json.dumps(update_payload), content_type="application/json"
-    )
+    update_response = superadmin_client.post(update_url, json.dumps(update_payload), content_type="application/json")
     assert update_response.status_code == 400
     assert "error" in update_response.json()
 
@@ -381,9 +331,7 @@ def test_update_course_not_found(superadmin_client):
         "django_email_learning:api_platform:courses_detail",
         kwargs={"organization_id": 1, "course_id": 9999},
     )
-    update_response = superadmin_client.post(
-        update_url, json.dumps(update_payload), content_type="application/json"
-    )
+    update_response = superadmin_client.post(update_url, json.dumps(update_payload), content_type="application/json")
     assert update_response.status_code == 409
     assert "error" in update_response.json()
 
@@ -391,31 +339,22 @@ def test_update_course_not_found(superadmin_client):
 @pytest.fixture
 def sample_course(superadmin_client):
     create_payload = valid_create_course_payload()
-    create_response = superadmin_client.post(
-        get_url(1), json.dumps(create_payload), content_type="application/json"
-    )
+    create_response = superadmin_client.post(get_url(1), json.dumps(create_payload), content_type="application/json")
     assert create_response.status_code == 201
     return create_response.json()
 
 
 def test_update_course_reset_imap_connection_conflict(sample_course, superadmin_client):
     course_id = sample_course["id"]
-    update_payload = valid_update_course_payload(
-        imap_connection_id=1, reset_imap_connection=True
-    )
+    update_payload = valid_update_course_payload(imap_connection_id=1, reset_imap_connection=True)
     update_url = reverse(
         "django_email_learning:api_platform:courses_detail",
         kwargs={"organization_id": 1, "course_id": course_id},
     )
-    update_response = superadmin_client.post(
-        update_url, json.dumps(update_payload), content_type="application/json"
-    )
+    update_response = superadmin_client.post(update_url, json.dumps(update_payload), content_type="application/json")
     assert update_response.status_code == 409
     assert "error" in update_response.json()
-    assert (
-        update_response.json()["error"]
-        == "Cannot set imap_connection_id when reset_imap_connection is True."
-    )
+    assert update_response.json()["error"] == "Cannot set imap_connection_id when reset_imap_connection is True."
 
 
 def test_viewer_not_allowed_to_delete_course(sample_course, viewer_client):
@@ -494,9 +433,7 @@ def test_create_course_with_instructor_succeeds(users, superadmin_client):
     payload = valid_create_course_payload()
     payload["instructors"] = [instructor_org_user_id]
 
-    response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
 
     assert response.status_code == 201
     data = response.json()
@@ -506,15 +443,11 @@ def test_create_course_with_instructor_succeeds(users, superadmin_client):
     assert data["instructors"][0]["photo"] is None
 
 
-def test_create_course_response_has_empty_instructors_list_when_none_assigned(
-    users, superadmin_client
-):
+def test_create_course_response_has_empty_instructors_list_when_none_assigned(users, superadmin_client):
     payload = valid_create_course_payload()
     # No instructors key in payload
 
-    response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
 
     assert response.status_code == 201
     data = response.json()
@@ -528,9 +461,7 @@ def test_create_course_with_non_instructor_org_user_fails(users, superadmin_clie
     payload = valid_create_course_payload(slug=uuid.uuid4().hex)
     payload["instructors"] = [editor_org_user_id]
 
-    response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
 
     assert response.status_code == 409
     assert "error" in response.json()
@@ -541,9 +472,7 @@ def test_create_course_with_nonexistent_org_user_fails(users, superadmin_client)
     payload = valid_create_course_payload(slug=uuid.uuid4().hex)
     payload["instructors"] = [99999]  # does not exist
 
-    response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
 
     assert response.status_code == 409
     assert "error" in response.json()
@@ -568,9 +497,7 @@ def test_create_course_with_multiple_instructors(users, superadmin_client):
     payload = valid_create_course_payload(slug=uuid.uuid4().hex)
     payload["instructors"] = [instructor_org_user_id, second_org_user.id]
 
-    response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
 
     assert response.status_code == 201
     data = response.json()
@@ -590,9 +517,7 @@ def test_get_single_course_response_includes_instructors(users, superadmin_clien
     payload = valid_create_course_payload(slug=uuid.uuid4().hex)
     payload["instructors"] = [instructor_org_user_id]
 
-    create_response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    create_response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert create_response.status_code == 201
     course_id = create_response.json()["id"]
 
@@ -666,9 +591,7 @@ def test_update_course_removes_instructor_when_not_in_list(users, superadmin_cli
     # Create course with both instructors
     payload = valid_create_course_payload(slug=uuid.uuid4().hex)
     payload["instructors"] = [instructor_org_user_id, second_org_user.id]
-    create_response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    create_response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert create_response.status_code == 201
     course_id = create_response.json()["id"]
     assert len(create_response.json()["instructors"]) == 2
@@ -687,9 +610,7 @@ def test_update_course_removes_instructor_when_not_in_list(users, superadmin_cli
     assert data["instructors"][0]["display_name"] == "Instructor Name"
     assert data["instructors"][0]["photo"] is None
     # Confirm DB record is gone
-    assert not CourseInstructor.objects.filter(
-        course_id=course_id, org_user=second_org_user
-    ).exists()
+    assert not CourseInstructor.objects.filter(course_id=course_id, org_user=second_org_user).exists()
 
 
 def test_update_course_clears_all_instructors_with_empty_list(users, superadmin_client):
@@ -697,9 +618,7 @@ def test_update_course_clears_all_instructors_with_empty_list(users, superadmin_
 
     payload = valid_create_course_payload(slug=uuid.uuid4().hex)
     payload["instructors"] = [instructor_org_user_id]
-    create_response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    create_response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert create_response.status_code == 201
     course_id = create_response.json()["id"]
 
@@ -716,17 +635,13 @@ def test_update_course_clears_all_instructors_with_empty_list(users, superadmin_
     assert not CourseInstructor.objects.filter(course_id=course_id).exists()
 
 
-def test_update_course_omitting_instructors_does_not_change_them(
-    users, superadmin_client
-):
+def test_update_course_omitting_instructors_does_not_change_them(users, superadmin_client):
     """Passing no 'instructors' key should leave existing instructors untouched."""
     instructor_org_user_id = _org_user_id("instructor")
 
     payload = valid_create_course_payload(slug=uuid.uuid4().hex)
     payload["instructors"] = [instructor_org_user_id]
-    create_response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    create_response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert create_response.status_code == 201
     course_id = create_response.json()["id"]
 
@@ -767,9 +682,7 @@ def test_update_course_with_non_instructor_role_fails(users, superadmin_client):
     assert "instructor role" in update_response.json()["error"]
 
 
-def test_update_course_with_nonexistent_instructor_org_user_fails(
-    users, superadmin_client
-):
+def test_update_course_with_nonexistent_instructor_org_user_fails(users, superadmin_client):
     create_response = superadmin_client.post(
         get_url(1),
         json.dumps(valid_create_course_payload(slug=uuid.uuid4().hex)),
@@ -796,9 +709,7 @@ def test_update_course_with_nonexistent_instructor_org_user_fails(
 
 def test_create_course_send_certificate_defaults_to_true(superadmin_client):
     payload = valid_create_course_payload()
-    response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert response.status_code == 201
     assert response.json()["send_certificate"] is True
 
@@ -806,9 +717,7 @@ def test_create_course_send_certificate_defaults_to_true(superadmin_client):
 def test_create_course_send_certificate_can_be_set_to_false(superadmin_client):
     payload = valid_create_course_payload(title="No Cert Course", slug="no-cert")
     payload["send_certificate"] = False
-    response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert response.status_code == 201
     assert response.json()["send_certificate"] is False
     assert Course.objects.get(id=response.json()["id"]).send_certificate is False
@@ -820,14 +729,13 @@ def test_create_course_send_certificate_can_be_set_to_false(superadmin_client):
 
 
 def test_can_create_course_hook_blocks_creation(superadmin_client):
-    from django_email_learning.platform.api.views import CourseCreationMixin
     from unittest.mock import patch
+
+    from django_email_learning.platform.api.views import CourseCreationMixin
 
     with patch.object(CourseCreationMixin, "can_create_course", return_value=False):
         payload = valid_create_course_payload(title="Blocked Course", slug="blocked")
-        response = superadmin_client.post(
-            get_url(1), json.dumps(payload), content_type="application/json"
-        )
+        response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
 
     assert response.status_code == 403
     assert "error" in response.json()
@@ -835,9 +743,7 @@ def test_can_create_course_hook_blocks_creation(superadmin_client):
 
 def test_can_create_course_hook_allows_creation_by_default(superadmin_client):
     payload = valid_create_course_payload(title="Allowed Course", slug="allowed")
-    response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert response.status_code == 201
 
 
@@ -845,34 +751,27 @@ def test_create_course_response_includes_can_create_course_true_by_default(
     superadmin_client,
 ):
     payload = valid_create_course_payload(title="Hook Course", slug="hook-course")
-    response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert response.status_code == 201
     assert "can_create_course" in response.json()
     assert response.json()["can_create_course"] is True
 
 
 def test_create_course_response_can_create_course_reflects_hook(superadmin_client):
-    from django_email_learning.platform.api.views import CourseCreationMixin
     from unittest.mock import patch
 
+    from django_email_learning.platform.api.views import CourseCreationMixin
+
     # First call (guard) returns True, second call (response field) returns False
-    with patch.object(
-        CourseCreationMixin, "can_create_course", side_effect=[True, False]
-    ):
+    with patch.object(CourseCreationMixin, "can_create_course", side_effect=[True, False]):
         payload = valid_create_course_payload(title="Last Course", slug="last-course")
-        response = superadmin_client.post(
-            get_url(1), json.dumps(payload), content_type="application/json"
-        )
+        response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
 
     assert response.status_code == 201
     assert response.json()["can_create_course"] is False
 
 
-def test_delete_course_response_includes_can_create_course(
-    sample_course, superadmin_client
-):
+def test_delete_course_response_includes_can_create_course(sample_course, superadmin_client):
     url = reverse(
         "django_email_learning:api_platform:courses_detail",
         kwargs={"organization_id": 1, "course_id": sample_course["id"]},
@@ -883,11 +782,10 @@ def test_delete_course_response_includes_can_create_course(
     assert response.json()["can_create_course"] is True
 
 
-def test_delete_course_response_can_create_course_reflects_hook(
-    sample_course, superadmin_client
-):
-    from django_email_learning.platform.api.views import CourseCreationMixin
+def test_delete_course_response_can_create_course_reflects_hook(sample_course, superadmin_client):
     from unittest.mock import patch
+
+    from django_email_learning.platform.api.views import CourseCreationMixin
 
     url = reverse(
         "django_email_learning:api_platform:courses_detail",

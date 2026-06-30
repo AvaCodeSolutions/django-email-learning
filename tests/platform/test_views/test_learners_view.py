@@ -1,5 +1,5 @@
-from django.urls import reverse
 import pytest
+from django.urls import reverse
 
 URL = reverse("django_email_learning:platform:learners_view")
 

@@ -1,14 +1,12 @@
 from unittest.mock import patch
 
 import pytest
+
 import django_email_learning.jobs.send_reminders_job as send_reminders_job_module
 from django_email_learning.jobs.send_reminders_job import (
-    SendRemindersJob,
-    SendQuizReminderCommand,
     QuizNotFoundError,
-)
-from django_email_learning.services.command_models.send_assignment_reminder_command import (
-    SendAssignmentReminderCommand,
+    SendQuizReminderCommand,
+    SendRemindersJob,
 )
 from django_email_learning.models import (
     ContentDelivery,
@@ -17,6 +15,9 @@ from django_email_learning.models import (
     JobExecution,
     JobName,
     JobStatus,
+)
+from django_email_learning.services.command_models.send_assignment_reminder_command import (
+    SendAssignmentReminderCommand,
 )
 from tests.jobs.delivery_queue_mock import DeliveryQueueMock
 
@@ -37,9 +38,7 @@ def test_send_reminders_job_runs_no_tasks(db, reminder_queue_mock):
     assert reminder_queue_mock.index == 0
 
 
-def test_send_reminders_job_runs_with_tasks(
-    db, reminder_queue_mock, enrollment, course_quiz_content
-):
+def test_send_reminders_job_runs_with_tasks(db, reminder_queue_mock, enrollment, course_quiz_content):
     enrollment.status = EnrollmentStatus.ACTIVE
     enrollment.save()
 
@@ -144,14 +143,10 @@ def test_send_reminders_job_blocks_on_unexpected_exception_and_tracks_metric(
 
     delivery.refresh_from_db()
     assert delivery.reminder_state == ContentDelivery.ReminderStatus.BLOCKED
-    metric_blocked_spy.assert_called_once_with(
-        delivery_schedule.delivery.course_content.id
-    )
+    metric_blocked_spy.assert_called_once_with(delivery_schedule.delivery.course_content.id)
 
 
-def test_send_reminders_job_does_not_emit_start_or_finish_metrics_when_already_running(
-    db, reminder_queue_mock
-):
+def test_send_reminders_job_does_not_emit_start_or_finish_metrics_when_already_running(db, reminder_queue_mock):
     JobExecution.objects.create(
         job_name=JobName.SEND_REMINDERS.value,
         status=JobStatus.RUNNING.value,
@@ -189,12 +184,8 @@ def test_send_reminders_job_uses_quiz_reminder_command_for_quiz_content(
     reminder_queue_mock.add_task(delivery_schedule)
 
     with (
-        patch.object(
-            SendQuizReminderCommand, "execute", return_value=None
-        ) as quiz_execute,
-        patch.object(
-            SendAssignmentReminderCommand, "execute", return_value=None
-        ) as assignment_execute,
+        patch.object(SendQuizReminderCommand, "execute", return_value=None) as quiz_execute,
+        patch.object(SendAssignmentReminderCommand, "execute", return_value=None) as assignment_execute,
     ):
         job = SendRemindersJob()
         job.run()
@@ -219,12 +210,8 @@ def test_send_reminders_job_uses_assignment_reminder_command_for_assignment_cont
     reminder_queue_mock.add_task(delivery_schedule)
 
     with (
-        patch.object(
-            SendAssignmentReminderCommand, "execute", return_value=None
-        ) as assignment_execute,
-        patch.object(
-            SendQuizReminderCommand, "execute", return_value=None
-        ) as quiz_execute,
+        patch.object(SendAssignmentReminderCommand, "execute", return_value=None) as assignment_execute,
+        patch.object(SendQuizReminderCommand, "execute", return_value=None) as quiz_execute,
     ):
         job = SendRemindersJob()
         job.run()

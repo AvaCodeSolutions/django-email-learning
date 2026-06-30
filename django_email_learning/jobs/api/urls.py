@@ -1,11 +1,12 @@
 from django.urls import path
+
 from django_email_learning.jobs.api.views import (
-    DeliverContentsJobView,
     CheckIMAPJobView,
+    CleanupJobExecutionsView,
+    DeactivateInactiveEnrollmentsJobView,
+    DeliverContentsJobView,
     SendNewslettersJobView,
     SendQuizRemindersJobView,
-    DeactivateInactiveEnrollmentsJobView,
-    CleanupJobExecutionsView,
 )
 
 app_name = "django_email_learning"

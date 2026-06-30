@@ -1,15 +1,17 @@
-from django_email_learning.services.command_models.send_assignment_reminder_command import (
-    SendAssignmentReminderCommand,
-)
+import datetime
+
+import pytest
+from django.core import mail
+from django.utils import timezone
+
 from django_email_learning.models import (
     ContentDelivery,
     DeliverySchedule,
     DeliveryStatus,
 )
-from django.core import mail
-from django.utils import timezone
-import datetime
-import pytest
+from django_email_learning.services.command_models.send_assignment_reminder_command import (
+    SendAssignmentReminderCommand,
+)
 
 
 @pytest.fixture
@@ -22,11 +24,7 @@ def assignment_content_delivery(db, active_enrollment, course_assignment_content
         course_content_id=course_assignment_content.id,
         hash_value="testhash",
     )
-    delivery.delivery_schedules.add(
-        DeliverySchedule.objects.create(
-            status=DeliveryStatus.DELIVERED, delivery=delivery
-        )
-    )
+    delivery.delivery_schedules.add(DeliverySchedule.objects.create(status=DeliveryStatus.DELIVERED, delivery=delivery))
     return delivery
 
 
@@ -54,8 +52,6 @@ def test_send_assignment_reminder_command(db, assignment_content_delivery):
     assert assignment_link in email.body
     assert len(email.alternatives) == 1
     delivery_schedule.delivery.refresh_from_db()
-    assert (
-        delivery_schedule.delivery.reminder_state == ContentDelivery.ReminderStatus.SENT
-    )
+    assert delivery_schedule.delivery.reminder_state == ContentDelivery.ReminderStatus.SENT
     assert delivery_schedule.delivery.remind_at is not None
     assert delivery_schedule.delivery.remind_at > test_time

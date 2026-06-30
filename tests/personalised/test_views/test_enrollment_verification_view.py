@@ -1,7 +1,8 @@
-from django_email_learning.services import jwt_service
-from django.urls import reverse
 from unittest.mock import patch
 
+from django.urls import reverse
+
+from django_email_learning.services import jwt_service
 
 URL = reverse("django_email_learning:personalised:verify_enrollment")
 

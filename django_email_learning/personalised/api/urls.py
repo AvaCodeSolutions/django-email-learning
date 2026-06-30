@@ -1,9 +1,10 @@
 from django.urls import path
+
 from django_email_learning.personalised.api.views import (
-    FileUploadView,
-    AssignmentSubmissionView,
-    QuizSubmissionView,
     AmpQuizSubmissionView,
+    AssignmentSubmissionView,
+    FileUploadView,
+    QuizSubmissionView,
     SubmitCertificateFormView,
 )
 

@@ -1,7 +1,7 @@
 import pytest
+from django.contrib.auth.models import User
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest, JsonResponse
-from django.contrib.auth.models import User
 
 from django_email_learning.decorators import accessible_for
 

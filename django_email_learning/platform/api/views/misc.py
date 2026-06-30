@@ -2,27 +2,29 @@ import json
 import posixpath
 from datetime import datetime
 from enum import StrEnum
-from django.views import View
-from django.utils.decorators import method_decorator
+from urllib.parse import urlparse
+
+from django.conf import settings
+from django.core.files.storage import default_storage
 from django.db.utils import IntegrityError
 from django.http import JsonResponse
-from django.core.files.storage import default_storage
-from django.conf import settings
 from django.utils import timezone
-from urllib.parse import urlparse
+from django.utils.decorators import method_decorator
+from django.views import View
 from pydantic import ValidationError
-from django_email_learning.platform.api import serializers
+
+from django_email_learning.decorators import (
+    accessible_for,
+    is_an_organization_member,
+    is_platform_admin,
+)
 from django_email_learning.models import (
     ApiKey,
     JobExecution,
     JobName,
     OrganizationUser,
 )
-from django_email_learning.decorators import (
-    is_an_organization_member,
-    is_platform_admin,
-    accessible_for,
-)
+from django_email_learning.platform.api import serializers
 
 DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
 
@@ -57,9 +59,7 @@ class ApiKeyView(View):
         api_keys = ApiKey.objects.all()  # type: ignore[attr-defined]
         response_list = []
         for api_key in api_keys:
-            response_list.append(
-                serializers.ApiKeyResponse.from_django_model(api_key).model_dump()
-            )
+            response_list.append(serializers.ApiKeyResponse.from_django_model(api_key).model_dump())
         return JsonResponse({"api_keys": response_list}, status=200)
 
 
@@ -83,25 +83,15 @@ class JobsStatus(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         jobs_status = {}
         for job in JobName:
-            last_execution = (
-                JobExecution.objects.filter(job_name=job.value)
-                .order_by("-started_at")
-                .first()
-            )
+            last_execution = JobExecution.objects.filter(job_name=job.value).order_by("-started_at").first()
             jobs_status[job.value] = {
                 "job_name": job.value,
-                "last_execution_status": last_execution.status
-                if last_execution
-                else None,
-                "last_execution_started_at": last_execution.started_at.isoformat()
-                if last_execution
-                else None,
+                "last_execution_status": last_execution.status if last_execution else None,
+                "last_execution_started_at": last_execution.started_at.isoformat() if last_execution else None,
                 "last_execution_finished_at": last_execution.finished_at.isoformat()
                 if last_execution and last_execution.finished_at
                 else None,
-                "job_health_status": self.calculate_job_health_status(
-                    last_execution.started_at
-                )
+                "job_health_status": self.calculate_job_health_status(last_execution.started_at)
                 if last_execution
                 else JobHealthStatus.CRITICAL.value,
             }
@@ -121,9 +111,7 @@ class JobsStatus(View):
         if not isinstance(warning_threshold, int) or warning_threshold <= 0:
             warning_threshold = DEFAULT_WARNING_THRESHOLD_MINUTES
         if warning_threshold <= success_threshold:
-            warning_threshold = (
-                success_threshold + 30
-            )  # Ensure warning threshold is greater than success threshold
+            warning_threshold = success_threshold + 30  # Ensure warning threshold is greater than success threshold
         now = timezone.now()
         time_diff = now - last_execution_started_at
         minutes_diff = time_diff.total_seconds() / 60
@@ -141,9 +129,7 @@ class RootView(View):
 
 
 @method_decorator(accessible_for(roles={"admin", "editor", "instructor"}), name="post")
-@method_decorator(
-    accessible_for(roles={"admin", "editor", "instructor"}), name="delete"
-)
+@method_decorator(accessible_for(roles={"admin", "editor", "instructor"}), name="delete")
 class FileView(View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         uploaded_file = request.FILES.get("file")
@@ -177,9 +163,7 @@ class FileView(View):
         if not file_path and file_url:
             parsed_url_path = urlparse(file_url).path
             media_url = settings.MEDIA_URL or "/media/"
-            normalized_media_url = (
-                media_url if media_url.endswith("/") else f"{media_url}/"
-            )
+            normalized_media_url = media_url if media_url.endswith("/") else f"{media_url}/"
             if parsed_url_path.startswith(normalized_media_url):
                 file_path = parsed_url_path[len(normalized_media_url) :]
 
@@ -190,12 +174,7 @@ class FileView(View):
         path_parts = normalized_file_path.split("/")
         organization_id = str(kwargs["organization_id"])
 
-        if (
-            len(path_parts) < 4
-            or path_parts[0] != "uploads"
-            or path_parts[2] != organization_id
-            or ".." in path_parts
-        ):
+        if len(path_parts) < 4 or path_parts[0] != "uploads" or path_parts[2] != organization_id or ".." in path_parts:
             return JsonResponse({"error": "Invalid file path"}, status=400)
 
         if not default_storage.exists(normalized_file_path):
@@ -216,16 +195,10 @@ class UpdateSessionView(View):
             return JsonResponse({"error": e.json()}, status=400)
 
         if (
-            not OrganizationUser.objects.filter(
-                user_id=request.user.id, organization_id=organization_id
-            ).exists()
+            not OrganizationUser.objects.filter(user_id=request.user.id, organization_id=organization_id).exists()
             and not request.user.is_superuser
         ):
-            return JsonResponse(
-                {"error": "Not a valid organization for the user."}, status=409
-            )
+            return JsonResponse({"error": "Not a valid organization for the user."}, status=409)
         request.session["active_organization_id"] = organization_id
-        response_serializer = serializers.SessionInfo.populate_from_session(
-            request.session
-        )
+        response_serializer = serializers.SessionInfo.populate_from_session(request.session)
         return JsonResponse(response_serializer.model_dump(), status=200)

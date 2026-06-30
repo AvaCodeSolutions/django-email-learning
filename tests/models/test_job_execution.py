@@ -26,13 +26,9 @@ def test_start_if_not_running_resets_stale_running_record(db) -> None:
         job_name=JobName.CHECK_IMAP.value,
         status=JobStatus.RUNNING.value,
     )
-    JobExecution.objects.filter(pk=stale.pk).update(
-        started_at=timezone.now() - timedelta(hours=3)
-    )
+    JobExecution.objects.filter(pk=stale.pk).update(started_at=timezone.now() - timedelta(hours=3))
 
-    execution = JobExecution.start_if_not_running(
-        JobName.CHECK_IMAP.value, stale_after_hours=2
-    )
+    execution = JobExecution.start_if_not_running(JobName.CHECK_IMAP.value, stale_after_hours=2)
 
     assert execution is not None
     assert execution.status == JobStatus.RUNNING.value
@@ -48,17 +44,10 @@ def test_start_if_not_running_does_not_reset_recent_running_record(db) -> None:
         status=JobStatus.RUNNING.value,
     )
 
-    execution = JobExecution.start_if_not_running(
-        JobName.CHECK_IMAP.value, stale_after_hours=2
-    )
+    execution = JobExecution.start_if_not_running(JobName.CHECK_IMAP.value, stale_after_hours=2)
 
     assert execution is None
-    assert (
-        JobExecution.objects.filter(
-            job_name=JobName.CHECK_IMAP.value, status=JobStatus.RUNNING.value
-        ).count()
-        == 1
-    )
+    assert JobExecution.objects.filter(job_name=JobName.CHECK_IMAP.value, status=JobStatus.RUNNING.value).count() == 1
 
 
 def test_start_if_not_running_only_resets_stale_for_matching_job(db) -> None:
@@ -71,9 +60,7 @@ def test_start_if_not_running_only_resets_stale_for_matching_job(db) -> None:
         status=JobStatus.RUNNING.value,
     )
     stale_cutoff = timezone.now() - timedelta(hours=3)
-    JobExecution.objects.filter(pk__in=[stale_imap.pk, stale_deliver.pk]).update(
-        started_at=stale_cutoff
-    )
+    JobExecution.objects.filter(pk__in=[stale_imap.pk, stale_deliver.pk]).update(started_at=stale_cutoff)
 
     JobExecution.start_if_not_running(JobName.CHECK_IMAP.value, stale_after_hours=2)
 

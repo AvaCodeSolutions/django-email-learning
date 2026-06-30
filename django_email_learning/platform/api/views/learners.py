@@ -2,17 +2,18 @@ import json
 import logging
 from datetime import timedelta
 from typing import Any
-from django.views import View
-from django.utils.decorators import method_decorator
-from django.db.models import Count
+
+from django.db import models
+from django.db.models import Count, Prefetch
 from django.db.models.functions import TruncDate
 from django.http import JsonResponse
-from django.db import models
-from django.utils import timezone
 from django.urls import reverse
+from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views import View
 from pydantic import ValidationError
-from django_email_learning.platform.api import serializers
-from django_email_learning.platform.api.pagniated_api_mixin import PaginatedApiMixin
+
+from django_email_learning.decorators import accessible_for
 from django_email_learning.models import (
     Certificate,
     Course,
@@ -20,18 +21,18 @@ from django_email_learning.models import (
     EnrollmentStatus,
     Learner,
 )
-from django_email_learning.decorators import accessible_for
+from django_email_learning.platform.api import serializers
+from django_email_learning.platform.api.pagniated_api_mixin import PaginatedApiMixin
 from django_email_learning.services.command_models.enroll_command import EnrollCommand
-from django_email_learning.services.command_models.verify_enrollment_command import (
-    VerifyEnrollmentCommand,
-)
 from django_email_learning.services.command_models.exceptions.blocked_email_error import (
     BlockedEmailError,
 )
 from django_email_learning.services.command_models.exceptions.enrollment_already_exists_error import (
     EnrollmentAlreadyExistsError,
 )
-from django.db.models import Prefetch
+from django_email_learning.services.command_models.verify_enrollment_command import (
+    VerifyEnrollmentCommand,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -91,9 +92,7 @@ class LearnersView(PaginatedApiMixin, View):
         return data
 
 
-@method_decorator(
-    accessible_for(roles={"admin", "editor", "viewer", "instructor"}), name="get"
-)
+@method_decorator(accessible_for(roles={"admin", "editor", "viewer", "instructor"}), name="get")
 class SingleLearnerView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
@@ -107,9 +106,7 @@ class SingleLearnerView(View):
                     certificate_url = request.build_absolute_uri(
                         reverse(
                             "django_email_learning:personalised:certificate",
-                            kwargs={
-                                "certificate_number": certificate.certificate_number
-                            },
+                            kwargs={"certificate_number": certificate.certificate_number},
                         )
                     )
                 enroolments_list.append(
@@ -141,9 +138,7 @@ class EnrollmentsView(PaginatedApiMixin, View):
         try:
             serializer = serializers.CreateEnrollmentRequest.model_validate(payload)
             try:
-                course = Course.objects.get(
-                    id=kwargs["course_id"], organization_id=kwargs["organization_id"]
-                )
+                course = Course.objects.get(id=kwargs["course_id"], organization_id=kwargs["organization_id"])
             except Course.DoesNotExist:
                 return JsonResponse({"error": "Course not found"}, status=404)
             command = EnrollCommand(
@@ -159,9 +154,7 @@ class EnrollmentsView(PaginatedApiMixin, View):
             except EnrollmentAlreadyExistsError as e:
                 return JsonResponse({"error": str(e)}, status=409)
 
-            enrollment = Enrollment.objects.get(
-                learner__email=serializer.learner_email, course_id=kwargs["course_id"]
-            )
+            enrollment = Enrollment.objects.get(learner__email=serializer.learner_email, course_id=kwargs["course_id"])
             verify_command = VerifyEnrollmentCommand(
                 enrollment_id=enrollment.id,
                 verification_code=enrollment.activation_code,  # type: ignore[arg-type]
@@ -169,26 +162,20 @@ class EnrollmentsView(PaginatedApiMixin, View):
             verify_command.execute()
             enrollment.refresh_from_db()
             return JsonResponse(
-                serializers.EnrollmentResponse.from_django_model(
-                    enrollment
-                ).model_dump(),
+                serializers.EnrollmentResponse.from_django_model(enrollment).model_dump(),
                 status=201,
             )
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
 
 
-@method_decorator(
-    accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get"
-)
+@method_decorator(accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get")
 class EnrollmentView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
             enrollment = Enrollment.objects.get(id=kwargs["enrollment_id"])
             return JsonResponse(
-                serializers.EnrollmentResponse.from_django_model(
-                    enrollment
-                ).model_dump(),
+                serializers.EnrollmentResponse.from_django_model(enrollment).model_dump(),
                 status=200,
             )
         except Enrollment.DoesNotExist:
@@ -197,9 +184,7 @@ class EnrollmentView(View):
             return JsonResponse({"error": e.json()}, status=400)
 
 
-@method_decorator(
-    accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get"
-)
+@method_decorator(accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get")
 class EnrollmentsStatisticsView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         course_id = kwargs["course_id"]
@@ -214,12 +199,6 @@ class EnrollmentsStatisticsView(View):
             .order_by("created_date")
         )
         dates = [a_week_ago.date() + timedelta(days=i) for i in range(8)]
-        enrollments_dict = {
-            enrollment["created_date"]: enrollment["count"]
-            for enrollment in enrollments
-        }
-        stats = [
-            {"date": date.isoformat(), "count": enrollments_dict.get(date, 0)}
-            for date in dates
-        ]
+        enrollments_dict = {enrollment["created_date"]: enrollment["count"] for enrollment in enrollments}
+        stats = [{"date": date.isoformat(), "count": enrollments_dict.get(date, 0)} for date in dates]
         return JsonResponse({"statistics": stats}, status=200)

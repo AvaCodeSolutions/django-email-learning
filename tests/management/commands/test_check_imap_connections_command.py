@@ -1,9 +1,9 @@
-from io import StringIO
 import logging
+from io import StringIO
 from unittest.mock import patch
 
-from django.core.management import call_command
 import pytest
+from django.core.management import call_command
 
 from django_email_learning.models import JobName
 
@@ -15,9 +15,7 @@ def test_runs_job_and_prints_success_message() -> None:
         patch(
             "django_email_learning.management.commands.check_imap_connections.logging.basicConfig"
         ) as mock_basic_config,
-        patch(
-            "django_email_learning.management.commands.check_imap_connections.CheckIMAPJob"
-        ) as mock_job_cls,
+        patch("django_email_learning.management.commands.check_imap_connections.CheckIMAPJob") as mock_job_cls,
     ):
         call_command("check_imap_connections", stdout=stdout)
 
@@ -34,9 +32,7 @@ def test_enables_debug_logging_when_verbose_option_used() -> None:
         patch(
             "django_email_learning.management.commands.check_imap_connections.logging.basicConfig"
         ) as mock_basic_config,
-        patch(
-            "django_email_learning.management.commands.check_imap_connections.CheckIMAPJob"
-        ),
+        patch("django_email_learning.management.commands.check_imap_connections.CheckIMAPJob"),
     ):
         call_command("check_imap_connections", verbose=True, stdout=stdout)
 
@@ -47,9 +43,7 @@ def test_enables_debug_logging_when_verbose_option_used() -> None:
 def test_handles_keyboard_interrupt_without_raising() -> None:
     stdout = StringIO()
 
-    with patch(
-        "django_email_learning.management.commands.check_imap_connections.CheckIMAPJob"
-    ) as mock_job_cls:
+    with patch("django_email_learning.management.commands.check_imap_connections.CheckIMAPJob") as mock_job_cls:
         mock_job_cls.return_value.run.side_effect = KeyboardInterrupt()
 
         call_command("check_imap_connections", stdout=stdout)
@@ -61,9 +55,7 @@ def test_records_metric_and_reraises_when_job_fails() -> None:
     stdout = StringIO()
 
     with (
-        patch(
-            "django_email_learning.management.commands.check_imap_connections.CheckIMAPJob"
-        ) as mock_job_cls,
+        patch("django_email_learning.management.commands.check_imap_connections.CheckIMAPJob") as mock_job_cls,
         patch(
             "django_email_learning.management.commands.check_imap_connections.metric_service.job_execution_failed"
         ) as mock_job_execution_failed,

@@ -1,8 +1,10 @@
-from django.urls import reverse
-from django_email_learning.models import Enrollment, EnrollmentStatus
 import json
-import pytest
 import uuid
+
+import pytest
+from django.urls import reverse
+
+from django_email_learning.models import Enrollment, EnrollmentStatus
 
 
 def get_url(organization_id: int, course_id: int) -> str:
@@ -22,9 +24,7 @@ def get_url(organization_id: int, course_id: int) -> str:
     ],
     indirect=["client"],
 )
-def test_enrollments_view_post_role_access(
-    client, expected_status, course, course_lesson_content
-):
+def test_enrollments_view_post_role_access(client, expected_status, course, course_lesson_content):
     course.enabled = True
     course.save()
     payload = {"learner_email": f"{uuid.uuid4().hex}@example.com"}
@@ -53,9 +53,7 @@ def test_enrollments_view_post_creates_active_enrollment_and_sends_one_email(
 
     assert response.status_code == 201
 
-    enrollment = Enrollment.objects.get(
-        learner__email=learner_email, course_id=course.id
-    )
+    enrollment = Enrollment.objects.get(learner__email=learner_email, course_id=course.id)
     assert enrollment.status == EnrollmentStatus.ACTIVE
 
     assert len(mailoutbox) == 1

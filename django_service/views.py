@@ -1,8 +1,9 @@
-from django.views.generic import TemplateView
-from django_email_learning.models import Assignment, Lesson, Quiz, CourseContent
-from django_email_learning.platform.views import CourseView
-from django_email_learning.platform.serializers import WebComponent
 from django.utils import timezone
+from django.views.generic import TemplateView
+
+from django_email_learning.models import Assignment, CourseContent, Lesson, Quiz
+from django_email_learning.platform.serializers import WebComponent
+from django_email_learning.platform.views import CourseView
 
 
 class CustomComponentCourseView(CourseView):
@@ -40,7 +41,8 @@ class EmailTemplatePreview(TemplateView):
             raise ValueError(
                 "Invalid template name. Allowed values are: 'certificate_form', 'enrollment_verified', "
                 "'enrollment_verification', 'lesson', 'password_reset', 'quiz', 'assignment', "
-                "'assignment_reminder', 'assignment_review', 'quiz_reminder', 'deactivation_deadline_passed', 'newsletter_sendout'."
+                "'assignment_reminder', 'assignment_review', 'quiz_reminder',"
+                " 'deactivation_deadline_passed', 'newsletter_sendout'."
             )
 
         return [f"emails/{template_name}.html"]
@@ -49,9 +51,7 @@ class EmailTemplatePreview(TemplateView):
         lesson = Lesson.objects.first()
         quiz = Quiz.objects.first()
         assignment = Assignment.objects.first()
-        content = (
-            CourseContent.objects.filter(lesson=lesson).first() if lesson else None
-        )
+        content = CourseContent.objects.filter(lesson=lesson).first() if lesson else None
         return {
             "course_title": "Example Course",
             "course_slug": "example-course",
@@ -70,7 +70,10 @@ class EmailTemplatePreview(TemplateView):
             "uid": "sampleuid",
             "token": "sampletoken",
             "progress": 40,
-            "message": "Your assignment has been reviewed and changes have been requested. Please review the feedback and update your submission accordingly.",
+            "message": (
+                "Your assignment has been reviewed and changes have been requested."
+                " Please review the feedback and update your submission accordingly."
+            ),
             "change_requested": True,
             "title_prefix": "Change Requested",
             "feedback": {

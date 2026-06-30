@@ -9,9 +9,7 @@ from .organizations import Organization
 class Newsletter(models.Model):
     title = models.CharField(max_length=200)
     language = models.CharField(max_length=10, choices=LANGUAGES, default="en")
-    organization = models.ForeignKey(
-        Organization, on_delete=models.CASCADE, related_name="newsletters"
-    )
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="newsletters")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -20,31 +18,21 @@ class Newsletter(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(
-                fields=["title", "organization"], name="unique_newsletter_title_per_org"
-            )
+            models.UniqueConstraint(fields=["title", "organization"], name="unique_newsletter_title_per_org")
         ]
 
 
 class NewsletterSubscriber(models.Model):
-    newsletter = models.ForeignKey(
-        Newsletter, on_delete=models.CASCADE, related_name="subscribers"
-    )
+    newsletter = models.ForeignKey(Newsletter, on_delete=models.CASCADE, related_name="subscribers")
     email = models.EmailField(max_length=254)
     subscribed_at = models.DateTimeField(auto_now_add=True)
-    unsubscribe_token = models.UUIDField(
-        default=uuid.uuid4, unique=True, editable=False
-    )
+    unsubscribe_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
 
     def __str__(self) -> str:
         return f"{self.email} → {self.newsletter.title}"
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["newsletter", "email"], name="unique_subscriber_per_newsletter"
-            )
-        ]
+        constraints = [models.UniqueConstraint(fields=["newsletter", "email"], name="unique_subscriber_per_newsletter")]
 
 
 class Sendout(models.Model):
@@ -52,16 +40,12 @@ class Sendout(models.Model):
         SCHEDULED = "scheduled", "Scheduled"
         SENT = "sent", "Sent"
 
-    newsletter = models.ForeignKey(
-        Newsletter, on_delete=models.CASCADE, related_name="sendouts"
-    )
+    newsletter = models.ForeignKey(Newsletter, on_delete=models.CASCADE, related_name="sendouts")
     subject = models.CharField(max_length=500)
     body = models.TextField()
     scheduled_at = models.DateTimeField()
     sent_at = models.DateTimeField(null=True, blank=True)
-    status = models.CharField(
-        max_length=20, choices=Status.choices, default=Status.SCHEDULED, db_index=True
-    )
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.SCHEDULED, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:
@@ -75,9 +59,7 @@ class SendoutDelivery(models.Model):
         SENT = "sent", "Sent"
         FAILED = "failed", "Failed"
 
-    sendout = models.ForeignKey(
-        Sendout, on_delete=models.CASCADE, related_name="deliveries"
-    )
+    sendout = models.ForeignKey(Sendout, on_delete=models.CASCADE, related_name="deliveries")
     subscriber = models.ForeignKey(
         NewsletterSubscriber,
         on_delete=models.CASCADE,

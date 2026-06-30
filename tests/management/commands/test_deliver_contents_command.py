@@ -1,9 +1,9 @@
-from io import StringIO
 import logging
+from io import StringIO
 from unittest.mock import patch
 
-from django.core.management import call_command
 import pytest
+from django.core.management import call_command
 
 from django_email_learning.models import JobName
 
@@ -12,12 +12,8 @@ def test_runs_job_and_prints_success_message() -> None:
     stdout = StringIO()
 
     with (
-        patch(
-            "django_email_learning.management.commands.deliver_contents.logging.basicConfig"
-        ) as mock_basic_config,
-        patch(
-            "django_email_learning.management.commands.deliver_contents.DeliverContentsJob"
-        ) as mock_job_cls,
+        patch("django_email_learning.management.commands.deliver_contents.logging.basicConfig") as mock_basic_config,
+        patch("django_email_learning.management.commands.deliver_contents.DeliverContentsJob") as mock_job_cls,
     ):
         call_command("deliver_contents", stdout=stdout)
 
@@ -31,12 +27,8 @@ def test_enables_debug_logging_when_verbose_option_used() -> None:
     stdout = StringIO()
 
     with (
-        patch(
-            "django_email_learning.management.commands.deliver_contents.logging.basicConfig"
-        ) as mock_basic_config,
-        patch(
-            "django_email_learning.management.commands.deliver_contents.DeliverContentsJob"
-        ),
+        patch("django_email_learning.management.commands.deliver_contents.logging.basicConfig") as mock_basic_config,
+        patch("django_email_learning.management.commands.deliver_contents.DeliverContentsJob"),
     ):
         call_command("deliver_contents", verbose=True, stdout=stdout)
 
@@ -47,9 +39,7 @@ def test_enables_debug_logging_when_verbose_option_used() -> None:
 def test_handles_keyboard_interrupt_without_raising() -> None:
     stdout = StringIO()
 
-    with patch(
-        "django_email_learning.management.commands.deliver_contents.DeliverContentsJob"
-    ) as mock_job_cls:
+    with patch("django_email_learning.management.commands.deliver_contents.DeliverContentsJob") as mock_job_cls:
         mock_job_cls.return_value.run.side_effect = KeyboardInterrupt()
 
         call_command("deliver_contents", stdout=stdout)
@@ -61,9 +51,7 @@ def test_records_metric_and_reraises_when_job_fails() -> None:
     stdout = StringIO()
 
     with (
-        patch(
-            "django_email_learning.management.commands.deliver_contents.DeliverContentsJob"
-        ) as mock_job_cls,
+        patch("django_email_learning.management.commands.deliver_contents.DeliverContentsJob") as mock_job_cls,
         patch(
             "django_email_learning.management.commands.deliver_contents.metric_service.job_execution_failed"
         ) as mock_job_execution_failed,
@@ -73,7 +61,5 @@ def test_records_metric_and_reraises_when_job_fails() -> None:
         with pytest.raises(RuntimeError):
             call_command("deliver_contents", stdout=stdout)
 
-    mock_job_execution_failed.assert_called_once_with(
-        job_name=JobName.DELIVER_CONTENTS.value
-    )
+    mock_job_execution_failed.assert_called_once_with(job_name=JobName.DELIVER_CONTENTS.value)
     assert "Content delivery job failed: boom" in stdout.getvalue()

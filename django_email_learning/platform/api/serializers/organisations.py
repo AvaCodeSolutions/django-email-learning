@@ -1,12 +1,14 @@
 import enum
 import re
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-from typing import Optional, Callable, Any
+from typing import Any, Callable, Optional
+
 from django.urls import reverse
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
 from django_email_learning.models import Organization, OrganizationUser
 from django_email_learning.services.storage_tools import (
-    move_file,
     FileDoesNotExistError,
+    move_file,
 )
 
 
@@ -44,9 +46,7 @@ class OrganizationResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     @staticmethod
-    def from_django_model(
-        organization: Organization, abs_url_builder: Callable
-    ) -> "OrganizationResponse":
+    def from_django_model(organization: Organization, abs_url_builder: Callable) -> "OrganizationResponse":
         url = reverse(
             "django_email_learning:public:organization_view",
             kwargs={"organization_id": organization.id},
@@ -55,9 +55,7 @@ class OrganizationResponse(BaseModel):
             {
                 "id": organization.id,
                 "name": organization.name,
-                "logo": abs_url_builder(organization.logo.url)
-                if organization.logo
-                else None,
+                "logo": abs_url_builder(organization.logo.url) if organization.logo else None,
                 "logo_path": organization.logo.name if organization.logo else None,
                 "description": organization.description,
                 "public_url": abs_url_builder(url),
@@ -71,17 +69,11 @@ class OrganizationResponse(BaseModel):
 
 class CreateOrganizationRequest(BaseModel):
     name: str = Field(min_length=1, examples=["AvaCode"])
-    description: Optional[str] = Field(
-        None, examples=["A description of the organization."]
-    )
+    description: Optional[str] = Field(None, examples=["A description of the organization."])
     logo: Optional[str] = Field(None, examples=["/path/to/logo.png"])
     website: Optional[str] = Field(None, examples=["https://example.com"])
-    youtube_channel: Optional[str] = Field(
-        None, examples=["https://youtube.com/channel/xyz"]
-    )
-    linkedin_page: Optional[str] = Field(
-        None, examples=["https://linkedin.com/company/xyz"]
-    )
+    youtube_channel: Optional[str] = Field(None, examples=["https://youtube.com/channel/xyz"])
+    linkedin_page: Optional[str] = Field(None, examples=["https://linkedin.com/company/xyz"])
     is_public: bool = Field(default=True, examples=[True])
 
     def to_django_model(self) -> Organization:
@@ -98,12 +90,8 @@ class CreateOrganizationRequest(BaseModel):
         if self.logo:
             try:
                 allowed_extensions = [".jpg", ".jpeg", ".png", ".svg"]
-                if not any(
-                    self.logo.lower().endswith(ext) for ext in allowed_extensions
-                ):
-                    raise ValueError(
-                        "Logo must be an image file with a valid extension."
-                    )
+                if not any(self.logo.lower().endswith(ext) for ext in allowed_extensions):
+                    raise ValueError("Logo must be an image file with a valid extension.")
                 final_path = move_file(
                     self.logo,
                     f"organization_logos/{organization.id}/{self.logo.split('/')[-1]}",
@@ -119,16 +107,10 @@ class CreateOrganizationRequest(BaseModel):
 class UpdateOrganizationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: Optional[str] = Field(None, min_length=1, examples=["AvaCode"])
-    description: Optional[str] = Field(
-        None, examples=["A description of the organization."]
-    )
+    description: Optional[str] = Field(None, examples=["A description of the organization."])
     website: Optional[str] = Field(None, examples=["https://example.com"])
-    youtube_channel: Optional[str] = Field(
-        None, examples=["https://youtube.com/channel/xyz"]
-    )
-    linkedin_page: Optional[str] = Field(
-        None, examples=["https://linkedin.com/company/xyz"]
-    )
+    youtube_channel: Optional[str] = Field(None, examples=["https://youtube.com/channel/xyz"])
+    linkedin_page: Optional[str] = Field(None, examples=["https://linkedin.com/company/xyz"])
     logo: Optional[str] = Field(None, examples=["/path/to/logo.png"])
     remove_logo: Optional[bool] = Field(None, examples=[True])
     is_public: Optional[bool] = Field(None, examples=[True])
@@ -182,9 +164,7 @@ class OrganizationUserResponse(BaseModel):
     photo_url: Optional[str] = None
 
     @staticmethod
-    def from_django_model(
-        org_user: OrganizationUser, request: Any
-    ) -> "OrganizationUserResponse":
+    def from_django_model(org_user: OrganizationUser, request: Any) -> "OrganizationUserResponse":
         return OrganizationUserResponse(
             id=org_user.id,
             user_id=org_user.user.id,
@@ -194,9 +174,7 @@ class OrganizationUserResponse(BaseModel):
             can_act_as_instructor=org_user.can_act_as_instructor(),
             display_name=org_user.display_name,
             photo=org_user.photo.name if org_user.photo else None,
-            photo_url=request.build_absolute_uri(org_user.photo.url)
-            if org_user.photo
-            else None,
+            photo_url=request.build_absolute_uri(org_user.photo.url) if org_user.photo else None,
         )
 
 
@@ -211,6 +189,4 @@ class SessionInfo(BaseModel):
 
     @classmethod
     def populate_from_session(cls, session):  # type: ignore[no-untyped-def]
-        return super().model_validate(
-            {"active_organization_id": session.get("active_organization_id")}
-        )
+        return super().model_validate({"active_organization_id": session.get("active_organization_id")})

@@ -1,14 +1,16 @@
-from django_email_learning.ports.task_queue_protocol import TaskQueueProtocol
-from django_email_learning.models import (
-    DeliverySchedule,
-    DeliveryStatus,
-    ContentDelivery,
-)
+import logging
+from typing import Iterator
+
 from django.db import transaction
 from django.db.models import OuterRef, Subquery
 from django.utils import timezone
-from typing import Iterator
-import logging
+
+from django_email_learning.models import (
+    ContentDelivery,
+    DeliverySchedule,
+    DeliveryStatus,
+)
+from django_email_learning.ports.task_queue_protocol import TaskQueueProtocol
 
 logger = logging.getLogger(__name__)
 
@@ -32,9 +34,7 @@ class DatabaseReminderQueue(TaskQueueProtocol[DeliverySchedule]):
                 .values_list("id", flat=True)
             )
 
-            logger.debug(
-                f"DatabaseReminderQueue: Found {len(task_ids)} ready reminder tasks."
-            )
+            logger.debug(f"DatabaseReminderQueue: Found {len(task_ids)} ready reminder tasks.")
 
             if not task_ids:
                 return iter([])

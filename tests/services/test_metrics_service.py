@@ -15,17 +15,13 @@ class ConfiguredMetricRecorder:
     def quiz_sent(self, course_slug: str, organization_id: int, quiz_id: int) -> None:
         pass
 
-    def lesson_sent(
-        self, course_slug: str, organization_id: int, lesson_id: int
-    ) -> None:
+    def lesson_sent(self, course_slug: str, organization_id: int, lesson_id: int) -> None:
         pass
 
     def user_enrollment_activated(self, course_slug: str, organization_id: int) -> None:
         pass
 
-    def user_enrollment_deactivated(
-        self, course_slug: str, organization_id: int, reason
-    ) -> None:
+    def user_enrollment_deactivated(self, course_slug: str, organization_id: int, reason) -> None:
         pass
 
     def user_completed_course(self, course_slug: str, organization_id: int) -> None:
@@ -54,9 +50,7 @@ def test_metrics_service_uses_default_recorder_when_setting_missing(settings):
 
 
 def test_metrics_service_instantiates_configured_recorder_class(settings):
-    settings.DJANGO_EMAIL_LEARNING = {
-        "METRIC_RECORDER": "tests.services.test_metrics_service.ConfiguredMetricRecorder"
-    }
+    settings.DJANGO_EMAIL_LEARNING = {"METRIC_RECORDER": "tests.services.test_metrics_service.ConfiguredMetricRecorder"}
 
     service = MetricsService()
 
@@ -64,9 +58,7 @@ def test_metrics_service_instantiates_configured_recorder_class(settings):
 
 
 def test_metrics_service_uses_configured_recorder_object_as_is(settings):
-    settings.DJANGO_EMAIL_LEARNING = {
-        "METRIC_RECORDER": "tests.services.test_metrics_service.ConfiguredMetricRecorder"
-    }
+    settings.DJANGO_EMAIL_LEARNING = {"METRIC_RECORDER": "tests.services.test_metrics_service.ConfiguredMetricRecorder"}
     prebuilt_recorder = Mock()
 
     with patch(

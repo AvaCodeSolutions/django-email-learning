@@ -47,7 +47,5 @@ class Command(BaseCommand):
 
         deleted_count, _ = queryset.delete()
         self.stdout.write(
-            self.style.SUCCESS(
-                f"Deleted {deleted_count} completed/staled job executions older than {days} days."
-            )
+            self.style.SUCCESS(f"Deleted {deleted_count} completed/staled job executions older than {days} days.")
         )

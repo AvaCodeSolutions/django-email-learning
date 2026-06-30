@@ -1,11 +1,12 @@
+import pytest
+from django.core.exceptions import ValidationError
+
 from django_email_learning.models import (
-    QuizSubmission,
     ContentDelivery,
     DeliverySchedule,
     DeliveryStatus,
+    QuizSubmission,
 )
-from django.core.exceptions import ValidationError
-import pytest
 
 
 def test_quiz_submission_creation(db, course_quiz_content, enrollment):
@@ -31,11 +32,7 @@ def test_quiz_submission_for_lesson_content(db, course_lesson_content, enrollmen
         enrollment=enrollment,
         course_content=course_lesson_content,
     )
-    delivery.delivery_schedules.add(
-        DeliverySchedule.objects.create(
-            status=DeliveryStatus.DELIVERED, delivery=delivery
-        )
-    )
+    delivery.delivery_schedules.add(DeliverySchedule.objects.create(status=DeliveryStatus.DELIVERED, delivery=delivery))
     with pytest.raises(Exception) as exc_info:
         QuizSubmission.objects.create(
             delivery=delivery,
@@ -52,18 +49,12 @@ def test_quiz_submission_for_lesson_content(db, course_lesson_content, enrollmen
         (50, None),
     ],
 )
-def test_invalid_quiz_submission_fields(
-    db, score, is_passed, course_quiz_content, enrollment
-):
+def test_invalid_quiz_submission_fields(db, score, is_passed, course_quiz_content, enrollment):
     delivery = ContentDelivery.objects.create(
         enrollment=enrollment,
         course_content=course_quiz_content,
     )
-    delivery.delivery_schedules.add(
-        DeliverySchedule.objects.create(
-            status=DeliveryStatus.DELIVERED, delivery=delivery
-        )
-    )
+    delivery.delivery_schedules.add(DeliverySchedule.objects.create(status=DeliveryStatus.DELIVERED, delivery=delivery))
 
     with pytest.raises(ValidationError):
         QuizSubmission.objects.create(
@@ -73,9 +64,7 @@ def test_invalid_quiz_submission_fields(
         )
 
 
-def test_quiz_submission_check_sent_item_quiz_association(
-    db, course_quiz_content, enrollment
-):
+def test_quiz_submission_check_sent_item_quiz_association(db, course_quiz_content, enrollment):
     delivery = ContentDelivery.objects.create(
         enrollment=enrollment,
         course_content=course_quiz_content,
@@ -87,7 +76,4 @@ def test_quiz_submission_check_sent_item_quiz_association(
             score=75,
             is_passed=True,
         )
-    assert (
-        "Quiz submission count exceeds the number of times the quiz was sent."
-        in str(exc_info.value)
-    )
+    assert "Quiz submission count exceeds the number of times the quiz was sent." in str(exc_info.value)

@@ -1,6 +1,7 @@
 from unittest import mock
 
 from django.urls import reverse
+
 from django_email_learning.services.jwt_service import generate_jwt
 
 URL = reverse("django_email_learning:api_jobs:send_newsletters")
@@ -18,9 +19,7 @@ def test_send_newsletters_with_invalid_api_key(superadmin_client):
 
 
 def test_send_newsletters_with_invalid_decoded_api_key(superadmin_client):
-    response = superadmin_client.get(
-        URL, HTTP_AUTHORIZATION="Bearer invalid_decoded_api_key"
-    )
+    response = superadmin_client.get(URL, HTTP_AUTHORIZATION="Bearer invalid_decoded_api_key")
     assert response.status_code == 401
 
 
@@ -36,9 +35,7 @@ def test_send_newsletters_valid_jwt_format_but_invalid_api_key(superadmin_client
     return_value=None,
 )
 def test_send_newsletters_with_valid_api_key(mock_run, superadmin_client):
-    create_key_response = superadmin_client.post(
-        reverse("django_email_learning:api_platform:api_keys_list")
-    )
+    create_key_response = superadmin_client.post(reverse("django_email_learning:api_platform:api_keys_list"))
     response = superadmin_client.get(
         URL,
         HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['key']}",
@@ -58,9 +55,7 @@ def test_send_newsletters_with_valid_api_key(mock_run, superadmin_client):
 def test_send_newsletters_failed_triggers_job_execution_failed_metric(
     mock_run, mock_job_execution_failed, superadmin_client
 ):
-    create_key_response = superadmin_client.post(
-        reverse("django_email_learning:api_platform:api_keys_list")
-    )
+    create_key_response = superadmin_client.post(reverse("django_email_learning:api_platform:api_keys_list"))
     response = superadmin_client.get(
         URL,
         HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['key']}",

@@ -24,9 +24,7 @@ class Command(BaseCommand):
                 format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
             )
         else:
-            logging.basicConfig(
-                level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-            )
+            logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
         logger = logging.getLogger(__name__)
 
@@ -37,21 +35,15 @@ class Command(BaseCommand):
             job = SendNewslettersJob()
             job.run()
 
-            self.stdout.write(
-                self.style.SUCCESS("Send newsletters job completed successfully")
-            )
+            self.stdout.write(self.style.SUCCESS("Send newsletters job completed successfully"))
             logger.info("SendNewslettersJob completed successfully")
 
         except KeyboardInterrupt:
-            self.stdout.write(
-                self.style.WARNING("Send newsletters job interrupted by user")
-            )
+            self.stdout.write(self.style.WARNING("Send newsletters job interrupted by user"))
             logger.warning("SendNewslettersJob interrupted by user")
 
         except Exception as e:
             metric_service.job_execution_failed(job_name=JobName.SEND_NEWSLETTERS.value)
-            self.stdout.write(
-                self.style.ERROR(f"Send newsletters job failed: {str(e)}")
-            )
+            self.stdout.write(self.style.ERROR(f"Send newsletters job failed: {str(e)}"))
             logger.error(f"SendNewslettersJob failed: {str(e)}", exc_info=True)
             raise

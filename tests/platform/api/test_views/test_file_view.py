@@ -1,8 +1,9 @@
+import json
+
+import pytest
 from django.core.files.storage import default_storage
 from django.test import override_settings
 from django.urls import reverse
-import json
-import pytest
 
 
 def get_url(organization_id: int) -> str:
@@ -14,9 +15,7 @@ def get_url(organization_id: int) -> str:
 
 @pytest.fixture
 def in_memory_storage():
-    with override_settings(
-        STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}}
-    ):
+    with override_settings(STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}}):
         yield
 
 

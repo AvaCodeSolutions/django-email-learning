@@ -1,26 +1,27 @@
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views import View
-from django.views.generic.base import TemplateResponseMixin
+import io
+import logging
+import uuid
+
+import qrcode
+from django.core.files.storage import default_storage
 from django.http import HttpResponse
-from django.utils.translation import gettext as _
-from django.utils.translation import get_language_info, get_language
 from django.urls import reverse
-from django_email_learning.models import ContentDelivery, EnrollmentStatus, Certificate
 from django.utils import timezone
-from django_email_learning.services import jwt_service
+from django.utils.decorators import method_decorator
+from django.utils.translation import get_language, get_language_info, gettext as _
+from django.views import View
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.generic.base import TemplateResponseMixin
+
+from django_email_learning.models import Certificate, ContentDelivery, EnrollmentStatus
 from django_email_learning.personalised.serializers import PublicQuizSerializer
-from django_email_learning.services.command_models.verify_enrollment_command import (
-    VerifyEnrollmentCommand,
-)
+from django_email_learning.services import jwt_service
 from django_email_learning.services.command_models.unsubscribe_command import (
     UnsubscribeCommand,
 )
-from django.core.files.storage import default_storage
-import qrcode
-import uuid
-import logging
-import io
+from django_email_learning.services.command_models.verify_enrollment_command import (
+    VerifyEnrollmentCommand,
+)
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -34,13 +35,9 @@ class BaseTemplateView(View, TemplateResponseMixin):
     ) -> HttpResponse:
         error_ref = uuid.uuid4().hex
         if exception:
-            logging.exception(
-                f"{message} - Ref: {error_ref}", extra={"error_ref": error_ref}
-            )
+            logging.exception(f"{message} - Ref: {error_ref}", extra={"error_ref": error_ref})
         else:
-            logging.error(
-                f"{message} - Ref: {error_ref}", extra={"error_ref": error_ref}
-            )
+            logging.error(f"{message} - Ref: {error_ref}", extra={"error_ref": error_ref})
         current_lang_code = get_language()
         lang_info = get_language_info(current_lang_code)
         return self.render_to_response(
@@ -147,9 +144,7 @@ class AssignmentPublicView(BaseTemplateView):
                 )
             if not delivery.course_content.is_published:
                 return self.error_response(
-                    message=_(
-                        "There is no valid assignment associated with this link."
-                    ),
+                    message=_("There is no valid assignment associated with this link."),
                     exception=ValueError("Assignment is not published"),
                     title=_("Invalid Assignment"),
                 )
@@ -166,18 +161,12 @@ class AssignmentPublicView(BaseTemplateView):
                         "assignment": assignment_data,
                         "token": token,
                         "csrfToken": request.META.get("CSRF_COOKIE", ""),
-                        "apiEndpoint": reverse(
-                            "django_email_learning:api_personalised:assignment_submission"
-                        ),
-                        "fileUploadApiEndpoint": reverse(
-                            "django_email_learning:api_personalised:file_upload"
-                        ),
+                        "apiEndpoint": reverse("django_email_learning:api_personalised:assignment_submission"),
+                        "fileUploadApiEndpoint": reverse("django_email_learning:api_personalised:file_upload"),
                         "localeMessages": {
                             "text_submission_label": _("Your Answer"),
                             "file_submission_label": _("Upload Your File"),
-                            "submission_success": _(
-                                "Your assignment has been submitted successfully!"
-                            ),
+                            "submission_success": _("Your assignment has been submitted successfully!"),
                             "submission_error": _(
                                 "An error occurred while submitting your assignment. Please try again later."
                             ),
@@ -196,13 +185,9 @@ class AssignmentPublicView(BaseTemplateView):
                 return self.render_to_response(
                     context={
                         "appContext": {
-                            "errorMessage": _(
-                                "The assignment link has already been used and is not valid anymore."
-                            ),
+                            "errorMessage": _("The assignment link has already been used and is not valid anymore."),
                             "localeMessages": {
-                                "close_window_message": _(
-                                    "You can now close this window!"
-                                ),
+                                "close_window_message": _("You can now close this window!"),
                             },
                         }
                     }
@@ -252,9 +237,7 @@ class QuizPublicView(BaseTemplateView):
                 )
             quiz_data = PublicQuizSerializer.model_validate(quiz).model_dump()
             if question_ids:
-                selected_questions = [
-                    q for q in quiz_data["questions"] if q["id"] in question_ids
-                ]
+                selected_questions = [q for q in quiz_data["questions"] if q["id"] in question_ids]
                 # Only filter questions if all specified question IDs are valid and included in the quiz
                 if len(selected_questions) == len(question_ids):
                     quiz_data["questions"] = selected_questions
@@ -264,12 +247,12 @@ class QuizPublicView(BaseTemplateView):
                         "quiz": quiz_data,
                         "token": token,
                         "csrfToken": request.META.get("CSRF_COOKIE", ""),
-                        "apiEndpoint": reverse(
-                            "django_email_learning:api_personalised:quiz_submission"
-                        ),
+                        "apiEndpoint": reverse("django_email_learning:api_personalised:quiz_submission"),
                         "localeMessages": {
                             "quiz_intro": _(
-                                "Please select all correct answers for each question. Note that some questions may have multiple correct answers. This quiz uses negative marking for incorrect choices; if you are unsure, it is better to leave the question unanswered."
+                                "Please select all correct answers for each question. Note that some questions may"
+                                " have multiple correct answers. This quiz uses negative marking for incorrect"
+                                " choices; if you are unsure, it is better to leave the question unanswered."
                             ),
                             "no_answer_warning": _(
                                 "You have not selected any answers for this question. Are you sure you want to proceed?"
@@ -278,14 +261,16 @@ class QuizPublicView(BaseTemplateView):
                             "error_loading_quiz": _("Error loading quiz"),
                             "ready_to_submit": _("Ready to submit?"),
                             "submit_quiz_note": _(
-                                "Please keep in mind that this quiz uses negative marking for incorrect answers. If you are unsure of an answer, it may be better to leave it blank."
+                                "Please keep in mind that this quiz uses negative marking for incorrect answers."
+                                " If you are unsure of an answer, it may be better to leave it blank."
                             ),
                             "cancel": _("Cancel"),
                             "submit": _("Submit"),
                             "try_again": _("Try Again"),
                             "close_window_message": _("You can now close this window!"),
                             "non_blocking_quiz_caption": _(
-                                "This quiz is for practice and does not affect your course progress. The course content will be sent to you regardless of your quiz answers."
+                                "This quiz is for practice and does not affect your course progress."
+                                " The course content will be sent to you regardless of your quiz answers."
                             ),
                         },
                     }
@@ -300,9 +285,7 @@ class QuizPublicView(BaseTemplateView):
                 return self.render_to_response(
                     context={
                         "appContext": {
-                            "errorMessage": _(
-                                "The quiz link has already been used and is not valid anymore."
-                            ),
+                            "errorMessage": _("The quiz link has already been used and is not valid anymore."),
                             "localeMessages": {
                                 "error": _("Error"),
                             },
@@ -332,22 +315,17 @@ class CertificateFormView(BaseTemplateView):
                 "appContext": {
                     "csrfToken": request.META.get("CSRF_COOKIE", ""),
                     "token": request.GET.get("token", ""),
-                    "apiEndpoint": reverse(
-                        "django_email_learning:api_personalised:submit_certificate_form"
-                    ),
+                    "apiEndpoint": reverse("django_email_learning:api_personalised:submit_certificate_form"),
                     "localeMessages": {
                         "form_title": _("Certificate of Completion"),
                         "form_intro": _(
-                            "Congratulations on completing the course! To issue your certificate, please enter the name you would like displayed on it."
+                            "Congratulations on completing the course! To issue your certificate,"
+                            " please enter the name you would like displayed on it."
                         ),
                         "full_name": _("Full Name"),
                         "full_name_required": _("Full Name is required"),
-                        "error_sending_data": _(
-                            "An error occurred while sending data. Please try again later."
-                        ),
-                        "form_submission_success": _(
-                            "Your certificate name has been submitted successfully!"
-                        ),
+                        "error_sending_data": _("An error occurred while sending data. Please try again later."),
+                        "form_submission_success": _("Your certificate name has been submitted successfully!"),
                         "submit": _("Submit"),
                         "view_certificate": _("View Certificate"),
                     },
@@ -385,9 +363,7 @@ class VerifyEnrollmentView(BaseTemplateView):
             context={
                 "page_title": _("Enrollment Verified"),
                 "appContext": {
-                    "successMessage": _(
-                        "Your enrollment has been successfully verified."
-                    ),
+                    "successMessage": _("Your enrollment has been successfully verified."),
                     "localeMessages": {"Confirm": _("Confirm")},
                 }
                 | self.get_app_context(),
@@ -407,9 +383,7 @@ class UnsubscribeView(BaseTemplateView):
                 context={
                     "page_title": _("Confirm Unsubscription"),
                     "appContext": {
-                        "confirmationMessage": _(
-                            "Are you sure you want to unsubscribe from our mailing list?"
-                        ),
+                        "confirmationMessage": _("Are you sure you want to unsubscribe from our mailing list?"),
                         "confirmUrl": f"{request.path}?token={request.GET.get('token')}&confirm=true",
                         "localeMessages": {"Confirm": _("Confirm")},
                     }
@@ -433,9 +407,7 @@ class UnsubscribeView(BaseTemplateView):
             context={
                 "page_title": _("Unsubscribed"),
                 "appContext": {
-                    "successMessage": _(
-                        "You have been successfully unsubscribed from our mailing list."
-                    ),
+                    "successMessage": _("You have been successfully unsubscribed from our mailing list."),
                     "localeMessages": {"Confirm": _("Confirm")},
                 }
                 | self.get_app_context(),
@@ -466,9 +438,7 @@ class CertificateView(BaseTemplateView):
         certificate_id = id_parts[2]
         random_suffix = id_parts[3]
         try:
-            certificate = Certificate.objects.get(
-                id=certificate_id, random_suffix=random_suffix
-            )
+            certificate = Certificate.objects.get(id=certificate_id, random_suffix=random_suffix)
         except Certificate.DoesNotExist:
             return self.error_response(
                 message=_("Certificate not found."),
@@ -487,9 +457,7 @@ class CertificateView(BaseTemplateView):
         qr.add_data(full_url)
         qr.make(fit=True)
 
-        qrcode_img = qr.make_image(
-            fill_color="black", back_color="transparent"
-        ).convert("RGBA")  # type: ignore[union-attr]
+        qrcode_img = qr.make_image(fill_color="black", back_color="transparent").convert("RGBA")  # type: ignore[union-attr]
 
         img_byte_arr = io.BytesIO()
         qrcode_img.save(img_byte_arr, format="PNG")
@@ -500,7 +468,10 @@ class CertificateView(BaseTemplateView):
 
         return self.render_to_response(
             context={
-                "page_title": f"{_('Certificate of Completion')} | {certificate.enrollment.course.title} | {certificate.name_on_certificate}",
+                "page_title": (
+                    f"{_('Certificate of Completion')} | {certificate.enrollment.course.title}"
+                    f" | {certificate.name_on_certificate}"
+                ),
                 "appContext": {
                     "name": certificate.name_on_certificate,
                     "courseTitle": certificate.enrollment.course.title,

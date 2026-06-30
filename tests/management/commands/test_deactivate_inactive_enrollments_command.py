@@ -1,9 +1,9 @@
-from io import StringIO
 import logging
+from io import StringIO
 from unittest.mock import patch
 
-from django.core.management import call_command
 import pytest
+from django.core.management import call_command
 
 from django_email_learning.models import JobName
 
@@ -24,10 +24,7 @@ def test_runs_job_and_prints_success_message() -> None:
     assert mock_basic_config.call_count == 1
     assert mock_basic_config.call_args.kwargs["level"] == logging.INFO
     mock_job_cls.return_value.run.assert_called_once_with()
-    assert (
-        "Deactivate inactive enrollments job completed successfully"
-        in stdout.getvalue()
-    )
+    assert "Deactivate inactive enrollments job completed successfully" in stdout.getvalue()
 
 
 def test_enables_debug_logging_when_verbose_option_used() -> None:
@@ -57,9 +54,7 @@ def test_handles_keyboard_interrupt_without_raising() -> None:
 
         call_command("deactivate_inactive_enrollments", stdout=stdout)
 
-    assert (
-        "Deactivate inactive enrollments job interrupted by user" in stdout.getvalue()
-    )
+    assert "Deactivate inactive enrollments job interrupted by user" in stdout.getvalue()
 
 
 def test_records_metric_and_reraises_when_job_fails() -> None:
@@ -78,7 +73,5 @@ def test_records_metric_and_reraises_when_job_fails() -> None:
         with pytest.raises(RuntimeError):
             call_command("deactivate_inactive_enrollments", stdout=stdout)
 
-    mock_job_execution_failed.assert_called_once_with(
-        job_name=JobName.DEACTIVATE_ENROLLMENTS.value
-    )
+    mock_job_execution_failed.assert_called_once_with(job_name=JobName.DEACTIVATE_ENROLLMENTS.value)
     assert "Deactivate inactive enrollments job failed: boom" in stdout.getvalue()

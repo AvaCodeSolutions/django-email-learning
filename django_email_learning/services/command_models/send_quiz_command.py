@@ -1,16 +1,17 @@
+from typing import Literal
+
+from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.urls import reverse
+
+from django_email_learning.models import CourseContent
+from django_email_learning.services import jwt_service
 from django_email_learning.services.command_models.abstract_command import (
     AbstractCommand,
 )
-from django_email_learning.models import CourseContent
 from django_email_learning.services.email_sender_service import email_sender_service
-from django_email_learning.services import jwt_service
 from django_email_learning.services.metrics_service import metric_service
-from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
-from django.conf import settings
-from django.urls import reverse
-from typing import Literal
-
 from django_email_learning.services.utils import mask_email
 
 
@@ -28,12 +29,8 @@ class SendQuizCommand(AbstractCommand):
         conf = settings.DJANGO_EMAIL_LEARNING
         content = CourseContent.objects.get(id=self.content_id)
         if not content.quiz:
-            raise QuizNotFoundError(
-                f"CourseContent with ID {self.content_id} has no associated quiz"
-            )
-        self.logger.info(
-            f"Sending quiz with ID {content.quiz.id} to email {mask_email(self.email)}"
-        )
+            raise QuizNotFoundError(f"CourseContent with ID {self.content_id} has no associated quiz")
+        self.logger.info(f"Sending quiz with ID {content.quiz.id} to email {mask_email(self.email)}")
 
         token = self.link.split("token=")[-1] if "token=" in self.link else None
         if token:
@@ -43,14 +40,11 @@ class SendQuizCommand(AbstractCommand):
 
         quiz = content.quiz
         subject = quiz.title
-        question_ids = decoded_token.get(
-            "question_ids", quiz.questions.values_list("id", flat=True)
-        )
-        delivery = content.contentdelivery_set.filter(
-            enrollment__learner__email=self.email
-        ).first()
+        question_ids = decoded_token.get("question_ids", quiz.questions.values_list("id", flat=True))
+        delivery = content.contentdelivery_set.filter(enrollment__learner__email=self.email).first()
         track_open_url = (
-            f"{conf['SITE_BASE_URL']}{reverse('django_email_learning:personalised:track_open', kwargs={'hash_value': delivery.hash_value})}"
+            f"{conf['SITE_BASE_URL']}"
+            f"{reverse('django_email_learning:personalised:track_open', kwargs={'hash_value': delivery.hash_value})}"
             if delivery
             else None
         )
@@ -58,7 +52,9 @@ class SendQuizCommand(AbstractCommand):
         context = {
             "quiz": quiz,
             "link": self.link,
-            "amp_action_url": f"{conf['SITE_BASE_URL']}{reverse('django_email_learning:api_personalised:quiz_amp_submission')}",
+            "amp_action_url": (
+                f"{conf['SITE_BASE_URL']}{reverse('django_email_learning:api_personalised:quiz_amp_submission')}"
+            ),
             "question_ids": question_ids,
             "token": token,
             "unsubscribe_link": content.course.generate_unsubscribe_link(self.email),
@@ -72,13 +68,9 @@ class SendQuizCommand(AbstractCommand):
             from_email=email_sender_service.from_email,
             to=[self.email],
         )
-        email_message.attach_alternative(
-            render_to_string("emails/quiz.html", context), "text/html"
-        )
+        email_message.attach_alternative(render_to_string("emails/quiz.html", context), "text/html")
         if conf.get("AMP_ENABLED"):
-            email_message.attach_alternative(
-                render_to_string("emails/quiz_amp.html", context), "text/x-amp-html"
-            )
+            email_message.attach_alternative(render_to_string("emails/quiz_amp.html", context), "text/x-amp-html")
 
         email_sender_service.send(email_message)
         metric_service.quiz_sent(

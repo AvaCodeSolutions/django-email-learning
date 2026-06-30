@@ -78,7 +78,7 @@ django_email_learning = [
 ]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 warn_unreachable = true
@@ -95,6 +95,22 @@ django_settings_module = "django_service.settings"
 
 [tool.pre-commit]
 default_language_version = {python = "python3.12"}
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "W",  # pycodestyle warnings
+    "I",  # isort
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["django_email_learning"]
+combine-as-imports = true
 
 [tool.ruff.format]
 # Ensure consistent formatting for pre-commit

@@ -4,7 +4,6 @@ from typing import ParamSpec, TypeVar
 
 from django.utils import timezone
 
-
 P = ParamSpec("P")
 R = TypeVar("R")
 

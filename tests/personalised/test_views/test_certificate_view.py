@@ -1,6 +1,7 @@
-from django.urls import reverse
-from django_email_learning.models import Certificate
 import pytest
+from django.urls import reverse
+
+from django_email_learning.models import Certificate
 
 
 def get_url(certificate_number):
@@ -12,9 +13,7 @@ def get_url(certificate_number):
 
 @pytest.fixture
 def certificate(enrollment):
-    return Certificate.objects.create(
-        enrollment=enrollment, name_on_certificate="John Doe"
-    )
+    return Certificate.objects.create(enrollment=enrollment, name_on_certificate="John Doe")
 
 
 def test_certificate_view(certificate, anonymous_client):
@@ -28,10 +27,5 @@ def test_certificate_view(certificate, anonymous_client):
         == f"Certificate of Completion | {certificate.enrollment.course.title} | John Doe"
     )
     assert response.context["appContext"]["name"] == certificate.name_on_certificate
-    assert (
-        response.context["appContext"]["courseTitle"]
-        == certificate.enrollment.course.title
-    )
-    assert response.context["appContext"][
-        "issueDate"
-    ] == certificate.issued_at.strftime("%B %d, %Y")
+    assert response.context["appContext"]["courseTitle"] == certificate.enrollment.course.title
+    assert response.context["appContext"]["issueDate"] == certificate.issued_at.strftime("%B %d, %Y")

@@ -1,15 +1,16 @@
+import typing
 from functools import wraps
+
 from django.core.exceptions import ImproperlyConfigured
 from django.http import JsonResponse
-from django_email_learning.models import OrganizationUser
+
 from django_email_learning.apps import PLATFORM_ADMIN_GROUP_NAME
+from django_email_learning.models import ApiKey, OrganizationUser
 from django_email_learning.services.jwt_service import (
-    decode_jwt,
-    InvalidTokenException,
     ExpiredTokenException,
+    InvalidTokenException,
+    decode_jwt,
 )
-from django_email_learning.models import ApiKey
-import typing
 
 
 def is_platform_admin() -> typing.Callable:
@@ -21,9 +22,7 @@ def is_platform_admin() -> typing.Callable:
 
             if (
                 not request.user.is_superuser
-                and not request.user.groups.filter(
-                    name=PLATFORM_ADMIN_GROUP_NAME
-                ).exists()
+                and not request.user.groups.filter(name=PLATFORM_ADMIN_GROUP_NAME).exists()
             ):
                 return JsonResponse({"error": "Forbidden"}, status=403)
             return view_func(request, *view_args, **view_kwargs)
@@ -62,9 +61,7 @@ def accessible_for(roles: set[str]) -> typing.Callable:
     return decorator
 
 
-def _resolve_active_organization_id(
-    request: typing.Any, view_kwargs: dict
-) -> typing.Optional[int]:
+def _resolve_active_organization_id(request: typing.Any, view_kwargs: dict) -> typing.Optional[int]:
     """Resolve the active organization ID for a request.
 
     Resolution order:
@@ -114,18 +111,11 @@ def check_api_key() -> typing.Callable:
         def _wrapped_view(request, *view_args, **view_kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
             authorization_header = request.headers.get("Authorization")
             if not authorization_header:
-                return JsonResponse(
-                    {"error": "Authorization header missing"}, status=401
-                )
+                return JsonResponse({"error": "Authorization header missing"}, status=401)
             authorization_header_parts = authorization_header.split(" ")
-            if (
-                len(authorization_header_parts) != 2
-                or authorization_header_parts[0] != "Bearer"
-            ):
+            if len(authorization_header_parts) != 2 or authorization_header_parts[0] != "Bearer":
                 return JsonResponse(
-                    {
-                        "error": "Invalid Authorization header format. Expected: Bearer <API_KEY>"
-                    },
+                    {"error": "Invalid Authorization header format. Expected: Bearer <API_KEY>"},
                     status=401,
                 )
             api_key = authorization_header_parts[1]
@@ -145,9 +135,7 @@ def check_api_key() -> typing.Callable:
             except InvalidTokenException:
                 return JsonResponse({"error": "Invalid Json Web Token"}, status=401)
             except KeyError:
-                return JsonResponse(
-                    {"error": "Json Web Token missing required fields"}, status=401
-                )
+                return JsonResponse({"error": "Json Web Token missing required fields"}, status=401)
 
             return view_func(request, *view_args, **view_kwargs)
 

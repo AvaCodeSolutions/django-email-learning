@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Any, Optional
+
 from pydantic import BaseModel, ConfigDict, Field
-from typing import Optional, Any
 
 
 class NewsletterResponse(BaseModel):

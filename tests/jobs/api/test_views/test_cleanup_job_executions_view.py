@@ -21,9 +21,7 @@ def test_cleanup_job_executions_with_invalid_api_key(superadmin_client, api_key)
         HTTP_AUTHORIZATION=api_key,
     )
     assert response.status_code == 401
-    assert response.json() == {
-        "error": "Invalid Authorization header format. Expected: Bearer <API_KEY>"
-    }
+    assert response.json() == {"error": "Invalid Authorization header format. Expected: Bearer <API_KEY>"}
 
 
 def test_cleanup_job_executions_with_invalid_decoded_api_key(superadmin_client):
@@ -49,12 +47,8 @@ def test_cleanup_job_executions_valid_jwt_format_but_invalid_api_key(superadmin_
     "django_email_learning.jobs.api.views.call_command",
     return_value=None,
 )
-def test_cleanup_job_executions_with_valid_api_key(
-    mock_call_command, superadmin_client
-):
-    create_key_response = superadmin_client.post(
-        reverse("django_email_learning:api_platform:api_keys_list")
-    )
+def test_cleanup_job_executions_with_valid_api_key(mock_call_command, superadmin_client):
+    create_key_response = superadmin_client.post(reverse("django_email_learning:api_platform:api_keys_list"))
     response = superadmin_client.get(
         URL,
         HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['key']}",
@@ -78,9 +72,7 @@ def test_cleanup_job_executions_with_valid_api_key(
 def test_cleanup_job_executions_failed_triggers_job_execution_failed_metric(
     mock_job_execution_failed, mock_call_command, superadmin_client
 ):
-    create_key_response = superadmin_client.post(
-        reverse("django_email_learning:api_platform:api_keys_list")
-    )
+    create_key_response = superadmin_client.post(reverse("django_email_learning:api_platform:api_keys_list"))
     response = superadmin_client.get(
         URL,
         HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['key']}",
@@ -96,9 +88,7 @@ def test_cleanup_job_executions_failed_triggers_job_execution_failed_metric(
 
 
 def test_cleanup_job_executions_returns_400_for_invalid_days(superadmin_client):
-    create_key_response = superadmin_client.post(
-        reverse("django_email_learning:api_platform:api_keys_list")
-    )
+    create_key_response = superadmin_client.post(reverse("django_email_learning:api_platform:api_keys_list"))
     response = superadmin_client.get(
         f"{URL}?days=invalid",
         HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['key']}",

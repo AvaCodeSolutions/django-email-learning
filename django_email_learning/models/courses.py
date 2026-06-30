@@ -1,17 +1,19 @@
 from typing import Any
-from django.db import models
-from django.core.exceptions import ValidationError
+
 from django.conf import settings
+from django.conf.global_settings import LANGUAGES
+from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
+from django.db import models
 from django.urls import reverse
 from PIL import Image
 
 from django_email_learning.models.imap_connections import ImapConnection
 from django_email_learning.models.newsletters import Newsletter
-from .organizations import Organization, OrganizationUser
-from .enums.enrollment_status import EnrollmentStatus
 from django_email_learning.services import jwt_service
-from django.conf.global_settings import LANGUAGES
+
+from .enums.enrollment_status import EnrollmentStatus
+from .organizations import Organization, OrganizationUser
 
 
 class Course(models.Model):
@@ -22,9 +24,7 @@ class Course(models.Model):
     )
     description = models.TextField(null=True, blank=True)
     enabled = models.BooleanField(default=False)
-    imap_connection = models.ForeignKey(
-        ImapConnection, on_delete=models.SET_NULL, null=True, blank=True
-    )
+    imap_connection = models.ForeignKey(ImapConnection, on_delete=models.SET_NULL, null=True, blank=True)
     newsletter = models.ForeignKey(
         Newsletter,
         on_delete=models.SET_NULL,
@@ -49,28 +49,18 @@ class Course(models.Model):
     class Meta:
         unique_together = [["slug", "organization"], ["title", "organization"]]
 
-    def delete(
-        self, using: Any | None = None, keep_parents: bool = False
-    ) -> tuple[int, dict[str, int]]:
+    def delete(self, using: Any | None = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
         if self.enabled:
-            raise ValueError(
-                "Course can not be deleted when enabled, please disable the course first!"
-            )
+            raise ValueError("Course can not be deleted when enabled, please disable the course first!")
         return super().delete(using, keep_parents)
 
     @property
     def enrollments_count(self) -> dict[str, int]:
         qs = self.enrollments.aggregate(
-            unverified=models.Count(
-                "id", filter=models.Q(status=EnrollmentStatus.UNVERIFIED)
-            ),
+            unverified=models.Count("id", filter=models.Q(status=EnrollmentStatus.UNVERIFIED)),
             active=models.Count("id", filter=models.Q(status=EnrollmentStatus.ACTIVE)),
-            completed=models.Count(
-                "id", filter=models.Q(status=EnrollmentStatus.COMPLETED)
-            ),
-            deactivated=models.Count(
-                "id", filter=models.Q(status=EnrollmentStatus.DEACTIVATED)
-            ),
+            completed=models.Count("id", filter=models.Q(status=EnrollmentStatus.COMPLETED)),
+            deactivated=models.Count("id", filter=models.Q(status=EnrollmentStatus.DEACTIVATED)),
             total=models.Count("id"),
         )
         return qs
@@ -92,9 +82,7 @@ class Course(models.Model):
                 img = Image.open(f)
                 width, height = img.size
                 if width < 580 or height < 360:
-                    raise ValueError(
-                        "Image dimensions must be at least 580x360 pixels."
-                    )
+                    raise ValueError("Image dimensions must be at least 580x360 pixels.")
             allowed_extensions = [".jpg", ".jpeg", ".png", ".svg"]
             if not any(file_path.lower().endswith(ext) for ext in allowed_extensions):
                 raise ValueError("Image must be an image file with a valid extension.")
@@ -108,9 +96,7 @@ class Course(models.Model):
 
 
 class CourseInstructor(models.Model):
-    course = models.ForeignKey(
-        Course, on_delete=models.CASCADE, related_name="instructors"
-    )
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="instructors")
     org_user = models.ForeignKey(OrganizationUser, on_delete=models.CASCADE)
 
     def __str__(self) -> str:
@@ -119,9 +105,7 @@ class CourseInstructor(models.Model):
     def clean(self) -> None:
         super().clean()
         if self.org_user.organization != self.course.organization:
-            raise ValidationError(
-                "Instructor must belong to the same organization as the course."
-            )
+            raise ValidationError("Instructor must belong to the same organization as the course.")
         if not self.org_user.can_act_as_instructor():
             raise ValidationError("Organization user doesn't have instructor role.")
 
@@ -134,9 +118,7 @@ class CourseInstructor(models.Model):
 
 
 class ExternalReference(models.Model):
-    course = models.ForeignKey(
-        Course, on_delete=models.CASCADE, related_name="external_references"
-    )
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="external_references")
     name = models.CharField(max_length=200)
     url = models.URLField(max_length=500)
 

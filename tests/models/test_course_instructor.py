@@ -1,12 +1,13 @@
-from django_email_learning.models import (
-    CourseInstructor,
-    Course,
-    OrganizationUser,
-    Organization,
-)
 import pytest
-from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+
+from django_email_learning.models import (
+    Course,
+    CourseInstructor,
+    Organization,
+    OrganizationUser,
+)
 
 
 @pytest.fixture
@@ -71,9 +72,7 @@ class TestCourseInstructorCreation:
         expected = f"{course.title} - {org_instructor.user.email}"
         assert str(course_instructor) == expected
 
-    def test_course_instructor_str_with_different_email(
-        self, db, course, org_instructor
-    ):
+    def test_course_instructor_str_with_different_email(self, db, course, org_instructor):
         """Test __str__ method reflects org_user email correctly."""
         course_instructor = CourseInstructor.objects.create(
             course=course,
@@ -87,9 +86,7 @@ class TestCourseInstructorCreation:
 class TestCourseInstructorValidation:
     """Test CourseInstructor validation rules."""
 
-    def test_cannot_add_instructor_from_different_organization(
-        self, db, course, org_instructor_different_org
-    ):
+    def test_cannot_add_instructor_from_different_organization(self, db, course, org_instructor_different_org):
         """Test that instructor from different organization cannot be added."""
         with pytest.raises(ValidationError) as exc_info:
             CourseInstructor(
@@ -97,9 +94,7 @@ class TestCourseInstructorValidation:
                 org_user=org_instructor_different_org,
             ).save()
 
-        assert "Instructor must belong to the same organization as the course." in str(
-            exc_info.value
-        )
+        assert "Instructor must belong to the same organization as the course." in str(exc_info.value)
 
     def test_cannot_add_non_instructor_role(self, db, course, org_editor):
         """Test that org_user without instructor role cannot be added."""
@@ -140,13 +135,9 @@ class TestCourseInstructorUniqueness:
                 course=course,
                 org_user=org_instructor,
             )
-        assert "Course instructor with this Course and Org user already exists." in str(
-            exc_info.value
-        )
+        assert "Course instructor with this Course and Org user already exists." in str(exc_info.value)
 
-    def test_same_instructor_can_teach_multiple_courses(
-        self, db, organization, org_instructor
-    ):
+    def test_same_instructor_can_teach_multiple_courses(self, db, organization, org_instructor):
         """Test that same instructor can be added to multiple courses."""
         course1 = Course.objects.create(
             title="Course 1",
@@ -172,9 +163,7 @@ class TestCourseInstructorUniqueness:
         assert instructor1.org_user == instructor2.org_user
         assert instructor1.course != instructor2.course
 
-    def test_different_instructors_can_teach_same_course(
-        self, db, course, organization
-    ):
+    def test_different_instructors_can_teach_same_course(self, db, course, organization):
         """Test that multiple instructors can be added to same course."""
         instructor_user2 = User.objects.create_user(
             username="instructor2",

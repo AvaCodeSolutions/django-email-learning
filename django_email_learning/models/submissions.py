@@ -1,21 +1,25 @@
-from typing import Optional
-from django.db import models, transaction
-from django.core.exceptions import ValidationError
-from django.urls import reverse
 from datetime import datetime, timedelta
+from typing import Optional
+
+from django.core.exceptions import ValidationError
+from django.db import models, transaction
+from django.urls import reverse
+
 from django_email_learning.services import jwt_service
-from django_email_learning.services.utils import get_private_file_storage, mask_email
-from .deliveries import ContentDelivery
-from .organizations import OrganizationUser
+from django_email_learning.services.utils import (
+    PRIVATE_FILE_STORAGE,
+    get_private_file_storage,
+    mask_email,
+)
+
 from .course_contents import Assignment
+from .deliveries import ContentDelivery
 from .enums.course_content_type import CourseContentType
-from django_email_learning.services.utils import PRIVATE_FILE_STORAGE
+from .organizations import OrganizationUser
 
 
 class QuizSubmission(models.Model):
-    delivery = models.ForeignKey(
-        ContentDelivery, on_delete=models.CASCADE, related_name="quiz_submissions"
-    )
+    delivery = models.ForeignKey(ContentDelivery, on_delete=models.CASCADE, related_name="quiz_submissions")
     score = models.IntegerField()
     is_passed = models.BooleanField()
     submitted_at = models.DateTimeField(auto_now_add=True)
@@ -23,23 +27,22 @@ class QuizSubmission(models.Model):
     def clean(self) -> None:
         if self.delivery.course_content.type != CourseContentType.QUIZ:
             raise ValidationError("Sent item must be associated with a quiz content.")
-        already_submitted = QuizSubmission.objects.filter(
-            delivery=self.delivery
-        ).count()
+        already_submitted = QuizSubmission.objects.filter(delivery=self.delivery).count()
         if (
             self.delivery.course_content.quiz.limited_attempts  # type: ignore[union-attr]
             and already_submitted >= self.delivery.times_delivered
         ):
-            raise ValidationError(
-                "Quiz submission count exceeds the number of times the quiz was sent."
-            )
+            raise ValidationError("Quiz submission count exceeds the number of times the quiz was sent.")
 
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
-        return f"{self.delivery.course_content.quiz.title} | {self.delivery.enrollment.learner.email} | Score: {self.score} | Passed: {self.is_passed}"  # type: ignore[union-attr]
+        return (  # type: ignore[union-attr]
+            f"{self.delivery.course_content.quiz.title} | {self.delivery.enrollment.learner.email}"
+            f" | Score: {self.score} | Passed: {self.is_passed}"
+        )
 
 
 class AssignmentSubmission(models.Model):
@@ -82,11 +85,10 @@ class AssignmentSubmission(models.Model):
     def save_file(file_path: str, delivery: ContentDelivery) -> str:
         if PRIVATE_FILE_STORAGE.exists(file_path):
             if PRIVATE_FILE_STORAGE.size(file_path) > 10 * 1024 * 1024:
-                raise ValueError(
-                    "File size exceeds the maximum allowed limit of 10 MB."
-                )
+                raise ValueError("File size exceeds the maximum allowed limit of 10 MB.")
             file = PRIVATE_FILE_STORAGE.open(file_path)
-            final_path = f"organizations/{delivery.enrollment.course.organization.id}/assignments/{delivery.id}/{file_path.split('/')[-1]}"
+            org_id = delivery.enrollment.course.organization.id
+            final_path = f"organizations/{org_id}/assignments/{delivery.id}/{file_path.split('/')[-1]}"
             PRIVATE_FILE_STORAGE.save(final_path, file)
             PRIVATE_FILE_STORAGE.delete(file_path)
             return final_path
@@ -100,13 +102,8 @@ class AssignmentSubmission(models.Model):
                 "org_id": org_id,
                 "file_path": self.file_submission.path,
             }
-            token = jwt_service.generate_jwt(
-                payload=payload, exp=datetime.now() + timedelta(hours=3)
-            )
-            url = (
-                reverse("django_email_learning:platform:private_file_view")
-                + f"?token={token}"
-            )
+            token = jwt_service.generate_jwt(payload=payload, exp=datetime.now() + timedelta(hours=3))
+            url = reverse("django_email_learning:platform:private_file_view") + f"?token={token}"
             return url
         return None
 
@@ -119,38 +116,31 @@ class AssignmentSubmission(models.Model):
     def clean(self) -> None:
         super().clean()
         if not self.delivery.course_content.assignment:
-            raise ValidationError(
-                "Sent item must be associated with an assignment content."
-            )
+            raise ValidationError("Sent item must be associated with an assignment content.")
         if not self.text_submission and not self.file_submission:
-            raise ValidationError(
-                "At least one of text submission or file submission must be provided."
-            )
+            raise ValidationError("At least one of text submission or file submission must be provided.")
 
     @transaction.atomic
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self.full_clean()
         if not self.pk and self.status != self.SubmissionStatus.PENDING_REVIEW:
             raise ValidationError("New submissions must have status 'pending_review'.")
-        if (
-            self.assignment.is_blocking
-            and self.status == self.SubmissionStatus.APPROVED
-        ):
-            current_state = (
-                AssignmentSubmission.objects.get(pk=self.pk).status if self.pk else None
-            )
+        if self.assignment.is_blocking and self.status == self.SubmissionStatus.APPROVED:
+            current_state = AssignmentSubmission.objects.get(pk=self.pk).status if self.pk else None
             if current_state != self.SubmissionStatus.APPROVED:
                 self.delivery.schedule_next_delivery()
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
-        return f"{self.delivery.course_content.assignment.title} | {mask_email(self.delivery.enrollment.learner.email)} | Submitted at: {self.submitted_at}"  # type: ignore[union-attr]
+        return (  # type: ignore[union-attr]
+            f"{self.delivery.course_content.assignment.title}"
+            f" | {mask_email(self.delivery.enrollment.learner.email)}"
+            f" | Submitted at: {self.submitted_at}"
+        )
 
 
 class AssignmentFeedback(models.Model):
-    submission = models.ForeignKey(
-        AssignmentSubmission, on_delete=models.CASCADE, related_name="feedbacks"
-    )
+    submission = models.ForeignKey(AssignmentSubmission, on_delete=models.CASCADE, related_name="feedbacks")
     comment = models.TextField()
     provided_at = models.DateTimeField(auto_now_add=True)
     provided_by = models.ForeignKey(

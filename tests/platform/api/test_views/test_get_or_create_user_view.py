@@ -1,13 +1,11 @@
-from django.urls import reverse
-from django.core import mail
 import pytest
+from django.core import mail
+from django.urls import reverse
 
 url = reverse("django_email_learning:api_platform:get_or_create_user_by_email")
 
 
-@pytest.mark.parametrize(
-    "client", ["superadmin", "platform_admin"], indirect=["client"]
-)
+@pytest.mark.parametrize("client", ["superadmin", "platform_admin"], indirect=["client"])
 def test_get_or_create_user_view(client):
     response = client.post(
         url,

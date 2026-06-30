@@ -1,13 +1,14 @@
-from enum import StrEnum
-
-from django.db import models
-from .enums.course_content_type import CourseContentType
-from typing import Optional
-from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator, MaxValueValidator
-from django.utils.translation import ngettext
 import random
+from enum import StrEnum
+from typing import Optional
+
+from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
+from django.utils.translation import ngettext
+
 from .courses import Course
+from .enums.course_content_type import CourseContentType
 
 
 class Lesson(models.Model):
@@ -93,9 +94,7 @@ class Question(models.Model):
 
 
 class Answer(models.Model):
-    question = models.ForeignKey(
-        Question, on_delete=models.CASCADE, related_name="answers"
-    )
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="answers")
     text = models.CharField(max_length=500)
     is_correct = models.BooleanField(default=False)
 
@@ -119,12 +118,8 @@ class Assignment(models.Model):
         help_text="Time limit to complete the assignment in days. 0 indicates no deadline.",
         validators=[MinValueValidator(0)],
     )
-    requires_text_submission = models.BooleanField(
-        help_text="Whether the assignment requires text submission."
-    )
-    requires_file_submission = models.BooleanField(
-        help_text="Whether the assignment requires file submission."
-    )
+    requires_text_submission = models.BooleanField(help_text="Whether the assignment requires text submission.")
+    requires_file_submission = models.BooleanField(help_text="Whether the assignment requires file submission.")
     reminder_interval_days = models.IntegerField(
         help_text="For assignments without a deadline (deadline_days = 0), send reminder emails every N days.",
         validators=[MinValueValidator(0)],
@@ -145,9 +140,7 @@ class CourseContent(models.Model):
     )
     lesson = models.ForeignKey(Lesson, null=True, blank=True, on_delete=models.CASCADE)
     quiz = models.ForeignKey(Quiz, null=True, blank=True, on_delete=models.CASCADE)
-    assignment = models.ForeignKey(
-        Assignment, null=True, blank=True, on_delete=models.CASCADE
-    )
+    assignment = models.ForeignKey(Assignment, null=True, blank=True, on_delete=models.CASCADE)
     waiting_period = models.IntegerField(
         help_text="Waiting period in seconds after previous content is sent or submited."
     )
@@ -204,19 +197,15 @@ class CourseContent(models.Model):
 
     def human_readable_waiting_period(self) -> str:
         if self.waiting_period < 60:
-            return ngettext(
-                "%(count)d second", "%(count)d seconds", self.waiting_period
-            ) % {"count": self.waiting_period}
+            return ngettext("%(count)d second", "%(count)d seconds", self.waiting_period) % {
+                "count": self.waiting_period
+            }
         elif self.waiting_period < 3600:
             minutes = self.waiting_period // 60
-            return ngettext("%(count)d minute", "%(count)d minutes", minutes) % {
-                "count": minutes
-            }
+            return ngettext("%(count)d minute", "%(count)d minutes", minutes) % {"count": minutes}
         elif self.waiting_period < 86400:
             hours = self.waiting_period // 3600
-            return ngettext("%(count)d hour", "%(count)d hours", hours) % {
-                "count": hours
-            }
+            return ngettext("%(count)d hour", "%(count)d hours", hours) % {"count": hours}
         else:
             days = self.waiting_period // 86400
             return ngettext("%(count)d day", "%(count)d days", days) % {"count": days}
@@ -245,9 +234,7 @@ class CourseContent(models.Model):
 
     def get_next(self) -> Optional["CourseContent"]:
         next_content = (
-            CourseContent.objects.filter(
-                course=self.course, is_published=True, priority__gt=self.priority
-            )
+            CourseContent.objects.filter(course=self.course, is_published=True, priority__gt=self.priority)
             .order_by("priority")
             .first()
         )

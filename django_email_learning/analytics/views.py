@@ -1,24 +1,24 @@
 import json
-from django.views import View
-from django.utils.decorators import method_decorator
-from django.http import HttpResponse, JsonResponse
-from django.db.models import Count, F, ExpressionWrapper, DurationField, Q
-from django.db.models.functions import TruncDate, TruncWeek, TruncMonth
-from django.utils import timezone
 from datetime import date, timedelta
 
+from django.db.models import Count, DurationField, ExpressionWrapper, F, Q
+from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
+from django.http import HttpResponse, JsonResponse
+from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views import View
+
+from django_email_learning.analytics import serializers
+from django_email_learning.analytics.downloads import csv_response
 from django_email_learning.decorators import is_an_organization_member
 from django_email_learning.models import (
+    ContentDelivery,
+    CourseContent,
+    DeliverySchedule,
     Enrollment,
     EnrollmentStatus,
-    CourseContent,
-    ContentDelivery,
-    DeliverySchedule,
 )
 from django_email_learning.models.enums.delivery_status import DeliveryStatus
-from django_email_learning.analytics.downloads import csv_response
-from django_email_learning.analytics import serializers
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -71,18 +71,14 @@ def _enrollment_qs(organization_id: int, course_ids: list[int]):  # type: ignore
 
 
 def _delivery_schedule_qs(organization_id: int, course_ids: list[int]):  # type: ignore[no-untyped-def]
-    qs = DeliverySchedule.objects.filter(
-        delivery__enrollment__course__organization_id=organization_id
-    )
+    qs = DeliverySchedule.objects.filter(delivery__enrollment__course__organization_id=organization_id)
     if course_ids:
         qs = qs.filter(delivery__enrollment__course_id__in=course_ids)
     return qs
 
 
 def _content_delivery_qs(organization_id: int, course_ids: list[int]):  # type: ignore[no-untyped-def]
-    qs = ContentDelivery.objects.filter(
-        enrollment__course__organization_id=organization_id
-    )
+    qs = ContentDelivery.objects.filter(enrollment__course__organization_id=organization_id)
     if course_ids:
         qs = qs.filter(enrollment__course_id__in=course_ids)
     return qs
@@ -118,12 +114,7 @@ class EnrollmentsOverTimeView(View):
         )
 
         response = serializers.EnrollmentsOverTimeResponse(
-            data=[
-                serializers.PeriodCount(
-                    period=r["period"].isoformat(), count=r["count"]
-                )
-                for r in rows
-            ]
+            data=[serializers.PeriodCount(period=r["period"].isoformat(), count=r["count"]) for r in rows]
         )
         return _json(response)
 
@@ -224,9 +215,7 @@ class AverageProgressView(View):
                 serializers.AverageProgressItem(
                     course_id=v["course_id"],
                     course_title=v["course_title"],
-                    average_progress=round(v["sum"] / v["total"], 1)
-                    if v["total"]
-                    else 0,
+                    average_progress=round(v["sum"] / v["total"], 1) if v["total"] else 0,
                     active_enrollments=v["total"],
                 )
                 for v in course_progress.values()
@@ -263,9 +252,7 @@ class TimeToCompleteView(View):
                     "completions": [],
                 }
             if r["days_to_complete"] is not None:
-                course_data[cid]["completions"].append(
-                    round(r["days_to_complete"].total_seconds() / 86400, 1)
-                )
+                course_data[cid]["completions"].append(round(r["days_to_complete"].total_seconds() / 86400, 1))
 
         response = serializers.TimeToCompleteResponse(
             data=[
@@ -273,9 +260,7 @@ class TimeToCompleteView(View):
                     course_id=v["course_id"],
                     course_title=v["course_title"],
                     completion_days=v["completions"],
-                    average_days=round(sum(v["completions"]) / len(v["completions"]), 1)
-                    if v["completions"]
-                    else None,
+                    average_days=round(sum(v["completions"]) / len(v["completions"]), 1) if v["completions"] else None,
                     total_completions=len(v["completions"]),
                 )
                 for v in course_data.values()
@@ -308,12 +293,7 @@ class EmailDeliveryOverTimeView(View):
         )
 
         response = serializers.EmailDeliveryOverTimeResponse(
-            data=[
-                serializers.PeriodCount(
-                    period=r["period"].isoformat(), count=r["count"]
-                )
-                for r in rows
-            ]
+            data=[serializers.PeriodCount(period=r["period"].isoformat(), count=r["count"]) for r in rows]
         )
         return _json(response)
 
@@ -377,9 +357,7 @@ class EmailOpenRateView(View):
                     course_title=r["enrollment__course__title"],
                     total_delivered=r["total_delivered"],
                     total_opened=r["total_opened"],
-                    open_rate=round(r["total_opened"] / r["total_delivered"] * 100, 1)
-                    if r["total_delivered"]
-                    else 0,
+                    open_rate=round(r["total_opened"] / r["total_delivered"] * 100, 1) if r["total_delivered"] else 0,
                 )
                 for r in rows
             ]
@@ -502,15 +480,11 @@ class DownloadCompletionSummaryView(View):
         base_qs = _enrollment_qs(organization_id, course_ids)
 
         totals = (
-            base_qs.values("course__id", "course__title")
-            .annotate(total_enrolled=Count("id"))
-            .order_by("course__title")
+            base_qs.values("course__id", "course__title").annotate(total_enrolled=Count("id")).order_by("course__title")
         )
 
         completed = (
-            base_qs.filter(
-                status=EnrollmentStatus.COMPLETED, final_state_at__isnull=False
-            )
+            base_qs.filter(status=EnrollmentStatus.COMPLETED, final_state_at__isnull=False)
             .annotate(
                 days=ExpressionWrapper(
                     F("final_state_at") - F("enrolled_at"),
@@ -534,11 +508,7 @@ class DownloadCompletionSummaryView(View):
             days_list = completed_map.get(cid, [])
             total_completed = len(days_list)
             avg_days = round(sum(days_list) / total_completed, 1) if days_list else ""
-            completion_rate = (
-                round(total_completed / t["total_enrolled"] * 100, 1)
-                if t["total_enrolled"]
-                else 0
-            )
+            completion_rate = round(total_completed / t["total_enrolled"] * 100, 1) if t["total_enrolled"] else 0
             rows.append(
                 [
                     t["course__title"],

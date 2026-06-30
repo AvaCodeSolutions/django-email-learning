@@ -1,9 +1,11 @@
+from typing import Dict
+
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
+
 from django_email_learning.decorators import is_an_organization_member
 from django_email_learning.platform.views.base import BasePlatformView
-from typing import Dict
 
 
 @method_decorator(login_required, name="dispatch")

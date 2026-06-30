@@ -1,5 +1,6 @@
-from django_email_learning.platform.api.serializers import QuizCreate
 import pytest
+
+from django_email_learning.platform.api.serializers import QuizCreate
 
 
 def test_quiz_create_serializer_fields():

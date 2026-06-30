@@ -1,21 +1,23 @@
 import enum
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, Field
 from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field
+
 from django_email_learning.models import (
+    AssignmentSubmission,
     ContentDelivery,
+    CourseContentType,
     DeliveryStatus,
     Enrollment,
     EnrollmentStatus,
-    CourseContentType,
-    AssignmentSubmission,
-)
-from django_email_learning.platform.api.serializers.common import (
-    LearnerResponse,
-    CourseSummaryResponse,
-    EnrollmentSummaryResponse,
 )
 from django_email_learning.platform.api.serializers.assignments import ReviewResult
+from django_email_learning.platform.api.serializers.common import (
+    CourseSummaryResponse,
+    EnrollmentSummaryResponse,
+    LearnerResponse,
+)
 
 
 class CreateEnrollmentRequest(BaseModel):
@@ -36,16 +38,12 @@ class EventType(enum.StrEnum):
 
 
 class DeactivatedEvent(BaseModel):
-    type: Literal[EventType.DEACTIVATED] = Field(
-        default=EventType.DEACTIVATED, exclude=True
-    )
+    type: Literal[EventType.DEACTIVATED] = Field(default=EventType.DEACTIVATED, exclude=True)
     reason: str
 
 
 class QuizSubmitedEvent(BaseModel):
-    type: Literal[EventType.QUIZ_SUBMITED] = Field(
-        default=EventType.QUIZ_SUBMITED, exclude=True
-    )
+    type: Literal[EventType.QUIZ_SUBMITED] = Field(default=EventType.QUIZ_SUBMITED, exclude=True)
     quiz_id: int
     quiz_title: str
     score: int
@@ -55,17 +53,13 @@ class QuizSubmitedEvent(BaseModel):
 
 
 class AssignmentSubmitedEvent(BaseModel):
-    type: Literal[EventType.ASSIGNMENT_SUBMITTED] = Field(
-        default=EventType.ASSIGNMENT_SUBMITTED, exclude=True
-    )
+    type: Literal[EventType.ASSIGNMENT_SUBMITTED] = Field(default=EventType.ASSIGNMENT_SUBMITTED, exclude=True)
     assignment_id: int
     assignment_title: str
 
 
 class AssignmentReviewdEvent(BaseModel):
-    type: Literal[EventType.ASSIGNMENT_REVIEWED] = Field(
-        default=EventType.ASSIGNMENT_REVIEWED, exclude=True
-    )
+    type: Literal[EventType.ASSIGNMENT_REVIEWED] = Field(default=EventType.ASSIGNMENT_REVIEWED, exclude=True)
     assignment_id: int
     assignment_title: str
     review_result: ReviewResult
@@ -73,26 +67,20 @@ class AssignmentReviewdEvent(BaseModel):
 
 
 class ReminderSentEvent(BaseModel):
-    type: Literal[EventType.REMINDER_SENT] = Field(
-        default=EventType.REMINDER_SENT, exclude=True
-    )
+    type: Literal[EventType.REMINDER_SENT] = Field(default=EventType.REMINDER_SENT, exclude=True)
     content_id: int
     content_title: str
 
 
 class ContentSentEvent(BaseModel):
-    type: Literal[EventType.CONTENT_SENT] = Field(
-        default=EventType.CONTENT_SENT, exclude=True
-    )
+    type: Literal[EventType.CONTENT_SENT] = Field(default=EventType.CONTENT_SENT, exclude=True)
     course_content_id: int
     course_content_title: str
     course_content_type: str
 
 
 class EmailOpenedEvent(BaseModel):
-    type: Literal[EventType.EMAIL_OPENED] = Field(
-        default=EventType.EMAIL_OPENED, exclude=True
-    )
+    type: Literal[EventType.EMAIL_OPENED] = Field(default=EventType.EMAIL_OPENED, exclude=True)
     course_content_id: int
     course_content_title: str
     course_content_type: str
@@ -110,9 +98,7 @@ class Event(BaseModel):
         | AssignmentReviewdEvent
         | ReminderSentEvent
         | None
-    ) = Field(
-        discriminator="type"
-    )  # REGISTERED, VERIFIED, COURSE_COMPLETED have no additional data
+    ) = Field(discriminator="type")  # REGISTERED, VERIFIED, COURSE_COMPLETED have no additional data
 
 
 class EnrollmentResponse(BaseModel):
@@ -141,9 +127,7 @@ class EnrollmentResponse(BaseModel):
             )
         for delivery in enrollment.content_deliveries.all().order_by("id"):  # type: ignore[attr-defined]
             schedule_no = 0
-            for schedule in delivery.delivery_schedules.filter(
-                status=DeliveryStatus.DELIVERED
-            ):
+            for schedule in delivery.delivery_schedules.filter(status=DeliveryStatus.DELIVERED):
                 schedule_no += 1
                 events.append(
                     Event(
@@ -157,10 +141,7 @@ class EnrollmentResponse(BaseModel):
                     )
                 )
                 if delivery.course_content.type == CourseContentType.ASSIGNMENT:
-                    if (
-                        delivery.reminder_state == ContentDelivery.ReminderStatus.SENT
-                        and delivery.remind_at
-                    ):
+                    if delivery.reminder_state == ContentDelivery.ReminderStatus.SENT and delivery.remind_at:
                         events.append(
                             Event(
                                 type=EventType.REMINDER_SENT,
@@ -185,8 +166,7 @@ class EnrollmentResponse(BaseModel):
                         )
                         if (
                             submission.reviewed_at
-                            and submission.status
-                            != AssignmentSubmission.SubmissionStatus.PENDING_REVIEW
+                            and submission.status != AssignmentSubmission.SubmissionStatus.PENDING_REVIEW
                         ):
                             events.append(
                                 Event(
@@ -216,10 +196,7 @@ class EnrollmentResponse(BaseModel):
                     )
 
                 if delivery.course_content.type == CourseContentType.QUIZ:
-                    if (
-                        delivery.reminder_state == ContentDelivery.ReminderStatus.SENT
-                        and delivery.remind_at
-                    ):
+                    if delivery.reminder_state == ContentDelivery.ReminderStatus.SENT and delivery.remind_at:
                         events.append(
                             Event(
                                 type=EventType.REMINDER_SENT,
@@ -231,9 +208,7 @@ class EnrollmentResponse(BaseModel):
                             )
                         )
                     attempt_number = 0
-                    quiz_attempts = delivery.quiz_submissions.all().order_by(
-                        "submitted_at"
-                    )
+                    quiz_attempts = delivery.quiz_submissions.all().order_by("submitted_at")
                     attempt = None
                     if (
                         delivery.course_content.quiz.is_blocking  # type: ignore[union-attr]
@@ -266,10 +241,7 @@ class EnrollmentResponse(BaseModel):
                                 )
                             )
                             attempt_number += 1
-        if (
-            enrollment.status == EnrollmentStatus.COMPLETED
-            and enrollment.final_state_at
-        ):
+        if enrollment.status == EnrollmentStatus.COMPLETED and enrollment.final_state_at:
             events.append(
                 Event(
                     type=EventType.COURSE_COMPLETED,
@@ -277,10 +249,7 @@ class EnrollmentResponse(BaseModel):
                     event_data=None,
                 )
             )
-        elif (
-            enrollment.status == EnrollmentStatus.DEACTIVATED
-            and enrollment.final_state_at
-        ):
+        elif enrollment.status == EnrollmentStatus.DEACTIVATED and enrollment.final_state_at:
             events.append(
                 Event(
                     type=EventType.DEACTIVATED,

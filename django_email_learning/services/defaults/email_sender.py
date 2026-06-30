@@ -1,7 +1,9 @@
 import logging
+
+from django.core.mail import EmailMultiAlternatives
+
 from django_email_learning.ports.email_sender_protocol import EmailSenderProtocol
 from django_email_learning.services.utils import mask_email
-from django.core.mail import EmailMultiAlternatives
 
 logger = logging.getLogger(__name__)
 

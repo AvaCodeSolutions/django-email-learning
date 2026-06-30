@@ -1,6 +1,7 @@
 from enum import Enum
-from .open_ai_adapter import OpenAiAdapter
+
 from .ai_service_protocol import AiServiceProtocol
+from .open_ai_adapter import OpenAiAdapter
 
 
 class LanguageModel(Enum):

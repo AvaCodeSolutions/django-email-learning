@@ -1,11 +1,12 @@
+import pytest
 from django.urls import reverse
+
 from django_email_learning.models import (
     AssignmentFeedback,
     AssignmentSubmission,
     ContentDelivery,
     OrganizationUser,
 )
-import pytest
 
 
 def get_url(organization_id: int, course_id: int, submission_id: int) -> str:
@@ -42,9 +43,7 @@ def submission(enrollment, course_assignment_content):
     ],
     indirect=["client"],
 )
-def test_assignment_submission_detail_view_role_access(
-    client, expected_status, submission, course_assignment_content
-):
+def test_assignment_submission_detail_view_role_access(client, expected_status, submission, course_assignment_content):
     response = client.get(
         get_url(
             organization_id=course_assignment_content.course.organization_id,
@@ -108,9 +107,7 @@ def test_assignment_submission_detail_view_returns_404_for_nonexistent_submissio
 def test_assignment_submission_detail_view_includes_reviewer_info(
     org_admin_client, users, submission, course_assignment_content
 ):
-    reviewer = OrganizationUser.objects.get(
-        user=users["instructor_user"], organization_id=1
-    )
+    reviewer = OrganizationUser.objects.get(user=users["instructor_user"], organization_id=1)
     submission.reviewer = reviewer
     submission.status = AssignmentSubmission.SubmissionStatus.APPROVED
     submission.save()
@@ -133,9 +130,7 @@ def test_assignment_submission_detail_view_includes_reviewer_info(
 def test_assignment_submission_detail_view_includes_feedbacks(
     org_admin_client, users, submission, course_assignment_content
 ):
-    provider = OrganizationUser.objects.get(
-        user=users["instructor_user"], organization_id=1
-    )
+    provider = OrganizationUser.objects.get(user=users["instructor_user"], organization_id=1)
     AssignmentFeedback.objects.create(
         submission=submission,
         comment="Good work!",

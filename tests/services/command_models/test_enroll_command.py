@@ -1,11 +1,11 @@
+import pytest
+from django.core import mail
+
+from django_email_learning.models import Enrollment, EnrollmentStatus, Learner
 from django_email_learning.services.command_models.enroll_command import (
     EnrollCommand,
     InvalidCourseSlugError,
 )
-from django_email_learning.models import Enrollment, Learner, EnrollmentStatus
-from django.core import mail
-import pytest
-
 from django_email_learning.services.command_models.exceptions.blocked_email_error import (
     BlockedEmailError,
 )
@@ -26,12 +26,8 @@ def test_enroll_command(db, course):
     command.execute()
 
     # check learner and enrollment created
-    learner = Learner.objects.get(
-        email="test@example.com", organization_id=course.organization.id
-    )
-    enrollment = Enrollment.objects.get(
-        learner=learner, course=course, status=EnrollmentStatus.UNVERIFIED
-    )
+    learner = Learner.objects.get(email="test@example.com", organization_id=course.organization.id)
+    enrollment = Enrollment.objects.get(learner=learner, course=course, status=EnrollmentStatus.UNVERIFIED)
 
     # check verification email sent
     assert len(mail.outbox) == 1
@@ -55,12 +51,8 @@ def test_enroll_command_skip_verification_email(db, course):
     command.execute()
 
     # check learner and enrollment created
-    learner = Learner.objects.get(
-        email="test@example.com", organization_id=course.organization.id
-    )
-    Enrollment.objects.get(
-        learner=learner, course=course, status=EnrollmentStatus.UNVERIFIED
-    )
+    learner = Learner.objects.get(email="test@example.com", organization_id=course.organization.id)
+    Enrollment.objects.get(learner=learner, course=course, status=EnrollmentStatus.UNVERIFIED)
 
     # check no verification email sent
     assert len(mail.outbox) == 0
@@ -88,9 +80,7 @@ def test_existing_enrollment_skipped(db, learner, course):
     course.enabled = True
     course.save()
     # Create an existing enrollment
-    Enrollment.objects.create(
-        learner=learner, course=course, status=EnrollmentStatus.UNVERIFIED
-    )
+    Enrollment.objects.create(learner=learner, course=course, status=EnrollmentStatus.UNVERIFIED)
 
     command = EnrollCommand(
         command_name="enroll",

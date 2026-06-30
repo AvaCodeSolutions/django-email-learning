@@ -1,18 +1,20 @@
 import logging
-from django.views.generic import View
-from django.http import FileResponse, HttpResponseBadRequest, HttpResponseNotFound
+from typing import Dict
+
 from django.contrib.auth.decorators import login_required
+from django.http import FileResponse, HttpResponseBadRequest, HttpResponseNotFound
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
-from django_email_learning.models import OrganizationUser
+from django.views.generic import View
+
 from django_email_learning.decorators import (
-    is_platform_admin,
     is_an_organization_member,
+    is_platform_admin,
 )
-from django_email_learning.services.utils import PRIVATE_FILE_STORAGE
-from django_email_learning.services import jwt_service
+from django_email_learning.models import OrganizationUser
 from django_email_learning.platform.views.base import BasePlatformView
-from typing import Dict
+from django_email_learning.services import jwt_service
+from django_email_learning.services.utils import PRIVATE_FILE_STORAGE
 
 
 @method_decorator(login_required, name="dispatch")
@@ -36,14 +38,14 @@ class ApiKeys(BasePlatformView):
             "key": _("Key"),
             "created_at": _("Created At"),
             "delete": _("Delete"),
-            "are_you_sure_delete_key": _(
-                "Are you sure you want to delete this API key?"
-            ),
+            "are_you_sure_delete_key": _("Are you sure you want to delete this API key?"),
             "created_by": _("Created By"),
             "cancel": _("Cancel"),
             "confirm_deletion": _("Confirm Deletion"),
             "api_key_intro": _(
-                "API keys allow external applications to interact with the platform and execute jobs. This is ideal for using cloud scheduling or third-party integrations instead of managing local cron jobs. You can create, view, and manage your keys below."
+                "API keys allow external applications to interact with the platform and execute jobs."
+                " This is ideal for using cloud scheduling or third-party integrations instead of managing"
+                " local cron jobs. You can create, view, and manage your keys below."
             ),
         }
 
@@ -71,9 +73,7 @@ class PrivateFileView(View):
         file_path = decoded_token.get("file_path")
 
         if not file_path or not org_id:
-            logging.error(
-                "Token is missing required fields. Decoded token: %s", decoded_token
-            )
+            logging.error("Token is missing required fields. Decoded token: %s", decoded_token)
             return HttpResponseBadRequest("Missing 'file_path' or 'org_id' in token.")
 
         if (
@@ -121,7 +121,8 @@ class Analytics(BasePlatformView):
             "enrollment_status_breakdown": _("Enrollment Status Breakdown"),
             "completion_funnel": _("Completion Funnel"),
             "completion_funnel_tooltip": _(
-                "Shows how many learners received each piece of content. The bar length is relative to the content with the most deliveries, so you can quickly see where learners drop off."
+                "Shows how many learners received each piece of content. The bar length is relative to the"
+                " content with the most deliveries, so you can quickly see where learners drop off."
             ),
             "average_progress": _("Average Progress"),
             "time_to_complete": _("Time to Complete"),

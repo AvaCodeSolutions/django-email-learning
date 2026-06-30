@@ -23,9 +23,7 @@ class DatabaseDeliveryQueue(TaskQueueProtocol[DeliverySchedule]):
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
-        self._task_iterator: Iterator[DeliverySchedule] = self.get_next_batch(
-            limit=self.ITERATOR_BATCH_SIZE
-        )
+        self._task_iterator: Iterator[DeliverySchedule] = self.get_next_batch(limit=self.ITERATOR_BATCH_SIZE)
 
     def get_next_batch(self, limit: int) -> Iterator[DeliverySchedule]:
         with transaction.atomic():
@@ -34,18 +32,14 @@ class DatabaseDeliveryQueue(TaskQueueProtocol[DeliverySchedule]):
             # locked by another transaction instead of waiting for them.
             task_ids = list(
                 DeliverySchedule.objects.select_for_update(skip_locked=True)  # type: ignore[misc]
-                .filter(status=DeliveryStatus.SCHEDULED, time__lte=timezone.now())[
-                    :limit
-                ]
+                .filter(status=DeliveryStatus.SCHEDULED, time__lte=timezone.now())[:limit]
                 .values_list("id", flat=True)
             )
 
             if not task_ids:
                 return iter([])
 
-            DeliverySchedule.objects.filter(id__in=task_ids).update(
-                status=DeliveryStatus.PROCESSING
-            )
+            DeliverySchedule.objects.filter(id__in=task_ids).update(status=DeliveryStatus.PROCESSING)
 
         # Return fully-hydrated objects outside the transaction so the lock
         # is released before we start iterating.
@@ -68,9 +62,7 @@ class DatabaseDeliveryQueue(TaskQueueProtocol[DeliverySchedule]):
             try:
                 return next(self._task_iterator)
             except StopIteration:
-                self._task_iterator = self.get_next_batch(
-                    limit=self.ITERATOR_BATCH_SIZE
-                )
+                self._task_iterator = self.get_next_batch(limit=self.ITERATOR_BATCH_SIZE)
                 try:
                     return next(self._task_iterator)
                 except StopIteration:

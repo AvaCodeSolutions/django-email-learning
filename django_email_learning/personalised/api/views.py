@@ -1,33 +1,34 @@
-from django.http import JsonResponse
+import json
+import logging
+import urllib.parse
+
 from django.conf import settings
-from django.views import View
+from django.http import JsonResponse
 from django.urls import reverse
 from django.utils import timezone
-from django_email_learning.personalised.api.serializers import (
-    QuizSubmissionRequest,
-    QuestionResponse,
-)
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from django_email_learning.services.metrics_service import metric_service
-from django_email_learning.services import jwt_service
-from django_email_learning.services.email_sender_service import email_sender_service
 from django.utils.translation import gettext as _
+from django.views import View
+from django.views.decorators.csrf import csrf_exempt
+from pydantic import ValidationError
+
 from django_email_learning.models import (
     AssignmentSubmission,
+    Certificate,
     ContentDelivery,
     Enrollment,
-    Certificate,
-    QuizSubmission,
-    Quiz,
     EnrollmentStatus,
+    Quiz,
+    QuizSubmission,
 )
+from django_email_learning.personalised.api.serializers import (
+    QuestionResponse,
+    QuizSubmissionRequest,
+)
+from django_email_learning.services import jwt_service
+from django_email_learning.services.email_sender_service import email_sender_service
+from django_email_learning.services.metrics_service import metric_service
 from django_email_learning.services.utils import PRIVATE_FILE_STORAGE
-from pydantic import ValidationError
-import json
-import urllib.parse
-import logging
-
 
 logger = logging.getLogger(__name__)
 
@@ -60,16 +61,12 @@ class FileUploadView(View):
                 f"File upload failed: No content delivery found for ID {decoded['delivery_id']} with provided hash."
             )
             return JsonResponse(
-                {
-                    "error": "The content delivery associated with this token does not exist."
-                },
+                {"error": "The content delivery associated with this token does not exist."},
                 status=422,
             )
 
         if delivery.enrollment.status != EnrollmentStatus.ACTIVE:
-            return JsonResponse(
-                {"error": _("File upload is not valid anymore")}, status=400
-            )
+            return JsonResponse({"error": _("File upload is not valid anymore")}, status=400)
 
         date_prefix = timezone.now().strftime("%Y%m%d")
         file_path = PRIVATE_FILE_STORAGE.save(
@@ -95,11 +92,7 @@ class AssignmentSubmissionView(View):
 
         if not text_submission and not file_submission:
             return JsonResponse(
-                {
-                    "error": _(
-                        "At least one of text submission or file submission is required."
-                    )
-                },
+                {"error": _("At least one of text submission or file submission is required.")},
                 status=400,
             )
 
@@ -112,32 +105,26 @@ class AssignmentSubmissionView(View):
 
         delivery_id = decoded["delivery_id"]
         try:
-            delivery = ContentDelivery.objects.get(
-                id=delivery_id, hash_value=decoded["delivery_hash"]
-            )
+            delivery = ContentDelivery.objects.get(id=delivery_id, hash_value=decoded["delivery_hash"])
         except ContentDelivery.DoesNotExist:
             logger.error(
                 f"Assignment submission failed: No content delivery found for ID {delivery_id} with provided hash."
             )
             return JsonResponse(
-                {
-                    "error": "The content delivery associated with this token does not exist."
-                },
+                {"error": "The content delivery associated with this token does not exist."},
                 status=422,
             )
 
-        existing_submission = AssignmentSubmission.objects.filter(
-            delivery=delivery
-        ).first()
+        existing_submission = AssignmentSubmission.objects.filter(delivery=delivery).first()
         if (
             existing_submission
-            and existing_submission.status
-            != AssignmentSubmission.SubmissionStatus.REQUESTING_CHANGES
+            and existing_submission.status != AssignmentSubmission.SubmissionStatus.REQUESTING_CHANGES
         ):
             return JsonResponse(
                 {
                     "error": _(
-                        "There is already a submission for this assignment. Please wait for it to be reviewed before submitting again."
+                        "There is already a submission for this assignment."
+                        " Please wait for it to be reviewed before submitting again."
                     )
                 },
                 status=400,
@@ -145,18 +132,12 @@ class AssignmentSubmissionView(View):
 
         enrollment = delivery.enrollment
         if enrollment.status != EnrollmentStatus.ACTIVE:
-            return JsonResponse(
-                {"error": "Assignment submission is not valid anymore"}, status=400
-            )
+            return JsonResponse({"error": "Assignment submission is not valid anymore"}, status=400)
 
         assignment = delivery.course_content.assignment
         if not assignment:
-            logger.error(
-                f"Assignment submission failed: No assignment found for content delivery ID {delivery_id}."
-            )
-            return JsonResponse(
-                {"error": "No assignment associated with this link"}, status=422
-            )
+            logger.error(f"Assignment submission failed: No assignment found for content delivery ID {delivery_id}.")
+            return JsonResponse({"error": "No assignment associated with this link"}, status=422)
 
         if assignment.requires_text_submission and not text_submission:
             return JsonResponse(
@@ -244,41 +225,28 @@ class QuizSubmissionView(View):
         delivery_id = decoded["delivery_id"]
 
         try:
-            delivery = ContentDelivery.objects.get(
-                id=delivery_id, hash_value=decoded["delivery_hash"]
-            )
+            delivery = ContentDelivery.objects.get(id=delivery_id, hash_value=decoded["delivery_hash"])
         except ContentDelivery.DoesNotExist:
-            logger.error(
-                f"Quiz submission failed: No content delivery found for ID {delivery_id} with provided hash."
-            )
+            logger.error(f"Quiz submission failed: No content delivery found for ID {delivery_id} with provided hash.")
             return None, JsonResponse(
-                {
-                    "error": "The content delivery associated with this token does not exist."
-                },
+                {"error": "The content delivery associated with this token does not exist."},
                 status=422,
             )
 
         enrollment = delivery.enrollment
         if enrollment.status != EnrollmentStatus.ACTIVE:
-            return None, JsonResponse(
-                {"error": "Quiz is not valid anymore"}, status=400
-            )
+            return None, JsonResponse({"error": "Quiz is not valid anymore"}, status=400)
 
         quiz = delivery.course_content.quiz
         if not quiz:
-            logger.error(
-                f"Quiz submission failed: No quiz found for content delivery ID {delivery_id}."
-            )
-            return None, JsonResponse(
-                {"error": "No quiz associated with this link"}, status=422
-            )
+            logger.error(f"Quiz submission failed: No quiz found for content delivery ID {delivery_id}.")
+            return None, JsonResponse({"error": "No quiz associated with this link"}, status=422)
 
         try:
-            score, passed = cls.calculate_score_and_passed(
-                quiz, answers, decoded.get("question_ids")
-            )
+            score, passed = cls.calculate_score_and_passed(quiz, answers, decoded.get("question_ids"))
             logger.info(
-                f"Learner ID {enrollment.learner.id} submitted quiz for Course {enrollment.course.title} with score {score}. Passed: {passed}"
+                f"Learner ID {enrollment.learner.id} submitted quiz for Course"
+                f" {enrollment.course.title} with score {score}. Passed: {passed}"
             )
         except ValueError as ve:
             logger.error(
@@ -294,9 +262,7 @@ class QuizSubmissionView(View):
         delivery.reminder_state = ContentDelivery.ReminderStatus.NOT_APPLICABLE
 
         if passed or not quiz.is_blocking:
-            delivery.valid_until = (
-                None  # Invalidate the quiz link immediately after passing
-            )
+            delivery.valid_until = None  # Invalidate the quiz link immediately after passing
             delivery.save()
             if quiz.is_blocking:
                 delivery.update_hash()  # Invalidate the quiz link after successful submission
@@ -306,9 +272,7 @@ class QuizSubmissionView(View):
                 if QuizSubmission.objects.filter(delivery=delivery).count() >= 10:
                     delivery.update_hash()  # Invalidate the quiz link after 10 attempts to prevent abuse
 
-            if (quiz.is_blocking and passed) or QuizSubmission.objects.filter(
-                delivery=delivery
-            ).count() == 1:
+            if (quiz.is_blocking and passed) or QuizSubmission.objects.filter(delivery=delivery).count() == 1:
                 new_delivery = delivery.schedule_next_delivery()
 
                 if not new_delivery:
@@ -325,23 +289,20 @@ class QuizSubmissionView(View):
 
                 if failed_submissions_count > 1:
                     message = _(
-                        "You have failed the quiz twice. Unfortunately, you cannot continue this course with this enrollment. You can enroll again to retake the course."
+                        "You have failed the quiz twice. Unfortunately, you cannot continue this course"
+                        " with this enrollment. You can enroll again to retake the course."
                     )
                     logger.info(
-                        f"Learner ID {enrollment.learner.id} has failed the quiz twice for Course {enrollment.course.title}. "
-                        f"Marking enrollment as failed."
+                        f"Learner ID {enrollment.learner.id} has failed the quiz twice"
+                        f" for Course {enrollment.course.title}. Marking enrollment as failed."
                     )
                     delivery.remind_at = None
-                    delivery.reminder_state = (
-                        ContentDelivery.ReminderStatus.NOT_APPLICABLE
-                    )
+                    delivery.reminder_state = ContentDelivery.ReminderStatus.NOT_APPLICABLE
                     delivery.valid_until = None
                     delivery.save()
                     enrollment.fail()
                 else:
-                    message = _(
-                        "You have failed the quiz. You will receive another chance to retake it tomorrow."
-                    )
+                    message = _("You have failed the quiz. You will receive another chance to retake it tomorrow.")
                     logger.info(
                         f"Learner ID {enrollment.learner.id} has failed the quiz for Course {enrollment.course.title}. "
                         f"Scheduling a retry for the next day."
@@ -355,9 +316,7 @@ class QuizSubmissionView(View):
                 delivery.valid_until = None
                 delivery.remind_at = None
                 delivery.save()
-                message = _(
-                    f"You have failed the quiz with score {score}. Please review the material and try again."
-                )
+                message = _(f"You have failed the quiz with score {score}. Please review the material and try again.")
 
         metric_service.quiz_submitted(
             course_slug=enrollment.course.slug,
@@ -384,15 +343,12 @@ class QuizSubmissionView(View):
                                 {
                                     "text": answer.text,
                                     "is_correct": answer.is_correct,
-                                    "user_selected": answer.id
-                                    in response_map.get(question.id, set()),
+                                    "user_selected": answer.id in response_map.get(question.id, set()),
                                 }
                                 for answer in question.answers.all()
                             ],
                         }
-                        for question in quiz.questions.filter(
-                            id__in=submitted_question_ids
-                        )
+                        for question in quiz.questions.filter(id__in=submitted_question_ids)
                     ],
                 }
                 if not quiz.is_blocking
@@ -418,20 +374,14 @@ class QuizSubmissionView(View):
 
         # Pre-populate answer lookup and count correct answers per question
         for question_obj in questions:
-            answers_dict[question_obj.id] = {
-                a.id: a for a in question_obj.answers.all()
-            }
-            correct_answers_count[question_obj.id] = question_obj.answers.filter(
-                is_correct=True
-            ).count()
+            answers_dict[question_obj.id] = {a.id: a for a in question_obj.answers.all()}
+            correct_answers_count[question_obj.id] = question_obj.answers.filter(is_correct=True).count()
 
         base_score = 0.0
 
         for response in answers:
             if response.id not in question_ids:
-                raise ValueError(
-                    f"Question ID {response.id} is not valid for this quiz."
-                )
+                raise ValueError(f"Question ID {response.id} is not valid for this quiz.")
 
             question = questions_dict.get(response.id)
             if not question:
@@ -440,9 +390,7 @@ class QuizSubmissionView(View):
             for answer_id in response.answers:
                 # Check if answer exists for this question
                 if answer_id not in answers_dict[response.id]:
-                    raise ValueError(
-                        f"Answer ID {answer_id} is not valid for Question ID {response.id}."
-                    )
+                    raise ValueError(f"Answer ID {answer_id} is not valid for Question ID {response.id}.")
 
                 answer = answers_dict[response.id][answer_id]
                 correct_count = correct_answers_count[response.id]
@@ -461,21 +409,15 @@ class QuizSubmissionView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class AmpQuizSubmissionView(View):
     @staticmethod
-    def _set_amp_headers(
-        response: JsonResponse, source_origin: str, request_origin: str
-    ) -> JsonResponse:
+    def _set_amp_headers(response: JsonResponse, source_origin: str, request_origin: str) -> JsonResponse:
         response["AMP-Email-Allow-Sender"] = source_origin
         response["Access-Control-Allow-Origin"] = request_origin
         response["AMP-Access-Control-Allow-Source-Origin"] = source_origin
-        response[
-            "Access-Control-Expose-Headers"
-        ] = "AMP-Access-Control-Allow-Source-Origin"
+        response["Access-Control-Expose-Headers"] = "AMP-Access-Control-Allow-Source-Origin"
         response["Access-Control-Allow-Credentials"] = "true"
         return response
 
-    def _amp_json_response(
-        self, payload: dict, status: int, source_origin: str, request_origin: str
-    ) -> JsonResponse:
+    def _amp_json_response(self, payload: dict, status: int, source_origin: str, request_origin: str) -> JsonResponse:
         response = JsonResponse(payload, status=status)
         return self._set_amp_headers(
             response=response,
@@ -484,27 +426,17 @@ class AmpQuizSubmissionView(View):
         )
 
     def post(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
-        source_origin = request.GET.get("__amp_source_origin") or request.headers.get(
-            "AMP-Email-Sender"
-        )
+        source_origin = request.GET.get("__amp_source_origin") or request.headers.get("AMP-Email-Sender")
         if (
             not source_origin
-            or urllib.parse.unquote(source_origin).lower()
-            not in email_sender_service.from_email.lower()
+            or urllib.parse.unquote(source_origin).lower() not in email_sender_service.from_email.lower()
         ):
             return JsonResponse(
-                {
-                    "error": _(
-                        "Missing or untrusted __amp_source_origin query parameter."
-                    )
-                },
+                {"error": _("Missing or untrusted __amp_source_origin query parameter.")},
                 status=400,
             )
 
-        trusted_origins = {
-            trusted_origin.rstrip("/")
-            for trusted_origin in settings.CSRF_TRUSTED_ORIGINS
-        }
+        trusted_origins = {trusted_origin.rstrip("/") for trusted_origin in settings.CSRF_TRUSTED_ORIGINS}
         request_origin = (
             request.headers.get("Origin")
             or request.headers.get("X-Forwarded-Host")
@@ -567,8 +499,7 @@ class AmpQuizSubmissionView(View):
             answers_map[question_id] = parsed_answers
 
         answers = [
-            QuestionResponse(id=question_id, answers=answer_ids)
-            for question_id, answer_ids in answers_map.items()
+            QuestionResponse(id=question_id, answers=answer_ids) for question_id, answer_ids in answers_map.items()
         ]
 
         response_payload, error_response = QuizSubmissionView.process_quiz_submission(
@@ -611,22 +542,16 @@ class SubmitCertificateFormView(View):
         try:
             enrollment = Enrollment.objects.get(id=enrollment_id)
         except Enrollment.DoesNotExist:
-            logger.error(
-                f"Certificate generation failed: No enrollment found for ID {enrollment_id}."
-            )
+            logger.error(f"Certificate generation failed: No enrollment found for ID {enrollment_id}.")
             return JsonResponse(
                 {"error": "The enrollment associated with this token does not exist."},
                 status=422,
             )
 
         if enrollment.status != EnrollmentStatus.COMPLETED:
-            logger.error(
-                f"Certificate generation failed: Enrollment ID {enrollment_id} is not completed."
-            )
+            logger.error(f"Certificate generation failed: Enrollment ID {enrollment_id} is not completed.")
             return JsonResponse(
-                {
-                    "error": "The enrollment is not completed. Certificate cannot be issued."
-                },
+                {"error": "The enrollment is not completed. Certificate cannot be issued."},
                 status=422,
             )
         certificate, created = Certificate.objects.get_or_create(

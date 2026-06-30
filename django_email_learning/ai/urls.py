@@ -1,4 +1,5 @@
 from django.urls import path
+
 from .views import EditTextView
 
 app_name = "django_email_learning"

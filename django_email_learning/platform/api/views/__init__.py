@@ -1,54 +1,54 @@
+from django_email_learning.platform.api.views.assignments import (
+    SubmissionReview,
+    SubmittedAssignmentDetailView,
+    SubmittedAssignmentsView,
+)
 from django_email_learning.platform.api.views.courses import (
+    CourseContentView,
     CourseCreationMixin,
     CourseView,
-    CourseContentView,
     ReorderCourseContentView,
+    SendLessonToPlatformUser,
     SingleCourseContentView,
     SingleCourseView,
-    SendLessonToPlatformUser,
+)
+from django_email_learning.platform.api.views.learners import (
+    EnrollmentsStatisticsView,
+    EnrollmentsView,
+    EnrollmentView,
+    LearnersView,
+    SingleLearnerView,
+)
+from django_email_learning.platform.api.views.misc import (
+    ApiKeyView,
+    FileView,
+    JobHealthStatus,
+    JobsStatus,
+    RootView,
+    SingleApiKeyView,
+    UpdateSessionView,
+)
+from django_email_learning.platform.api.views.newsletters import (
+    NewsletterView,
+    SendoutView,
+    SingleNewsletterView,
+    SingleSendoutView,
+    SingleSubscriberView,
+    SubscribersCsvExportView,
+    SubscriberView,
 )
 from django_email_learning.platform.api.views.oauth import (
-    OauthSessionView,
+    ImapConnectionView,
     OauthGetGroupListView,
     OauthGroupEnrollment,
-    ImapConnectionView,
+    OauthSessionView,
 )
 from django_email_learning.platform.api.views.organisations import (
+    GetOrCreateUserByEmail,
     OrganizationsView,
     OrganizationUsersView,
     SingleOrganizationUserView,
     SingleOrganizationView,
-    GetOrCreateUserByEmail,
-)
-from django_email_learning.platform.api.views.assignments import (
-    SubmittedAssignmentsView,
-    SubmittedAssignmentDetailView,
-    SubmissionReview,
-)
-from django_email_learning.platform.api.views.learners import (
-    LearnersView,
-    SingleLearnerView,
-    EnrollmentsView,
-    EnrollmentView,
-    EnrollmentsStatisticsView,
-)
-from django_email_learning.platform.api.views.newsletters import (
-    NewsletterView,
-    SingleNewsletterView,
-    SendoutView,
-    SingleSendoutView,
-    SubscriberView,
-    SingleSubscriberView,
-    SubscribersCsvExportView,
-)
-from django_email_learning.platform.api.views.misc import (
-    JobHealthStatus,
-    ApiKeyView,
-    SingleApiKeyView,
-    JobsStatus,
-    RootView,
-    FileView,
-    UpdateSessionView,
 )
 
 __all__ = [

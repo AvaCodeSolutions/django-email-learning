@@ -1,4 +1,5 @@
 import json
+
 import pytest
 from django.urls import reverse
 
@@ -14,9 +15,7 @@ def get_url(organization_id: int) -> str:
 
 @pytest.fixture()
 def newsletter(db):
-    return Newsletter.objects.create(
-        title="Weekly Digest", language="en", organization_id=1
-    )
+    return Newsletter.objects.create(title="Weekly Digest", language="en", organization_id=1)
 
 
 # --- GET ---
@@ -64,9 +63,7 @@ def test_list_newsletters_role_access(client, expected_status, newsletter):
 
 def test_create_newsletter_success(superadmin_client):
     payload = {"title": "Monthly News", "language": "en"}
-    response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert response.status_code == 201
     data = response.json()
     assert data["title"] == "Monthly News"
@@ -78,9 +75,7 @@ def test_create_newsletter_success(superadmin_client):
 
 def test_create_newsletter_unauthenticated(anonymous_client):
     payload = {"title": "News", "language": "en"}
-    response = anonymous_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response = anonymous_client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert response.status_code == 401
 
 
@@ -93,33 +88,25 @@ def test_create_newsletter_role_access(client, expected_status):
     import uuid
 
     payload = {"title": uuid.uuid4().hex, "language": "en"}
-    response = client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response = client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert response.status_code == expected_status
 
 
 def test_create_newsletter_duplicate_title(superadmin_client, newsletter):
     payload = {"title": newsletter.title, "language": "fr"}
-    response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert response.status_code == 409
 
 
 def test_create_newsletter_missing_title(superadmin_client):
     payload = {"language": "en"}
-    response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert response.status_code == 400
 
 
 def test_create_newsletter_empty_title(superadmin_client):
     payload = {"title": "", "language": "en"}
-    response = superadmin_client.post(
-        get_url(1), json.dumps(payload), content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
     assert response.status_code == 400
 
 

@@ -1,6 +1,5 @@
-from django.urls import reverse
 import pytest
-
+from django.urls import reverse
 
 URL = reverse(
     "django_email_learning:api_platform:organization_users_list",
@@ -108,9 +107,7 @@ def create_organization_user_with_nonexistent_user(superadmin_client):
     assert "error" in response.json()
 
 
-def test_create_organization_user_in_nonexistent_organization(
-    superadmin_client, second_user
-):
+def test_create_organization_user_in_nonexistent_organization(superadmin_client, second_user):
     url = reverse(
         "django_email_learning:api_platform:organization_users_list",
         kwargs={"organization_id": 9999},
@@ -144,9 +141,7 @@ def test_delete_organization_user(superadmin_client, second_user):
     assert response.status_code == 200
     data = response.json()
     assert any(user["user_id"] == second_user.id for user in data["organization_users"])
-    organization_user = next(
-        user for user in data["organization_users"] if user["user_id"] == second_user.id
-    )
+    organization_user = next(user for user in data["organization_users"] if user["user_id"] == second_user.id)
 
     # Now delete the user from the organization
     delete_url = get_single_user_url(1, organization_user["id"])
@@ -157,9 +152,7 @@ def test_delete_organization_user(superadmin_client, second_user):
     response = superadmin_client.get(URL)
     assert response.status_code == 200
     data = response.json()
-    assert not any(
-        user["user_id"] == second_user.id for user in data["organization_users"]
-    )
+    assert not any(user["user_id"] == second_user.id for user in data["organization_users"])
 
 
 @pytest.mark.parametrize("client", ["viewer", "editor"], indirect=["client"])
@@ -170,9 +163,7 @@ def test_other_roles_cannot_delete_organization_user(superadmin_client, client):
     assert delete_response.status_code == 403
 
 
-def test_create_organization_user_instructor_includes_display_name_and_photo(
-    superadmin_client, second_user
-):
+def test_create_organization_user_instructor_includes_display_name_and_photo(superadmin_client, second_user):
     response = superadmin_client.post(
         URL,
         data={
@@ -192,9 +183,7 @@ def test_create_organization_user_instructor_includes_display_name_and_photo(
     assert data["photo"] == "org_user_photos/test-instructor.png"
 
 
-def test_update_organization_user_includes_display_name_and_photo(
-    superadmin_client, second_user
-):
+def test_update_organization_user_includes_display_name_and_photo(superadmin_client, second_user):
     create_response = superadmin_client.post(
         URL,
         data={
@@ -223,9 +212,7 @@ def test_update_organization_user_includes_display_name_and_photo(
     assert data["photo"] == "org_user_photos/updated-instructor.png"
 
 
-def test_list_organization_users_response_includes_display_name_and_photo(
-    superadmin_client, second_user
-):
+def test_list_organization_users_response_includes_display_name_and_photo(superadmin_client, second_user):
     create_response = superadmin_client.post(
         URL,
         data={

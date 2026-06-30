@@ -1,28 +1,29 @@
+import logging
+from email.message import EmailMessage
+
+from django_email_learning.models import (
+    Course,
+    Enrollment,
+    EnrollmentStatus,
+    ImapConnection,
+)
 from django_email_learning.ports.imap_interface_protocol import ImapInterfaceProtocol
 from django_email_learning.services.command_models.enroll_command import EnrollCommand
-from django_email_learning.services.command_models.verify_enrollment_command import (
-    VerifyEnrollmentCommand,
-)
-from django_email_learning.services.command_models.unsubscribe_command import (
-    UnsubscribeCommand,
-)
-from django_email_learning.services.command_models.exceptions.invalid_course_slug_error import (
-    InvalidCourseSlugError,
+from django_email_learning.services.command_models.exceptions.blocked_email_error import (
+    BlockedEmailError,
 )
 from django_email_learning.services.command_models.exceptions.enrollment_already_exists_error import (
     EnrollmentAlreadyExistsError,
 )
-from django_email_learning.services.command_models.exceptions.blocked_email_error import (
-    BlockedEmailError,
+from django_email_learning.services.command_models.exceptions.invalid_course_slug_error import (
+    InvalidCourseSlugError,
 )
-from django_email_learning.models import (
-    EnrollmentStatus,
-    ImapConnection,
-    Course,
-    Enrollment,
+from django_email_learning.services.command_models.unsubscribe_command import (
+    UnsubscribeCommand,
 )
-from email.message import EmailMessage
-import logging
+from django_email_learning.services.command_models.verify_enrollment_command import (
+    VerifyEnrollmentCommand,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +36,7 @@ class ImapInterface(ImapInterfaceProtocol):
         "verify": "_verify",
     }
 
-    def _enroll(
-        self, email: str, argument: str, imap_connection: ImapConnection
-    ) -> None:
+    def _enroll(self, email: str, argument: str, imap_connection: ImapConnection) -> None:
         logger.info(f"Enrolling {email} with argument '{argument}'")
 
         try:
@@ -48,7 +47,8 @@ class ImapInterface(ImapInterfaceProtocol):
             )
         except Course.DoesNotExist:
             logger.warning(
-                f"Course with enabled imap connection and slug '{argument}' does not exist for organization {imap_connection.organization.id}"
+                f"Course with enabled imap connection and slug '{argument}' does not exist"
+                f" for organization {imap_connection.organization.id}"
             )
             return
 
@@ -67,9 +67,7 @@ class ImapInterface(ImapInterfaceProtocol):
         except BlockedEmailError as e:
             logger.info(f"Blocked email {email}: {str(e)}")
 
-    def _verify(
-        self, email: str, argument: str, imap_connection: ImapConnection
-    ) -> None:
+    def _verify(self, email: str, argument: str, imap_connection: ImapConnection) -> None:
         logger.info(f"Received verify command for {email} with argument '{argument}'")
 
         try:
@@ -104,25 +102,23 @@ class ImapInterface(ImapInterfaceProtocol):
 
         command.execute()
 
-    def handle_email_message(
-        self, email_message: EmailMessage, imap_connection: ImapConnection
-    ) -> None:
+    def handle_email_message(self, email_message: EmailMessage, imap_connection: ImapConnection) -> None:
         # Implement your email handling logic here
 
         logger.info(
-            f"Handling email from {email_message['From']} with subject {email_message['Subject']} for connection {imap_connection.email}"
+            f"Handling email from {email_message['From']} with subject {email_message['Subject']}"
+            f" for connection {imap_connection.email}"
         )
         subject = email_message["Subject"]
         subject_parts = subject.split()
         if len(subject_parts) < 2:
-            logger.warning(
-                f"Invalid email subject format: '{subject}'. Expected format: 'command argument'"
-            )
+            logger.warning(f"Invalid email subject format: '{subject}'. Expected format: 'command argument'")
             return
 
         if subject_parts[0].lower() not in self._ACCEPTED_COMMANDS:
             logger.warning(
-                f"Invalid command in email subject: '{subject_parts[0]}'. Expected one of: {', '.join(self._ACCEPTED_COMMANDS)}"
+                f"Invalid command in email subject: '{subject_parts[0]}'."
+                f" Expected one of: {', '.join(self._ACCEPTED_COMMANDS)}"
             )
             return
 

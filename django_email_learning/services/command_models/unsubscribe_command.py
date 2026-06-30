@@ -1,20 +1,22 @@
 from typing import Literal
+
+from django.utils import timezone
+
 from django_email_learning.models import (
     Course,
-    Enrollment,
-    DeliveryStatus,
-    Learner,
-    EnrollmentStatus,
     DeactivationReason,
+    DeliveryStatus,
+    Enrollment,
+    EnrollmentStatus,
+    Learner,
 )
-from django.utils import timezone
-from django_email_learning.services.metrics_service import metric_service
 from django_email_learning.services.command_models.abstract_command import (
     AbstractCommand,
 )
 from django_email_learning.services.command_models.exceptions.invalid_course_slug_error import (
     InvalidCourseSlugError,
 )
+from django_email_learning.services.metrics_service import metric_service
 
 
 class UnsubscribeCommand(AbstractCommand):
@@ -32,12 +34,11 @@ class UnsubscribeCommand(AbstractCommand):
                     organization_id=self.organization_id,
                 )
             else:
-                course = Course.objects.get(
-                    slug=self.course_slug, organization_id=self.organization_id
-                )
+                course = Course.objects.get(slug=self.course_slug, organization_id=self.organization_id)
         except Course.DoesNotExist:
             self.logger.error(
-                f"Unsubscribe Failed: Invalid course slug '{self.course_slug}' for organization ID {self.organization_id}"
+                f"Unsubscribe Failed: Invalid course slug '{self.course_slug}'"
+                f" for organization ID {self.organization_id}"
             )
             raise InvalidCourseSlugError(
                 f"Course with slug '{self.course_slug}' does not exist for organization ID {self.organization_id}"
@@ -49,9 +50,7 @@ class UnsubscribeCommand(AbstractCommand):
                 organization_id=self.organization_id,  # type: ignore[misc]
             )
         except Learner.DoesNotExist:
-            self.logger.warning(
-                f"Unsubscribe Skipped: No learner found with email {self.email}"
-            )
+            self.logger.warning(f"Unsubscribe Skipped: No learner found with email {self.email}")
             return
 
         enrollments = Enrollment.objects.filter(learner=learner, course=course).exclude(
@@ -65,9 +64,9 @@ class UnsubscribeCommand(AbstractCommand):
 
         for enrollment in enrollments:
             for delivery in enrollment.content_deliveries.all():
-                delivery.delivery_schedules.filter(
-                    status=DeliveryStatus.SCHEDULED
-                ).update(status=DeliveryStatus.CANCELED)
+                delivery.delivery_schedules.filter(status=DeliveryStatus.SCHEDULED).update(
+                    status=DeliveryStatus.CANCELED
+                )
 
         enrollments.update(
             status=EnrollmentStatus.DEACTIVATED,

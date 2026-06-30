@@ -1,24 +1,24 @@
 # ruff: noqa: F401
-from .enums.enrollment_status import EnrollmentStatus
-from .enums.delivery_status import DeliveryStatus
-from .enums.deactivation_reason import DeactivationReason
-from .enums.course_content_type import CourseContentType
-from .organizations import Organization, OrganizationUser
-from .mixin_models import EncryptionMixin
-from .imap_connections import ImapConnection, InboxFolder, is_domain_or_ip
-from .enrollments import Enrollment, Learner, BlockedEmail, Certificate
-from .courses import Course, CourseInstructor, ExternalReference
+from .api_keys import ApiKey
 from .course_contents import (
-    Lesson,
-    Quiz,
-    Question,
     Answer,
-    CourseContent,
     Assignment,
+    CourseContent,
+    Lesson,
+    Question,
+    Quiz,
     QuizSelectionStrategy,
 )
+from .courses import Course, CourseInstructor, ExternalReference
 from .deliveries import ContentDelivery, DeliverySchedule
+from .enrollments import BlockedEmail, Certificate, Enrollment, Learner
+from .enums.course_content_type import CourseContentType
+from .enums.deactivation_reason import DeactivationReason
+from .enums.delivery_status import DeliveryStatus
+from .enums.enrollment_status import EnrollmentStatus
+from .imap_connections import ImapConnection, InboxFolder, is_domain_or_ip
 from .jobs import JobExecution, JobName, JobStatus
-from .submissions import QuizSubmission, AssignmentSubmission, AssignmentFeedback
-from .api_keys import ApiKey
+from .mixin_models import EncryptionMixin
 from .newsletters import Newsletter, NewsletterSubscriber, Sendout, SendoutDelivery
+from .organizations import Organization, OrganizationUser
+from .submissions import AssignmentFeedback, AssignmentSubmission, QuizSubmission

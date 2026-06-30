@@ -112,10 +112,7 @@ def test_next_task_returns_only_ready_reminder_tasks_and_sets_processing_state(
 
     assert ready_delivery.reminder_state == ContentDelivery.ReminderStatus.PROCESSING
     assert not_ready_delivery.reminder_state == ContentDelivery.ReminderStatus.PENDING
-    assert (
-        already_processed_delivery.reminder_state
-        == ContentDelivery.ReminderStatus.PROCESSING
-    )
+    assert already_processed_delivery.reminder_state == ContentDelivery.ReminderStatus.PROCESSING
 
 
 def test_next_task_returns_latest_schedule_for_each_delivery(
@@ -143,9 +140,7 @@ def test_next_task_returns_latest_schedule_for_each_delivery(
         course_content=second_content,
     )
 
-    ContentDelivery.objects.filter(
-        id__in=[first_delivery.id, second_delivery.id]
-    ).update(
+    ContentDelivery.objects.filter(id__in=[first_delivery.id, second_delivery.id]).update(
         remind_at=timezone.now() - timedelta(minutes=1),
         reminder_state=ContentDelivery.ReminderStatus.PENDING,
     )

@@ -1,6 +1,10 @@
-from django.views import View
+import json
+import logging
+
 from django.http import JsonResponse
+from django.views import View
 from pydantic import ValidationError
+
 from django_email_learning.models import Course, Newsletter, NewsletterSubscriber
 from django_email_learning.public.api.serializers import (
     EnrollmentRequest,
@@ -13,8 +17,6 @@ from django_email_learning.services.command_models.exceptions.blocked_email_erro
 from django_email_learning.services.command_models.exceptions.enrollment_already_exists_error import (
     EnrollmentAlreadyExistsError,
 )
-import json
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -88,23 +90,14 @@ class NewsletterSubscribeView(View):
 
         invalid = set(data.newsletter_ids) - set(newsletters)
         if invalid:
-            return JsonResponse(
-                {"error": "One or more newsletter IDs are invalid."}, status=400
-            )
+            return JsonResponse({"error": "One or more newsletter IDs are invalid."}, status=400)
 
         max_subscribers = self.get_max_subscribers()
         for newsletter in newsletters.values():
-            already_subscribed = NewsletterSubscriber.objects.filter(
-                newsletter=newsletter, email=data.email
-            ).exists()
-            if (
-                not already_subscribed
-                and newsletter.subscribers.count() >= max_subscribers
-            ):
+            already_subscribed = NewsletterSubscriber.objects.filter(newsletter=newsletter, email=data.email).exists()
+            if not already_subscribed and newsletter.subscribers.count() >= max_subscribers:
                 return JsonResponse(
-                    {
-                        "error": f'Newsletter "{newsletter.title}" has reached its maximum number of subscribers.'
-                    },
+                    {"error": f'Newsletter "{newsletter.title}" has reached its maximum number of subscribers.'},
                     status=400,
                 )
 

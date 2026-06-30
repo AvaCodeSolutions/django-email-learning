@@ -1,4 +1,5 @@
 from django.urls import path
+
 from django_email_learning.analytics.views import (
     AverageProgressView,
     CompletionFunnelView,
@@ -8,8 +9,8 @@ from django_email_learning.analytics.views import (
     EmailDeliveryOverTimeView,
     EmailDeliveryStatusBreakdownView,
     EmailOpenRateView,
-    EnrollmentStatusBreakdownView,
     EnrollmentsOverTimeView,
+    EnrollmentStatusBreakdownView,
     TimeToCompleteView,
 )
 

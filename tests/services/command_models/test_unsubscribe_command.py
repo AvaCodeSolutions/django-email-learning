@@ -1,11 +1,12 @@
-from django_email_learning.services.command_models.unsubscribe_command import (
-    UnsubscribeCommand,
-)
+import pytest
+
+from django_email_learning.models import EnrollmentStatus
 from django_email_learning.services.command_models.exceptions.invalid_course_slug_error import (
     InvalidCourseSlugError,
 )
-from django_email_learning.models import EnrollmentStatus
-import pytest
+from django_email_learning.services.command_models.unsubscribe_command import (
+    UnsubscribeCommand,
+)
 
 
 def test_unsubscribe_command(db, enrollment):

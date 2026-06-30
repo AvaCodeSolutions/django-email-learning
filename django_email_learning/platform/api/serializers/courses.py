@@ -1,38 +1,40 @@
 import enum
-from pydantic import BaseModel, ConfigDict, Field, field_serializer, model_validator
-from typing import Optional, Callable
+from typing import Callable, Optional
+
 from django.utils.translation import get_language_info
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, model_validator
+
 from django_email_learning.models import (
-    Organization,
-    ImapConnection,
-    Newsletter,
+    Answer,
     Course,
-    CourseInstructor,
     CourseContent,
     CourseContentType,
+    CourseInstructor,
+    ImapConnection,
     Lesson,
-    Quiz,
-    Question,
-    Answer,
+    Newsletter,
+    Organization,
     OrganizationUser,
+    Question,
+    Quiz,
+)
+from django_email_learning.platform.api.serializers.assignments import (
+    AssignmentCreate,
+    AssignmentResponse,
+    AssignmentUpdate,
 )
 from django_email_learning.platform.api.serializers.common import (
     InstructorResponse,
 )
 from django_email_learning.platform.api.serializers.lessons import (
     LessonCreate,
-    LessonUpdate,
     LessonResponse,
+    LessonUpdate,
 )
 from django_email_learning.platform.api.serializers.quizzes import (
     QuizCreate,
-    UpdateQuiz,
     QuizResponse,
-)
-from django_email_learning.platform.api.serializers.assignments import (
-    AssignmentCreate,
-    AssignmentUpdate,
-    AssignmentResponse,
+    UpdateQuiz,
 )
 
 
@@ -64,9 +66,7 @@ class WaitingPeriod(BaseModel):
         elif seconds % 3600 == 0:
             return cls(period=seconds // 3600, type=PeriodType.HOURS)
         else:
-            raise ValueError(
-                f"Cannot convert {seconds} seconds to a valid WaitingPeriod."
-            )
+            raise ValueError(f"Cannot convert {seconds} seconds to a valid WaitingPeriod.")
 
 
 class CreateCourseRequest(BaseModel):
@@ -77,16 +77,12 @@ class CreateCourseRequest(BaseModel):
         description="A short label for the course, used in URLs or email interactive actions. "
         "You can not edit it later.",
     )
-    description: Optional[str] = Field(
-        None, examples=["A beginner's course on Python programming."]
-    )
+    description: Optional[str] = Field(None, examples=["A beginner's course on Python programming."])
     imap_connection_id: Optional[int] = Field(None, examples=[1])
     newsletter_id: Optional[int] = Field(None, examples=[1])
     image: Optional[str] = Field(None, examples=["/path/to/course_image.png"])
     language: str = Field(min_length=2, max_length=10, examples=["en"])
-    target_audience: Optional[str] = Field(
-        None, examples=["Beginners with no prior programming experience."]
-    )
+    target_audience: Optional[str] = Field(None, examples=["Beginners with no prior programming experience."])
     external_references: Optional[list[dict[str, str]]] = Field(
         None,
         examples=[
@@ -117,16 +113,10 @@ class CreateCourseRequest(BaseModel):
         imap_connection = None
         if self.imap_connection_id:
             try:
-                imap_connection = ImapConnection.objects.get(
-                    id=self.imap_connection_id, organization=organization
-                )
+                imap_connection = ImapConnection.objects.get(id=self.imap_connection_id, organization=organization)
             except ImapConnection.DoesNotExist:
-                raise ValueError(
-                    f"ImapConnection with id {self.imap_connection_id} does not exist."
-                )
-            imap_connection = ImapConnection.objects.get(
-                id=self.imap_connection_id, organization=organization
-            )
+                raise ValueError(f"ImapConnection with id {self.imap_connection_id} does not exist.")
+            imap_connection = ImapConnection.objects.get(id=self.imap_connection_id, organization=organization)
         course = Course(
             title=self.title,
             slug=self.slug,
@@ -140,28 +130,20 @@ class CreateCourseRequest(BaseModel):
             course.imap_connection = imap_connection
         if self.newsletter_id:
             try:
-                course.newsletter = Newsletter.objects.get(
-                    id=self.newsletter_id, organization=organization
-                )
+                course.newsletter = Newsletter.objects.get(id=self.newsletter_id, organization=organization)
             except Newsletter.DoesNotExist:
-                raise ValueError(
-                    f"Newsletter with id {self.newsletter_id} does not exist."
-                )
+                raise ValueError(f"Newsletter with id {self.newsletter_id} does not exist.")
         if self.instructors:
             course.save()  # Save course before adding instructors
             for instructor_id in self.instructors:
                 try:
-                    org_user = OrganizationUser.objects.get(
-                        id=instructor_id, organization=organization
-                    )
+                    org_user = OrganizationUser.objects.get(id=instructor_id, organization=organization)
                 except OrganizationUser.DoesNotExist:
                     raise ValueError(
                         f"OrganizationUser with id {instructor_id} does not exist in organization {organization.name}."
                     )
                 if not org_user.can_act_as_instructor():
-                    raise ValueError(
-                        f"OrganizationUser with id {instructor_id} does not have instructor role."
-                    )
+                    raise ValueError(f"OrganizationUser with id {instructor_id} does not have instructor role.")
                 CourseInstructor.objects.create(course=course, org_user=org_user)
         if self.image:
             course.replace_image(self.image)
@@ -176,12 +158,8 @@ class CreateCourseRequest(BaseModel):
 
 class UpdateCourseRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    title: Optional[str] = Field(
-        None, min_length=1, examples=["Introduction to Python"]
-    )
-    description: Optional[str] = Field(
-        None, examples=["A beginner's course on Python programming."]
-    )
+    title: Optional[str] = Field(None, min_length=1, examples=["Introduction to Python"])
+    description: Optional[str] = Field(None, examples=["A beginner's course on Python programming."])
     imap_connection_id: Optional[int] = Field(None, examples=[1])
     newsletter_id: Optional[int] = Field(None, examples=[1])
     enabled: Optional[bool] = Field(None, examples=[True])
@@ -189,9 +167,7 @@ class UpdateCourseRequest(BaseModel):
     reset_newsletter: Optional[bool] = Field(None, examples=[False])
     image: Optional[str] = Field(None, examples=["/path/to/course_image.png"])
     language: Optional[str] = Field(None, min_length=2, max_length=10, examples=["en"])
-    target_audience: Optional[str] = Field(
-        None, examples=["Beginners with no prior programming experience."]
-    )
+    target_audience: Optional[str] = Field(None, examples=["Beginners with no prior programming experience."])
     external_references: Optional[list[dict[str, str]]] = Field(
         None,
         examples=[
@@ -217,9 +193,7 @@ class UpdateCourseRequest(BaseModel):
         except Course.DoesNotExist:
             raise ValueError(f"Course with id {course_id} does not exist.")
         if self.reset_imap_connection and self.imap_connection_id is not None:
-            raise ValueError(
-                "Cannot set imap_connection_id when reset_imap_connection is True."
-            )
+            raise ValueError("Cannot set imap_connection_id when reset_imap_connection is True.")
 
         if self.title is not None:
             course.title = self.title
@@ -255,27 +229,20 @@ class UpdateCourseRequest(BaseModel):
         if self.send_certificate is not None:
             course.send_certificate = self.send_certificate
         if self.instructors is not None:
-            instructors_to_remove = course.instructors.exclude(
-                org_user_id__in=self.instructors
-            )
+            instructors_to_remove = course.instructors.exclude(org_user_id__in=self.instructors)
             for instructor in instructors_to_remove:
                 instructor.delete()
-            instructors_to_add = set(self.instructors) - set(
-                course.instructors.values_list("org_user_id", flat=True)
-            )
+            instructors_to_add = set(self.instructors) - set(course.instructors.values_list("org_user_id", flat=True))
             for instructor_id in instructors_to_add:
                 try:
-                    org_user = OrganizationUser.objects.get(
-                        id=instructor_id, organization=course.organization
-                    )
+                    org_user = OrganizationUser.objects.get(id=instructor_id, organization=course.organization)
                 except OrganizationUser.DoesNotExist:
                     raise ValueError(
-                        f"OrganizationUser with id {instructor_id} does not exist in organization {course.organization.name}."
+                        f"OrganizationUser with id {instructor_id} does not exist"
+                        f" in organization {course.organization.name}."
                     )
                 if not org_user.can_act_as_instructor():
-                    raise ValueError(
-                        f"OrganizationUser with id {instructor_id} does not have instructor role."
-                    )
+                    raise ValueError(f"OrganizationUser with id {instructor_id} does not have instructor role.")
                 CourseInstructor.objects.create(course=course, org_user=org_user)
         return course
 
@@ -303,9 +270,7 @@ class CourseResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     @staticmethod
-    def from_django_model(
-        course: Course, abs_url_builder: Callable
-    ) -> "CourseResponse":
+    def from_django_model(course: Course, abs_url_builder: Callable) -> "CourseResponse":
         language_info = get_language_info(course.language)
         return CourseResponse.model_validate(
             {
@@ -314,9 +279,7 @@ class CourseResponse(BaseModel):
                 "slug": course.slug,
                 "description": course.description,
                 "organization_id": course.organization.id,
-                "imap_connection_id": course.imap_connection.id
-                if course.imap_connection
-                else None,
+                "imap_connection_id": course.imap_connection.id if course.imap_connection else None,
                 "newsletter_id": course.newsletter_id,
                 "enabled": course.enabled,
                 "enrollments_count": course.enrollments_count,
@@ -325,21 +288,15 @@ class CourseResponse(BaseModel):
                 "language": course.language,
                 "is_rtl": language_info["bidi"],
                 "target_audience": course.target_audience,
-                "external_references": [
-                    {"name": ref.name, "url": ref.url}
-                    for ref in course.external_references.all()
-                ]
+                "external_references": [{"name": ref.name, "url": ref.url} for ref in course.external_references.all()]
                 if course.external_references.exists()
                 else None,
                 "is_public": course.is_public,
                 "send_certificate": course.send_certificate,
                 "instructors": [
                     InstructorResponse(
-                        display_name=instructor.org_user.display_name
-                        or instructor.org_user.user.email,
-                        photo=instructor.org_user.photo.name
-                        if instructor.org_user.photo
-                        else None,
+                        display_name=instructor.org_user.display_name or instructor.org_user.user.email,
+                        photo=instructor.org_user.photo.name if instructor.org_user.photo else None,
                     )
                     for instructor in course.instructors.all()
                 ],
@@ -449,7 +406,8 @@ class UpdateCourseContentRequest(BaseModel):
         ]
         if not any(f is not None for f in fields):
             raise ValueError(
-                "At least one of 'priority', 'waiting_period', 'lesson', 'quiz', 'assignment', or 'is_published' must be provided."
+                "At least one of 'priority', 'waiting_period', 'lesson', 'quiz',"
+                " 'assignment', or 'is_published' must be provided."
             )
         return self
 

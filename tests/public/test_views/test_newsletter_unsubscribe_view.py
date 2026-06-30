@@ -8,9 +8,7 @@ from django_email_learning.models import Newsletter, NewsletterSubscriber
 
 @pytest.fixture()
 def newsletter(db):
-    return Newsletter.objects.create(
-        title="Weekly Digest", language="en", organization_id=1
-    )
+    return Newsletter.objects.create(title="Weekly Digest", language="en", organization_id=1)
 
 
 @pytest.fixture()
@@ -57,9 +55,7 @@ def test_already_used_token_returns_410(db, anonymous_client, subscriber):
     assert response.status_code == 410
 
 
-def test_unsubscribe_does_not_affect_other_subscribers(
-    db, anonymous_client, newsletter, subscriber
-):
+def test_unsubscribe_does_not_affect_other_subscribers(db, anonymous_client, newsletter, subscriber):
     other = NewsletterSubscriber.objects.create(
         newsletter=newsletter,
         email="other@example.com",

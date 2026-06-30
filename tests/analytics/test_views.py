@@ -1,4 +1,6 @@
 from django.urls import reverse
+from django.utils import timezone
+
 from django_email_learning.models import (
     ContentDelivery,
     DeliverySchedule,
@@ -6,8 +8,6 @@ from django_email_learning.models import (
     EnrollmentStatus,
 )
 from django_email_learning.models.enums.delivery_status import DeliveryStatus
-from django.utils import timezone
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -91,9 +91,7 @@ def test_enrollments_over_time_course_filter(editor_client, active_enrollment):
     assert total == 1
 
 
-def test_enrollments_over_time_wrong_course_filter_returns_empty(
-    editor_client, active_enrollment
-):
+def test_enrollments_over_time_wrong_course_filter_returns_empty(editor_client, active_enrollment):
     response = editor_client.get(url("enrollments_over_time"), {"course_id": 99999})
     assert response.status_code == 200
     assert response.json()["data"] == []
@@ -105,12 +103,8 @@ def test_enrollments_over_time_granularity_week(editor_client, active_enrollment
     assert isinstance(response.json()["data"], list)
 
 
-def test_enrollments_over_time_invalid_granularity_falls_back_to_day(
-    editor_client, active_enrollment
-):
-    response = editor_client.get(
-        url("enrollments_over_time"), {"granularity": "invalid"}
-    )
+def test_enrollments_over_time_invalid_granularity_falls_back_to_day(editor_client, active_enrollment):
+    response = editor_client.get(url("enrollments_over_time"), {"granularity": "invalid"})
     assert response.status_code == 200
 
 
@@ -142,9 +136,7 @@ def test_enrollment_status_breakdown_reflects_status(editor_client, active_enrol
 # ---------------------------------------------------------------------------
 
 
-def test_completion_funnel_returns_content_items(
-    editor_client, active_enrollment, course_lesson_content
-):
+def test_completion_funnel_returns_content_items(editor_client, active_enrollment, course_lesson_content):
     response = editor_client.get(url("completion_funnel"))
     assert response.status_code == 200
     data = response.json()["data"]
@@ -154,9 +146,7 @@ def test_completion_funnel_returns_content_items(
     assert "learners_reached" in item
 
 
-def test_completion_funnel_counts_delivered(
-    editor_client, active_enrollment, course_lesson_content
-):
+def test_completion_funnel_counts_delivered(editor_client, active_enrollment, course_lesson_content):
     delivery = ContentDelivery.objects.create(
         enrollment=active_enrollment,
         course_content=course_lesson_content,
@@ -186,9 +176,7 @@ def test_average_progress_returns_per_course(editor_client, active_enrollment):
         assert "active_enrollments" in row
 
 
-def test_average_progress_only_includes_active_enrollments(
-    editor_client, active_enrollment, course
-):
+def test_average_progress_only_includes_active_enrollments(editor_client, active_enrollment, course):
     from django_email_learning.models import Learner
 
     other_learner = Learner.objects.create(email="other@example.com", organization_id=1)
@@ -237,9 +225,7 @@ def test_time_to_complete_shows_completed_enrollment(editor_client, active_enrol
 # ---------------------------------------------------------------------------
 
 
-def test_email_delivery_over_time(
-    editor_client, active_enrollment, course_lesson_content
-):
+def test_email_delivery_over_time(editor_client, active_enrollment, course_lesson_content):
     delivery = ContentDelivery.objects.create(
         enrollment=active_enrollment,
         course_content=course_lesson_content,
@@ -253,9 +239,7 @@ def test_email_delivery_over_time(
     assert total == 1
 
 
-def test_email_delivery_over_time_excludes_non_delivered(
-    editor_client, active_enrollment, course_lesson_content
-):
+def test_email_delivery_over_time_excludes_non_delivered(editor_client, active_enrollment, course_lesson_content):
     delivery = ContentDelivery.objects.create(
         enrollment=active_enrollment,
         course_content=course_lesson_content,
@@ -276,9 +260,7 @@ def test_email_delivery_over_time_excludes_non_delivered(
 # ---------------------------------------------------------------------------
 
 
-def test_email_delivery_status_breakdown(
-    editor_client, active_enrollment, course_lesson_content
-):
+def test_email_delivery_status_breakdown(editor_client, active_enrollment, course_lesson_content):
     delivery = ContentDelivery.objects.create(
         enrollment=active_enrollment,
         course_content=course_lesson_content,
@@ -319,9 +301,7 @@ def test_email_open_rate(editor_client, active_enrollment, course_lesson_content
     assert row["open_rate"] == 100.0
 
 
-def test_email_open_rate_unopened(
-    editor_client, active_enrollment, course_lesson_content
-):
+def test_email_open_rate_unopened(editor_client, active_enrollment, course_lesson_content):
     delivery = ContentDelivery.objects.create(
         enrollment=active_enrollment,
         course_content=course_lesson_content,
@@ -342,9 +322,7 @@ def test_email_open_rate_unopened(
 # ---------------------------------------------------------------------------
 
 
-def test_download_learner_progress_csv(
-    org_admin_client, active_enrollment, course_lesson_content
-):
+def test_download_learner_progress_csv(org_admin_client, active_enrollment, course_lesson_content):
     response = org_admin_client.get(url("download_learner_progress"))
     assert response.status_code == 200
     assert response["Content-Type"] == "text/csv"
@@ -353,9 +331,7 @@ def test_download_learner_progress_csv(
     assert active_enrollment.learner.email in content
 
 
-def test_download_delivery_log_csv(
-    org_admin_client, active_enrollment, course_lesson_content
-):
+def test_download_delivery_log_csv(org_admin_client, active_enrollment, course_lesson_content):
     delivery = ContentDelivery.objects.create(
         enrollment=active_enrollment,
         course_content=course_lesson_content,
@@ -379,12 +355,8 @@ def test_download_completion_summary_csv(org_admin_client, active_enrollment):
     assert active_enrollment.course.title in content
 
 
-def test_download_learner_progress_respects_course_filter(
-    org_admin_client, active_enrollment
-):
-    response = org_admin_client.get(
-        url("download_learner_progress"), {"course_id": 99999}
-    )
+def test_download_learner_progress_respects_course_filter(org_admin_client, active_enrollment):
+    response = org_admin_client.get(url("download_learner_progress"), {"course_id": 99999})
     assert response.status_code == 200
     content = response.content.decode()
     # Only header row — no learner rows for a non-existent course

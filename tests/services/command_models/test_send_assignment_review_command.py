@@ -6,9 +6,7 @@ from django_email_learning.services.command_models.send_assignment_review_comman
 )
 
 
-def test_send_assignment_review_command_sends_email(
-    db, enrollment, course_assignment_content
-):
+def test_send_assignment_review_command_sends_email(db, enrollment, course_assignment_content):
     delivery = ContentDelivery.objects.create(
         enrollment=enrollment,
         course_content=course_assignment_content,

@@ -1,3 +1,11 @@
+import logging
+
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils import timezone
+from django.utils.translation import gettext as _
+
+from django_email_learning.jobs.job_metrics import track_job_execution
 from django_email_learning.models import (
     ContentDelivery,
     DeactivationReason,
@@ -6,15 +14,8 @@ from django_email_learning.models import (
     JobName,
     JobStatus,
 )
-from django_email_learning.jobs.job_metrics import track_job_execution
-from django_email_learning.services.metrics_service import metric_service
 from django_email_learning.services.email_sender_service import email_sender_service
-from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
-from django.utils.translation import gettext as _
-from django.utils import timezone
-import logging
-
+from django_email_learning.services.metrics_service import metric_service
 from django_email_learning.services.utils import mask_email
 
 logger = logging.getLogger(__name__)
@@ -22,13 +23,9 @@ logger = logging.getLogger(__name__)
 
 class DeactivateInactiveEnrollmentsJob:
     def run(self) -> None:
-        job_execution = JobExecution.start_if_not_running(
-            job_name=JobName.DEACTIVATE_ENROLLMENTS.value
-        )
+        job_execution = JobExecution.start_if_not_running(job_name=JobName.DEACTIVATE_ENROLLMENTS.value)
         if job_execution is None:
-            logger.warning(
-                "Another instance of DEACTIVATE_ENROLLMENTS is already running. Exiting this run."
-            )
+            logger.warning("Another instance of DEACTIVATE_ENROLLMENTS is already running. Exiting this run.")
             return
         self._run_job(job_execution)
 

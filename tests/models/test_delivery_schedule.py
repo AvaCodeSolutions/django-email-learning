@@ -1,10 +1,12 @@
-from django_email_learning.models import DeliverySchedule, ContentDelivery
-from urllib.parse import urlparse, parse_qs
-from django_email_learning.services import jwt_service
+from datetime import datetime
+from urllib.parse import parse_qs, urlparse
+
+import jwt
 from django.conf import settings
 from django.utils import timezone
-import jwt
-from datetime import datetime
+
+from django_email_learning.models import ContentDelivery, DeliverySchedule
+from django_email_learning.services import jwt_service
 
 
 def test_generate_link(course_quiz_content, enrollment):
@@ -43,9 +45,7 @@ def test_generate_link_for_assignment_content(course_assignment_content, enrollm
     assert decoded_token["delivery_hash"] == content_delivery.hash_value
 
 
-def test_generate_link_assignment_with_zero_deadline_uses_datetime_max_exp(
-    course_assignment_content, enrollment
-):
+def test_generate_link_assignment_with_zero_deadline_uses_datetime_max_exp(course_assignment_content, enrollment):
     course_assignment_content.assignment.deadline_days = 0
     course_assignment_content.assignment.save()
 

@@ -1,19 +1,15 @@
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 from django.urls import reverse
-from django.core.files.uploadedfile import SimpleUploadedFile
+
 from django_email_learning.models import ContentDelivery
 from django_email_learning.services import jwt_service
-
 
 URL = reverse("django_email_learning:api_personalised:file_upload")
 
 
-def test_file_upload_valid_token(
-    active_enrollment, course_assignment_content, anonymous_client
-):
-    with override_settings(
-        STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}}
-    ):
+def test_file_upload_valid_token(active_enrollment, course_assignment_content, anonymous_client):
+    with override_settings(STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}}):
         content_delivery = ContentDelivery.objects.create(
             enrollment=active_enrollment,
             course_content=course_assignment_content,

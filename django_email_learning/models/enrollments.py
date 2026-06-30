@@ -1,24 +1,26 @@
-from django.db import models, transaction
-from django.core.exceptions import ValidationError
-from django.utils import timezone
-from django.urls import reverse
-from django.conf import settings
-import random
 import logging
-from django.core.mail import EmailMultiAlternatives
-from .organizations import Organization
-from .courses import Course
-from .enums.enrollment_status import EnrollmentStatus
-from .enums.deactivation_reason import DeactivationReason
-from django_email_learning.services.email_sender_service import email_sender_service
-from django_email_learning.services import jwt_service
-from django_email_learning.services.metrics_service import metric_service
-from django.utils.translation import gettext_lazy as _
-from django.template.loader import render_to_string
-from .enums.delivery_status import DeliveryStatus
-from .course_contents import CourseContent
-from datetime import timedelta, datetime
+import random
+from datetime import datetime, timedelta
 
+from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.mail import EmailMultiAlternatives
+from django.db import models, transaction
+from django.template.loader import render_to_string
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+
+from django_email_learning.services import jwt_service
+from django_email_learning.services.email_sender_service import email_sender_service
+from django_email_learning.services.metrics_service import metric_service
+
+from .course_contents import CourseContent
+from .courses import Course
+from .enums.deactivation_reason import DeactivationReason
+from .enums.delivery_status import DeliveryStatus
+from .enums.enrollment_status import EnrollmentStatus
+from .organizations import Organization
 
 logger = logging.getLogger(__name__)
 
@@ -61,9 +63,7 @@ class Learner(models.Model):
     def enrollments_count(self) -> dict[str, int]:
         return {
             "total": self.enrollments.count(),
-            "completed": self.enrollments.filter(
-                status=EnrollmentStatus.COMPLETED
-            ).count(),
+            "completed": self.enrollments.filter(status=EnrollmentStatus.COMPLETED).count(),
         }
 
     class Meta:
@@ -98,12 +98,8 @@ class Enrollment(models.Model):
         EnrollmentStatus.COMPLETED: [],
         EnrollmentStatus.DEACTIVATED: [],
     }
-    learner = models.ForeignKey(
-        Learner, related_name="enrollments", on_delete=models.CASCADE
-    )
-    course = models.ForeignKey(
-        Course, related_name="enrollments", on_delete=models.CASCADE
-    )
+    learner = models.ForeignKey(Learner, related_name="enrollments", on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, related_name="enrollments", on_delete=models.CASCADE)
     enrolled_at = models.DateTimeField(auto_now_add=True)
     activated_at = models.DateTimeField(null=True, blank=True)
     final_state_at = models.DateTimeField(null=True, blank=True)
@@ -136,23 +132,11 @@ class Enrollment(models.Model):
             if old_status != self.status:
                 allowed_transitions = self.state_transitions.get(old_status, [])
                 if self.status not in allowed_transitions:
-                    raise ValidationError(
-                        f"Invalid status transition from {old_status} to {self.status}."
-                    )
-        if (
-            self.status != EnrollmentStatus.DEACTIVATED.value
-            and self.deactivation_reason is not None
-        ):
-            raise ValidationError(
-                "Deactivation reason must be null unless status is 'deactivated'."
-            )
-        if (
-            self.status == EnrollmentStatus.DEACTIVATED.value
-            and not self.deactivation_reason
-        ):
-            raise ValidationError(
-                "Deactivation reason must be provided when status is 'deactivated'."
-            )
+                    raise ValidationError(f"Invalid status transition from {old_status} to {self.status}.")
+        if self.status != EnrollmentStatus.DEACTIVATED.value and self.deactivation_reason is not None:
+            raise ValidationError("Deactivation reason must be null unless status is 'deactivated'.")
+        if self.status == EnrollmentStatus.DEACTIVATED.value and not self.deactivation_reason:
+            raise ValidationError("Deactivation reason must be provided when status is 'deactivated'.")
 
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         if not self.pk:
@@ -187,27 +171,21 @@ class Enrollment(models.Model):
     def graduate(self) -> None:
         with transaction.atomic():
             if self.status != EnrollmentStatus.ACTIVE:
-                raise ValidationError(
-                    "Only active enrollments can be marked as completed."
-                )
+                raise ValidationError("Only active enrollments can be marked as completed.")
             self.status = EnrollmentStatus.COMPLETED
             self.final_state_at = timezone.now()
             metric_service.user_completed_course(
                 course_slug=self.course.slug,
                 organization_id=self.course.organization.id,
             )
-            logger.info(
-                f"Learner ID {self.learner.id} has completed the course {self.course.title}."
-            )
+            logger.info(f"Learner ID {self.learner.id} has completed the course {self.course.title}.")
             self.save()
         if self.course.send_certificate:
             transaction.on_commit(self.send_certificate_form)
 
     def send_certificate_form(self) -> None:
         if self.status != EnrollmentStatus.COMPLETED:
-            raise ValidationError(
-                "Certificate form can only be sent for completed enrollments."
-            )
+            raise ValidationError("Certificate form can only be sent for completed enrollments.")
         token_payload = {
             "enrollment_id": self.id,
         }
@@ -216,9 +194,7 @@ class Enrollment(models.Model):
             token_payload,
             exp=datetime.max.replace(tzinfo=timezone.get_current_timezone()),
         )
-        certificate_path = reverse(
-            "django_email_learning:personalised:certificate_form"
-        )
+        certificate_path = reverse("django_email_learning:personalised:certificate_form")
         link = f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{certificate_path}?token={token}"
 
         subject = _("Finalize your Certificate")
@@ -236,9 +212,7 @@ class Enrollment(models.Model):
             from_email=email_sender_service.from_email,
             to=[self.learner.email],
         )
-        email_message.attach_alternative(
-            render_to_string("emails/certificate_form.html", context), "text/html"
-        )
+        email_message.attach_alternative(render_to_string("emails/certificate_form.html", context), "text/html")
 
         email_sender_service.send(email_message)
         logger.info(f"Certificate form email sent for enrollment ID {self.id}")
@@ -254,20 +228,14 @@ class Enrollment(models.Model):
             organization_id=self.course.organization.id,
             reason=DeactivationReason.FAILED,
         )
-        logger.info(
-            f"Learner ID {self.learner.id} has failed the course {self.course.title}."
-        )
+        logger.info(f"Learner ID {self.learner.id} has failed the course {self.course.title}.")
         self.save()
 
     @transaction.atomic()
     def schedule_first_content_delivery(self) -> None:
         from .deliveries import DeliverySchedule
 
-        first_content = (
-            CourseContent.objects.filter(course=self.course, is_published=True)
-            .order_by("priority")
-            .first()
-        )
+        first_content = CourseContent.objects.filter(course=self.course, is_published=True).order_by("priority").first()
         if first_content:
             delivery = self.content_deliveries.create(course_content=first_content)
             scheduled = DeliverySchedule.objects.create(
@@ -302,9 +270,7 @@ class Certificate(models.Model):
     Certificate number is generated from course, enrollment, and a random suffix.
     """
 
-    enrollment = models.OneToOneField(
-        Enrollment, on_delete=models.CASCADE, related_name="certificate"
-    )
+    enrollment = models.OneToOneField(Enrollment, on_delete=models.CASCADE, related_name="certificate")
     issued_at = models.DateTimeField(auto_now_add=True)
     name_on_certificate = models.CharField(max_length=200)
     random_suffix = models.IntegerField()

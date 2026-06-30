@@ -1,25 +1,25 @@
-from django.contrib import admin
 from django import forms
+from django.contrib import admin
+
 from django_email_learning.models import (
     AssignmentFeedback,
-    Lesson,
-    Quiz,
+    AssignmentSubmission,
+    ContentDelivery,
     Course,
+    DeliverySchedule,
+    Enrollment,
     ImapConnection,
     InboxFolder,
-    OrganizationUser,
-    Enrollment,
-    ContentDelivery,
-    Learner,
-    DeliverySchedule,
-    QuizSubmission,
     JobExecution,
-    AssignmentSubmission,
+    Learner,
+    Lesson,
     Newsletter,
-    Sendout,
     NewsletterSubscriber,
+    OrganizationUser,
+    Quiz,
+    QuizSubmission,
+    Sendout,
 )
-
 from django_email_learning.oauth_integrations.models import Session
 
 

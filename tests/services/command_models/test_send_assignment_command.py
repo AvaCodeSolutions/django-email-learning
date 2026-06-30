@@ -1,7 +1,8 @@
+from django.core import mail
+
 from django_email_learning.services.command_models.send_assignment_command import (
     SendAssignmentCommand,
 )
-from django.core import mail
 
 
 def test_send_assignment_command(db, course_assignment_content):

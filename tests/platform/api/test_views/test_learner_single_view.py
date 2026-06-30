@@ -1,4 +1,5 @@
 from django.urls import reverse
+
 from django_email_learning.models import Certificate
 
 
@@ -21,9 +22,7 @@ def test_single_llearner_viewe(viewer_client, enrollment):
     assert enrollment_data["certificate_url"] is None
 
 
-def test_single_learner_view_contains_certificate_url_when_certificate_exists(
-    viewer_client, enrollment
-):
+def test_single_learner_view_contains_certificate_url_when_certificate_exists(viewer_client, enrollment):
     certificate = Certificate.objects.create(
         enrollment=enrollment,
         name_on_certificate="Jane Doe",
@@ -37,9 +36,9 @@ def test_single_learner_view_contains_certificate_url_when_certificate_exists(
 
     assert response.status_code == 200
     enrollment_data = response.json()["enrollments"][0]
-    assert (
-        enrollment_data["certificate_url"]
-        == f"http://testserver{reverse('django_email_learning:personalised:certificate', kwargs={'certificate_number': certificate.certificate_number})}"
+    assert enrollment_data["certificate_url"] == "http://testserver" + reverse(
+        "django_email_learning:personalised:certificate",
+        kwargs={"certificate_number": certificate.certificate_number},
     )
 
 

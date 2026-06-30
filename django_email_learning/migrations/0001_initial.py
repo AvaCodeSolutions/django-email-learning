@@ -3,13 +3,14 @@
 import django.core.validators
 import django.db.models.deletion
 import django.utils.timezone
+from django.conf import settings
+from django.db import migrations, models
+
 import django_email_learning.models.enums.deactivation_reason
 import django_email_learning.models.enums.delivery_status
 import django_email_learning.models.enums.enrollment_status
 import django_email_learning.models.imap_connections
 import django_email_learning.services.utils
-from django.conf import settings
-from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
@@ -38,7 +39,8 @@ class Migration(migrations.Migration):
                     "is_blocking",
                     models.BooleanField(
                         default=True,
-                        help_text="Whether the learner is required to submit the assignment to proceed to the next content.",
+                        help_text="Whether the learner is required to submit the assignment to proceed "
+                        "to the next content.",
                     ),
                 ),
                 (
@@ -50,21 +52,18 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "requires_text_submission",
-                    models.BooleanField(
-                        help_text="Whether the assignment requires text submission."
-                    ),
+                    models.BooleanField(help_text="Whether the assignment requires text submission."),
                 ),
                 (
                     "requires_file_submission",
-                    models.BooleanField(
-                        help_text="Whether the assignment requires file submission."
-                    ),
+                    models.BooleanField(help_text="Whether the assignment requires file submission."),
                 ),
                 (
                     "reminder_interval_days",
                     models.IntegerField(
                         blank=True,
-                        help_text="For assignments without a deadline (deadline_days = 0), send reminder emails every N days.",
+                        help_text="For assignments without a deadline (deadline_days = 0), "
+                        "send reminder emails every N days.",
                         null=True,
                         validators=[django.core.validators.MinValueValidator(0)],
                     ),
@@ -102,16 +101,15 @@ class Migration(migrations.Migration):
                 (
                     "slug",
                     models.SlugField(
-                        help_text="A short label for the course, used in URLs or email interactive actions. You can not edit it later."
+                        help_text="A short label for the course, used in URLs or email interactive actions. "
+                        "You can not edit it later."
                     ),
                 ),
                 ("description", models.TextField(blank=True, null=True)),
                 ("enabled", models.BooleanField(default=False)),
                 (
                     "image",
-                    models.ImageField(
-                        blank=True, null=True, upload_to="course_images/"
-                    ),
+                    models.ImageField(blank=True, null=True, upload_to="course_images/"),
                 ),
                 (
                     "language",
@@ -244,9 +242,7 @@ class Migration(migrations.Migration):
                     "server",
                     models.CharField(
                         max_length=200,
-                        validators=[
-                            django_email_learning.models.imap_connections.is_domain_or_ip
-                        ],
+                        validators=[django_email_learning.models.imap_connections.is_domain_or_ip],
                     ),
                 ),
                 ("port", models.IntegerField(db_default=993)),
@@ -273,9 +269,7 @@ class Migration(migrations.Migration):
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 (
                     "photo",
-                    models.ImageField(
-                        blank=True, null=True, upload_to="learner_photos/"
-                    ),
+                    models.ImageField(blank=True, null=True, upload_to="learner_photos/"),
                 ),
             ],
         ),
@@ -310,9 +304,7 @@ class Migration(migrations.Migration):
                 ("name", models.CharField(max_length=200, unique=True)),
                 (
                     "logo",
-                    models.ImageField(
-                        blank=True, null=True, upload_to="organization_logos/"
-                    ),
+                    models.ImageField(blank=True, null=True, upload_to="organization_logos/"),
                 ),
                 ("description", models.TextField(blank=True, null=True)),
                 ("website", models.URLField(blank=True, max_length=500, null=True)),
@@ -360,9 +352,7 @@ class Migration(migrations.Migration):
                 ("title", models.CharField(max_length=500)),
                 (
                     "required_score",
-                    models.IntegerField(
-                        validators=[django.core.validators.MaxValueValidator(100)]
-                    ),
+                    models.IntegerField(validators=[django.core.validators.MaxValueValidator(100)]),
                 ),
                 (
                     "selection_strategy",
@@ -387,7 +377,8 @@ class Migration(migrations.Migration):
                     "reminder_interval_days",
                     models.IntegerField(
                         blank=True,
-                        help_text="For quizzes without a deadline (deadline_days = 0), send reminder emails every N days.",
+                        help_text="For quizzes without a deadline (deadline_days = 0), "
+                        "send reminder emails every N days.",
                         null=True,
                         validators=[django.core.validators.MinValueValidator(0)],
                     ),
@@ -554,9 +545,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "time",
-                    models.DateTimeField(
-                        db_index=True, default=django.utils.timezone.now
-                    ),
+                    models.DateTimeField(db_index=True, default=django.utils.timezone.now),
                 ),
                 ("link", models.URLField(blank=True, max_length=500, null=True)),
                 (
@@ -564,40 +553,28 @@ class Migration(migrations.Migration):
                     models.CharField(
                         choices=[
                             (
-                                django_email_learning.models.enums.delivery_status.DeliveryStatus[
-                                    "SCHEDULED"
-                                ],
+                                django_email_learning.models.enums.delivery_status.DeliveryStatus["SCHEDULED"],
                                 "Scheduled",
                             ),
                             (
-                                django_email_learning.models.enums.delivery_status.DeliveryStatus[
-                                    "PROCESSING"
-                                ],
+                                django_email_learning.models.enums.delivery_status.DeliveryStatus["PROCESSING"],
                                 "Processing",
                             ),
                             (
-                                django_email_learning.models.enums.delivery_status.DeliveryStatus[
-                                    "DELIVERED"
-                                ],
+                                django_email_learning.models.enums.delivery_status.DeliveryStatus["DELIVERED"],
                                 "Delivered",
                             ),
                             (
-                                django_email_learning.models.enums.delivery_status.DeliveryStatus[
-                                    "CANCELED"
-                                ],
+                                django_email_learning.models.enums.delivery_status.DeliveryStatus["CANCELED"],
                                 "Canceled",
                             ),
                             (
-                                django_email_learning.models.enums.delivery_status.DeliveryStatus[
-                                    "BLOCKED"
-                                ],
+                                django_email_learning.models.enums.delivery_status.DeliveryStatus["BLOCKED"],
                                 "Blocked",
                             ),
                         ],
                         db_index=True,
-                        default=django_email_learning.models.enums.delivery_status.DeliveryStatus[
-                            "SCHEDULED"
-                        ],
+                        default=django_email_learning.models.enums.delivery_status.DeliveryStatus["SCHEDULED"],
                         max_length=50,
                     ),
                 ),
@@ -633,33 +610,23 @@ class Migration(migrations.Migration):
                     models.CharField(
                         choices=[
                             (
-                                django_email_learning.models.enums.enrollment_status.EnrollmentStatus[
-                                    "UNVERIFIED"
-                                ],
+                                django_email_learning.models.enums.enrollment_status.EnrollmentStatus["UNVERIFIED"],
                                 "Unverified",
                             ),
                             (
-                                django_email_learning.models.enums.enrollment_status.EnrollmentStatus[
-                                    "ACTIVE"
-                                ],
+                                django_email_learning.models.enums.enrollment_status.EnrollmentStatus["ACTIVE"],
                                 "Active",
                             ),
                             (
-                                django_email_learning.models.enums.enrollment_status.EnrollmentStatus[
-                                    "COMPLETED"
-                                ],
+                                django_email_learning.models.enums.enrollment_status.EnrollmentStatus["COMPLETED"],
                                 "Completed",
                             ),
                             (
-                                django_email_learning.models.enums.enrollment_status.EnrollmentStatus[
-                                    "DEACTIVATED"
-                                ],
+                                django_email_learning.models.enums.enrollment_status.EnrollmentStatus["DEACTIVATED"],
                                 "Deactivated",
                             ),
                         ],
-                        default=django_email_learning.models.enums.enrollment_status.EnrollmentStatus[
-                            "UNVERIFIED"
-                        ],
+                        default=django_email_learning.models.enums.enrollment_status.EnrollmentStatus["UNVERIFIED"],
                         max_length=50,
                     ),
                 ),
@@ -669,27 +636,19 @@ class Migration(migrations.Migration):
                         blank=True,
                         choices=[
                             (
-                                django_email_learning.models.enums.deactivation_reason.DeactivationReason[
-                                    "CANCELED"
-                                ],
+                                django_email_learning.models.enums.deactivation_reason.DeactivationReason["CANCELED"],
                                 "Canceled",
                             ),
                             (
-                                django_email_learning.models.enums.deactivation_reason.DeactivationReason[
-                                    "BLOCKED"
-                                ],
+                                django_email_learning.models.enums.deactivation_reason.DeactivationReason["BLOCKED"],
                                 "Blocked",
                             ),
                             (
-                                django_email_learning.models.enums.deactivation_reason.DeactivationReason[
-                                    "FAILED"
-                                ],
+                                django_email_learning.models.enums.deactivation_reason.DeactivationReason["FAILED"],
                                 "Failed",
                             ),
                             (
-                                django_email_learning.models.enums.deactivation_reason.DeactivationReason[
-                                    "INACTIVE"
-                                ],
+                                django_email_learning.models.enums.deactivation_reason.DeactivationReason["INACTIVE"],
                                 "Inactive",
                             ),
                         ],
@@ -913,9 +872,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "photo",
-                    models.ImageField(
-                        blank=True, null=True, upload_to="org_user_photos/"
-                    ),
+                    models.ImageField(blank=True, null=True, upload_to="org_user_photos/"),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True, null=True)),
                 ("updated_at", models.DateTimeField(auto_now=True, null=True)),
@@ -1122,9 +1079,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="enrollment",
             constraint=models.UniqueConstraint(
-                condition=models.Q(
-                    ("status__in", ["unverified", "active", "completed"])
-                ),
+                condition=models.Q(("status__in", ["unverified", "active", "completed"])),
                 fields=("learner", "course"),
                 name="unique_active_enrollment",
             ),
@@ -1139,9 +1094,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name="organizationuser",
-            constraint=models.UniqueConstraint(
-                fields=("user", "organization"), name="unique_user_organization"
-            ),
+            constraint=models.UniqueConstraint(fields=("user", "organization"), name="unique_user_organization"),
         ),
         migrations.AlterUniqueTogether(
             name="courseinstructor",
@@ -1173,8 +1126,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddConstraint(
             model_name="coursecontent",
-            constraint=models.UniqueConstraint(
-                fields=("course", "priority"), name="unique_priority_per_course"
-            ),
+            constraint=models.UniqueConstraint(fields=("course", "priority"), name="unique_priority_per_course"),
         ),
     ]

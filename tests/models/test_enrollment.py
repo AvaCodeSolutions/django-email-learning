@@ -1,8 +1,10 @@
-from django_email_learning.models import Enrollment
+from unittest.mock import patch
+
+import pytest
 from django.core.exceptions import ValidationError
 from freezegun import freeze_time
-from unittest.mock import patch
-import pytest
+
+from django_email_learning.models import Enrollment
 
 
 def immediately(func):
@@ -29,12 +31,8 @@ def test_enrollment_minimal_save(learner, course):
         ("active", "deactivated", "canceled"),
     ],
 )
-def test_update_valid_status(
-    db, learner, course, initial_status, new_status, deactivation_reason
-):
-    enrollment = Enrollment.objects.create(
-        learner=learner, course=course, status=initial_status
-    )
+def test_update_valid_status(db, learner, course, initial_status, new_status, deactivation_reason):
+    enrollment = Enrollment.objects.create(learner=learner, course=course, status=initial_status)
     enrollment.status = new_status
     enrollment.deactivation_reason = deactivation_reason
     enrollment.save()
@@ -70,21 +68,15 @@ def test_update_invalid_status(
     enrollment.deactivation_reason = new_deactivation_reason
     with pytest.raises(ValidationError) as exc_info:
         enrollment.save()
-    assert f"Invalid status transition from {initial_status} to {new_status}." in str(
-        exc_info.value
-    )
+    assert f"Invalid status transition from {initial_status} to {new_status}." in str(exc_info.value)
 
 
 def test_deactivation_reason_set_only_when_deactivated(db, learner, course):
-    enrollment = Enrollment.objects.create(
-        learner=learner, course=course, status="active"
-    )
+    enrollment = Enrollment.objects.create(learner=learner, course=course, status="active")
     enrollment.deactivation_reason = "Violated terms"
     with pytest.raises(ValidationError) as exc_info:
         enrollment.save()
-    assert "Deactivation reason must be null unless status is 'deactivated'." in str(
-        exc_info.value
-    )
+    assert "Deactivation reason must be null unless status is 'deactivated'." in str(exc_info.value)
 
 
 def test_learner_required_field(db, course):
@@ -114,9 +106,7 @@ def test_unique_active_enrollment_allows_deactivated(db, learner, course):
         status="deactivated",
         deactivation_reason="canceled",
     )
-    enrollment = Enrollment.objects.create(
-        learner=learner, course=course, status="unverified"
-    )
+    enrollment = Enrollment.objects.create(learner=learner, course=course, status="unverified")
     assert enrollment.id is not None
 
 
@@ -147,14 +137,10 @@ def test_deactivation_reason_null_when_not_deactivated(db, learner, course):
             status="active",
             deactivation_reason="canceled",
         )
-    assert "Deactivation reason must be null unless status is 'deactivated'." in str(
-        exc_info.value
-    )
+    assert "Deactivation reason must be null unless status is 'deactivated'." in str(exc_info.value)
 
 
-def test_schedule_first_content_delivery_creates_delivery_and_schedule(
-    db, enrollment, course_lesson_content
-):
+def test_schedule_first_content_delivery_creates_delivery_and_schedule(db, enrollment, course_lesson_content):
     course_lesson_content.waiting_period = 3600  # 1 hour
     course_lesson_content.save()
 
@@ -186,9 +172,7 @@ def test_schedule_first_content_delivery_atomic_transaction(
             enrollment.schedule_first_content_delivery()
 
         deliveries = enrollment.content_deliveries.all()
-        assert (
-            deliveries.count() == 0
-        )  # Delivery should be deleted if no schedule created
+        assert deliveries.count() == 0  # Delivery should be deleted if no schedule created
 
 
 # ---------------------------------------------------------------------------
@@ -204,9 +188,7 @@ def test_schedule_first_content_delivery_atomic_transaction(
     "django_email_learning.models.enrollments.Enrollment.send_certificate_form",
     autospec=True,
 )
-def test_graduate_sends_certificate_when_enabled(
-    mock_send, mock_on_commit, active_enrollment
-):
+def test_graduate_sends_certificate_when_enabled(mock_send, mock_on_commit, active_enrollment):
     active_enrollment.graduate()
     mock_send.assert_called_once()
 
@@ -219,9 +201,7 @@ def test_graduate_sends_certificate_when_enabled(
     "django_email_learning.models.enrollments.Enrollment.send_certificate_form",
     autospec=True,
 )
-def test_graduate_does_not_send_certificate_when_disabled(
-    mock_send, mock_on_commit, active_enrollment
-):
+def test_graduate_does_not_send_certificate_when_disabled(mock_send, mock_on_commit, active_enrollment):
     active_enrollment.course.send_certificate = False
     active_enrollment.course.save()
     active_enrollment.graduate()

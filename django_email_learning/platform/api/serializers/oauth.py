@@ -1,6 +1,8 @@
-from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 from typing import Any
-from django_email_learning.models import Organization, ImapConnection, InboxFolder
+
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
+
+from django_email_learning.models import ImapConnection, InboxFolder, Organization
 
 
 class CreateImapConnectionRequest(BaseModel):
@@ -29,9 +31,7 @@ class CreateImapConnectionRequest(BaseModel):
         )
         imap_connection.save()
         for folder in self.folders:
-            InboxFolder.objects.create(
-                imap_connection=imap_connection, folder_name=folder
-            )
+            InboxFolder.objects.create(imap_connection=imap_connection, folder_name=folder)
         return imap_connection
 
 
@@ -51,6 +51,4 @@ class ImapConnectionResponse(BaseModel):
 
 
 class GroupEnrollmentRequest(BaseModel):
-    groups: list[str] = Field(
-        min_length=1, default=["all"], examples=[["group1", "group2"]]
-    )
+    groups: list[str] = Field(min_length=1, default=["all"], examples=[["group1", "group2"]])

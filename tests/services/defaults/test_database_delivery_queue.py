@@ -1,10 +1,12 @@
+from datetime import timedelta
+
+import pytest
+from django.utils import timezone
+
+from django_email_learning.models import DeliverySchedule, DeliveryStatus
 from django_email_learning.services.defaults.database_delivery_queue import (
     DatabaseDeliveryQueue,
 )
-from django_email_learning.models import DeliverySchedule, DeliveryStatus
-from django.utils import timezone
-from datetime import timedelta
-import pytest
 
 
 @pytest.fixture
@@ -19,9 +21,7 @@ def test_next_task_returns_none_when_no_tasks(db, database_delivery_queue):
     assert task is None
 
 
-def test_next_task_returns_scheduled_tasks(
-    db, database_delivery_queue, content_delivery
-):
+def test_next_task_returns_scheduled_tasks(db, database_delivery_queue, content_delivery):
     # Create scheduled tasks
     task1 = DeliverySchedule.objects.create(
         delivery=content_delivery,

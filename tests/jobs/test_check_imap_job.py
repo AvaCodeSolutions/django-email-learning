@@ -18,12 +18,7 @@ def test_check_imap_job_processes_unseen_emails(db, course, imap_connection):
         ("OK", [b"1 2"]),
         ("OK", [b""]),
     ]
-    raw_email = (
-        b"From: sender@example.com\r\n"
-        b"To: user@example.com\r\n"
-        b"Subject: Test\r\n\r\n"
-        b"Hello"
-    )
+    raw_email = b"From: sender@example.com\r\nTo: user@example.com\r\nSubject: Test\r\n\r\nHello"
     account_mock.fetch.side_effect = [
         ("OK", [(None, raw_email)]),
         ("OK", [(None, raw_email)]),
@@ -46,9 +41,7 @@ def test_check_imap_job_processes_unseen_emails(db, course, imap_connection):
     account_mock.login.assert_called_once()
     account_mock.select.assert_has_calls([call("alerts"), call("inbox")])
     assert imap_interface_mock.handle_email_message.call_count == 2
-    account_mock.store.assert_has_calls(
-        [call(b"1", "+FLAGS", "\\Seen"), call(b"2", "+FLAGS", "\\Seen")]
-    )
+    account_mock.store.assert_has_calls([call(b"1", "+FLAGS", "\\Seen"), call(b"2", "+FLAGS", "\\Seen")])
     account_mock.logout.assert_called_once()
 
 
@@ -75,25 +68,16 @@ def test_check_imap_job_skips_connection_when_login_fails(db, course, imap_conne
     imap_interface_mock.handle_email_message.assert_not_called()
 
 
-def test_check_imap_job_tracks_metric_when_processing_fails(
-    db, course, imap_connection
-):
+def test_check_imap_job_tracks_metric_when_processing_fails(db, course, imap_connection):
     course.enabled = True
     course.save()
 
     imap_interface_mock = MagicMock()
-    imap_interface_mock.handle_email_message.side_effect = Exception(
-        "processing failed"
-    )
+    imap_interface_mock.handle_email_message.side_effect = Exception("processing failed")
 
     account_mock = MagicMock()
     account_mock.search.return_value = ("OK", [b"1"])
-    raw_email = (
-        b"From: sender@example.com\r\n"
-        b"To: user@example.com\r\n"
-        b"Subject: Test\r\n\r\n"
-        b"Hello"
-    )
+    raw_email = b"From: sender@example.com\r\nTo: user@example.com\r\nSubject: Test\r\n\r\nHello"
     account_mock.fetch.return_value = ("OK", [(None, raw_email)])
 
     with (

@@ -1,28 +1,30 @@
-from django.contrib.auth.models import User, Group
-from django_email_learning.models import OrganizationUser
-from django_email_learning.apps import PLATFORM_ADMIN_GROUP_NAME
+import uuid
+
+import pytest
+from django.contrib.auth.models import Group, User
 from django.test import Client
+
+from django_email_learning.apps import PLATFORM_ADMIN_GROUP_NAME
 from django_email_learning.models import (
-    ImapConnection,
-    Quiz,
-    Lesson,
-    Assignment,
-    Course,
-    BlockedEmail,
-    Learner,
-    Enrollment,
-    CourseContent,
-    Question,
     Answer,
-    EnrollmentStatus,
+    Assignment,
+    BlockedEmail,
     ContentDelivery,
+    Course,
+    CourseContent,
     DeliverySchedule,
     DeliveryStatus,
+    Enrollment,
+    EnrollmentStatus,
+    ImapConnection,
     JobExecution,
     JobName,
+    Learner,
+    Lesson,
+    OrganizationUser,
+    Question,
+    Quiz,
 )
-import uuid
-import pytest
 
 
 @pytest.fixture()
@@ -34,18 +36,14 @@ def users(db):
         password="adminpass",
         is_superuser=True,
     )
-    editor_user = User(
-        id=2, username="editor", email="editor@example.com", password="editorpass"
-    )
+    editor_user = User(id=2, username="editor", email="editor@example.com", password="editorpass")
     platform_admin_user = User(
         id=3,
         username="platformadmin",
         email="platformadmin@example.com",
         password="platformadminpass",
     )
-    viewer_user = User(
-        id=4, username="viewer", email="viewer@example.com", password="viewerpass"
-    )
+    viewer_user = User(id=4, username="viewer", email="viewer@example.com", password="viewerpass")
     organization_admin_user = User(
         id=5,
         username="orgadmin",
@@ -77,16 +75,10 @@ def users(db):
         role="instructor",
         display_name="Instructor Name",
     )
-    platform_admin = OrganizationUser(
-        user=platform_admin_user, organization_id=1, role="admin"
-    )
-    organization_admin = OrganizationUser(
-        user=organization_admin_user, organization_id=1, role="admin"
-    )
+    platform_admin = OrganizationUser(user=platform_admin_user, organization_id=1, role="admin")
+    organization_admin = OrganizationUser(user=organization_admin_user, organization_id=1, role="admin")
     viewer = OrganizationUser(user=viewer_user, organization_id=1, role="viewer")
-    OrganizationUser.objects.bulk_create(
-        [editor, instructor, platform_admin, organization_admin, viewer]
-    )
+    OrganizationUser.objects.bulk_create([editor, instructor, platform_admin, organization_admin, viewer])
     return {
         "superadmin": superadmin,
         "editor_user": editor_user,
@@ -308,9 +300,7 @@ def quiz_with_questions(db, quiz) -> Quiz:
 
 @pytest.fixture
 def active_enrollment(db, learner, course):
-    enrollment = Enrollment.objects.create(
-        learner=learner, course=course, status=EnrollmentStatus.ACTIVE
-    )
+    enrollment = Enrollment.objects.create(learner=learner, course=course, status=EnrollmentStatus.ACTIVE)
     return enrollment
 
 
@@ -325,11 +315,7 @@ def content_delivery(db, active_enrollment, course_quiz_content, quiz_with_quest
         course_content_id=course_quiz_content.id,
         hash_value="testhash",
     )
-    delivery.delivery_schedules.add(
-        DeliverySchedule.objects.create(
-            status=DeliveryStatus.DELIVERED, delivery=delivery
-        )
-    )
+    delivery.delivery_schedules.add(DeliverySchedule.objects.create(status=DeliveryStatus.DELIVERED, delivery=delivery))
     return delivery
 
 
@@ -356,9 +342,7 @@ def enrollments_factory(db):
 
 @pytest.fixture
 def second_user(db):
-    user = User(
-        username="seconduser", email="seconduser@example.com", password="secondpass"
-    )
+    user = User(username="seconduser", email="seconduser@example.com", password="secondpass")
     user.save()
     return user
 

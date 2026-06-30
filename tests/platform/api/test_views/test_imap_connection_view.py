@@ -1,4 +1,5 @@
 from django.urls import reverse
+
 from django_email_learning.models import ImapConnection
 
 
@@ -54,9 +55,7 @@ def test_create_imap_connection_success(superadmin_client):
         "port": 993,
         "folders": ["inbox"],
     }
-    response = superadmin_client.post(
-        get_url(1), data=payload, content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(1), data=payload, content_type="application/json")
     assert response.status_code == 201
     assert "id" in response.json()
     assert response.json()["email"] == payload["email"]
@@ -73,8 +72,6 @@ def test_create_imap_connection_without__inbox_folder(superadmin_client):
         "port": 993,
         "folders": ["spam"],
     }
-    response = superadmin_client.post(
-        get_url(1), data=payload, content_type="application/json"
-    )
+    response = superadmin_client.post(get_url(1), data=payload, content_type="application/json")
     assert response.status_code == 400
     assert "Folders list must contain 'inbox'." in response.json()["error"]

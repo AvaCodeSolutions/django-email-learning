@@ -21,9 +21,7 @@ from django_email_learning.models import (
 
 @pytest.fixture()
 def newsletter(db):
-    return Newsletter.objects.create(
-        title="Weekly Digest", language="en", organization_id=1
-    )
+    return Newsletter.objects.create(title="Weekly Digest", language="en", organization_id=1)
 
 
 @pytest.fixture()
@@ -39,9 +37,7 @@ def sendout(newsletter):
 
 @pytest.fixture()
 def subscriber(newsletter):
-    return NewsletterSubscriber.objects.create(
-        newsletter=newsletter, email="sub@example.com"
-    )
+    return NewsletterSubscriber.objects.create(newsletter=newsletter, email="sub@example.com")
 
 
 @pytest.fixture()
@@ -96,9 +92,7 @@ def test_run_no_tasks_completes_job_execution(db, job, sendout_queue_mock):
 
 
 def test_process_delivery_success_marks_delivery_sent(db, delivery):
-    with patch(
-        "django_email_learning.jobs.send_newsletters_job.email_sender_service.send"
-    ):
+    with patch("django_email_learning.jobs.send_newsletters_job.email_sender_service.send"):
         SendNewslettersJob().process_delivery(delivery)
 
     delivery.refresh_from_db()
@@ -107,9 +101,7 @@ def test_process_delivery_success_marks_delivery_sent(db, delivery):
 
 
 def test_process_delivery_success_marks_sendout_sent_when_last(db, delivery, sendout):
-    with patch(
-        "django_email_learning.jobs.send_newsletters_job.email_sender_service.send"
-    ):
+    with patch("django_email_learning.jobs.send_newsletters_job.email_sender_service.send"):
         SendNewslettersJob().process_delivery(delivery)
 
     sendout.refresh_from_db()
@@ -117,21 +109,13 @@ def test_process_delivery_success_marks_sendout_sent_when_last(db, delivery, sen
     assert sendout.sent_at is not None
 
 
-def test_process_delivery_sendout_stays_scheduled_while_others_pending(
-    db, sendout, newsletter
-):
+def test_process_delivery_sendout_stays_scheduled_while_others_pending(db, sendout, newsletter):
     sub1 = NewsletterSubscriber.objects.create(newsletter=newsletter, email="a@x.com")
     sub2 = NewsletterSubscriber.objects.create(newsletter=newsletter, email="b@x.com")
-    d1 = SendoutDelivery.objects.create(
-        sendout=sendout, subscriber=sub1, status=SendoutDelivery.Status.PROCESSING
-    )
-    SendoutDelivery.objects.create(
-        sendout=sendout, subscriber=sub2, status=SendoutDelivery.Status.PENDING
-    )
+    d1 = SendoutDelivery.objects.create(sendout=sendout, subscriber=sub1, status=SendoutDelivery.Status.PROCESSING)
+    SendoutDelivery.objects.create(sendout=sendout, subscriber=sub2, status=SendoutDelivery.Status.PENDING)
 
-    with patch(
-        "django_email_learning.jobs.send_newsletters_job.email_sender_service.send"
-    ):
+    with patch("django_email_learning.jobs.send_newsletters_job.email_sender_service.send"):
         SendNewslettersJob().process_delivery(d1)
 
     sendout.refresh_from_db()
@@ -153,23 +137,15 @@ def test_process_delivery_failure_increments_retry_and_sets_pending(db, delivery
     assert delivery.retry_count == 1
 
 
-def test_process_delivery_marks_failed_after_max_retries_when_others_succeeded(
-    db, sendout, newsletter, settings
-):
+def test_process_delivery_marks_failed_after_max_retries_when_others_succeeded(db, sendout, newsletter, settings):
     """A delivery that hits max retries stays FAILED when at least one sibling succeeded."""
     settings.DJANGO_EMAIL_LEARNING = {
         **settings.DJANGO_EMAIL_LEARNING,
         "NEWSLETTERS": {"MAX_RETRIES": 1},
     }
-    sub_ok = NewsletterSubscriber.objects.create(
-        newsletter=newsletter, email="ok@x.com"
-    )
-    sub_bad = NewsletterSubscriber.objects.create(
-        newsletter=newsletter, email="bad@x.com"
-    )
-    SendoutDelivery.objects.create(
-        sendout=sendout, subscriber=sub_ok, status=SendoutDelivery.Status.SENT
-    )
+    sub_ok = NewsletterSubscriber.objects.create(newsletter=newsletter, email="ok@x.com")
+    sub_bad = NewsletterSubscriber.objects.create(newsletter=newsletter, email="bad@x.com")
+    SendoutDelivery.objects.create(sendout=sendout, subscriber=sub_ok, status=SendoutDelivery.Status.SENT)
     d_fail = SendoutDelivery.objects.create(
         sendout=sendout,
         subscriber=sub_bad,
@@ -188,24 +164,16 @@ def test_process_delivery_marks_failed_after_max_retries_when_others_succeeded(
     assert d_fail.retry_count == 1
 
 
-def test_process_delivery_only_retries_failed_subscriber_not_others(
-    db, sendout, newsletter, settings
-):
+def test_process_delivery_only_retries_failed_subscriber_not_others(db, sendout, newsletter, settings):
     """A failure on one delivery must not affect the others."""
     settings.DJANGO_EMAIL_LEARNING = {
         **settings.DJANGO_EMAIL_LEARNING,
         "NEWSLETTERS": {"MAX_RETRIES": 3},
     }
     sub1 = NewsletterSubscriber.objects.create(newsletter=newsletter, email="ok@x.com")
-    sub2 = NewsletterSubscriber.objects.create(
-        newsletter=newsletter, email="fail@x.com"
-    )
-    d_ok = SendoutDelivery.objects.create(
-        sendout=sendout, subscriber=sub1, status=SendoutDelivery.Status.PROCESSING
-    )
-    d_fail = SendoutDelivery.objects.create(
-        sendout=sendout, subscriber=sub2, status=SendoutDelivery.Status.PROCESSING
-    )
+    sub2 = NewsletterSubscriber.objects.create(newsletter=newsletter, email="fail@x.com")
+    d_ok = SendoutDelivery.objects.create(sendout=sendout, subscriber=sub1, status=SendoutDelivery.Status.PROCESSING)
+    d_fail = SendoutDelivery.objects.create(sendout=sendout, subscriber=sub2, status=SendoutDelivery.Status.PROCESSING)
 
     call_count = 0
 
@@ -233,9 +201,7 @@ def test_process_delivery_only_retries_failed_subscriber_not_others(
 # ── sendout best-effort completion ───────────────────────────────────────────
 
 
-def test_sendout_marked_sent_when_all_deliveries_done_best_effort(
-    db, sendout, newsletter, settings
-):
+def test_sendout_marked_sent_when_all_deliveries_done_best_effort(db, sendout, newsletter, settings):
     """Sendout becomes SENT even if one delivery permanently failed."""
     settings.DJANGO_EMAIL_LEARNING = {
         **settings.DJANGO_EMAIL_LEARNING,
@@ -243,9 +209,7 @@ def test_sendout_marked_sent_when_all_deliveries_done_best_effort(
     }
     sub1 = NewsletterSubscriber.objects.create(newsletter=newsletter, email="ok@x.com")
     sub2 = NewsletterSubscriber.objects.create(newsletter=newsletter, email="bad@x.com")
-    SendoutDelivery.objects.create(
-        sendout=sendout, subscriber=sub1, status=SendoutDelivery.Status.SENT
-    )
+    SendoutDelivery.objects.create(sendout=sendout, subscriber=sub1, status=SendoutDelivery.Status.SENT)
     d_fail = SendoutDelivery.objects.create(
         sendout=sendout,
         subscriber=sub2,
@@ -263,9 +227,7 @@ def test_sendout_marked_sent_when_all_deliveries_done_best_effort(
     assert sendout.status == Sendout.Status.SENT
 
 
-def test_sendout_stays_scheduled_and_resets_when_all_deliveries_fail(
-    db, sendout, newsletter, settings
-):
+def test_sendout_stays_scheduled_and_resets_when_all_deliveries_fail(db, sendout, newsletter, settings):
     """If every delivery permanently fails the sendout stays SCHEDULED and
     deliveries are reset to PENDING so the next run retries them all."""
     settings.DJANGO_EMAIL_LEARNING = {
@@ -298,9 +260,7 @@ def test_sendout_stays_scheduled_and_resets_when_all_deliveries_fail(
     assert delivery.retry_count == 0
     assert sendout.scheduled_at > timezone.now()
     assert sendout.scheduled_at <= timezone.now() + timedelta(minutes=11)
-    mock_metric.assert_called_once_with(
-        sendout_id=sendout.id, newsletter_id=sendout.newsletter_id
-    )
+    mock_metric.assert_called_once_with(sendout_id=sendout.id, newsletter_id=sendout.newsletter_id)
 
 
 # ── from_email resolution ────────────────────────────────────────────────────

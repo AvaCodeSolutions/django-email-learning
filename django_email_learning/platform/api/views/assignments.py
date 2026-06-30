@@ -1,18 +1,20 @@
 import json
 import logging
-from django.views import View
-from django.utils.decorators import method_decorator
+
 from django.db.utils import IntegrityError
 from django.http import JsonResponse
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views import View
 from pydantic import ValidationError
-from django_email_learning.platform.api import serializers
+
+from django_email_learning.decorators import accessible_for
 from django_email_learning.models import (
     AssignmentFeedback,
     AssignmentSubmission,
     OrganizationUser,
 )
-from django_email_learning.decorators import accessible_for
+from django_email_learning.platform.api import serializers
 from django_email_learning.services.command_models.send_assignment_review_command import (
     SendAssignmentReviewCommand,
 )
@@ -26,13 +28,9 @@ class SubmittedAssignmentsView(View):
         submissions = (
             AssignmentSubmission.objects.filter(
                 delivery__course_content__course_id=kwargs["course_id"],
-                delivery__course_content__course__organization_id=kwargs[
-                    "organization_id"
-                ],
+                delivery__course_content__course__organization_id=kwargs["organization_id"],
             )
-            .select_related(
-                "delivery__course_content__assignment", "delivery__enrollment__learner"
-            )
+            .select_related("delivery__course_content__assignment", "delivery__enrollment__learner")
             .order_by("-submitted_at")
         )
         if "status" in request.GET:
@@ -40,9 +38,7 @@ class SubmittedAssignmentsView(View):
             if status in AssignmentSubmission.SubmissionStatus.values:
                 submissions = submissions.filter(status=status)
         if "learner_id" in request.GET:
-            submissions = submissions.filter(
-                delivery__enrollment__learner_id=request.GET["learner_id"]
-            )
+            submissions = submissions.filter(delivery__enrollment__learner_id=request.GET["learner_id"])
         page = int(request.GET.get("page", 1))
         page_size = int(request.GET.get("page_size", 50))
         offset = (page - 1) * page_size
@@ -50,9 +46,7 @@ class SubmittedAssignmentsView(View):
         response_list = []
         for submission in submissions[offset : offset + page_size]:
             response_list.append(
-                serializers.AssignmentSubmissionSummaryResponse.from_django_model(
-                    submission
-                ).model_dump()
+                serializers.AssignmentSubmissionSummaryResponse.from_django_model(submission).model_dump()
             )
         return JsonResponse(
             {
@@ -82,9 +76,7 @@ class SubmittedAssignmentDetailView(View):
                 status=200,
             )
         except AssignmentSubmission.DoesNotExist:
-            return JsonResponse(
-                {"error": "Assignment submission not found"}, status=404
-            )
+            return JsonResponse({"error": "Assignment submission not found"}, status=404)
 
 
 @method_decorator(accessible_for(roles={"admin", "instructor"}), name="post")
@@ -95,10 +87,7 @@ class SubmissionReview(View):
             serializer = serializers.ReviewRquest.model_validate(payload)
             submission = AssignmentSubmission.objects.get(id=kwargs["submission_id"])
             initial_status = submission.status
-            if (
-                submission.delivery.course_content.course.organization_id
-                != kwargs["organization_id"]
-            ):
+            if submission.delivery.course_content.course.organization_id != kwargs["organization_id"]:
                 return JsonResponse({"error": "Unauthorized"}, status=401)
             org_user = OrganizationUser.objects.filter(
                 organization_id=kwargs["organization_id"], user_id=request.user.id
@@ -119,7 +108,8 @@ class SubmissionReview(View):
                     )
                 else:
                     logger.warning(
-                        f"User {request.user.id} can not act as instructor, feedback not saved for submission {submission.id}, but status was updated to {submission.status}"
+                        f"User {request.user.id} can not act as instructor, feedback not saved"
+                        f" for submission {submission.id}, but status was updated to {submission.status}"
                     )
 
             # Send assignment review email
@@ -130,9 +120,7 @@ class SubmissionReview(View):
                         include_last_feedback=serializer.comment is not None,
                     ).execute()
                 except Exception as e:
-                    logger.error(
-                        f"Failed to send assignment review email for submission {submission.id}: {str(e)}"
-                    )
+                    logger.error(f"Failed to send assignment review email for submission {submission.id}: {str(e)}")
 
             return JsonResponse(
                 serializers.AssignmentSubmissionResponse.from_django_model(
@@ -142,9 +130,7 @@ class SubmissionReview(View):
                 status=200,
             )
         except AssignmentSubmission.DoesNotExist:
-            return JsonResponse(
-                {"error": "Assignment submission not found"}, status=404
-            )
+            return JsonResponse({"error": "Assignment submission not found"}, status=404)
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
         except IntegrityError as e:

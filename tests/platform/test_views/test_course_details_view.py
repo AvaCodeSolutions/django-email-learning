@@ -1,5 +1,5 @@
-from django.urls import reverse
 import pytest
+from django.urls import reverse
 
 
 def get_url(course_id: int = 1) -> str:

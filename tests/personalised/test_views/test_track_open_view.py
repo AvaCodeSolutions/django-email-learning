@@ -1,6 +1,5 @@
 from django.urls import reverse
 
-
 URL_NAME = "django_email_learning:personalised:track_open"
 
 
@@ -26,9 +25,7 @@ def test_sets_opened_at_on_first_request(content_delivery, anonymous_client):
     assert content_delivery.opened_at is not None
 
 
-def test_does_not_overwrite_opened_at_on_subsequent_requests(
-    content_delivery, anonymous_client
-):
+def test_does_not_overwrite_opened_at_on_subsequent_requests(content_delivery, anonymous_client):
     anonymous_client.get(_url(content_delivery.hash_value))
     content_delivery.refresh_from_db()
     first_opened_at = content_delivery.opened_at

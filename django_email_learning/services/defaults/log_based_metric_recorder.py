@@ -1,6 +1,7 @@
-from django_email_learning.ports.metric_recorder_protocol import MetricRecorderProtocol
-from django_email_learning.models.enums.deactivation_reason import DeactivationReason
 import logging
+
+from django_email_learning.models.enums.deactivation_reason import DeactivationReason
+from django_email_learning.ports.metric_recorder_protocol import MetricRecorderProtocol
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +28,7 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
             },
         )
 
-    def assignment_sent(
-        self, course_slug: str, organization_id: int, assignment_id: int
-    ) -> None:
+    def assignment_sent(self, course_slug: str, organization_id: int, assignment_id: int) -> None:
         logger.info(
             "Assignment sent",
             extra={
@@ -40,9 +39,7 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
             },
         )
 
-    def quiz_reminder_sent(
-        self, course_slug: str, organization_id: int, quiz_id: int
-    ) -> None:
+    def quiz_reminder_sent(self, course_slug: str, organization_id: int, quiz_id: int) -> None:
         logger.info(
             "Quiz reminder sent",
             extra={
@@ -53,9 +50,7 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
             },
         )
 
-    def assignment_reminder_sent(
-        self, course_slug: str, organization_id: int, assignment_id: int
-    ) -> None:
+    def assignment_reminder_sent(self, course_slug: str, organization_id: int, assignment_id: int) -> None:
         logger.info(
             "Assignment reminder sent",
             extra={
@@ -66,9 +61,7 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
             },
         )
 
-    def lesson_sent(
-        self, course_slug: str, organization_id: int, lesson_id: int
-    ) -> None:
+    def lesson_sent(self, course_slug: str, organization_id: int, lesson_id: int) -> None:
         logger.info(
             "Lesson sent",
             extra={
@@ -89,9 +82,7 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
             },
         )
 
-    def user_enrollment_deactivated(
-        self, course_slug: str, organization_id: int, reason: DeactivationReason
-    ) -> None:
+    def user_enrollment_deactivated(self, course_slug: str, organization_id: int, reason: DeactivationReason) -> None:
         logger.info(
             "User enrollment deactivated",
             extra={
@@ -112,9 +103,7 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
             },
         )
 
-    def assignment_submitted(
-        self, course_slug: str, organization_id: int, assignment_id: int
-    ) -> None:
+    def assignment_submitted(self, course_slug: str, organization_id: int, assignment_id: int) -> None:
         logger.info(
             "Assignment Submitted",
             extra={
@@ -189,9 +178,7 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
             },
         )
 
-    def imap_command_handling_failed(
-        self, imap_connection_id: int, organization_id: int
-    ) -> None:
+    def imap_command_handling_failed(self, imap_connection_id: int, organization_id: int) -> None:
         logger.warning(
             "IMAP command handling failed",
             extra={
@@ -229,9 +216,7 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
             },
         )
 
-    def sendout_all_deliveries_failed(
-        self, sendout_id: int, newsletter_id: int
-    ) -> None:
+    def sendout_all_deliveries_failed(self, sendout_id: int, newsletter_id: int) -> None:
         logger.error(
             "All deliveries failed for sendout — possible email configuration issue",
             extra={

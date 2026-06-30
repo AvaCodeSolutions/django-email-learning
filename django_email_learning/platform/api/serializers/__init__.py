@@ -1,91 +1,91 @@
-from django_email_learning.platform.api.serializers.misc import ApiKeyResponse
+from django_email_learning.platform.api.serializers.assignments import (
+    AssignmentCreate,
+    AssignmentResponse,
+    AssignmentSubmissionResponse,
+    AssignmentSubmissionSummaryResponse,
+    AssignmentUpdate,
+    FeedbackResponse,
+    ReviewResult,
+    ReviewRquest,
+)
 from django_email_learning.platform.api.serializers.common import (
-    InstructorResponse,
-    EnrollmentsCount,
-    LearnerResponse,
     CourseSummaryResponse,
+    EnrollmentsCount,
     EnrollmentSummaryResponse,
+    InstructorResponse,
+    LearnerResponse,
+)
+from django_email_learning.platform.api.serializers.courses import (
+    CourseContentResponse,
+    CourseContentSummaryResponse,
+    CourseResponse,
+    CreateCourseContentRequest,
+    CreateCourseRequest,
+    Identifier,
+    PeriodType,
+    ReorderCourseContentsRequest,
+    UpdateCourseContentRequest,
+    UpdateCourseRequest,
+    WaitingPeriod,
+)
+from django_email_learning.platform.api.serializers.learners import (
+    AssignmentReviewdEvent,
+    AssignmentSubmitedEvent,
+    ContentSentEvent,
+    CreateEnrollmentRequest,
+    DeactivatedEvent,
+    EmailOpenedEvent,
+    EnrollmentResponse,
+    Event,
+    EventType,
+    LearnerDetailResponse,
+    QuizSubmitedEvent,
+    ReminderSentEvent,
 )
 from django_email_learning.platform.api.serializers.lessons import (
     LessonCreate,
-    LessonUpdate,
     LessonResponse,
+    LessonUpdate,
+)
+from django_email_learning.platform.api.serializers.misc import ApiKeyResponse
+from django_email_learning.platform.api.serializers.newsletters import (
+    CreateNewsletterRequest,
+    CreateSendoutRequest,
+    NewsletterResponse,
+    NewsletterSubscriberResponse,
+    SendoutDetailResponse,
+    SendoutResponse,
+    UpdateSendoutRequest,
+)
+from django_email_learning.platform.api.serializers.oauth import (
+    CreateImapConnectionRequest,
+    GroupEnrollmentRequest,
+    ImapConnectionResponse,
+)
+from django_email_learning.platform.api.serializers.organisations import (
+    AddOrganizationUserRequest,
+    CreateOrganizationRequest,
+    GetOrCreateUserRequest,
+    OrganizationResponse,
+    OrganizationUserResponse,
+    SessionInfo,
+    UpdateOrganizationRequest,
+    UpdateOrganizationUserRequest,
+    UpdateSessionRequest,
+    UserResponse,
+    UserRole,
 )
 from django_email_learning.platform.api.serializers.quizzes import (
     MIN_QUIZ_DEADLINE,
     AnswerCreate,
-    AnswerUpdate,
     AnswerObject,
+    AnswerUpdate,
     QuestionCreate,
-    QuestionUpdate,
     QuestionObject,
-    UpdateQuiz,
+    QuestionUpdate,
     QuizCreate,
     QuizResponse,
-)
-from django_email_learning.platform.api.serializers.assignments import (
-    AssignmentCreate,
-    AssignmentUpdate,
-    AssignmentResponse,
-    ReviewResult,
-    ReviewRquest,
-    FeedbackResponse,
-    AssignmentSubmissionResponse,
-    AssignmentSubmissionSummaryResponse,
-)
-from django_email_learning.platform.api.serializers.courses import (
-    Identifier,
-    PeriodType,
-    WaitingPeriod,
-    CreateCourseRequest,
-    UpdateCourseRequest,
-    CourseResponse,
-    CreateCourseContentRequest,
-    UpdateCourseContentRequest,
-    CourseContentResponse,
-    CourseContentSummaryResponse,
-    ReorderCourseContentsRequest,
-)
-from django_email_learning.platform.api.serializers.learners import (
-    CreateEnrollmentRequest,
-    EventType,
-    DeactivatedEvent,
-    QuizSubmitedEvent,
-    AssignmentSubmitedEvent,
-    AssignmentReviewdEvent,
-    ReminderSentEvent,
-    ContentSentEvent,
-    EmailOpenedEvent,
-    Event,
-    EnrollmentResponse,
-    LearnerDetailResponse,
-)
-from django_email_learning.platform.api.serializers.organisations import (
-    GetOrCreateUserRequest,
-    UserResponse,
-    OrganizationResponse,
-    CreateOrganizationRequest,
-    UpdateOrganizationRequest,
-    UserRole,
-    AddOrganizationUserRequest,
-    UpdateOrganizationUserRequest,
-    OrganizationUserResponse,
-    UpdateSessionRequest,
-    SessionInfo,
-)
-from django_email_learning.platform.api.serializers.oauth import (
-    CreateImapConnectionRequest,
-    ImapConnectionResponse,
-    GroupEnrollmentRequest,
-)
-from django_email_learning.platform.api.serializers.newsletters import (
-    NewsletterResponse,
-    CreateNewsletterRequest,
-    SendoutResponse,
-    CreateSendoutRequest,
-    UpdateSendoutRequest,
-    SendoutDetailResponse,
-    NewsletterSubscriberResponse,
+    UpdateQuiz,
 )
 
 __all__ = [
