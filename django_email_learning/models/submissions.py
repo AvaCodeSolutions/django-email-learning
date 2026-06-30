@@ -39,10 +39,9 @@ class QuizSubmission(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
-        return (  # type: ignore[union-attr]
-            f"{self.delivery.course_content.quiz.title} | {self.delivery.enrollment.learner.email}"
-            f" | Score: {self.score} | Passed: {self.is_passed}"
-        )
+        quiz_title = self.delivery.course_content.quiz.title  # type: ignore[union-attr]
+        learner_email = self.delivery.enrollment.learner.email
+        return f"{quiz_title} | {learner_email} | Score: {self.score} | Passed: {self.is_passed}"
 
 
 class AssignmentSubmission(models.Model):
@@ -132,8 +131,8 @@ class AssignmentSubmission(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:
-        return (  # type: ignore[union-attr]
-            f"{self.delivery.course_content.assignment.title}"
+        return (
+            f"{self.delivery.course_content.assignment.title}"  # type: ignore[union-attr]
             f" | {mask_email(self.delivery.enrollment.learner.email)}"
             f" | Submitted at: {self.submitted_at}"
         )

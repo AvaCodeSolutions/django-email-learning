@@ -1,8 +1,7 @@
 import argparse
-from pathlib import Path
 import json
 import re
-
+from pathlib import Path
 
 TEMPLATES = [
     ["platform", "courses"],
@@ -24,9 +23,7 @@ TEMPLATES = [
 ]
 
 
-def rewrite_backend_file(
-    backend_file: Path, manifest: dict, frontend_path: str
-) -> None:
+def rewrite_backend_file(backend_file: Path, manifest: dict, frontend_path: str) -> None:
     file_content = backend_file.read_text()
     file_content = file_content.replace("{% load django_vite %}", "")
     file_content = file_content.replace("{", "{{").replace("}", "}}")
@@ -38,17 +35,13 @@ def rewrite_backend_file(
     new_content = file_content.replace(vite_asset_tag, "{manifest_tags}")
 
     main_manifest = manifest.get(frontend_path, {})
-    script_tags = [
-        f'<script type="module" crossorigin src="/static/{main_manifest.get("file", "")}"></script>'
-    ]
+    script_tags = [f'<script type="module" crossorigin src="/static/{main_manifest.get("file", "")}"></script>']
     css_tags = []
     for css_file in main_manifest.get("css", []):
         css_tags.append(f'<link rel="stylesheet" href="/static/{css_file}">')
     link_tags = []
     for item in main_manifest.get("imports", []):
-        link_tags.append(
-            f'<link rel="modulepreload" crossorigin href="/static/assets/{item.lstrip("_")}">'
-        )
+        link_tags.append(f'<link rel="modulepreload" crossorigin href="/static/assets/{item.lstrip("_")}">')
         if item in manifest:
             for css_file in manifest[item].get("css", []):
                 css_tags.append(f'<link rel="stylesheet" href="/static/{css_file}">')
@@ -69,21 +62,13 @@ def run_prebuild() -> None:
     for template_path in TEMPLATES:
         template_path.append("index.html")
         frontend_path = "/".join(template_path).lstrip("/")
-        backend_file = (
-            root_path
-            / "django_email_learning"
-            / "templates"
-            / template_path[0]
-            / f"{template_path[1]}.html"
-        )
+        backend_file = root_path / "django_email_learning" / "templates" / template_path[0] / f"{template_path[1]}.html"
         rewrite_backend_file(backend_file, manifest, frontend_path)
 
     folders_with_base_html = {"platform", "personalised", "public"}
 
     for folder in folders_with_base_html:
-        base_html_path = (
-            root_path / "django_email_learning" / "templates" / folder / "base.html"
-        )
+        base_html_path = root_path / "django_email_learning" / "templates" / folder / "base.html"
         file_content = base_html_path.read_text()
         file_content = file_content.replace("{% load django_vite %}", "")
         file_content = file_content.replace("{% vite_react_refresh %}", "")
