@@ -4,7 +4,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db.utils import IntegrityError
 from django.db import models
-from django.http import JsonResponse
+from django.http import HttpRequest, JsonResponse
 from django.db import transaction
 from django.core.exceptions import ValidationError as DjangoValidationError
 from pydantic import ValidationError
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 class CourseCreationMixin:
     """Provides the can_create_course hook shared by CourseView and SingleCourseView."""
 
-    def can_create_course(self, request, organization_id: int) -> bool:
+    def can_create_course(self, request: HttpRequest, organization_id: int) -> bool:
         """
         Override to add custom course creation logic (e.g. plan limits, feature flags).
         Return False to reject the request with a 403 before any DB work happens.
