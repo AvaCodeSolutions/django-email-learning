@@ -336,9 +336,11 @@ def test_enroll_users_success(db, org_admin_client, course):
             "django_email_learning.oauth_integrations.group_enrollment.google_group_enrollment_handler.GoogleGroupEnrollmentHandler.get_users_to_enroll",
             return_value=users_to_enroll,
         ),
-        patch("django_email_learning.platform.api.views.EnrollCommand") as mock_enroll,
         patch(
-            "django_email_learning.platform.api.views.VerifyEnrollmentCommand"
+            "django_email_learning.platform.api.views.oauth.EnrollCommand"
+        ) as mock_enroll,
+        patch(
+            "django_email_learning.platform.api.views.oauth.VerifyEnrollmentCommand"
         ) as mock_verify,
     ):
         mock_enroll.return_value.execute.return_value = None
