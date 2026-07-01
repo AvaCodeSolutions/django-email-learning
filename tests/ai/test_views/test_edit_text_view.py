@@ -3,6 +3,7 @@ import json
 import pytest
 
 from django_email_learning.ai.language_models import LanguageModel
+from django_email_learning.ai.views import EditTextView
 
 INPUT_TEXT = "Draft text which is long enough to pass validation"
 
@@ -64,8 +65,8 @@ def test_edit_text_accepts_markup_in_input(editor_client, monkeypatch):
     }
 
 
-@pytest.mark.parametrize("client", ["editor", "platform_admin", "org_admin"], indirect=["client"])
-def test_edit_text_accessible_for_editor_and_admin(client, monkeypatch):
+@pytest.mark.parametrize("client", ["editor", "platform_admin", "org_admin", "instructor"], indirect=["client"])
+def test_edit_text_accessible_for_editor_admin_and_instructor(client, monkeypatch):
     class DummyAdapter:
         def edit_text(self, text: str, model: str) -> str:
             return "Edited text"
@@ -106,3 +107,32 @@ def test_edit_text_validation_error(editor_client, length):
 
     assert response.status_code == 400
     assert "error" in response.json()
+
+
+def test_edit_text_access_allowed_by_default(editor_client, monkeypatch):
+    class DummyAdapter:
+        def edit_text(self, text: str, model: str) -> str:
+            return "Edited text"
+
+    monkeypatch.setattr(LanguageModel.GPT_5_NANO, "adapter_class", DummyAdapter)
+
+    response = editor_client.post(
+        get_url(1),
+        data=json.dumps({"input": INPUT_TEXT}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+
+
+def test_edit_text_access_denied_returns_403(editor_client, monkeypatch):
+    monkeypatch.setattr(EditTextView, "ai_edit_text_access_allowed", lambda self, request, *a, **kw: False)
+
+    response = editor_client.post(
+        get_url(1),
+        data=json.dumps({"input": INPUT_TEXT}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 403
+    assert response.json() == {"error": "Forbidden"}
