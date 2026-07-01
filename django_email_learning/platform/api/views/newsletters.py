@@ -15,12 +15,13 @@ from django_email_learning.models import (
     Sendout,
 )
 from django_email_learning.platform.api import serializers
+from django_email_learning.platform.api.newsletter_access_mixin import NewsletterAccessMixin
 from django_email_learning.platform.api.pagniated_api_mixin import PaginatedApiMixin
 
 
 @method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
 @method_decorator(accessible_for(roles={"admin"}), name="post")
-class NewsletterView(View):
+class NewsletterView(NewsletterAccessMixin, View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         newsletters = Newsletter.objects.filter(organization_id=kwargs["organization_id"]).prefetch_related(
             "subscribers"
@@ -50,7 +51,7 @@ class NewsletterView(View):
 
 
 @method_decorator(accessible_for(roles={"admin"}), name="delete")
-class SingleNewsletterView(View):
+class SingleNewsletterView(NewsletterAccessMixin, View):
     def delete(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
             newsletter = Newsletter.objects.get(
@@ -65,7 +66,7 @@ class SingleNewsletterView(View):
 
 @method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
 @method_decorator(accessible_for(roles={"admin"}), name="post")
-class SendoutView(View):
+class SendoutView(NewsletterAccessMixin, View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
             newsletter = Newsletter.objects.get(
@@ -122,7 +123,7 @@ class SendoutView(View):
 @method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
 @method_decorator(accessible_for(roles={"admin"}), name="patch")
 @method_decorator(accessible_for(roles={"admin"}), name="delete")
-class SingleSendoutView(View):
+class SingleSendoutView(NewsletterAccessMixin, View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
             sendout = Sendout.objects.get(
@@ -188,7 +189,7 @@ class SingleSendoutView(View):
 
 
 @method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
-class SubscriberView(PaginatedApiMixin, View):
+class SubscriberView(NewsletterAccessMixin, PaginatedApiMixin, View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         # Override to cap page_size at 30
         request.GET = request.GET.copy()
@@ -207,7 +208,7 @@ class SubscriberView(PaginatedApiMixin, View):
 
 
 @method_decorator(accessible_for(roles={"admin"}), name="delete")
-class SingleSubscriberView(View):
+class SingleSubscriberView(NewsletterAccessMixin, View):
     def delete(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
             subscriber = NewsletterSubscriber.objects.get(
@@ -222,7 +223,7 @@ class SingleSubscriberView(View):
 
 
 @method_decorator(accessible_for(roles={"admin"}), name="get")
-class SubscribersCsvExportView(View):
+class SubscribersCsvExportView(NewsletterAccessMixin, View):
     def get(self, request, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
         try:
             newsletter = Newsletter.objects.get(
