@@ -1,6 +1,8 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
 from pydantic import BaseModel
+
+from django_email_learning.oauth_integrations.base_handler import BaseOAuthSessionHandler
 
 
 class Group(BaseModel):
@@ -21,25 +23,8 @@ class User(BaseModel):
         return self.email == other.email
 
 
-class BaseGroupEnrollmentHandler(ABC, BaseModel):
-    provider_and_purpose: str
+class BaseGroupEnrollmentHandler(BaseOAuthSessionHandler):
     course_id: int
-    state: str | None = None
-    code: str | None = None
-
-    @abstractmethod
-    def handle_redirect(self) -> str:
-        """
-        Handles the OAuth redirect and returns the access_token
-        """
-        raise NotImplementedError("Subclasses must implement the handle_redirect method")
-
-    @abstractmethod
-    def get_authorization_url(self, state: str) -> str:
-        """
-        Returns the authorization URL to redirect the user to for OAuth authentication
-        """
-        raise NotImplementedError("Subclasses must implement the get_authorization_url method")
 
     @abstractmethod
     def get_groups(self) -> list[Group] | None:

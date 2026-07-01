@@ -98,6 +98,22 @@ def test_create_session_returns_session_and_authorization_url(org_admin_client, 
     assert session.jwt_token != "pending"
 
 
+def test_create_session_access_denied_returns_403(org_admin_client, course):
+    with patch(
+        "django_email_learning.oauth_integrations.group_enrollment.google_group_enrollment_handler."
+        "GoogleGroupEnrollmentHandler.access_allowed",
+        return_value=False,
+    ):
+        response = org_admin_client.post(
+            SESSIONS_URL,
+            json.dumps(oauth_payload(course.id)),
+            content_type="application/json",
+        )
+
+    assert response.status_code == 403
+    assert response.json() == {"error": "Forbidden"}
+
+
 def test_create_session_course_not_found(org_admin_client):
     response = org_admin_client.post(
         SESSIONS_URL,
