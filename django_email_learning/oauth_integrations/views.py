@@ -15,8 +15,8 @@ from django_email_learning.services.jwt_service import (
     generate_jwt,
 )
 
+from .mixins import OAuthSessionRequestMixin
 from .models import Session, SessionState
-from .serializers import CreateSessionRequest
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ def _has_oauth_session_access(user, organization_id: int) -> bool:  # type: igno
     ).exists()
 
 
-class SessionsView(View):
+class SessionsView(OAuthSessionRequestMixin, View):
     def post(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
         if not request.user.is_authenticated:
             return JsonResponse({"error": "Unauthorized"}, status=401)
@@ -68,11 +68,15 @@ class SessionsView(View):
         payload = json.loads(request.body)
 
         try:
-            serializer = CreateSessionRequest.model_validate(payload)
+            request_serializer_class = self.get_create_session_request_class()
+            serializer = request_serializer_class.model_validate(payload)
         except ValidationError as ve:
             return JsonResponse({"error": ve.errors()}, status=400)
 
         handler = serializer.handler
+
+        if not handler.access_allowed(request):
+            return JsonResponse({"error": "Forbidden"}, status=403)
 
         if hasattr(handler, "course_id") and handler.course_id is not None:
             try:
@@ -98,7 +102,7 @@ class SessionsView(View):
         )
 
 
-class RedirectView(View):
+class RedirectView(OAuthSessionRequestMixin, View):
     def get(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
         session_id = request.GET.get("state")
         code = request.GET.get("code")
@@ -138,7 +142,8 @@ class RedirectView(View):
             # command_payload = decoded_request.get("handler", {})
             decoded_request["code"] = code
             decoded_request["state"] = session_id
-            session_request = CreateSessionRequest(handler=decoded_request)
+            request_serializer_class = self.get_create_session_request_class()
+            session_request = request_serializer_class(handler=decoded_request)
             handler = session_request.model_validate(obj=session_request).handler
             access_token = handler.handle_redirect()
             session.access_token = generate_jwt({"access_token": access_token})
