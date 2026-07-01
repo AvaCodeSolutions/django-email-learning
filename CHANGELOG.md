@@ -6,6 +6,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.3.0] — 2026-07-01
+
+### Added
+
+- **`NewsletterAccessMixin` for newsletter API views** — library users can now override `newsletter_access_allowed(request, *args, **kwargs) -> bool` (default `True`) to gate access to the newsletter feature (e.g. behind a plan or feature flag), independent of the existing role-based `accessible_for` checks. Applied to all newsletter API views (`NewsletterView`, `SingleNewsletterView`, `SendoutView`, `SingleSendoutView`, `SubscriberView`, `SingleSubscriberView`, `SubscribersCsvExportView`).
+- **`EditTextView` access hook and `instructor` role** — `EditTextView` now supports an overridable `ai_edit_text_access_allowed(request, *args, **kwargs) -> bool` hook (default `True`), checked before the role-based access check. The `instructor` role has also been added to the allowed roles for AI text editing, matching the pattern already used for content-editing actions elsewhere (courses, learners, oauth).
+- **`BaseOAuthSessionHandler` and overridable OAuth request serializer** — `BaseGroupEnrollmentHandler` now extends a new shared `BaseOAuthSessionHandler`, so future non-enrollment OAuth handlers (e.g. authentication-only) won't inherit enrollment-specific fields like `course_id`. The shared base adds an `access_allowed(request) -> bool` hook (default `True`), checked in `SessionsView` before the role-based check. A new `OAuthSessionRequestMixin` with `get_create_session_request_class()` lets library users plug in a custom `CreateSessionRequest` to support their own handler types, kept in sync between `SessionsView` and `RedirectView`.
+
+---
+
 ## [1.2.4] — 2026-06-30
 
 ### Changed
