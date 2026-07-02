@@ -81,3 +81,35 @@ def test_newsletters_feature_present_when_setting_enabled(db, users, settings):
 
     assert response.status_code == 200
     assert "newsletters" in response.context["appContext"]["availableFeatures"]
+
+
+def test_navbar_custom_components_empty_by_default(db, users):
+    client = Client()
+    client.force_login(users["editor_user"])
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["navbarCustomComponents"] == []
+
+
+def test_navbar_custom_components_from_settings(db, users, settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "NAVBAR": {
+            "CUSTOM_COMPONENTS": [
+                {"SLOT": "notifications", "HTML": "<my-notifications></my-notifications>"},
+                {"SLOT": "search", "HTML": "<my-search></my-search>"},
+            ]
+        },
+    }
+    client = Client()
+    client.force_login(users["editor_user"])
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["navbarCustomComponents"] == [
+        {"slot": "notifications", "html": "<my-notifications></my-notifications>"},
+        {"slot": "search", "html": "<my-search></my-search>"},
+    ]

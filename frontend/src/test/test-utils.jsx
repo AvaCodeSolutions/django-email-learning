@@ -28,6 +28,7 @@ export const defaultAppContext = {
   isOrganizationAdmin: false,
   isInstructor: false,
   sidebarCustomComponent: null,
+  navbarCustomComponents: [],
   customLogo: null,
 };
 

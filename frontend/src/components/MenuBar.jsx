@@ -96,7 +96,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     const [menuOpen, setMenuOpen] = useState(false)
     const [organizations, setOrganizations] = useState([])
     const [deliverContentsJobStatus, setDeliverContentsJobStatus] = useState(null)
-    const { localeMessages, isPlatformAdmin, isOrganizationAdmin, isInstructor, direction, apiBaseUrl, platformBaseUrl, sidebarCustomComponent, customLogo } = useAppContext();
+    const { localeMessages, isPlatformAdmin, isOrganizationAdmin, isInstructor, direction, apiBaseUrl, platformBaseUrl, sidebarCustomComponent, navbarCustomComponents, customLogo } = useAppContext();
 
     const theme = useTheme();
     const isMdUpScreen = useMediaQuery(theme.breakpoints.up('md'));
@@ -213,6 +213,9 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                 <img src={logoHorizontalUrl} alt="Logo" style={{maxHeight: "57px", height: "100%"}} />
             </Box>
             <Box sx={{display: { xs: 'flex'}, right: direction === 'rtl' ? 'auto' : '0', left: direction === 'rtl' ? '0' : 'auto', position: "absolute", top: '50%', transform: 'translateY(-50%)', direction: direction, alignItems: 'center'}}>
+                {navbarCustomComponents?.map((component) => (
+                    <Box key={component.slot} sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }} dangerouslySetInnerHTML={{ __html: component.html }} />
+                ))}
                 <ThemeSwitcher />
                 <Box sx={{ m: 1 }}>
                 <IconButton

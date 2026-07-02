@@ -71,6 +71,12 @@ class BasePlatformView(TemplateView):
                     .get("CUSTOM_COMPONENT", {})
                     .get("STYLE_URL"),
                 },
+                "navbarCustomComponents": [
+                    {"slot": component.get("SLOT"), "html": component.get("HTML")}
+                    for component in getattr(settings, "DJANGO_EMAIL_LEARNING", {})
+                    .get("NAVBAR", {})
+                    .get("CUSTOM_COMPONENTS", [])
+                ],
                 "userRole": role,
                 "direction": "rtl" if lang_info["bidi"] else "ltr",
                 "isPlatformAdmin": (
