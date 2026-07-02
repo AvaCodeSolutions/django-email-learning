@@ -71,6 +71,7 @@ class BasePlatformView(TemplateView):
                     .get("CUSTOM_COMPONENT", {})
                     .get("STYLE_URL"),
                 },
+                "navbarCustomComponents": [],
                 "userRole": role,
                 "direction": "rtl" if lang_info["bidi"] else "ltr",
                 "isPlatformAdmin": (

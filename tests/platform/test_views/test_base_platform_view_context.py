@@ -81,3 +81,13 @@ def test_newsletters_feature_present_when_setting_enabled(db, users, settings):
 
     assert response.status_code == 200
     assert "newsletters" in response.context["appContext"]["availableFeatures"]
+
+
+def test_navbar_custom_components_empty_by_default(db, users):
+    client = Client()
+    client.force_login(users["editor_user"])
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["navbarCustomComponents"] == []

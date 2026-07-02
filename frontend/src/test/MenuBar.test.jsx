@@ -162,6 +162,24 @@ describe('MenuBar', () => {
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
   });
 
+  it('does not render any navbar custom component slots by default', () => {
+    renderWithProviders(<MenuBar {...defaultProps} />);
+    expect(document.querySelector('my-notifications')).not.toBeInTheDocument();
+  });
+
+  it('renders navbar custom components from appContext', () => {
+    renderWithProviders(<MenuBar {...defaultProps} />, {
+      appContext: {
+        navbarCustomComponents: [
+          { slot: 'notifications', html: '<my-notifications></my-notifications>' },
+          { slot: 'search', html: '<my-search></my-search>' },
+        ],
+      },
+    });
+    expect(document.querySelector('my-notifications')).toBeInTheDocument();
+    expect(document.querySelector('my-search')).toBeInTheDocument();
+  });
+
   it('shows content delivery chip for platform admin when job status is present', async () => {
     global.fetch.mockImplementation((url) => {
       if (url.includes('/status/jobs/')) {
