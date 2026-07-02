@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.4.0] — 2026-07-02
+
+### Added
+
+- **`navbarCustomComponents` slot for the desktop navbar** — `appContext.navbarCustomComponents` (default `[]`) lets views fill the previously empty space in the desktop navbar with one or more independent widgets. Views populate it directly in `get_context_data` (the same pattern `CustomComponentCourseView` already uses for `customComponent`) with a list of `{slot, html}` entries, each rendered via `dangerouslySetInnerHTML` in `MenuBar.jsx`, keyed by slot, and shown only at `md`+ widths.
+
+---
+
 ## [1.3.0] — 2026-07-01
 
 ### Added
