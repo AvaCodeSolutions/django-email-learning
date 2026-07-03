@@ -1,7 +1,7 @@
 import BottomDrawer from "./BottomDrawer";
 import MenuBar from "./MenuBar";
 import { useState, useEffect } from "react";
-import { Box, GlobalStyles, Grid, Breadcrumbs, Typography, Link } from "@mui/material";
+import { Box, Dialog, GlobalStyles, Grid, Breadcrumbs, Typography, Link } from "@mui/material";
 import { getCookie } from "../utils.js";
 import { useAppContext } from "../render.jsx";
 
@@ -9,8 +9,34 @@ import { useAppContext } from "../render.jsx";
 function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefreshCallback, showOrganizationSwitcher=true}) {
   const { direction, apiBaseUrl } = useAppContext();
   const [activeOrganizationId, setActiveOrganizationId] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogContent, setDialogContent] = useState(null);
+  const [dialogMaxWidth, setDialogMaxWidth] = useState('md');
+  const [dialogCloseOnBackdropClick, setDialogCloseOnBackdropClick] = useState(false);
   const drawerWidth = 250;
   const activeCrumbIndex = breadCrumbList.length - 1;
+
+  useEffect(() => {
+    window.DialogAPI = {
+      show: (content) => {
+        setDialogContent(content);
+        setDialogOpen(true);
+      },
+      close: () => setDialogOpen(false),
+      setMaxWidth: (maxWidth) => setDialogMaxWidth(maxWidth || 'md'),
+      setCloseOnBackdropClick: (closeOnBackdropClick) => setDialogCloseOnBackdropClick(!!closeOnBackdropClick),
+      getDialogBackdropClickSetting: () => dialogCloseOnBackdropClick,
+    }
+  }, [dialogCloseOnBackdropClick]);
+
+  const handleDialogClose = (event, reason) => {
+    if (dialogCloseOnBackdropClick) {
+      setDialogOpen(false);
+    }
+    if (reason !== "backdropClick" && reason !== "escapeKeyDown") {
+      setDialogOpen(false);
+    }
+  }
 
   useEffect(() => {
     const orgId = localStorage.getItem('activeOrganizationId');
@@ -161,6 +187,10 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
       </Typography>
     </Box>
     </Box>
+
+    <Dialog open={dialogOpen} onClose={handleDialogClose} fullWidth maxWidth={dialogMaxWidth} sx={{ '& .MuiDialog-paper': { mx: { xs: '4px', sm: 4 }, width: { xs: 'calc(100% - 8px)', sm: undefined } }, '& .MuiDialogTitle-root': { px: { xs: 2, sm: 3 } }, '& .MuiDialogContent-root': { px: { xs: 2, sm: 3 } }, '& .MuiDialogActions-root': { px: { xs: 2, sm: 3 } } }}>
+      {dialogContent}
+    </Dialog>
     </>
   );
 }
