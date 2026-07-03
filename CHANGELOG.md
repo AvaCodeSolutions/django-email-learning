@@ -6,6 +6,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.7.0] — 2026-07-03
+
+### Added
+
+- **Enable/disable error feedback and inline "enable it" action** — `EnableCourseSwitchPopup` now shows the API's error message (e.g. the "no content" guard from 1.5.0) as an alert inside the confirmation dialog instead of failing silently, and disables its buttons while the request is in flight. The single-course page's disabled-course banner now renders "enable it" as a clickable link that opens the same confirmation dialog; on success the banner, enrollment analytics summary, and enroll button all update immediately without a page reload.
+- **`window.DialogAPI` available on every platform page** — moved from the single-course page to the shared navbar layer (`Base.jsx`), so `window.DialogAPI` (`show`, `close`, `setMaxWidth`, `setCloseOnBackdropClick`, `getDialogBackdropClickSetting`) is available consistently across the whole platform instead of disappearing as soon as the user navigates away from a course. The course page keeps its own separate local dialog for its internal forms, unaffected.
+
+---
+
 ## [1.6.0] — 2026-07-03
 
 ### Added
