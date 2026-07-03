@@ -35,7 +35,7 @@ const EnableCourseSwitchPopup = lazy(() => import("../courses/components/EnableC
 
 
 function Course() {
-    const { courseTitle, courseId, courseEnabled: courseEnabledFromContext, localeMessages, direction, userRole, isInstructor, isInstructore, apiBaseUrl, platformBaseUrl, customComponent } = useAppContext();
+    const { courseTitle, courseId, courseEnabled: courseEnabledFromContext, courseHasContent, localeMessages, direction, userRole, isInstructor, isInstructore, apiBaseUrl, platformBaseUrl, customComponent } = useAppContext();
     const [courseEnabled, setCourseEnabled] = useState(courseEnabledFromContext);
     const [dialogOpen, setDialogOpen] = useState(false)
     const [dialogContent, setDialogContent] = useState(null)
@@ -174,9 +174,11 @@ function Course() {
         return (
             <>
                 {before}
-                <Link component="button" type="button" underline="hover" onClick={openEnableCourseDialog}>
-                    {localeMessages["course_disabled_banner_link"]}
-                </Link>
+                {courseHasContent ? (
+                    <Link component="button" type="button" underline="hover" onClick={openEnableCourseDialog}>
+                        {localeMessages["course_disabled_banner_link"]}
+                    </Link>
+                ) : localeMessages["course_disabled_banner_link"]}
                 {after}
             </>
         );

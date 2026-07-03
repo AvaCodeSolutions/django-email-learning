@@ -51,9 +51,9 @@ describe('Course', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
-  it('shows the disabled banner with a linked "enable it" when the course is disabled', () => {
+  it('shows the disabled banner with a linked "enable it" when the course has content', () => {
     renderWithProviders(<Course />, {
-      appContext: { ...baseAppContext, courseEnabled: false },
+      appContext: { ...baseAppContext, courseEnabled: false, courseHasContent: true },
     });
     expect(screen.getByRole('alert')).toHaveTextContent(
       'This course is disabled. Learners cannot be enrolled until you enable it.'
@@ -61,10 +61,20 @@ describe('Course', () => {
     expect(screen.getByRole('button', { name: 'enable it' })).toBeInTheDocument();
   });
 
+  it('shows "enable it" as plain text (not a link) when the course has no content', () => {
+    renderWithProviders(<Course />, {
+      appContext: { ...baseAppContext, courseEnabled: false, courseHasContent: false },
+    });
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'This course is disabled. Learners cannot be enrolled until you enable it.'
+    );
+    expect(screen.queryByRole('button', { name: 'enable it' })).not.toBeInTheDocument();
+  });
+
   it('opens the enable confirmation dialog when "enable it" is clicked', async () => {
     const user = userEvent.setup();
     renderWithProviders(<Course />, {
-      appContext: { ...baseAppContext, courseEnabled: false },
+      appContext: { ...baseAppContext, courseEnabled: false, courseHasContent: true },
     });
     await user.click(screen.getByRole('button', { name: 'enable it' }));
     expect(await screen.findByText('Enable Sample Course')).toBeInTheDocument();
@@ -73,7 +83,7 @@ describe('Course', () => {
   it('hides the disabled banner and re-enables the Enroll button after confirming enable', async () => {
     const user = userEvent.setup();
     renderWithProviders(<Course />, {
-      appContext: { ...baseAppContext, courseEnabled: false },
+      appContext: { ...baseAppContext, courseEnabled: false, courseHasContent: true },
     });
     await user.click(screen.getByRole('button', { name: 'enable it' }));
     await user.click(await screen.findByRole('button', { name: 'Continue' }));
