@@ -7,8 +7,9 @@ import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, M
 import apiClient from '../../../src/apiClient.js';
 
 
-const EnrollMenu = ({successCallback}) => {
-    const {courseId, courseEnabled, localeMessages, direction, apiBaseUrl, userRole, availableFeatures = [] } = useAppContext();
+const EnrollMenu = ({successCallback, courseEnabled: courseEnabledProp}) => {
+    const {courseId, courseEnabled: courseEnabledFromContext, localeMessages, direction, apiBaseUrl, userRole, availableFeatures = [] } = useAppContext();
+    const courseEnabled = courseEnabledProp !== undefined ? courseEnabledProp : courseEnabledFromContext;
     const [enrollMenuAnchorEl, setEnrollMenuAnchorEl] = useState(null);
     const [manualEnrollOpen, setManualEnrollOpen] = useState(false);
     const [googleWorkspaceDialogOpen, setGoogleWorkspaceDialogOpen] = useState(false);
