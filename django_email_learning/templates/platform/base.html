@@ -12,6 +12,12 @@
     {% if appContext.sidebarCustomComponent.scriptUrl %}
         <script src="{{ appContext.sidebarCustomComponent.scriptUrl }}" type="module"></script>
     {% endif %}
+    {% for style_url in navbarComponentStyleUrls %}
+        <link rel="stylesheet" href="{{ style_url }}">
+    {% endfor %}
+    {% for script_url in navbarComponentScriptUrls %}
+        <script src="{{ script_url }}"></script>
+    {% endfor %}
     {{ appContext | json_script:"app-context" }}
     {% block extra_head %}{% endblock %}
     <meta charset="UTF-8" />
