@@ -6,6 +6,8 @@ are scoped to the active organization, not any organization.
 from django.test import Client
 from django.urls import reverse
 
+from django_email_learning.platform.views.base import BasePlatformView
+
 
 def get_url() -> str:
     return reverse("django_email_learning:platform:courses_view")
@@ -91,3 +93,64 @@ def test_navbar_custom_components_empty_by_default(db, users):
 
     assert response.status_code == 200
     assert response.context["appContext"]["navbarCustomComponents"] == []
+    assert response.context["navbarComponentStyleUrls"] == []
+    assert response.context["navbarComponentScriptUrls"] == []
+
+
+def _with_navbar_components(monkeypatch, components: list) -> None:
+    original = BasePlatformView.get_shared_context
+
+    def patched(self):  # type: ignore[no-untyped-def]
+        context = original(self)
+        context["appContext"]["navbarCustomComponents"] = components
+        return context
+
+    monkeypatch.setattr(BasePlatformView, "get_shared_context", patched)
+
+
+def test_navbar_component_style_and_script_urls_deduped(db, users, monkeypatch):
+    _with_navbar_components(
+        monkeypatch,
+        [
+            {
+                "slot": "a",
+                "html": "<a-widget></a-widget>",
+                "styleUrl": "/static/shared.css",
+                "scriptUrl": "/static/shared.js",
+            },
+            {
+                "slot": "b",
+                "html": "<b-widget></b-widget>",
+                "styleUrl": "/static/shared.css",
+                "scriptUrl": "/static/other.js",
+            },
+        ],
+    )
+    client = Client()
+    client.force_login(users["editor_user"])
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["navbarComponentStyleUrls"] == ["/static/shared.css"]
+    assert response.context["navbarComponentScriptUrls"] == ["/static/shared.js", "/static/other.js"]
+
+    content = response.content.decode()
+    assert content.count('href="/static/shared.css"') == 1
+    assert '<script src="/static/shared.js"></script>' in content
+    assert '<script src="/static/other.js"></script>' in content
+
+
+def test_navbar_component_urls_omit_missing_style_or_script(db, users, monkeypatch):
+    _with_navbar_components(
+        monkeypatch,
+        [{"slot": "a", "html": "<a-widget></a-widget>"}],
+    )
+    client = Client()
+    client.force_login(users["editor_user"])
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["navbarComponentStyleUrls"] == []
+    assert response.context["navbarComponentScriptUrls"] == []

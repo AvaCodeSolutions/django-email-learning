@@ -24,6 +24,17 @@ AI_CONFIGURATIONS: dict = DJANGO_EMAIL_LEARNING_SETTINGS.get("AI", {})
 QUIZ_DEFAULTS: dict = DJANGO_EMAIL_LEARNING_SETTINGS.get("QUIZ_DEFAULTS", {})
 
 
+def _unique(values) -> list:  # type: ignore[no-untyped-def]
+    """Return the truthy values, in order, with duplicates removed."""
+    seen: set = set()
+    result = []
+    for value in values:
+        if value and value not in seen:
+            seen.add(value)
+            result.append(value)
+    return result
+
+
 @method_decorator(login_required, name="dispatch")
 class BasePlatformView(TemplateView):
     """Base view for all platform views with shared context"""
@@ -32,6 +43,12 @@ class BasePlatformView(TemplateView):
         context = super().get_context_data(**kwargs)
         context.update(self.get_shared_context())
         return context
+
+    def render_to_response(self, context, **response_kwargs):  # type: ignore[no-untyped-def]
+        components = context.get("appContext", {}).get("navbarCustomComponents", [])
+        context["navbarComponentStyleUrls"] = _unique(component.get("styleUrl") for component in components)
+        context["navbarComponentScriptUrls"] = _unique(component.get("scriptUrl") for component in components)
+        return super().render_to_response(context, **response_kwargs)
 
     def get_shared_context(self) -> Dict[str, Any]:
         """Get shared context for all platform views"""
