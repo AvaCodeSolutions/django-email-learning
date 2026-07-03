@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.5.0] — 2026-07-03
+
+### Added
+
+- **Disabled-course guards on the course page and API** — the single-course page now exposes `appContext.courseEnabled` and shows a warning banner while hiding the enrollment analytics summary when a course is disabled. The "Enroll Learner" button (manual email and Google Workspace group enrollment) is disabled while the course is disabled. Server-side, enabling a course (`enabled: true`) with no `CourseContent` now fails with a clear `409` error instead of silently succeeding.
+
+---
+
 ## [1.4.0] — 2026-07-02
 
 ### Added
