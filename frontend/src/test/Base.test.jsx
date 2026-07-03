@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import { renderWithProviders } from './test-utils';
 import Base from '../components/Base';
 
@@ -99,5 +99,54 @@ describe('Base', () => {
     );
     // FAB for BottomDrawer must not be present
     expect(screen.queryByRole('button', { name: /filter list/i })).not.toBeInTheDocument();
+  });
+
+  it('exposes window.DialogAPI.show to open a dialog with arbitrary content', () => {
+    renderWithProviders(
+      <Base breadCrumbList={[{ label: 'Home', href: '/' }]}>
+        <div />
+      </Base>
+    );
+    expect(screen.queryByText('Hello from DialogAPI')).not.toBeInTheDocument();
+    act(() => window.DialogAPI.show(<p>Hello from DialogAPI</p>));
+    expect(screen.getByText('Hello from DialogAPI')).toBeInTheDocument();
+  });
+
+  it('closes the dialog via window.DialogAPI.close', async () => {
+    renderWithProviders(
+      <Base breadCrumbList={[{ label: 'Home', href: '/' }]}>
+        <div />
+      </Base>
+    );
+    act(() => window.DialogAPI.show(<p>Hello from DialogAPI</p>));
+    expect(screen.getByText('Hello from DialogAPI')).toBeInTheDocument();
+    act(() => window.DialogAPI.close());
+    await waitFor(() => expect(screen.queryByText('Hello from DialogAPI')).not.toBeInTheDocument());
+  });
+
+  it('does not close the dialog on backdrop click by default', () => {
+    renderWithProviders(
+      <Base breadCrumbList={[{ label: 'Home', href: '/' }]}>
+        <div />
+      </Base>
+    );
+    act(() => window.DialogAPI.show(<p>Hello from DialogAPI</p>));
+    // eslint-disable-next-line testing-library/no-node-access
+    act(() => document.querySelector('.MuiBackdrop-root').click());
+    expect(screen.getByText('Hello from DialogAPI')).toBeInTheDocument();
+  });
+
+  it('closes the dialog on backdrop click after setCloseOnBackdropClick(true)', async () => {
+    renderWithProviders(
+      <Base breadCrumbList={[{ label: 'Home', href: '/' }]}>
+        <div />
+      </Base>
+    );
+    act(() => window.DialogAPI.setCloseOnBackdropClick(true));
+    expect(window.DialogAPI.getDialogBackdropClickSetting()).toBe(true);
+    act(() => window.DialogAPI.show(<p>Hello from DialogAPI</p>));
+    // eslint-disable-next-line testing-library/no-node-access
+    act(() => document.querySelector('.MuiBackdrop-root').click());
+    await waitFor(() => expect(screen.queryByText('Hello from DialogAPI')).not.toBeInTheDocument());
   });
 });

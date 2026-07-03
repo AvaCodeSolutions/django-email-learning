@@ -45,7 +45,6 @@ function Course() {
     const [weeklyStats, setWeeklyStats] = useState(null);
     const [isEnrollmentsLoading, setIsEnrollmentsLoading] = useState(true);
     const [isWeeklyStatsLoading, setIsWeeklyStatsLoading] = useState(true);
-    const [dialogCloseOnBackdropClick, setDialogCloseOnBackdropClick] = useState(false);
     const [activeTab, setActiveTab] = useState('content');
     const [pendingAssignmentsCount, setPendingAssignmentsCount] = useState(0);
 
@@ -138,16 +137,6 @@ function Course() {
         window.ContentListAPI = {
             refresh: () => setContentLoaded(false)
         }
-        window.DialogAPI = {
-            show: (content) => {
-                setDialogContent(content);
-                setDialogOpen(true);
-            },
-            close: () => setDialogOpen(false),
-            setMaxWidth: (maxWidth) => setDialogMaxWidth(maxWidth || 'md'),
-            setCloseOnBackdropClick: (closeOnBackdropClick) => setDialogCloseOnBackdropClick(!!closeOnBackdropClick),
-            getDialogBackdropClickSetting: () => dialogCloseOnBackdropClick,
-        }
     }, []);
 
     useEffect(() => {
@@ -194,9 +183,6 @@ function Course() {
     }
 
     const handleClose = (event, reason) => {
-        if (dialogCloseOnBackdropClick) {
-            setDialogOpen(false);
-        }
         if (reason !== "backdropClick" && reason !== "escapeKeyDown") {
             setDialogOpen(false);
         }
