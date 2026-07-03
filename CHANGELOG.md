@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.6.0] — 2026-07-03
+
+### Added
+
+- **Script/style URL support for navbar custom components** — each entry in `appContext.navbarCustomComponents` can now include `styleUrl`/`scriptUrl` in addition to `html`, matching the `WebComponent` shape already used for the course-page and sidebar custom components. `BasePlatformView` collects the unique `styleUrl`/`scriptUrl` values across all navbar slots and injects one `<link>`/plain `<script src="...">` tag per unique URL (deduplicated across slots, no `type="module"`).
+
+---
+
 ## [1.5.0] — 2026-07-03
 
 ### Added
