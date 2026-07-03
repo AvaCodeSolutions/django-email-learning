@@ -8,7 +8,7 @@ import apiClient from '../../../src/apiClient.js';
 
 
 const EnrollMenu = ({successCallback}) => {
-    const {courseId, localeMessages, direction, apiBaseUrl, userRole, availableFeatures = [] } = useAppContext();
+    const {courseId, courseEnabled, localeMessages, direction, apiBaseUrl, userRole, availableFeatures = [] } = useAppContext();
     const [enrollMenuAnchorEl, setEnrollMenuAnchorEl] = useState(null);
     const [manualEnrollOpen, setManualEnrollOpen] = useState(false);
     const [googleWorkspaceDialogOpen, setGoogleWorkspaceDialogOpen] = useState(false);
@@ -295,6 +295,7 @@ const EnrollMenu = ({successCallback}) => {
                     }),
                 })}
                 onClick={openEnrollMenu}
+                disabled={courseEnabled === false}
                 >
                 {localeMessages['enroll_learner'] }
             </Button>

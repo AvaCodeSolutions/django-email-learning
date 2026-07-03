@@ -66,6 +66,20 @@ describe('EnrollMenu', () => {
     );
   });
 
+  it('disables the Enroll Learner button when the course is disabled', () => {
+    renderWithProviders(<EnrollMenu successCallback={vi.fn()} />, {
+      appContext: { localeMessages, courseId: '5', userRole: 'admin', courseEnabled: false },
+    });
+    expect(screen.getByRole('button', { name: /Enroll Learner/ })).toBeDisabled();
+  });
+
+  it('keeps the Enroll Learner button enabled when courseEnabled is not specified', () => {
+    renderWithProviders(<EnrollMenu successCallback={vi.fn()} />, {
+      appContext: { localeMessages, courseId: '5', userRole: 'admin' },
+    });
+    expect(screen.getByRole('button', { name: /Enroll Learner/ })).toBeEnabled();
+  });
+
   it('calls successCallback after successful manual enrollment', async () => {
     global.fetch.mockResolvedValue({
       ok: true,

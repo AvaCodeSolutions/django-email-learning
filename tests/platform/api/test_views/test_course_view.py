@@ -6,7 +6,10 @@ from django.urls import reverse
 
 from django_email_learning.models import (
     Course,
+    CourseContent,
+    CourseContentType,
     CourseInstructor,
+    Lesson,
     Organization,
     OrganizationUser,
 )
@@ -238,6 +241,7 @@ def test_update_course_success(superadmin_client):
     create_response = superadmin_client.post(get_url(1), json.dumps(create_payload), content_type="application/json")
     assert create_response.status_code == 201
     course_id = create_response.json()["id"]
+    _add_course_content(course_id)
 
     # Now, update the created course
     update_payload = valid_update_course_payload()
@@ -259,6 +263,7 @@ def test_update_course_with_target_audience_and_external_references(superadmin_c
     create_response = superadmin_client.post(get_url(1), json.dumps(create_payload), content_type="application/json")
     assert create_response.status_code == 201
     course_id = create_response.json()["id"]
+    _add_course_content(course_id)
 
     # Now, update the created course with target audience and external references
     update_payload = valid_update_course_payload()
@@ -293,6 +298,7 @@ def test_update_course_replaces_external_references(superadmin_client):
     create_response = superadmin_client.post(get_url(1), json.dumps(create_payload), content_type="application/json")
     assert create_response.status_code == 201
     course_id = create_response.json()["id"]
+    _add_course_content(course_id)
 
     update_payload = valid_update_course_payload()
     update_payload["external_references"] = [{"name": "Updated Docs", "url": "https://example.com/new-docs"}]
@@ -357,6 +363,44 @@ def test_update_course_reset_imap_connection_conflict(sample_course, superadmin_
     assert update_response.json()["error"] == "Cannot set imap_connection_id when reset_imap_connection is True."
 
 
+def test_enabling_course_without_content_fails(sample_course, superadmin_client):
+    course_id = sample_course["id"]
+    update_payload = valid_update_course_payload(enabled=True)
+    update_url = reverse(
+        "django_email_learning:api_platform:courses_detail",
+        kwargs={"organization_id": 1, "course_id": course_id},
+    )
+    update_response = superadmin_client.post(update_url, json.dumps(update_payload), content_type="application/json")
+    assert update_response.status_code == 409
+    assert update_response.json()["error"] == "Cannot enable a course that has no content."
+    assert Course.objects.get(id=course_id).enabled is False
+
+
+def test_enabling_course_with_content_succeeds(sample_course, superadmin_client):
+    course_id = sample_course["id"]
+    _add_course_content(course_id)
+    update_payload = valid_update_course_payload(enabled=True)
+    update_url = reverse(
+        "django_email_learning:api_platform:courses_detail",
+        kwargs={"organization_id": 1, "course_id": course_id},
+    )
+    update_response = superadmin_client.post(update_url, json.dumps(update_payload), content_type="application/json")
+    assert update_response.status_code == 200
+    assert update_response.json()["enabled"] is True
+
+
+def test_disabling_course_without_content_succeeds(sample_course, superadmin_client):
+    course_id = sample_course["id"]
+    update_payload = valid_update_course_payload(enabled=False)
+    update_url = reverse(
+        "django_email_learning:api_platform:courses_detail",
+        kwargs={"organization_id": 1, "course_id": course_id},
+    )
+    update_response = superadmin_client.post(update_url, json.dumps(update_payload), content_type="application/json")
+    assert update_response.status_code == 200
+    assert update_response.json()["enabled"] is False
+
+
 def test_viewer_not_allowed_to_delete_course(sample_course, viewer_client):
     url = reverse(
         "django_email_learning:api_platform:courses_detail",
@@ -412,6 +456,17 @@ def valid_update_course_payload(
         "enabled": enabled,
         "reset_imap_connection": reset_imap_connection,
     }
+
+
+def _add_course_content(course_id: int) -> CourseContent:
+    lesson = Lesson.objects.create(title="Lesson", content="Content")
+    return CourseContent.objects.create(
+        course_id=course_id,
+        priority=1,
+        type=CourseContentType.LESSON,
+        lesson=lesson,
+        waiting_period=0,
+    )
 
 
 # ---------------------------------------------------------------------------

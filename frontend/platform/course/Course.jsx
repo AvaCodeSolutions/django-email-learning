@@ -34,7 +34,7 @@ const DeleteContentForm = lazy(() => import("./components/DeleteContentForm.jsx"
 
 
 function Course() {
-    const { courseTitle, courseId, localeMessages, direction, userRole, isInstructor, isInstructore, apiBaseUrl, platformBaseUrl, customComponent } = useAppContext();
+    const { courseTitle, courseId, courseEnabled, localeMessages, direction, userRole, isInstructor, isInstructore, apiBaseUrl, platformBaseUrl, customComponent } = useAppContext();
     const [dialogOpen, setDialogOpen] = useState(false)
     const [dialogContent, setDialogContent] = useState(null)
     const [contentLoaded, setContentLoaded] = useState(false)
@@ -316,6 +316,12 @@ function Course() {
                 </Box>
             )}
             <Grid size={{xs: 12}} sx={{ px: { xs: 0, md: 2 }, pt: 2, pb: 3 }}>
+                {courseEnabled === false && (
+                    <Alert severity="warning" sx={{ mx: { xs: 2, md: 0 }, mb: 3 }}>
+                        {localeMessages["course_disabled_banner"]}
+                    </Alert>
+                )}
+                {courseEnabled !== false && (
                 <Box
                     sx={{
                         display: { xs: 'none', md: 'block' },
@@ -346,6 +352,7 @@ function Course() {
                         </Grid>
                     </Grid>
                 </Box>
+                )}
                 <Box sx={{ px: { xs: 0, md: 2 }, py: 2, backgroundColor: 'background.box', boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.04)', borderRadius: { xs: 0, sm: 2 }, minHeight: 300 }}>
                     <Tabs
                         value={activeTab}
@@ -461,3 +468,5 @@ function Course() {
 }
 
 render({children: <Course />});
+
+export default Course;

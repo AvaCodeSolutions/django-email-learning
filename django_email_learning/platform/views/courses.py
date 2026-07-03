@@ -154,6 +154,7 @@ class CourseView(BasePlatformView):
         context["appContext"]["courseId"] = course.id
         context["appContext"]["courseTitle"] = course.title
         context["appContext"]["courseLanguage"] = course.language
+        context["appContext"]["courseEnabled"] = course.enabled
         context["appContext"]["customComponent"] = None
         context["appContext"]["quizDefaults"] = {
             "limitedAttempts": QUIZ_DEFAULTS.get("LIMITED_ATTEMPTS", True),
@@ -172,6 +173,8 @@ class CourseView(BasePlatformView):
     def get_locale_messages(self) -> Dict[str, str]:
         return {
             "actions": _("Actions"),
+            "course_disabled": _("Disabled"),
+            "course_disabled_banner": _("This course is disabled. Learners cannot be enrolled until you enable it."),
             "enroll_learner": _("Enroll Learner"),
             "enrollment_success": _("Learner enrolled successfully."),
             "imported_from_google_success": _("Learners imported from Google Workspace successfully."),
