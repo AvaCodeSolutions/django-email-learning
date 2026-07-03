@@ -203,6 +203,8 @@ class UpdateCourseRequest(BaseModel):
             imap_connection = ImapConnection.objects.get(id=self.imap_connection_id)
             course.imap_connection = imap_connection
         if self.enabled is not None:
+            if self.enabled and not CourseContent.objects.filter(course=course).exists():
+                raise ValueError("Cannot enable a course that has no content.")
             course.enabled = self.enabled
         if self.reset_imap_connection:
             course.imap_connection = None
