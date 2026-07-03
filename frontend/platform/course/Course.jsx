@@ -9,7 +9,7 @@ import ViewListIcon from '@mui/icons-material/ViewList';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import InsightsIcon from '@mui/icons-material/Insights';
 import { useState, useEffect, memo } from 'react';
-import { Box, Grid, Button, Dialog, LinearProgress, Typography, Alert, Tabs, Tab, Badge } from '@mui/material'
+import { Box, Grid, Button, Dialog, LinearProgress, Typography, Alert, Tabs, Tab, Badge, Link } from '@mui/material'
 import { useTheme } from '@mui/material/styles';
 import ContentTable from './components/ContentTable.jsx';
 import SubmittedAssignmentsSection from './components/SubmittedAssignmentsSection.jsx';
@@ -31,10 +31,12 @@ const QuizForm = lazy(() => import("./components/QuizForm.jsx"));
 const LessonForm = lazy(() => import("./components/LessonForm.jsx"));
 const AssignmentForm = lazy(() => import("./components/AssignmentForm.jsx"));
 const DeleteContentForm = lazy(() => import("./components/DeleteContentForm.jsx"));
+const EnableCourseSwitchPopup = lazy(() => import("../courses/components/EnableCourseSwitchPopup.jsx"));
 
 
 function Course() {
-    const { courseTitle, courseId, courseEnabled, localeMessages, direction, userRole, isInstructor, isInstructore, apiBaseUrl, platformBaseUrl, customComponent } = useAppContext();
+    const { courseTitle, courseId, courseEnabled: courseEnabledFromContext, localeMessages, direction, userRole, isInstructor, isInstructore, apiBaseUrl, platformBaseUrl, customComponent } = useAppContext();
+    const [courseEnabled, setCourseEnabled] = useState(courseEnabledFromContext);
     const [dialogOpen, setDialogOpen] = useState(false)
     const [dialogContent, setDialogContent] = useState(null)
     const [contentLoaded, setContentLoaded] = useState(false)
@@ -164,6 +166,31 @@ function Course() {
         setPageSuccessMessage(msg);
         setTimeout(() => setPageSuccessMessage(''), 4000);
         refreshEnrollmentAnalytics();
+    }
+
+    const openEnableCourseDialog = () => {
+        setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><EnableCourseSwitchPopup
+            courseId={courseId}
+            action="enable"
+            courseTitle={courseTitle}
+            handleClose={() => {setDialogOpen(false); setDialogMaxWidth('lg');}}
+            handleSuccess={() => setCourseEnabled(true)}
+        /></Suspense>);
+        setDialogMaxWidth('sm');
+        setDialogOpen(true);
+    }
+
+    const renderDisabledBanner = () => {
+        const [before, after] = (localeMessages["course_disabled_banner"] || '').split('ENABLE_LINK');
+        return (
+            <>
+                {before}
+                <Link component="button" type="button" underline="hover" onClick={openEnableCourseDialog}>
+                    {localeMessages["course_disabled_banner_link"]}
+                </Link>
+                {after}
+            </>
+        );
     }
 
     const handleClose = (event, reason) => {
@@ -318,7 +345,7 @@ function Course() {
             <Grid size={{xs: 12}} sx={{ px: { xs: 0, md: 2 }, pt: 2, pb: 3 }}>
                 {courseEnabled === false && (
                     <Alert severity="warning" sx={{ mx: { xs: 2, md: 0 }, mb: 3 }}>
-                        {localeMessages["course_disabled_banner"]}
+                        {renderDisabledBanner()}
                     </Alert>
                 )}
                 {courseEnabled !== false && (
@@ -432,7 +459,7 @@ function Course() {
                                     courseId={courseId} /></Suspense>);
                                 setDialogOpen(true);}}>{localeMessages["add_assignment"]}</Button>
                             {customComponent && <CustomComponentSlot html={customComponent.html} display={customComponent.container_display} />}
-                            {userRole === 'admin' && <Box sx={{ marginInlineStart: { xs: 0, md: 'auto' }, alignSelf: { xs: 'stretch', md: 'flex-start' } }}><EnrollMenu successCallback={handleEnrollMenuSuccess} /></Box>}
+                            {userRole === 'admin' && <Box sx={{ marginInlineStart: { xs: 0, md: 'auto' }, alignSelf: { xs: 'stretch', md: 'flex-start' } }}><EnrollMenu successCallback={handleEnrollMenuSuccess} courseEnabled={courseEnabled} /></Box>}
                             </> }
                             </Box>
                             <ContentTable courseId={courseId} loaded={contentLoaded} eventHandler={(event) => tableEventHandler(event)} />

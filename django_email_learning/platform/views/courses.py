@@ -174,7 +174,12 @@ class CourseView(BasePlatformView):
         return {
             "actions": _("Actions"),
             "course_disabled": _("Disabled"),
-            "course_disabled_banner": _("This course is disabled. Learners cannot be enrolled until you enable it."),
+            "course_disabled_banner": _("This course is disabled. Learners cannot be enrolled until you ENABLE_LINK."),
+            "course_disabled_banner_link": _("enable it"),
+            "enable_course": _("Enable COURSE_NAME"),
+            "course_enable_confirmation": _("Are you sure you want to enable the course COURSE_NAME?"),
+            "continue": _("Continue"),
+            "server_error": _("Server error occurred. Please try again later."),
             "enroll_learner": _("Enroll Learner"),
             "enrollment_success": _("Learner enrolled successfully."),
             "imported_from_google_success": _("Learners imported from Google Workspace successfully."),
