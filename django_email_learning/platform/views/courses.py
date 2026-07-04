@@ -7,6 +7,7 @@ from django.utils.translation import get_language_info, gettext as _
 from django_email_learning.decorators import is_an_organization_member
 from django_email_learning.models import (
     Course,
+    CourseContent,
     Newsletter,
 )
 from django_email_learning.platform.views.base import (
@@ -155,6 +156,7 @@ class CourseView(BasePlatformView):
         context["appContext"]["courseTitle"] = course.title
         context["appContext"]["courseLanguage"] = course.language
         context["appContext"]["courseEnabled"] = course.enabled
+        context["appContext"]["courseHasContent"] = CourseContent.objects.filter(course=course).exists()
         context["appContext"]["customComponent"] = None
         context["appContext"]["quizDefaults"] = {
             "limitedAttempts": QUIZ_DEFAULTS.get("LIMITED_ATTEMPTS", True),

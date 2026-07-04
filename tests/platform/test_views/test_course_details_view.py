@@ -1,6 +1,8 @@
 import pytest
 from django.urls import reverse
 
+from django_email_learning.models import CourseContent, CourseContentType, Lesson
+
 
 def get_url(course_id: int = 1) -> str:
     return reverse(
@@ -39,3 +41,25 @@ def test_context_values(superadmin_client, course):
     assert "activeOrganizationId" in response.context
     assert "userRole" in response.context["appContext"]
     assert response.context["appContext"]["isPlatformAdmin"] is True
+
+
+def test_course_has_content_false_when_course_has_no_content(superadmin_client, course):
+    response = superadmin_client.get(get_url(course.id))
+    assert response.status_code == 200
+    assert response.context["appContext"]["courseHasContent"] is False
+
+
+def test_course_has_content_true_when_course_has_content(superadmin_client, course):
+    lesson = Lesson.objects.create(title="Lesson", content="Content")
+    CourseContent.objects.create(
+        course=course,
+        priority=1,
+        type=CourseContentType.LESSON,
+        lesson=lesson,
+        waiting_period=0,
+    )
+
+    response = superadmin_client.get(get_url(course.id))
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["courseHasContent"] is True
