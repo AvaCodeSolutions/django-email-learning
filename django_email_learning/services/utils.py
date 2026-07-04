@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage
+from django.core.files.storage import FileSystemStorage, Storage, storages
 
 DJANGO_EMAIL_LEARNING_CONFIGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
 
@@ -19,12 +19,16 @@ def mask_email(email_address: str) -> str:
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-def get_private_file_storage() -> FileSystemStorage:
+def get_private_file_storage() -> Storage:
+    # PRIVATE_FILE_STORAGE_ALIAS, when set, takes precedence and resolves against
+    # the project's own STORAGES setting, so private files can use a different
+    # backend (e.g. a separate S3 bucket) than public media.
+    alias = DJANGO_EMAIL_LEARNING_CONFIGS.get("PRIVATE_FILE_STORAGE_ALIAS")
+    if alias:
+        return storages[alias]
     return FileSystemStorage(
         location=DJANGO_EMAIL_LEARNING_CONFIGS.get("PRIVATE_FILE_STORAGE_LOCATION", f"{BASE_DIR}/private_files/")
     )
 
 
-PRIVATE_FILE_STORAGE = FileSystemStorage(
-    location=DJANGO_EMAIL_LEARNING_CONFIGS.get("PRIVATE_FILE_STORAGE_LOCATION", f"{BASE_DIR}/private_files/")
-)
+PRIVATE_FILE_STORAGE = get_private_file_storage()
