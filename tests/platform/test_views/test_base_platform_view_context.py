@@ -6,6 +6,7 @@ are scoped to the active organization, not any organization.
 from django.test import Client
 from django.urls import reverse
 
+from django_email_learning.models import OrganizationUser
 from django_email_learning.platform.views.base import BasePlatformView
 
 
@@ -33,6 +34,32 @@ def test_is_instructor_false_when_not_instructor_in_active_org(db, users):
 
     assert response.status_code == 200
     assert response.context["appContext"]["isInstructor"] is False
+
+
+def test_is_instructor_false_for_admin_without_display_name(db, users):
+    """isInstructor is False for an admin org_user with no display_name (can_act_as_instructor requires one)."""
+    client = Client()
+    client.force_login(users["organization_admin"])
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["isInstructor"] is False
+
+
+def test_is_instructor_true_for_admin_with_display_name(db, users):
+    """isInstructor is True for a non-superuser admin org_user with a display_name, per can_act_as_instructor()."""
+    admin_org_user = OrganizationUser.objects.get(user=users["organization_admin"], organization_id=1)
+    admin_org_user.display_name = "Org Admin"
+    admin_org_user.save()
+
+    client = Client()
+    client.force_login(users["organization_admin"])
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["isInstructor"] is True
 
 
 def test_is_organization_admin_true_for_admin_in_active_org(db, users):
