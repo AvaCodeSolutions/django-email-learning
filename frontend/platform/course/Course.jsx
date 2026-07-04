@@ -35,7 +35,7 @@ const EnableCourseSwitchPopup = lazy(() => import("../courses/components/EnableC
 
 
 function Course() {
-    const { courseTitle, courseId, courseEnabled: courseEnabledFromContext, localeMessages, direction, userRole, isInstructor, isInstructore, apiBaseUrl, platformBaseUrl, customComponent } = useAppContext();
+    const { courseTitle, courseId, courseEnabled: courseEnabledFromContext, localeMessages, direction, userRole, isInstructor, apiBaseUrl, platformBaseUrl, customComponent } = useAppContext();
     const [courseEnabled, setCourseEnabled] = useState(courseEnabledFromContext);
     const [dialogOpen, setDialogOpen] = useState(false)
     const [dialogContent, setDialogContent] = useState(null)
@@ -83,9 +83,7 @@ function Course() {
 
     const hasEnrollmentsChartData = !!(enrollmentsPieData && totalEnrollments > 0);
     const hasWeeklyChartData = !!(weeklyStats && weeklyStats.some((stat) => stat.count > 0));
-    const canSeeSubmittedAssignments = Boolean(
-        isInstructore ?? isInstructor
-    );
+    const canSeeSubmittedAssignments = Boolean(isInstructor);
 
 
     const resetDialog = () => {
