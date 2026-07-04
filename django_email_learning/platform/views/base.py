@@ -55,11 +55,13 @@ class BasePlatformView(TemplateView):
         active_organization_id = self.get_or_set_active_organization()
         if self.request.user.is_superuser:
             role = "admin"
+            active_org_user = None
         else:
-            role = OrganizationUser.objects.get(  # type: ignore[misc]
+            active_org_user = OrganizationUser.objects.get(  # type: ignore[misc]
                 user=self.request.user,
                 organization_id=active_organization_id,
-            ).role
+            )
+            role = active_org_user.role
 
         current_lang_code = get_language()
         lang_info = get_language_info(current_lang_code)
@@ -100,13 +102,7 @@ class BasePlatformView(TemplateView):
                 ),
                 "isInstructor": (
                     self.request.user.is_superuser
-                    or (
-                        OrganizationUser.objects.filter(
-                            user=self.request.user,
-                            organization_id=active_organization_id,
-                            role="instructor",
-                        ).exists()  # type: ignore[misc]
-                    )
+                    or (active_org_user is not None and active_org_user.can_act_as_instructor())
                 ),
                 "aiTextEditingModel": AI_CONFIGURATIONS.get("TEXT_EDITING_MODEL"),
                 "availableFeatures": [f.value for f in self.get_available_features()],
