@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.8.0] — 2026-07-04
+
+### Added
+
+- **`PRIVATE_FILE_STORAGE_ALIAS` setting** — private files can now be backed by a completely different storage backend than public media (e.g. a separate S3 bucket), by pointing this setting at an entry in the project's own `STORAGES` setting. Previously, `PRIVATE_FILE_STORAGE_LOCATION` only let you change the path within a hard-coded `FileSystemStorage`, with no way to use S3/GCS/Azure for private files. `PRIVATE_FILE_STORAGE_LOCATION` remains the default when no alias is set.
+
+---
+
 ## [1.7.1] — 2026-07-03
 
 ### Added
