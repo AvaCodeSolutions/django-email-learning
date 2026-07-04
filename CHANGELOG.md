@@ -6,6 +6,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.7.1] — 2026-07-03
+
+### Added
+
+- **"enable it" only links when the course has content** — the single-course page's disabled-course banner now renders "enable it" as a clickable link only when the course actually has at least one piece of content; otherwise it's plain text, since enabling would just fail the existing "no content" guard.
+
+### Fixed
+
+- **`isInstructor` context now matches `can_act_as_instructor()`** — `BasePlatformView`'s `appContext.isInstructor` previously ran its own inline `role="instructor"` check, diverging from `OrganizationUser.can_act_as_instructor()` (used everywhere else), which also requires a `display_name` and additionally covers admins. Also removed an unused `isInstructore` typo in `Course.jsx` that was dead code.
+
+---
+
 ## [1.7.0] — 2026-07-03
 
 ### Added
