@@ -271,6 +271,8 @@ Optional configuration for branding assets in the platform header.
 
 The filesystem path where privately uploaded files will be stored. Unlike media files served via Django's ``MEDIA_URL`` which are publicly accessible, files stored here are **not** served publicly. They are only accessible through an authenticated endpoint, ensuring that sensitive files (such as assignment submissions or certificates) are protected and only available to authorised users.
 
+This setting only controls the path used by the default ``FileSystemStorage`` backend. If you need private files to live on a different storage backend entirely (for example a separate S3 bucket from the one used for public media), use ``PRIVATE_FILE_STORAGE_ALIAS`` instead.
+
 If not specified, a default location will be used.
 
 .. code-block:: python
@@ -285,6 +287,40 @@ If not specified, a default location will be used.
 .. note::
    Ensure the directory exists and that the Django process has read/write permissions for the specified path.
    Do **not** place this directory inside your web server's publicly served document root, as doing so would defeat the purpose of private storage.
+
+**PRIVATE_FILE_STORAGE_ALIAS**
+
+The key of an entry in your project's own `STORAGES <https://docs.djangoproject.com/en/stable/ref/settings/#storages>`_ setting to use for privately uploaded files. This lets you back private files with any storage backend supported by Django or `django-storages <https://django-storages.readthedocs.io/>`_ (S3, GCS, Azure, etc.), independently of the backend used for public media.
+
+When set, this takes precedence over ``PRIVATE_FILE_STORAGE_LOCATION``, which is then ignored.
+
+.. code-block:: python
+
+    STORAGES = {
+        'default': {
+            'BACKEND': 'django.core.files.storage.FileSystemStorage',
+        },
+        'staticfiles': {
+            'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage',
+        },
+        'private_files': {
+            'BACKEND': 'storages.backends.s3.S3Storage',
+            'OPTIONS': {
+                'bucket_name': 'my-private-bucket',
+                'region_name': 'eu-west-1',
+            },
+        },
+    }
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
+        'PRIVATE_FILE_STORAGE_ALIAS': 'private_files',
+    }
+
+.. note::
+   Whichever backend you point ``private_files`` at, ensure it is **not** publicly readable. Private files are only meant to be reached through this library's authenticated endpoint.
 
 **AI**
 
