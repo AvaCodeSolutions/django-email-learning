@@ -72,8 +72,11 @@ export default function NewsletterSubscriptionForm({ newsletters, subscribeApiUr
                 backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.05),
             }}
         >
-            <Typography variant="h2" sx={{ mb: 2, fontSize: '1.25rem' }}>
+            <Typography variant="h2" sx={{ mb: 1, fontSize: '1.25rem' }}>
                 {localeMessages['newsletters']}
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+                {localeMessages['newsletter_subscribe_intro']}
             </Typography>
 
             {status === 'error' && (

@@ -191,6 +191,7 @@ class OrganizationView(TemplateView):
                 "localeMessages": {
                     "courses": _("Courses"),
                     "enroll_now": _("Enroll Now"),
+                    "enrolled": _("Enrolled"),
                     "enrol_for_course": _("Enroll for COURSE_NAME"),
                     "email": _("email"),
                     "cancel": _("Cancel"),
@@ -211,14 +212,15 @@ class OrganizationView(TemplateView):
                         " to enroll in courses."
                     ),
                     "continue": _("Continue"),
-                    "linkedin_page": _("LinkedIn Page"),
-                    "youtube_channel": _("YouTube Channel"),
+                    "linkedin_page": _("LinkedIn"),
+                    "youtube_channel": _("YouTube"),
                     "website": _("Website"),
                     "terms_of_service_confirmation": _(
                         "By enrolling, you agree to our"
                         " <a href='TERMS_OF_SERVICE_URL' target='_blank'>Terms of Service</a>."
                     ),
                     "newsletters": _("Newsletters"),
+                    "newsletter_subscribe_intro": _("Choose which updates you'd like to receive by email:"),
                     "newsletter_subscribe": _("Subscribe"),
                     "newsletter_subscribe_success": _("You have been successfully subscribed."),
                     "newsletter_subscribe_error": _("Subscription failed. Please try again."),

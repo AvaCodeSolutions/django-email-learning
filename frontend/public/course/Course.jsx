@@ -342,20 +342,10 @@ function Course() {
                                             {reference.name}
                                         </Link>
                                     }
-                                    secondary={reference.url}
                                     slotProps={{
                                         primary: {
                                             variant: 'body1',
                                             sx: {
-                                                textAlign: courseDirection === 'rtl' ? 'right' : 'left',
-                                                wordBreak: 'break-word',
-                                            },
-                                        },
-                                        secondary: {
-                                            variant: 'body2',
-                                            sx: {
-                                                mt: 0.5,
-                                                color: 'text.secondary',
                                                 textAlign: courseDirection === 'rtl' ? 'right' : 'left',
                                                 wordBreak: 'break-word',
                                             },

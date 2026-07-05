@@ -7,6 +7,7 @@ import { Alert, Box, Button, Card, CardContent, CardMedia, Dialog, Grid, Stack, 
 import LanguageIcon from '@mui/icons-material/Language';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import YouTubeIcon from '@mui/icons-material/YouTube';
+import SchoolIcon from '@mui/icons-material/School';
 import { alpha, ThemeProvider } from '@mui/material/styles';
 import { useAppContext } from '../../src/render.jsx';
 import { lightTheme } from '../../src/theme/themes';
@@ -20,6 +21,8 @@ function Organization() {
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
     const { organization, enrollApiUrl, newsletterSubscribeApiUrl, newsletters = [], localeMessages } = useAppContext();
+
+    const hasMultipleLanguages = new Set(courses.map((course) => course.language)).size > 1;
 
     useEffect(() => {
         const initialCourses = (organization.courses || []).map((course) => ({ ...course, enrolled: false }));
@@ -58,63 +61,92 @@ function Organization() {
                     : alpha(theme.palette.common.white, 0.04),
             }}
         >
-            <Stack spacing={2}>
+            <Stack
+                direction={{ xs: 'column', md: 'row' }}
+                spacing={{ xs: 2, md: 3 }}
+                sx={{ alignItems: { xs: 'stretch', md: 'flex-start' } }}
+            >
                 { organization["logo_url"] &&
-                    <Box>
+                    <Box sx={{ flexShrink: 0 }}>
                         <Box component="img" src={ organization["logo_url"] } alt={`${organization["name"]} Logo`} sx={{ maxWidth: 220, width: '100%', height: 'auto' }} />
                     </Box>
                 }
-                <Typography variant="h1" sx={{ mb: 0 }}>{ organization["name"] }</Typography>
-                <Typography variant="body1" sx={{ color: 'text.secondary' }} dangerouslySetInnerHTML={{ __html: organization["description"] }} />
-                {(organization.website || organization.linkedin_page || organization.youtube_channel) && (
-                    <Stack
-                        direction="row"
-                        spacing={2.5}
-                        useFlexGap
-                        flexWrap="wrap"
-                        sx={{ pt: 1, alignItems: 'center' }}
-                    >
-                        {organization.website && (
-                            <Link
-                                href={organization.website}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                underline="hover"
-                                color="secondary.dark"
-                                sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, fontWeight: 500 }}
-                            >
-                                <LanguageIcon fontSize="small" sx={{ color: 'primary.dark' }} />
-                                {localeMessages['website']}
-                            </Link>
-                        )}
-                        {organization.linkedin_page && (
-                            <Link
-                                href={organization.linkedin_page}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                underline="hover"
-                                color="secondary.dark"
-                                sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, fontWeight: 500 }}
-                            >
-                                <LinkedInIcon fontSize="small" sx={(theme) => ({ color: theme.palette.blue[800] })} />
-                                {localeMessages['linkedin_page']}
-                            </Link>
-                        )}
-                        {organization.youtube_channel && (
-                            <Link
-                                href={organization.youtube_channel}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                underline="hover"
-                                color="secondary.dark"
-                                sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, fontWeight: 500 }}
-                            >
-                                <YouTubeIcon fontSize="small" sx={(theme) => ({ color: theme.palette.red[700] })} />
-                                {localeMessages['youtube_channel']}
-                            </Link>
-                        )}
-                    </Stack>
-                )}
+                <Stack spacing={2} sx={{ flex: 1, minWidth: 0, pt: { xs: 1, md: 3 }, px: { xs: 0.5, md: 1 } }}>
+                    <Typography variant="h1" sx={{ mb: 0 }}>{ organization["name"] }</Typography>
+                    <Typography variant="body1" sx={{ color: 'text.secondary' }} dangerouslySetInnerHTML={{ __html: organization["description"] }} />
+                    {(organization.website || organization.linkedin_page || organization.youtube_channel) && (
+                        <Stack
+                            direction={{ xs: 'column', sm: 'row' }}
+                            spacing={{ xs: 0.75, sm: 1.25 }}
+                            useFlexGap
+                            sx={{ pt: 1, alignItems: { xs: 'stretch', sm: 'center' }, flexWrap: 'wrap' }}
+                        >
+                            {organization.website && (
+                                <Button
+                                    component="a"
+                                    href={organization.website}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    variant="outlined"
+                                    color="primary"
+                                    size="small"
+                                    startIcon={<LanguageIcon fontSize="small" />}
+                                    sx={{
+                                        width: { xs: '100%', sm: 'auto' },
+                                        borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
+                                        '&:hover': {
+                                            borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
+                                        },
+                                    }}
+                                >
+                                    {localeMessages['website']}
+                                </Button>
+                            )}
+                            {organization.linkedin_page && (
+                                <Button
+                                    component="a"
+                                    href={organization.linkedin_page}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    variant="outlined"
+                                    color="primary"
+                                    size="small"
+                                    startIcon={<LinkedInIcon fontSize="small" />}
+                                    sx={{
+                                        width: { xs: '100%', sm: 'auto' },
+                                        borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
+                                        '&:hover': {
+                                            borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
+                                        },
+                                    }}
+                                >
+                                    {localeMessages['linkedin_page']}
+                                </Button>
+                            )}
+                            {organization.youtube_channel && (
+                                <Button
+                                    component="a"
+                                    href={organization.youtube_channel}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    variant="outlined"
+                                    color="primary"
+                                    size="small"
+                                    startIcon={<YouTubeIcon fontSize="small" />}
+                                    sx={{
+                                        width: { xs: '100%', sm: 'auto' },
+                                        borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
+                                        '&:hover': {
+                                            borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
+                                        },
+                                    }}
+                                >
+                                    {localeMessages['youtube_channel']}
+                                </Button>
+                            )}
+                        </Stack>
+                    )}
+                </Stack>
             </Stack>
         </Box>
         {showSuccessMessage && (
@@ -128,7 +160,7 @@ function Organization() {
         )}
 
         <Box sx={{ my: 4 }}>
-            <Typography variant="h2" sx={{ mb: 2 }}>{localeMessages['courses']}</Typography>
+            <Typography variant="h2" sx={{ mb: 2, pl: { xs: 0.5, md: 1 } }}>{localeMessages['courses']}</Typography>
             { courses.length > 0 ? (
                 <Grid container columnSpacing={2} rowSpacing={3} sx={{ alignItems: 'stretch' }}>
                 { courses.map((course) => {
@@ -162,31 +194,40 @@ function Organization() {
                                     aspectRatio: '16 / 9',
                                     backgroundColor: 'background.dark',
                                     objectFit: 'cover',
+                                    display: course["image"] ? undefined : 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
                                 }}
-                            />
+                            >
+                                {course["image"] ? null : (
+                                    <SchoolIcon sx={{ fontSize: 48, color: 'grey.400' }} />
+                                )}
+                            </CardMedia>
                             <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, flexGrow: 1, direction: course.is_rtl ? 'rtl' : 'ltr' }}>
                                 <Box>
                                     <Link href={`courses/${course["slug"]}/`} underline="none">
                                         <Typography variant="h3" sx={{ textAlign: courseDirection === 'rtl' ? 'right' : 'left' }}>{course["title"]}</Typography>
                                     </Link>
-                                    <Stack direction={courseDirection === 'rtl' ? 'rtl' : 'ltr'} spacing={0.5} sx={{ mt: 0.25, alignItems: 'center' }}>
-                                        <LanguageIcon
-                                            sx={(theme) => ({
-                                                fontSize: '1rem',
-                                                color: theme.palette.grey[600],
-                                            })}
-                                        />
-                                        <Typography
-                                            variant="body2"
-                                            sx={(theme) => ({
-                                                fontSize: '0.875rem',
-                                                color: theme.palette.grey[600],
-                                                textAlign: courseDirection === 'rtl' ? 'right' : 'left',
-                                            })}
-                                        >
-                                            {course["language"]}
-                                        </Typography>
-                                    </Stack>
+                                    {hasMultipleLanguages && (
+                                        <Stack direction={courseDirection === 'rtl' ? 'rtl' : 'ltr'} spacing={0.5} sx={{ mt: 0.25, alignItems: 'center' }}>
+                                            <LanguageIcon
+                                                sx={(theme) => ({
+                                                    fontSize: '1rem',
+                                                    color: theme.palette.grey[600],
+                                                })}
+                                            />
+                                            <Typography
+                                                variant="body2"
+                                                sx={(theme) => ({
+                                                    fontSize: '0.875rem',
+                                                    color: theme.palette.grey[600],
+                                                    textAlign: courseDirection === 'rtl' ? 'right' : 'left',
+                                                })}
+                                            >
+                                                {course["language"]}
+                                            </Typography>
+                                        </Stack>
+                                    )}
                                 </Box>
                                 <Typography
                                     variant="body2"
@@ -209,7 +250,7 @@ function Organization() {
                                         onClick={() => showModalForCourse(course)}
                                         disabled={course.enrolled}
                                     >
-                                        {localeMessages['enroll_now']}
+                                        {course.enrolled ? localeMessages['enrolled'] : localeMessages['enroll_now']}
                                     </Button>
                                 </Box>
                             </CardContent>
