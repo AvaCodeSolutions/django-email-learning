@@ -22,6 +22,8 @@ function Organization() {
 
     const { organization, enrollApiUrl, newsletterSubscribeApiUrl, newsletters = [], localeMessages } = useAppContext();
 
+    const hasMultipleLanguages = new Set(courses.map((course) => course.language)).size > 1;
+
     useEffect(() => {
         const initialCourses = (organization.courses || []).map((course) => ({ ...course, enrolled: false }));
         setCourses(initialCourses);
@@ -177,24 +179,26 @@ function Organization() {
                                     <Link href={`courses/${course["slug"]}/`} underline="none">
                                         <Typography variant="h3" sx={{ textAlign: courseDirection === 'rtl' ? 'right' : 'left' }}>{course["title"]}</Typography>
                                     </Link>
-                                    <Stack direction={courseDirection === 'rtl' ? 'rtl' : 'ltr'} spacing={0.5} sx={{ mt: 0.25, alignItems: 'center' }}>
-                                        <LanguageIcon
-                                            sx={(theme) => ({
-                                                fontSize: '1rem',
-                                                color: theme.palette.grey[600],
-                                            })}
-                                        />
-                                        <Typography
-                                            variant="body2"
-                                            sx={(theme) => ({
-                                                fontSize: '0.875rem',
-                                                color: theme.palette.grey[600],
-                                                textAlign: courseDirection === 'rtl' ? 'right' : 'left',
-                                            })}
-                                        >
-                                            {course["language"]}
-                                        </Typography>
-                                    </Stack>
+                                    {hasMultipleLanguages && (
+                                        <Stack direction={courseDirection === 'rtl' ? 'rtl' : 'ltr'} spacing={0.5} sx={{ mt: 0.25, alignItems: 'center' }}>
+                                            <LanguageIcon
+                                                sx={(theme) => ({
+                                                    fontSize: '1rem',
+                                                    color: theme.palette.grey[600],
+                                                })}
+                                            />
+                                            <Typography
+                                                variant="body2"
+                                                sx={(theme) => ({
+                                                    fontSize: '0.875rem',
+                                                    color: theme.palette.grey[600],
+                                                    textAlign: courseDirection === 'rtl' ? 'right' : 'left',
+                                                })}
+                                            >
+                                                {course["language"]}
+                                            </Typography>
+                                        </Stack>
+                                    )}
                                 </Box>
                                 <Typography
                                     variant="body2"
