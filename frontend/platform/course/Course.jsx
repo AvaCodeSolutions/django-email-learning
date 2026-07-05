@@ -8,8 +8,10 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import InsightsIcon from '@mui/icons-material/Insights';
+import PublicIcon from '@mui/icons-material/Public';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useState, useEffect, memo } from 'react';
-import { Box, Grid, Button, Dialog, LinearProgress, Typography, Alert, Tabs, Tab, Badge, Link } from '@mui/material'
+import { Box, Grid, Button, Dialog, LinearProgress, Typography, Alert, Tabs, Tab, Badge, Link, IconButton, Tooltip } from '@mui/material'
 import { useTheme } from '@mui/material/styles';
 import ContentTable from './components/ContentTable.jsx';
 import SubmittedAssignmentsSection from './components/SubmittedAssignmentsSection.jsx';
@@ -35,8 +37,9 @@ const EnableCourseSwitchPopup = lazy(() => import("../courses/components/EnableC
 
 
 function Course() {
-    const { courseTitle, courseId, courseEnabled: courseEnabledFromContext, courseHasContent, localeMessages, direction, userRole, isInstructor, apiBaseUrl, platformBaseUrl, customComponent } = useAppContext();
+    const { courseTitle, courseId, courseEnabled: courseEnabledFromContext, courseHasContent, coursePublicUrl, localeMessages, direction, userRole, isInstructor, apiBaseUrl, platformBaseUrl, customComponent } = useAppContext();
     const [courseEnabled, setCourseEnabled] = useState(courseEnabledFromContext);
+    const [publicUrlCopied, setPublicUrlCopied] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false)
     const [dialogContent, setDialogContent] = useState(null)
     const [contentLoaded, setContentLoaded] = useState(false)
@@ -180,6 +183,16 @@ function Course() {
                 {after}
             </>
         );
+    }
+
+    const handleCopyPublicUrl = async () => {
+        try {
+            await navigator.clipboard.writeText(coursePublicUrl);
+            setPublicUrlCopied(true);
+            setTimeout(() => setPublicUrlCopied(false), 2000);
+        } catch (error) {
+            console.error('Failed to copy course public URL:', error);
+        }
     }
 
     const handleClose = (event, reason) => {
@@ -329,6 +342,28 @@ function Course() {
                 </Box>
             )}
             <Grid size={{xs: 12}} sx={{ px: { xs: 0, md: 2 }, pt: 2, pb: 3 }}>
+                {courseEnabled && coursePublicUrl && (
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mx: { xs: 2, md: 0 }, mb: 1 }}>
+                        <Tooltip title={localeMessages["view_public_course_page"]}>
+                            <IconButton
+                                size="small"
+                                onClick={() => window.open(coursePublicUrl, '_blank')}
+                                aria-label={localeMessages["view_public_course_page"]}
+                            >
+                                <PublicIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title={publicUrlCopied ? localeMessages["public_course_link_copied"] : localeMessages["copy_public_course_link"]}>
+                            <IconButton
+                                size="small"
+                                onClick={handleCopyPublicUrl}
+                                aria-label={localeMessages["copy_public_course_link"]}
+                            >
+                                <ContentCopyIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
+                    </Box>
+                )}
                 {courseEnabled === false && (
                     <Alert severity="warning" sx={{ mx: { xs: 2, md: 0 }, mb: 3 }}>
                         {renderDisabledBanner()}

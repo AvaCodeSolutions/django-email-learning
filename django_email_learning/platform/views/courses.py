@@ -151,11 +151,12 @@ class CourseView(BasePlatformView):
 
     def get_context_data(self, **kwargs) -> dict:  # type: ignore[no-untyped-def]
         context = super().get_context_data(**kwargs)
-        course = Course.objects.get(pk=self.kwargs["course_id"])
+        course = Course.objects.select_related("organization").get(pk=self.kwargs["course_id"])
         context["appContext"]["courseId"] = course.id
         context["appContext"]["courseTitle"] = course.title
         context["appContext"]["courseLanguage"] = course.language
         context["appContext"]["courseEnabled"] = course.enabled
+        context["appContext"]["coursePublicUrl"] = course.public_url
         context["appContext"]["courseHasContent"] = CourseContent.objects.filter(course=course).exists()
         context["appContext"]["customComponent"] = None
         context["appContext"]["quizDefaults"] = {
@@ -178,6 +179,9 @@ class CourseView(BasePlatformView):
             "course_disabled": _("Disabled"),
             "course_disabled_banner": _("This course is disabled. Learners cannot be enrolled until you ENABLE_LINK."),
             "course_disabled_banner_link": _("enable it"),
+            "view_public_course_page": _("View public course page"),
+            "copy_public_course_link": _("Copy public course link"),
+            "public_course_link_copied": _("Link copied!"),
             "enable_course": _("Enable COURSE_NAME"),
             "course_enable_confirmation": _("Are you sure you want to enable the course COURSE_NAME?"),
             "continue": _("Continue"),

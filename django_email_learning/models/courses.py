@@ -65,6 +65,16 @@ class Course(models.Model):
         )
         return qs
 
+    @property
+    def public_url(self) -> str | None:
+        if not (self.enabled and self.is_public and self.organization.is_public):
+            return None
+        path = reverse(
+            "django_email_learning:public:course_view",
+            kwargs={"organization_id": self.organization.id, "course_slug": self.slug},
+        )
+        return f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{path}"
+
     def generate_unsubscribe_link(self, email: str) -> str:
         payload = {
             "email": email,
