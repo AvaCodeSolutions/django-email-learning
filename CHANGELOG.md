@@ -6,6 +6,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.10.1] — 2026-07-05
+
+### Fixed
+
+- **Course public page** — no-image courses now show a placeholder instead of hiding the title/enroll button, and the organization info box no longer leaves an empty column when there's no logo.
+- **Organization logo removal** — removing an existing organization logo and saving now actually clears it on the backend.
+
+---
+
 ## [1.10.0] — 2026-07-05
 
 ### Changed
