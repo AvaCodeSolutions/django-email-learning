@@ -7,6 +7,7 @@ import { Alert, Box, Button, Card, CardContent, CardMedia, Dialog, Grid, Stack, 
 import LanguageIcon from '@mui/icons-material/Language';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import YouTubeIcon from '@mui/icons-material/YouTube';
+import SchoolIcon from '@mui/icons-material/School';
 import { alpha, ThemeProvider } from '@mui/material/styles';
 import { useAppContext } from '../../src/render.jsx';
 import { lightTheme } from '../../src/theme/themes';
@@ -162,8 +163,15 @@ function Organization() {
                                     aspectRatio: '16 / 9',
                                     backgroundColor: 'background.dark',
                                     objectFit: 'cover',
+                                    display: course["image"] ? undefined : 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
                                 }}
-                            />
+                            >
+                                {!course["image"] && (
+                                    <SchoolIcon sx={{ fontSize: 48, color: 'grey.400' }} />
+                                )}
+                            </CardMedia>
                             <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, flexGrow: 1, direction: course.is_rtl ? 'rtl' : 'ltr' }}>
                                 <Box>
                                     <Link href={`courses/${course["slug"]}/`} underline="none">
@@ -209,7 +217,7 @@ function Organization() {
                                         onClick={() => showModalForCourse(course)}
                                         disabled={course.enrolled}
                                     >
-                                        {localeMessages['enroll_now']}
+                                        {course.enrolled ? localeMessages['enrolled'] : localeMessages['enroll_now']}
                                     </Button>
                                 </Box>
                             </CardContent>

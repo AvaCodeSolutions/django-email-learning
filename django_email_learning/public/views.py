@@ -191,6 +191,7 @@ class OrganizationView(TemplateView):
                 "localeMessages": {
                     "courses": _("Courses"),
                     "enroll_now": _("Enroll Now"),
+                    "enrolled": _("Enrolled"),
                     "enrol_for_course": _("Enroll for COURSE_NAME"),
                     "email": _("email"),
                     "cancel": _("Cancel"),
