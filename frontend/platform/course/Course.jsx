@@ -344,24 +344,52 @@ function Course() {
             <Grid size={{xs: 12}} sx={{ px: { xs: 0, md: 2 }, pt: 2, pb: 3 }}>
                 {courseEnabled && coursePublicUrl && (
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mx: { xs: 2, md: 0 }, mb: 1 }}>
-                        <Tooltip title={localeMessages["view_public_course_page"]}>
-                            <IconButton
-                                size="small"
-                                onClick={() => window.open(coursePublicUrl, '_blank')}
-                                aria-label={localeMessages["view_public_course_page"]}
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                                pl: 1.5,
+                                pr: 0.5,
+                                py: 0.2,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 2,
+                            }}
+                        >
+                            <Link
+                                href={coursePublicUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                underline="none"
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 0.75,
+                                    color: 'text.primary',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 500,
+                                    '&:hover': { color: 'primary.dark' },
+                                }}
                             >
                                 <PublicIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                        <Tooltip title={publicUrlCopied ? localeMessages["public_course_link_copied"] : localeMessages["copy_public_course_link"]}>
-                            <IconButton
-                                size="small"
-                                onClick={handleCopyPublicUrl}
-                                aria-label={localeMessages["copy_public_course_link"]}
-                            >
-                                <ContentCopyIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
+                                {localeMessages["view_public_course_page"]}
+                            </Link>
+                            <Tooltip title={publicUrlCopied ? localeMessages["public_course_link_copied"] : localeMessages["copy_public_course_link"]}>
+                                <IconButton
+                                    size="small"
+                                    onClick={handleCopyPublicUrl}
+                                    aria-label={localeMessages["copy_public_course_link"]}
+                                    sx={{
+                                        borderRadius: '50%',
+                                        border: '1px solid transparent',
+                                        '&:hover': { borderColor: 'divider', color: 'primary.dark' },
+                                    }}
+                                >
+                                    <ContentCopyIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
                     </Box>
                 )}
                 {courseEnabled === false && (

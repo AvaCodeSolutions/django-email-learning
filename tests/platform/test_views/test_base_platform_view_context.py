@@ -6,7 +6,7 @@ are scoped to the active organization, not any organization.
 from django.test import Client
 from django.urls import reverse
 
-from django_email_learning.models import OrganizationUser
+from django_email_learning.models import Organization, OrganizationUser
 from django_email_learning.platform.views.base import BasePlatformView
 
 
@@ -82,6 +82,28 @@ def test_is_organization_admin_false_for_non_admin_in_active_org(db, users):
 
     assert response.status_code == 200
     assert response.context["appContext"]["isOrganizationAdmin"] is False
+
+
+def test_organization_is_public_true_by_default(db, users):
+    client = Client()
+    client.force_login(users["organization_admin"])
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["organizationIsPublic"] is True
+
+
+def test_organization_is_public_false_when_active_organization_not_public(db, users):
+    Organization.objects.filter(id=1).update(is_public=False)
+
+    client = Client()
+    client.force_login(users["organization_admin"])
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["organizationIsPublic"] is False
 
 
 def test_newsletters_feature_absent_when_setting_falsy(db, users, settings):

@@ -132,6 +132,7 @@ class BasePlatformView(TemplateView):
                         ).exists()  # type: ignore[misc]
                     )
                 ),
+                "organizationIsPublic": Organization.objects.get(id=active_organization_id).is_public,
                 "localeMessages": {
                     "organizations": _("Organizations"),
                     "course_management": _("Course Management"),
