@@ -110,14 +110,14 @@ function Course() {
                 <Box
                     sx={{
                         width: '100%',
-                        aspectRatio: '16 / 9',
+                        aspectRatio: { xs: '16 / 9', md: '32 / 9' },
                         backgroundColor: 'grey.300',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                     }}
                 >
-                    <AutoStoriesIcon sx={{ fontSize: 64, color: 'grey.500' }} />
+                    <AutoStoriesIcon sx={{ fontSize: 64, color: 'common.white' }} />
                 </Box>
             )}
 
