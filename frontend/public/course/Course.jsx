@@ -111,7 +111,7 @@ function Course() {
                     sx={{
                         width: '100%',
                         aspectRatio: { xs: '16 / 9', md: '32 / 9' },
-                        backgroundColor: 'grey.300',
+                        backgroundColor: 'grey.600',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -128,7 +128,9 @@ function Course() {
                     display: 'flex',
                     alignItems: 'flex-end',
                     p: { xs: 2, md: 3 },
-                    background: 'linear-gradient(180deg, rgba(0, 0, 0, 0) 25%, rgba(0, 0, 0, 0.75) 100%)',
+                    background: course.image
+                        ? 'linear-gradient(180deg, rgba(0, 0, 0, 0) 25%, rgba(0, 0, 0, 0.75) 100%)'
+                        : 'none',
                     pointerEvents: 'none',
                 }}
             >
