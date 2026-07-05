@@ -32,7 +32,7 @@ const externalReferencesChanged = (originalReferences, currentReferences) => {
 };
 
 function CourseForm({successCallback, failureCallback, cancelCallback, activeOrganizationId, createMode, courseId}) {
-    const { localeMessages, apiBaseUrl, direction, languageOptions = [], availableFeatures = [] } = useAppContext();
+    const { localeMessages, apiBaseUrl, direction, languageOptions = [], availableFeatures = [], organizationIsPublic } = useAppContext();
     const newslettersEnabled = availableFeatures.includes('newsletters');
     const createNewsletterEnabled = availableFeatures.includes('create_newsletter');
     const [courseTitle, setCourseTitle] = useState("")
@@ -40,7 +40,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     const [courseDescription, setCourseDescription] = useState("")
     const [courseTargetAudience, setCourseTargetAudience] = useState("")
     const [courseLanguage, setCourseLanguage] = useState("")
-    const [isPublic, setIsPublic] = useState(createMode)
+    const [isPublic, setIsPublic] = useState(createMode && organizationIsPublic)
     const [sendCertificate, setSendCertificate] = useState(true)
     const [addImapConnection, setAddImapConnection] = useState(false)
     const [imapConnectionId, setImapConnectionId] = useState(null)
@@ -86,6 +86,12 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     }, [createMode, courseLanguage, languageOptions]);
 
     useEffect(() => {
+        if (!organizationIsPublic) {
+            setIsPublic(false);
+        }
+    }, [organizationIsPublic]);
+
+    useEffect(() => {
         if (!createMode && courseId) {
             apiClient.get(apiBaseUrl + '/organizations/' + activeOrganizationId + '/courses/' + courseId + '/')
             .then(data => {
@@ -94,7 +100,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setCourseDescription(data.description);
                 setCourseTargetAudience(data.target_audience || "");
                 setCourseLanguage(data.language || "");
-                setIsPublic(data.is_public ?? true);
+                setIsPublic(organizationIsPublic ? (data.is_public ?? true) : false);
                 setSendCertificate(data.send_certificate ?? true);
                 setImageUrl(data.image);
                 setImageServerPath(data.image_path);
@@ -422,12 +428,12 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
               <Divider sx={{ my: 2 }} />
               <Box sx={{ mt: 1 }}>
                     <FormControlLabel
-                            control={<Switch checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} dir={direction} />}
+                            control={<Switch checked={isPublic} disabled={!organizationIsPublic} onChange={(e) => setIsPublic(e.target.checked)} dir={direction} />}
                             label={localeMessages["course_is_public"]}
                             sx={{ m: 0 }}
                     />
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                            {localeMessages["course_is_public_helper_text"]}
+                            {organizationIsPublic ? localeMessages["course_is_public_helper_text"] : localeMessages["course_is_public_disabled_helper_text"]}
                     </Typography>
               </Box>
               <Box sx={{ mt: 2 }}>
@@ -509,6 +515,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     ))}
                 </Stack>
               </Box>
+              <Divider sx={{ my: 2 }} />
               <FormControlLabel
                 control={<Switch onChange={() => switchImapConnection()} checked={addImapConnection} dir={direction} />}
                 label={localeMessages["add_imap_connection"]} sx={{ m: 0 }} />
@@ -527,6 +534,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     />
               </Box>}
               {newslettersEnabled && (<>
+              <Divider sx={{ my: 2 }} />
                 <FormControlLabel
                     control={<Switch onChange={() => setAddNewsletter(!addNewsletter)} checked={addNewsletter} dir={direction} />}
                     label={localeMessages["add_newsletter"]} sx={{ m: 0 }} />
@@ -566,6 +574,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     initialInstructorIds={selectedInstructorIds}
                 />
               </Box>}
+              <Divider sx={{ my: 2 }} />
               <Box>
                 <ImageUpload organizationId={activeOrganizationId} initialUrl={imageUrl} onUploadSuccess={(data) => {
                     setImageUrl(data.file_url);

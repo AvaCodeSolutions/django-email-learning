@@ -52,6 +52,10 @@ class Courses(BasePlatformView):
                 "Public courses are visible on your organization's public pages."
                 " Turn this off to keep the course private."
             ),
+            "course_is_public_disabled_helper_text": _(
+                "Courses can't be made public because your organization itself isn't public."
+                " Make your organization public first to enable this option."
+            ),
             "course_send_certificate": _("Send Certificate on Completion"),
             "course_send_certificate_helper_text": _(
                 "When enabled, learners will receive a certificate email upon completing this course."
@@ -59,7 +63,8 @@ class Courses(BasePlatformView):
             "external_references": _("External References"),
             "add_external_reference": _("Add Reference"),
             "external_references_helper_text": _(
-                "Add up to 10 optional links for learners, such as docs, repos, or supporting resources."
+                "Add up to 10 optional links, such as docs, repos, or supporting resources. These are shown to"
+                " learners on the course's public page before they enroll."
             ),
             "reference_name": _("Reference Name"),
             "reference_url": _("Reference URL"),
@@ -151,11 +156,12 @@ class CourseView(BasePlatformView):
 
     def get_context_data(self, **kwargs) -> dict:  # type: ignore[no-untyped-def]
         context = super().get_context_data(**kwargs)
-        course = Course.objects.get(pk=self.kwargs["course_id"])
+        course = Course.objects.select_related("organization").get(pk=self.kwargs["course_id"])
         context["appContext"]["courseId"] = course.id
         context["appContext"]["courseTitle"] = course.title
         context["appContext"]["courseLanguage"] = course.language
         context["appContext"]["courseEnabled"] = course.enabled
+        context["appContext"]["coursePublicUrl"] = course.public_url
         context["appContext"]["courseHasContent"] = CourseContent.objects.filter(course=course).exists()
         context["appContext"]["customComponent"] = None
         context["appContext"]["quizDefaults"] = {
@@ -178,6 +184,9 @@ class CourseView(BasePlatformView):
             "course_disabled": _("Disabled"),
             "course_disabled_banner": _("This course is disabled. Learners cannot be enrolled until you ENABLE_LINK."),
             "course_disabled_banner_link": _("enable it"),
+            "view_public_course_page": _("Public page"),
+            "copy_public_course_link": _("Copy public course link"),
+            "public_course_link_copied": _("Link copied!"),
             "enable_course": _("Enable COURSE_NAME"),
             "course_enable_confirmation": _("Are you sure you want to enable the course COURSE_NAME?"),
             "continue": _("Continue"),

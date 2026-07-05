@@ -8,8 +8,10 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import InsightsIcon from '@mui/icons-material/Insights';
+import PublicIcon from '@mui/icons-material/Public';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useState, useEffect, memo } from 'react';
-import { Box, Grid, Button, Dialog, LinearProgress, Typography, Alert, Tabs, Tab, Badge, Link } from '@mui/material'
+import { Box, Grid, Button, Dialog, LinearProgress, Typography, Alert, Tabs, Tab, Badge, Link, IconButton, Tooltip } from '@mui/material'
 import { useTheme } from '@mui/material/styles';
 import ContentTable from './components/ContentTable.jsx';
 import SubmittedAssignmentsSection from './components/SubmittedAssignmentsSection.jsx';
@@ -35,8 +37,9 @@ const EnableCourseSwitchPopup = lazy(() => import("../courses/components/EnableC
 
 
 function Course() {
-    const { courseTitle, courseId, courseEnabled: courseEnabledFromContext, courseHasContent, localeMessages, direction, userRole, isInstructor, apiBaseUrl, platformBaseUrl, customComponent } = useAppContext();
+    const { courseTitle, courseId, courseEnabled: courseEnabledFromContext, courseHasContent, coursePublicUrl, localeMessages, direction, userRole, isInstructor, apiBaseUrl, platformBaseUrl, customComponent } = useAppContext();
     const [courseEnabled, setCourseEnabled] = useState(courseEnabledFromContext);
+    const [publicUrlCopied, setPublicUrlCopied] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false)
     const [dialogContent, setDialogContent] = useState(null)
     const [contentLoaded, setContentLoaded] = useState(false)
@@ -180,6 +183,16 @@ function Course() {
                 {after}
             </>
         );
+    }
+
+    const handleCopyPublicUrl = async () => {
+        try {
+            await navigator.clipboard.writeText(coursePublicUrl);
+            setPublicUrlCopied(true);
+            setTimeout(() => setPublicUrlCopied(false), 2000);
+        } catch (error) {
+            console.error('Failed to copy course public URL:', error);
+        }
     }
 
     const handleClose = (event, reason) => {
@@ -329,6 +342,56 @@ function Course() {
                 </Box>
             )}
             <Grid size={{xs: 12}} sx={{ px: { xs: 0, md: 2 }, pt: 2, pb: 3 }}>
+                {courseEnabled && coursePublicUrl && (
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mx: { xs: 2, md: 0 }, mb: 1 }}>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                                pl: 1.5,
+                                pr: 0.5,
+                                py: 0.2,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 2,
+                            }}
+                        >
+                            <Link
+                                href={coursePublicUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                underline="none"
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 0.75,
+                                    color: 'text.primary',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 500,
+                                    '&:hover': { color: 'primary.dark' },
+                                }}
+                            >
+                                <PublicIcon fontSize="small" />
+                                {localeMessages["view_public_course_page"]}
+                            </Link>
+                            <Tooltip title={publicUrlCopied ? localeMessages["public_course_link_copied"] : localeMessages["copy_public_course_link"]}>
+                                <IconButton
+                                    size="small"
+                                    onClick={handleCopyPublicUrl}
+                                    aria-label={localeMessages["copy_public_course_link"]}
+                                    sx={{
+                                        borderRadius: '50%',
+                                        border: '1px solid transparent',
+                                        '&:hover': { borderColor: 'divider', color: 'primary.dark' },
+                                    }}
+                                >
+                                    <ContentCopyIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+                    </Box>
+                )}
                 {courseEnabled === false && (
                     <Alert severity="warning" sx={{ mx: { xs: 2, md: 0 }, mb: 3 }}>
                         {renderDisabledBanner()}

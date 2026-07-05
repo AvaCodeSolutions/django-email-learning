@@ -43,6 +43,23 @@ def test_context_values(superadmin_client, course):
     assert response.context["appContext"]["isPlatformAdmin"] is True
 
 
+def test_course_public_url_is_none_when_course_disabled(superadmin_client, course):
+    response = superadmin_client.get(get_url(course.id))
+    assert response.status_code == 200
+    assert response.context["appContext"]["coursePublicUrl"] is None
+
+
+def test_course_public_url_set_when_course_enabled_and_public(superadmin_client, course):
+    course.enabled = True
+    course.save()
+
+    response = superadmin_client.get(get_url(course.id))
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["coursePublicUrl"] == course.public_url
+    assert response.context["appContext"]["coursePublicUrl"] is not None
+
+
 def test_course_has_content_false_when_course_has_no_content(superadmin_client, course):
     response = superadmin_client.get(get_url(course.id))
     assert response.status_code == 200
