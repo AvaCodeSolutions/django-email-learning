@@ -61,63 +61,69 @@ function Organization() {
                     : alpha(theme.palette.common.white, 0.04),
             }}
         >
-            <Stack spacing={2}>
+            <Stack
+                direction={{ xs: 'column', md: 'row' }}
+                spacing={{ xs: 2, md: 3 }}
+                sx={{ alignItems: { xs: 'stretch', md: 'flex-start' } }}
+            >
                 { organization["logo_url"] &&
-                    <Box>
+                    <Box sx={{ flexShrink: 0 }}>
                         <Box component="img" src={ organization["logo_url"] } alt={`${organization["name"]} Logo`} sx={{ maxWidth: 220, width: '100%', height: 'auto' }} />
                     </Box>
                 }
-                <Typography variant="h1" sx={{ mb: 0 }}>{ organization["name"] }</Typography>
-                <Typography variant="body1" sx={{ color: 'text.secondary' }} dangerouslySetInnerHTML={{ __html: organization["description"] }} />
-                {(organization.website || organization.linkedin_page || organization.youtube_channel) && (
-                    <Stack
-                        direction="row"
-                        spacing={2.5}
-                        useFlexGap
-                        flexWrap="wrap"
-                        sx={{ pt: 1, alignItems: 'center' }}
-                    >
-                        {organization.website && (
-                            <Link
-                                href={organization.website}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                underline="hover"
-                                color="secondary.dark"
-                                sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, fontWeight: 500 }}
-                            >
-                                <LanguageIcon fontSize="small" sx={{ color: 'primary.dark' }} />
-                                {localeMessages['website']}
-                            </Link>
-                        )}
-                        {organization.linkedin_page && (
-                            <Link
-                                href={organization.linkedin_page}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                underline="hover"
-                                color="secondary.dark"
-                                sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, fontWeight: 500 }}
-                            >
-                                <LinkedInIcon fontSize="small" sx={{ color: 'primary.dark' }} />
-                                {localeMessages['linkedin_page']}
-                            </Link>
-                        )}
-                        {organization.youtube_channel && (
-                            <Link
-                                href={organization.youtube_channel}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                underline="hover"
-                                color="secondary.dark"
-                                sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, fontWeight: 500 }}
-                            >
-                                <YouTubeIcon fontSize="small" sx={{ color: 'primary.dark' }} />
-                                {localeMessages['youtube_channel']}
-                            </Link>
-                        )}
-                    </Stack>
-                )}
+                <Stack spacing={2} sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="h1" sx={{ mb: 0 }}>{ organization["name"] }</Typography>
+                    <Typography variant="body1" sx={{ color: 'text.secondary' }} dangerouslySetInnerHTML={{ __html: organization["description"] }} />
+                    {(organization.website || organization.linkedin_page || organization.youtube_channel) && (
+                        <Stack
+                            direction="row"
+                            spacing={2.5}
+                            useFlexGap
+                            flexWrap="wrap"
+                            sx={{ pt: 1, alignItems: 'center' }}
+                        >
+                            {organization.website && (
+                                <Link
+                                    href={organization.website}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    underline="hover"
+                                    color="secondary.dark"
+                                    sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, fontWeight: 500 }}
+                                >
+                                    <LanguageIcon fontSize="small" sx={{ color: 'primary.dark' }} />
+                                    {localeMessages['website']}
+                                </Link>
+                            )}
+                            {organization.linkedin_page && (
+                                <Link
+                                    href={organization.linkedin_page}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    underline="hover"
+                                    color="secondary.dark"
+                                    sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, fontWeight: 500 }}
+                                >
+                                    <LinkedInIcon fontSize="small" sx={{ color: 'primary.dark' }} />
+                                    {localeMessages['linkedin_page']}
+                                </Link>
+                            )}
+                            {organization.youtube_channel && (
+                                <Link
+                                    href={organization.youtube_channel}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    underline="hover"
+                                    color="secondary.dark"
+                                    sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, fontWeight: 500 }}
+                                >
+                                    <YouTubeIcon fontSize="small" sx={{ color: 'primary.dark' }} />
+                                    {localeMessages['youtube_channel']}
+                                </Link>
+                            )}
+                        </Stack>
+                    )}
+                </Stack>
             </Stack>
         </Box>
         {showSuccessMessage && (
