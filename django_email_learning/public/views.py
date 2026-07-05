@@ -212,8 +212,8 @@ class OrganizationView(TemplateView):
                         " to enroll in courses."
                     ),
                     "continue": _("Continue"),
-                    "linkedin_page": _("LinkedIn Page"),
-                    "youtube_channel": _("YouTube Channel"),
+                    "linkedin_page": _("LinkedIn"),
+                    "youtube_channel": _("YouTube"),
                     "website": _("Website"),
                     "terms_of_service_confirmation": _(
                         "By enrolling, you agree to our"

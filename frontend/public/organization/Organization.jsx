@@ -76,50 +76,74 @@ function Organization() {
                     <Typography variant="body1" sx={{ color: 'text.secondary' }} dangerouslySetInnerHTML={{ __html: organization["description"] }} />
                     {(organization.website || organization.linkedin_page || organization.youtube_channel) && (
                         <Stack
-                            direction="row"
-                            spacing={2.5}
+                            direction={{ xs: 'column', sm: 'row' }}
+                            spacing={{ xs: 0.75, sm: 1.25 }}
                             useFlexGap
                             flexWrap="wrap"
-                            sx={{ pt: 1, alignItems: 'center' }}
+                            sx={{ pt: 1, alignItems: { xs: 'stretch', sm: 'center' } }}
                         >
                             {organization.website && (
-                                <Link
+                                <Button
+                                    component="a"
                                     href={organization.website}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    underline="hover"
-                                    color="secondary.dark"
-                                    sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, fontWeight: 500 }}
+                                    variant="outlined"
+                                    color="primary"
+                                    size="small"
+                                    startIcon={<LanguageIcon fontSize="small" />}
+                                    sx={{
+                                        width: { xs: '100%', sm: 'auto' },
+                                        borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
+                                        '&:hover': {
+                                            borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
+                                        },
+                                    }}
                                 >
-                                    <LanguageIcon fontSize="small" sx={{ color: 'primary.dark' }} />
                                     {localeMessages['website']}
-                                </Link>
+                                </Button>
                             )}
                             {organization.linkedin_page && (
-                                <Link
+                                <Button
+                                    component="a"
                                     href={organization.linkedin_page}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    underline="hover"
-                                    color="secondary.dark"
-                                    sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, fontWeight: 500 }}
+                                    variant="outlined"
+                                    color="primary"
+                                    size="small"
+                                    startIcon={<LinkedInIcon fontSize="small" />}
+                                    sx={{
+                                        width: { xs: '100%', sm: 'auto' },
+                                        borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
+                                        '&:hover': {
+                                            borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
+                                        },
+                                    }}
                                 >
-                                    <LinkedInIcon fontSize="small" sx={{ color: 'primary.dark' }} />
                                     {localeMessages['linkedin_page']}
-                                </Link>
+                                </Button>
                             )}
                             {organization.youtube_channel && (
-                                <Link
+                                <Button
+                                    component="a"
                                     href={organization.youtube_channel}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    underline="hover"
-                                    color="secondary.dark"
-                                    sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, fontWeight: 500 }}
+                                    variant="outlined"
+                                    color="primary"
+                                    size="small"
+                                    startIcon={<YouTubeIcon fontSize="small" />}
+                                    sx={{
+                                        width: { xs: '100%', sm: 'auto' },
+                                        borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
+                                        '&:hover': {
+                                            borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
+                                        },
+                                    }}
                                 >
-                                    <YouTubeIcon fontSize="small" sx={{ color: 'primary.dark' }} />
                                     {localeMessages['youtube_channel']}
-                                </Link>
+                                </Button>
                             )}
                         </Stack>
                     )}
@@ -137,7 +161,7 @@ function Organization() {
         )}
 
         <Box sx={{ my: 4 }}>
-            <Typography variant="h2" sx={{ mb: 2 }}>{localeMessages['courses']}</Typography>
+            <Typography variant="h2" sx={{ mb: 2, pl: { xs: 0.5, md: 1 } }}>{localeMessages['courses']}</Typography>
             { courses.length > 0 ? (
                 <Grid container columnSpacing={2} rowSpacing={3} sx={{ alignItems: 'stretch' }}>
                 { courses.map((course) => {
