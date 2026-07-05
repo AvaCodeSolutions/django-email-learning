@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.10.0] — 2026-07-05
+
+### Changed
+
+- **Public organization/course page UX polish** — smaller layout, copy, and styling improvements across the public organization and course pages (course card image placeholder, enrollment button state, social link buttons, header layout, and related spacing fixes).
+
+---
+
 ## [1.9.0] — 2026-07-05
 
 ### Added
