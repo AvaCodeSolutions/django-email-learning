@@ -119,4 +119,29 @@ describe('OrganizationForm', () => {
       expect(successCallback).toHaveBeenCalledWith({ id: '1', name: 'Acme Corp' })
     );
   });
+
+  it('sends remove_logo when an existing logo is removed and the form is saved', async () => {
+    global.fetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ id: '1', name: 'Acme Corp' }),
+    });
+    const user = userEvent.setup();
+    renderWithProviders(
+      <OrganizationForm
+        {...createProps}
+        createMode={false}
+        organizationId="1"
+        initialName="Acme Corp"
+        initialDescription="A great company."
+        initialLogoUrl="https://example.com/logo.png"
+      />,
+      { appContext: { localeMessages } }
+    );
+    await user.click(screen.getByRole('button', { name: 'Remove' }));
+    await user.click(screen.getByRole('button', { name: 'Update' }));
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+    const [, options] = global.fetch.mock.calls.at(-1);
+    expect(JSON.parse(options.body)).toMatchObject({ remove_logo: true });
+  });
 });
