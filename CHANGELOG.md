@@ -6,6 +6,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.9.0] — 2026-07-05
+
+### Added
+
+- **Public course page link on the course detail page** — when a course is enabled, public, and belongs to a public organization, its page now shows a "Public page" button (with a globe icon) that opens the course's public page in a new tab, plus a copy-link icon to copy the URL directly. Backed by a new `Course.public_url` model property, mirroring the existing `Organization.public_url`.
+- **Public-organization guard on the "Public Course" toggle** — the course form now forces "Public Course" off and disables the toggle when the organization itself isn't public, since a course can't be publicly reachable in that case. The new `organizationIsPublic` flag is exposed on the shared platform `appContext`.
+- **Clearer form guidance** — the external references helper text now explains that these links are shown to learners on the course's public page before they enroll, and the course form gained divider separators between the References, IMAP Connection, Newsletter, and Upload Image sections for visual consistency.
+
+---
+
 ## [1.8.0] — 2026-07-04
 
 ### Added
