@@ -99,7 +99,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
             payload.logo = logoServerPath;
         }
 
-        if (!logoServerPath && !initialLogoUrl) {
+        if (!logoServerPath && initialLogoUrl) {
             payload.remove_logo = true;
         }
 
