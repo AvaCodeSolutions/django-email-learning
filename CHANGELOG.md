@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.10.2] — 2026-07-05
+
+### Fixed
+
+- **Analytics downloads** — CSV download buttons are now disabled when there's no data to export instead of producing an empty file.
+
+---
+
 ## [1.10.1] — 2026-07-05
 
 ### Fixed
