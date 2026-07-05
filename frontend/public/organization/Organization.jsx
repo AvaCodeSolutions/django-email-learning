@@ -99,7 +99,7 @@ function Organization() {
                                 color="secondary.dark"
                                 sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, fontWeight: 500 }}
                             >
-                                <LinkedInIcon fontSize="small" sx={(theme) => ({ color: theme.palette.blue[800] })} />
+                                <LinkedInIcon fontSize="small" sx={{ color: 'primary.dark' }} />
                                 {localeMessages['linkedin_page']}
                             </Link>
                         )}
@@ -112,7 +112,7 @@ function Organization() {
                                 color="secondary.dark"
                                 sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75, fontWeight: 500 }}
                             >
-                                <YouTubeIcon fontSize="small" sx={(theme) => ({ color: theme.palette.red[700] })} />
+                                <YouTubeIcon fontSize="small" sx={{ color: 'primary.dark' }} />
                                 {localeMessages['youtube_channel']}
                             </Link>
                         )}
