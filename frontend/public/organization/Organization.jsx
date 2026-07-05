@@ -71,7 +71,7 @@ function Organization() {
                         <Box component="img" src={ organization["logo_url"] } alt={`${organization["name"]} Logo`} sx={{ maxWidth: 220, width: '100%', height: 'auto' }} />
                     </Box>
                 }
-                <Stack spacing={2} sx={{ flex: 1, minWidth: 0 }}>
+                <Stack spacing={2} sx={{ flex: 1, minWidth: 0, pt: { xs: 1, md: 2 }, px: { xs: 0.5, md: 1 } }}>
                     <Typography variant="h1" sx={{ mb: 0 }}>{ organization["name"] }</Typography>
                     <Typography variant="body1" sx={{ color: 'text.secondary' }} dangerouslySetInnerHTML={{ __html: organization["description"] }} />
                     {(organization.website || organization.linkedin_page || organization.youtube_channel) && (
