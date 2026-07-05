@@ -220,6 +220,7 @@ class OrganizationView(TemplateView):
                         " <a href='TERMS_OF_SERVICE_URL' target='_blank'>Terms of Service</a>."
                     ),
                     "newsletters": _("Newsletters"),
+                    "newsletter_subscribe_intro": _("Choose which updates you'd like to receive by email:"),
                     "newsletter_subscribe": _("Subscribe"),
                     "newsletter_subscribe_success": _("You have been successfully subscribed."),
                     "newsletter_subscribe_error": _("Subscription failed. Please try again."),
