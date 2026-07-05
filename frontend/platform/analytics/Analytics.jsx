@@ -330,6 +330,18 @@ function Analytics() {
 
     const noData = localeMessages.no_data
 
+    const hasLearnerProgressData =
+        Boolean(avgProgress?.length) ||
+        Boolean(enrollmentsOverTime?.length)
+
+    const hasDeliveryLogData =
+        Boolean(deliveryOverTime?.length) ||
+        Boolean(deliveryStatus?.length)
+
+    const hasCompletionSummaryData =
+        Boolean(funnel?.length) ||
+        Boolean(statusBreakdown?.length)
+
     return (
         <Base breadCrumbList={[{ label: localeMessages.analytics, href: '#' }]}>
             <Grid size={{ xs: 12 }} sx={{ py: 2, pl: { xs: 0, sm: 2 } }}>
@@ -400,12 +412,13 @@ function Analytics() {
                             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>{localeMessages.downloads}</Typography>
                             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                                 {[
-                                    { key: 'downloads/learner-progress', label: localeMessages.download_learner_progress },
-                                    { key: 'downloads/delivery-log', label: localeMessages.download_delivery_log },
-                                    { key: 'downloads/completion-summary', label: localeMessages.download_completion_summary },
-                                ].map(({ key, label }) => (
+                                    { key: 'downloads/learner-progress', label: localeMessages.download_learner_progress ,     hasData: hasLearnerProgressData,},
+                                    { key: 'downloads/delivery-log', label: localeMessages.download_delivery_log , hasData: hasDeliveryLogData,},
+                                    { key: 'downloads/completion-summary', label: localeMessages.download_completion_summary , hasData: hasCompletionSummaryData,},
+                                ].map(({ key, label , hasData }) => (
                                     <Button key={key} variant="outlined" size="small"
-                                        startIcon={<DownloadIcon />} onClick={() => download(key)}>
+                                        startIcon={<DownloadIcon />} onClick={() => download(key)}
+                                        disabled={loading || !hasData}>
                                         {label}
                                     </Button>
                                 ))}
