@@ -4,6 +4,7 @@ import Layout from '../components/Layout.jsx';
 import EnrollmentForm from '../components/EnrollmentForm.jsx';
 import { Alert, Box, Button, Card, Chip, Container, Dialog, Grid, Link, List, ListItem, ListItemIcon, ListItemText, Stack, Typography } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import { alpha, ThemeProvider } from '@mui/material/styles';
 import { useAppContext } from '../../src/render.jsx';
 import { lightTheme } from '../../src/theme/themes';
@@ -92,7 +93,7 @@ function Course() {
         >
 
 
-            {course.image && (
+            {course.image ? (
                 <Box
                     component="img"
                     src={course.image}
@@ -105,6 +106,19 @@ function Course() {
                         display: 'block',
                     }}
                 />
+            ) : (
+                <Box
+                    sx={{
+                        width: '100%',
+                        aspectRatio: { xs: '16 / 9', md: '32 / 9' },
+                        backgroundColor: 'grey.600',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <AutoStoriesIcon sx={{ fontSize: 64, color: 'common.white' }} />
+                </Box>
             )}
 
             <Box
@@ -114,7 +128,9 @@ function Course() {
                     display: 'flex',
                     alignItems: 'flex-end',
                     p: { xs: 2, md: 3 },
-                    background: 'linear-gradient(180deg, rgba(0, 0, 0, 0) 25%, rgba(0, 0, 0, 0.75) 100%)',
+                    background: course.image
+                        ? 'linear-gradient(180deg, rgba(0, 0, 0, 0) 25%, rgba(0, 0, 0, 0.75) 100%)'
+                        : 'none',
                     pointerEvents: 'none',
                 }}
             >
@@ -207,9 +223,8 @@ function Course() {
                     }}
                 >
                     <Grid container spacing={2}>
-                    <Grid  size={{ xs: 12, md: 3 }} sx={{ mx: 'auto', textAlign: 'center' }}>
-
-                        {organization.logo_url && (
+                    {organization.logo_url && (
+                        <Grid size={{ xs: 12, md: 3 }} sx={{ mx: 'auto', textAlign: 'center' }}>
                             <Link href={organization.public_url} target="_blank" rel="noopener noreferrer">
                                 <Box
                                     component="img"
@@ -221,9 +236,9 @@ function Course() {
                                     borderRadius: 1,
                                 }}
                             /></Link>
-                        )}
                         </Grid>
-                        <Grid size={{ xs: 12, md: 9 }} sx={{ mx: 'auto', mt: 2 }}>
+                    )}
+                        <Grid size={{ xs: 12, md: organization.logo_url ? 9 : 12 }} sx={{ mx: 'auto', mt: 2 }}>
 
                             <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>
                                 <span dangerouslySetInnerHTML={{ __html: localeMessages['provided_by'].replace('ORGANIZATION_NAME', `<a href="${organization.public_url}" rel="noopener noreferrer">${organization.name}</a>`) }} />
