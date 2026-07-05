@@ -168,7 +168,7 @@ function Organization() {
                                     justifyContent: 'center',
                                 }}
                             >
-                                {!course["image"] && (
+                                {course["image"] ? null : (
                                     <SchoolIcon sx={{ fontSize: 48, color: 'grey.400' }} />
                                 )}
                             </CardMedia>
