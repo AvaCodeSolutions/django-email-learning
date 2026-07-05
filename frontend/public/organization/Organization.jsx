@@ -79,8 +79,7 @@ function Organization() {
                             direction={{ xs: 'column', sm: 'row' }}
                             spacing={{ xs: 0.75, sm: 1.25 }}
                             useFlexGap
-                            flexWrap="wrap"
-                            sx={{ pt: 1, alignItems: { xs: 'stretch', sm: 'center' } }}
+                            sx={{ pt: 1, alignItems: { xs: 'stretch', sm: 'center' }, flexWrap: 'wrap' }}
                         >
                             {organization.website && (
                                 <Button
