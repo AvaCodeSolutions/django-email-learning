@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.11.0] — 2026-07-06
+
+### Added
+
+- **`NEWSLETTERS.FROM_DOMAIN` setting** — generates a per-organization newsletter sender address (`<snake_cased_organization_name>@<FROM_DOMAIN>`, with the organization's name as the display name) instead of sending every newsletter from the same fixed address. Overrides `NEWSLETTERS.FROM_EMAIL` and the top-level `FROM_EMAIL` when set.
+
+---
+
 ## [1.10.3] — 2026-07-05
 
 ### Fixed
