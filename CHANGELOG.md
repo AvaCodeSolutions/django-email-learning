@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.10.3] — 2026-07-05
+
+### Fixed
+
+- **Sidebar navigation** — the light/dark theme toggle moved out of the top navbar into its own "Appearance" section in the sidebar, with outlined icons.
+
+---
+
 ## [1.10.2] — 2026-07-05
 
 ### Fixed
