@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import Base from "../../src/components/Base";
+import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
@@ -135,7 +136,24 @@ function Organization() {
                                                 <TableBody>
                                                     {organizationUsers.map((user) => (
                                                         <TableRow key={user.user_id}>
-                                                            <TableCell>{user.email}</TableCell>
+                                                            <TableCell>
+                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                                                                    <Avatar
+                                                                        src={user.photo_url || undefined}
+                                                                        sx={(theme) => ({
+                                                                            width: 30,
+                                                                            height: 30,
+                                                                            fontSize: '0.85rem',
+                                                                            fontWeight: 600,
+                                                                            color: '#fff',
+                                                                            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.deepPurple[400]} 100%)`,
+                                                                        })}
+                                                                    >
+                                                                        {(user.email?.[0] || '?').toUpperCase()}
+                                                                    </Avatar>
+                                                                    <Typography component="span">{user.email}</Typography>
+                                                                </Box>
+                                                            </TableCell>
                                                             <TableCell>{user.role}</TableCell>
                                                             {userRole !== 'viewer' && (
                                                                 <TableCell align={direction === 'rtl' ? 'left' : 'right'}>
