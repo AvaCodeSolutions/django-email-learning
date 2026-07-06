@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.11.1] — 2026-07-06
+
+### Added
+
+- **Member avatars in the organization Members table** — shows each member's photo if set, or a first-letter fallback otherwise, matching the existing Learners table.
+
+---
+
 ## [1.11.0] — 2026-07-06
 
 ### Added
