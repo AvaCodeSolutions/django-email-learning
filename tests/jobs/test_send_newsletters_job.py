@@ -1,4 +1,6 @@
 from datetime import timedelta
+from email.utils import formataddr
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -7,6 +9,7 @@ from django.utils import timezone
 from django_email_learning.jobs.send_newsletters_job import (
     SendNewslettersJob,
     _get_newsletter_from_email,
+    _snake_case_organization_name,
 )
 from django_email_learning.models import (
     JobExecution,
@@ -271,14 +274,45 @@ def test_from_email_uses_newsletters_specific_setting(settings):
         "FROM_EMAIL": "global@example.com",
         "NEWSLETTERS": {"FROM_EMAIL": "newsletter@example.com"},
     }
-    assert _get_newsletter_from_email() == "newsletter@example.com"
+    assert _get_newsletter_from_email(MagicMock()) == "newsletter@example.com"
 
 
 def test_from_email_falls_back_to_global_from_email(settings):
     settings.DJANGO_EMAIL_LEARNING = {"FROM_EMAIL": "global@example.com"}
-    assert _get_newsletter_from_email() == "global@example.com"
+    assert _get_newsletter_from_email(MagicMock()) == "global@example.com"
 
 
 def test_from_email_falls_back_to_default_when_nothing_configured(settings):
     settings.DJANGO_EMAIL_LEARNING = {}
-    assert _get_newsletter_from_email() == "webmaster@localhost"
+    assert _get_newsletter_from_email(MagicMock()) == "webmaster@localhost"
+
+
+def test_from_domain_generates_per_organization_address(settings):
+    settings.DJANGO_EMAIL_LEARNING = {"NEWSLETTERS": {"FROM_DOMAIN": "example.com"}}
+    organization = SimpleNamespace(name="Acme Inc", id=1)
+    assert _get_newsletter_from_email(organization) == formataddr(("Acme Inc", "acme_inc@example.com"))
+
+
+def test_from_domain_overrides_from_email(settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        "FROM_EMAIL": "global@example.com",
+        "NEWSLETTERS": {"FROM_EMAIL": "newsletter@example.com", "FROM_DOMAIN": "example.com"},
+    }
+    organization = SimpleNamespace(name="Acme Inc", id=1)
+    assert _get_newsletter_from_email(organization) == formataddr(("Acme Inc", "acme_inc@example.com"))
+
+
+def test_from_domain_includes_organization_name_as_display_name(settings):
+    settings.DJANGO_EMAIL_LEARNING = {"NEWSLETTERS": {"FROM_DOMAIN": "example.com"}}
+    organization = SimpleNamespace(name="Café Météo, Inc.", id=1)
+    assert _get_newsletter_from_email(organization) == formataddr(("Café Météo, Inc.", "cafe_meteo_inc@example.com"))
+
+
+def test_snake_case_organization_name_sanitizes_unicode_and_punctuation():
+    organization = SimpleNamespace(name="Café Météo, Inc.", id=1)
+    assert _snake_case_organization_name(organization) == "cafe_meteo_inc"
+
+
+def test_snake_case_organization_name_falls_back_to_org_id_when_name_has_no_ascii_content():
+    organization = SimpleNamespace(name="🎉🎊", id=42)
+    assert _snake_case_organization_name(organization) == "org_42"
