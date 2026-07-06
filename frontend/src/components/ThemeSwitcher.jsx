@@ -1,6 +1,6 @@
 import { MenuItem, ListItemIcon, ListItemText } from '@mui/material';
-import LightModeRoundedIcon from '@mui/icons-material/LightModeRounded';
-import DarkModeRoundedIcon from '@mui/icons-material/DarkModeRounded';
+import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
+import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
 import { useThemeContext } from '../theme/ThemeContext';
 import { lightTheme, darkTheme } from '../theme/themes';
 
@@ -29,7 +29,7 @@ const ThemeSwitcher = () => {
         minWidth: 35,
         color: theme.palette.mode === 'dark' ? theme.palette.deepPurple[300] : theme.palette.deepPurple[500],
       })}>
-        {isLightTheme ? <DarkModeRoundedIcon fontSize="small" /> : <LightModeRoundedIcon fontSize="small" />}
+        {isLightTheme ? <DarkModeOutlinedIcon fontSize="small" /> : <LightModeOutlinedIcon fontSize="small" />}
       </ListItemIcon>
       <ListItemText
         primary={isLightTheme ? 'Dark' : 'Light'}
