@@ -1,5 +1,6 @@
 import logging
 from datetime import timedelta
+from email.utils import formataddr
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -37,7 +38,8 @@ def _get_newsletter_from_email(organization: Organization) -> str:
     newsletters_conf: dict = conf.get("NEWSLETTERS", {})
     from_domain = newsletters_conf.get("FROM_DOMAIN")
     if from_domain:
-        return f"{_snake_case_organization_name(organization)}@{from_domain}"
+        address = f"{_snake_case_organization_name(organization)}@{from_domain}"
+        return formataddr((organization.name, address))
     return newsletters_conf.get("FROM_EMAIL") or conf.get("FROM_EMAIL") or _DEFAULT_FROM_EMAIL
 
 
