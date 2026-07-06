@@ -6,6 +6,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.text import slugify
 
 from django_email_learning.jobs.job_metrics import track_job_execution
 from django_email_learning.jobs.queue_utils import resolve_queue
@@ -13,6 +14,7 @@ from django_email_learning.models import (
     JobExecution,
     JobName,
     JobStatus,
+    Organization,
     Sendout,
     SendoutDelivery,
 )
@@ -25,9 +27,18 @@ logger = logging.getLogger(__name__)
 _DEFAULT_FROM_EMAIL = "webmaster@localhost"
 
 
-def _get_newsletter_from_email() -> str:
+def _snake_case_organization_name(organization: Organization) -> str:
+    local_part = slugify(organization.name).replace("-", "_")
+    return local_part or f"org_{organization.id}"
+
+
+def _get_newsletter_from_email(organization: Organization) -> str:
     conf: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
-    return conf.get("NEWSLETTERS", {}).get("FROM_EMAIL") or conf.get("FROM_EMAIL") or _DEFAULT_FROM_EMAIL
+    newsletters_conf: dict = conf.get("NEWSLETTERS", {})
+    from_domain = newsletters_conf.get("FROM_DOMAIN")
+    if from_domain:
+        return f"{_snake_case_organization_name(organization)}@{from_domain}"
+    return newsletters_conf.get("FROM_EMAIL") or conf.get("FROM_EMAIL") or _DEFAULT_FROM_EMAIL
 
 
 def _get_max_retries() -> int:
@@ -168,7 +179,7 @@ class SendNewslettersJob:
         msg = EmailMultiAlternatives(
             subject=sendout.subject,
             body=plain_body,
-            from_email=_get_newsletter_from_email(),
+            from_email=_get_newsletter_from_email(sendout.newsletter.organization),
             to=[email],
         )
         msg.attach_alternative(render_to_string("emails/newsletter_sendout.html", context), "text/html")

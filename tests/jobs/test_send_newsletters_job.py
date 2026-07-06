@@ -1,4 +1,5 @@
 from datetime import timedelta
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -271,14 +272,41 @@ def test_from_email_uses_newsletters_specific_setting(settings):
         "FROM_EMAIL": "global@example.com",
         "NEWSLETTERS": {"FROM_EMAIL": "newsletter@example.com"},
     }
-    assert _get_newsletter_from_email() == "newsletter@example.com"
+    assert _get_newsletter_from_email(MagicMock()) == "newsletter@example.com"
 
 
 def test_from_email_falls_back_to_global_from_email(settings):
     settings.DJANGO_EMAIL_LEARNING = {"FROM_EMAIL": "global@example.com"}
-    assert _get_newsletter_from_email() == "global@example.com"
+    assert _get_newsletter_from_email(MagicMock()) == "global@example.com"
 
 
 def test_from_email_falls_back_to_default_when_nothing_configured(settings):
     settings.DJANGO_EMAIL_LEARNING = {}
-    assert _get_newsletter_from_email() == "webmaster@localhost"
+    assert _get_newsletter_from_email(MagicMock()) == "webmaster@localhost"
+
+
+def test_from_domain_generates_per_organization_address(settings):
+    settings.DJANGO_EMAIL_LEARNING = {"NEWSLETTERS": {"FROM_DOMAIN": "example.com"}}
+    organization = SimpleNamespace(name="Acme Inc", id=1)
+    assert _get_newsletter_from_email(organization) == "acme_inc@example.com"
+
+
+def test_from_domain_overrides_from_email(settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        "FROM_EMAIL": "global@example.com",
+        "NEWSLETTERS": {"FROM_EMAIL": "newsletter@example.com", "FROM_DOMAIN": "example.com"},
+    }
+    organization = SimpleNamespace(name="Acme Inc", id=1)
+    assert _get_newsletter_from_email(organization) == "acme_inc@example.com"
+
+
+def test_from_domain_sanitizes_unicode_and_punctuation(settings):
+    settings.DJANGO_EMAIL_LEARNING = {"NEWSLETTERS": {"FROM_DOMAIN": "example.com"}}
+    organization = SimpleNamespace(name="Café Météo, Inc.", id=1)
+    assert _get_newsletter_from_email(organization) == "cafe_meteo_inc@example.com"
+
+
+def test_from_domain_falls_back_to_org_id_when_name_has_no_ascii_content(settings):
+    settings.DJANGO_EMAIL_LEARNING = {"NEWSLETTERS": {"FROM_DOMAIN": "example.com"}}
+    organization = SimpleNamespace(name="🎉🎊", id=42)
+    assert _get_newsletter_from_email(organization) == "org_42@example.com"

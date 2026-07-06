@@ -453,6 +453,7 @@ Optional integer controlling how many threads the ``deliver_contents`` job uses 
 Optional configuration for the newsletter feature.
 
 - ``FROM_EMAIL``: The sender address used for newsletter sendouts. Overrides the top-level ``FROM_EMAIL`` and Django's ``DEFAULT_FROM_EMAIL`` for newsletter emails specifically. Useful when newsletters are sent from a different address than course emails.
+- ``FROM_DOMAIN``: When set, generates a per-organization sender address instead of using a single fixed ``FROM_EMAIL``. The address is built as ``<snake_cased_organization_name>@<FROM_DOMAIN>`` (e.g. an organization named "Acme Inc" sends from ``acme_inc@yourdomain.com``). Takes priority over ``NEWSLETTERS.FROM_EMAIL`` and the top-level ``FROM_EMAIL`` when set. Requires your mail provider to allow sending from arbitrary local parts on a domain-verified sender (true for most transactional providers with domain verification, e.g. SES or SendGrid).
 - ``MAX_SUBSCRIBER_PER_NEWSLETTER``: The maximum number of subscribers allowed per newsletter. Defaults to ``500``. Once a newsletter reaches this limit it is hidden from the public subscription form and new subscriptions via the API are rejected with a ``400`` error. Existing subscribers are never affected.
 
 .. code-block:: python
@@ -463,6 +464,7 @@ Optional configuration for the newsletter feature.
         'JWT_SECRET_KEY': 'another-very-long-random-string',
         'NEWSLETTERS': {
             'FROM_EMAIL': 'newsletter@yourdomain.com',
+            'FROM_DOMAIN': 'yourdomain.com',
             'MAX_SUBSCRIBER_PER_NEWSLETTER': 1000,
         },
     }

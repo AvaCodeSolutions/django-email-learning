@@ -77,7 +77,7 @@ class DatabaseSendoutQueue(TaskQueueProtocol[SendoutDelivery]):
 
         return (
             SendoutDelivery.objects.filter(id__in=delivery_ids)
-            .select_related("sendout__newsletter", "subscriber")
+            .select_related("sendout__newsletter__organization", "subscriber")
             .iterator(chunk_size=BATCH_SIZE)
         )
 
