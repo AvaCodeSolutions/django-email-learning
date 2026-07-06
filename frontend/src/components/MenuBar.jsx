@@ -216,7 +216,6 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                 {navbarCustomComponents?.map((component) => (
                     <Box key={component.slot} sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }} dangerouslySetInnerHTML={{ __html: component.html }} />
                 ))}
-                <ThemeSwitcher />
                 <Box sx={{ m: 1 }}>
                 <IconButton
                     aria-controls="menu-appbar"
@@ -312,6 +311,14 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                         </Box>
                     </Tooltip>
                 </>}
+
+                {/* ── Appearance ── */}
+                <Divider textAlign="left" sx={{ mt: 1, mb: 0.5 }}>
+                    <Typography variant="caption" sx={(theme) => ({ color: theme.palette.mode === 'dark' ? theme.palette.text.secondary : theme.palette.text.disabled, textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.7rem' })}>
+                        {localeMessages['appearance'] || 'Appearance'}
+                    </Typography>
+                </Divider>
+                <ThemeSwitcher />
             </MenuList>
             </Box>
             {sidebarCustomComponent && <Box sx={{ mt: 'auto' }} dangerouslySetInnerHTML={{ __html: sidebarCustomComponent.componentTag }} />}
