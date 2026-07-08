@@ -321,3 +321,62 @@ def test_list_organization_users_response_includes_display_name_and_photo(supera
     assert "photo" in org_user
     assert org_user["display_name"] == "List Instructor"
     assert org_user["photo"] == "org_user_photos/list-instructor.png"
+
+
+# ---------------------------------------------------------------------------
+# can_add_member hook
+# ---------------------------------------------------------------------------
+
+
+def test_can_add_member_hook_blocks_creation(superadmin_client, second_user):
+    from unittest.mock import patch
+
+    from django_email_learning.platform.api.views import OrganizationMemberCreationMixin
+
+    with patch.object(OrganizationMemberCreationMixin, "can_add_member", return_value=False):
+        response = superadmin_client.post(
+            URL,
+            data={"user_id": second_user.id, "role": "viewer"},
+            content_type="application/json",
+        )
+
+    assert response.status_code == 403
+    assert "error" in response.json()
+    assert not OrganizationUser.objects.filter(user_id=second_user.id, organization_id=1).exists()
+
+
+def test_can_add_member_hook_allows_creation_by_default(superadmin_client, second_user):
+    response = superadmin_client.post(
+        URL,
+        data={"user_id": second_user.id, "role": "viewer"},
+        content_type="application/json",
+    )
+    assert response.status_code == 201
+
+
+def test_create_member_response_includes_can_add_member_true_by_default(superadmin_client, second_user):
+    response = superadmin_client.post(
+        URL,
+        data={"user_id": second_user.id, "role": "viewer"},
+        content_type="application/json",
+    )
+    assert response.status_code == 201
+    assert "can_add_member" in response.json()
+    assert response.json()["can_add_member"] is True
+
+
+def test_create_member_response_can_add_member_reflects_hook(superadmin_client, second_user):
+    from unittest.mock import patch
+
+    from django_email_learning.platform.api.views import OrganizationMemberCreationMixin
+
+    # First call (guard) returns True, second call (response field) returns False
+    with patch.object(OrganizationMemberCreationMixin, "can_add_member", side_effect=[True, False]):
+        response = superadmin_client.post(
+            URL,
+            data={"user_id": second_user.id, "role": "viewer"},
+            content_type="application/json",
+        )
+
+    assert response.status_code == 201
+    assert response.json()["can_add_member"] is False

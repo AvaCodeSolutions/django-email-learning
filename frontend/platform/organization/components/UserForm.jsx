@@ -12,7 +12,7 @@ import { useAppContext } from '../../../src/render.jsx';
 import apiClient from '../../../src/apiClient.js';
 
 
-const UserForm = ({ onClose, organizationId, refreshUsers, user = null, disableRoleField = false }) => {
+const UserForm = ({ onClose, organizationId, refreshUsers, user = null, disableRoleField = false, onCreateSuccess = () => {} }) => {
     const { localeMessages, apiBaseUrl } = useAppContext();
     const [email, setEmail] = useState(user ? user.email : '');
     const [role, setRole] = useState(user ? user.role : 'viewer');
@@ -50,8 +50,9 @@ const UserForm = ({ onClose, organizationId, refreshUsers, user = null, disableR
             'display_name': displayName.trim() || null,
             'photo': photoPath,
         })
-        .then(() => {
+        .then((data) => {
             refreshUsers();
+            onCreateSuccess(data);
             onClose();
         })
         .catch(error => {

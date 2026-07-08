@@ -158,7 +158,7 @@ class BasePlatformView(TemplateView):
         }
 
     def get_available_features(self) -> set[PlatformFeature]:
-        features: set[PlatformFeature] = {PlatformFeature.CREATE_COURSE}
+        features: set[PlatformFeature] = {PlatformFeature.CREATE_COURSE, PlatformFeature.CAN_ADD_MEMBER}
         if AI_CONFIGURATIONS.get("TEXT_EDITING_MODEL"):
             features.add(PlatformFeature.AI_EDIT)
         if DJANGO_EMAIL_LEARNING_SETTINGS.get("GOOGLE_OAUTH", {}).get("CLIENT_ID") and apps.is_installed(

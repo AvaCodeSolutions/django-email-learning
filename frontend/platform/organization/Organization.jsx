@@ -41,6 +41,7 @@ function Organization() {
 
     const newslettersEnabled = availableFeatures.includes('newsletters');
     const createNewsletterEnabled = availableFeatures.includes('create_newsletter');
+    const [canAddMember, setCanAddMember] = useState(availableFeatures.includes('can_add_member'));
 
     const refreshUsers = () => {
         apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/users/`)
@@ -111,17 +112,31 @@ function Organization() {
                         {/* Members tab */}
                         {activeTab === 'members' && (
                             <>
+                                <Tooltip title={canAddMember ? '' : localeMessages["cannot_add_member"]}>
+                                <span>
                                 <Button
                                     variant="contained"
                                     color="secondary"
+                                    disabled={!canAddMember}
                                     onClick={() => showDialog(
                                         <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
-                                            <UserForm organizationId={organizationId} onClose={closeDialog} refreshUsers={refreshUsers} />
+                                            <UserForm
+                                                organizationId={organizationId}
+                                                onClose={closeDialog}
+                                                refreshUsers={refreshUsers}
+                                                onCreateSuccess={(data) => {
+                                                    if (data?.can_add_member !== undefined) {
+                                                        setCanAddMember(data.can_add_member);
+                                                    }
+                                                }}
+                                            />
                                         </Suspense>
                                     )}
                                 >
                                     {localeMessages["add_user"]}
                                 </Button>
+                                </span>
+                                </Tooltip>
                                 <Box sx={{ mt: 2, width: '100%' }}>
                                     {organizationUsers.length > 0 ? (
                                         <TableContainer>
