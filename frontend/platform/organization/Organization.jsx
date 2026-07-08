@@ -159,20 +159,14 @@ function Organization() {
                                                                 const isSelf = user.user_id === currentUserId;
                                                                 return (
                                                                 <TableCell align={direction === 'rtl' ? 'left' : 'right'}>
-                                                                    <Tooltip title={isSelf ? localeMessages["cannot_edit_or_remove_self"] : ''}>
-                                                                        <span>
-                                                                            <IconButton
-                                                                                disabled={isSelf}
-                                                                                onClick={() => showDialog(
-                                                                                    <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
-                                                                                        <UserForm organizationId={organizationId} onClose={closeDialog} refreshUsers={refreshUsers} user={user} />
-                                                                                    </Suspense>
-                                                                                )}>
-                                                                                <EditIcon fontSize="small" />
-                                                                            </IconButton>
-                                                                        </span>
-                                                                    </Tooltip>
-                                                                    <Tooltip title={isSelf ? localeMessages["cannot_edit_or_remove_self"] : ''}>
+                                                                    <IconButton onClick={() => showDialog(
+                                                                        <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
+                                                                            <UserForm organizationId={organizationId} onClose={closeDialog} refreshUsers={refreshUsers} user={user} disableRoleField={isSelf} />
+                                                                        </Suspense>
+                                                                    )}>
+                                                                        <EditIcon fontSize="small" />
+                                                                    </IconButton>
+                                                                    <Tooltip title={isSelf ? localeMessages["cannot_remove_self"] : ''}>
                                                                         <span>
                                                                             <IconButton
                                                                                 disabled={isSelf}

@@ -174,7 +174,7 @@ def test_admin_cannot_delete_own_membership(org_admin_client, users):
     assert OrganizationUser.objects.filter(id=own_org_user.id).exists()
 
 
-def test_admin_cannot_update_own_membership(org_admin_client, users):
+def test_admin_cannot_change_own_role(org_admin_client, users):
     response = org_admin_client.post(
         get_single_user_url(1, users["organization_admin"].id),
         data={"role": "editor"},
@@ -184,6 +184,24 @@ def test_admin_cannot_update_own_membership(org_admin_client, users):
     assert response.status_code == 403
     own_org_user = OrganizationUser.objects.get(user=users["organization_admin"], organization_id=1)
     assert own_org_user.role == "admin"
+
+
+def test_admin_can_update_own_display_name_and_photo_without_changing_role(org_admin_client, users):
+    response = org_admin_client.post(
+        get_single_user_url(1, users["organization_admin"].id),
+        data={
+            "role": "admin",
+            "display_name": "My Own Name",
+            "photo": "org_user_photos/self.png",
+        },
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    own_org_user = OrganizationUser.objects.get(user=users["organization_admin"], organization_id=1)
+    assert own_org_user.role == "admin"
+    assert own_org_user.display_name == "My Own Name"
+    assert own_org_user.photo == "org_user_photos/self.png"
 
 
 def test_admin_can_delete_another_admin(org_admin_client, superadmin_client, second_user):

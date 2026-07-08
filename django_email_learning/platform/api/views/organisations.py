@@ -128,9 +128,9 @@ class SingleOrganizationUserView(View):
             org_user = OrganizationUser.objects.get(
                 organization_id=kwargs["organization_id"], user_id=kwargs["user_id"]
             )
-            if org_user.user_id == request.user.id:
+            if org_user.user_id == request.user.id and serializer.role != org_user.role:
                 return JsonResponse(
-                    {"error": "You cannot change your own membership. Ask another admin to do this for you."},
+                    {"error": "You cannot change your own role. Ask another admin to do this for you."},
                     status=403,
                 )
             org_user.role = serializer.role
