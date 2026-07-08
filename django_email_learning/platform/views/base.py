@@ -92,6 +92,7 @@ class BasePlatformView(TemplateView):
                 },
                 "navbarCustomComponents": [],
                 "userRole": role,
+                "currentUserId": self.request.user.id if self.request.user.is_authenticated else None,
                 "direction": "rtl" if lang_info["bidi"] else "ltr",
                 "isPlatformAdmin": (
                     self.request.user.is_superuser

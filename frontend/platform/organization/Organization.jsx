@@ -13,7 +13,7 @@ import TableCell from "@mui/material/TableCell";
 import Typography from "@mui/material/Typography";
 import LinearProgress from "@mui/material/LinearProgress";
 import Dialog from "@mui/material/Dialog";
-import { Tabs, Tab, Link } from "@mui/material";
+import { Tabs, Tab, Link, Tooltip } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import PeopleIcon from '@mui/icons-material/People';
@@ -37,7 +37,7 @@ function Organization() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogContent, setDialogContent] = useState(null);
 
-    const { localeMessages, direction, userRole, isOrganizationAdmin, apiBaseUrl, platformBaseUrl, organizationId, availableFeatures = [] } = useAppContext();
+    const { localeMessages, direction, userRole, isOrganizationAdmin, apiBaseUrl, platformBaseUrl, organizationId, currentUserId, availableFeatures = [] } = useAppContext();
 
     const newslettersEnabled = availableFeatures.includes('newsletters');
     const createNewsletterEnabled = availableFeatures.includes('create_newsletter');
@@ -155,27 +155,41 @@ function Organization() {
                                                                 </Box>
                                                             </TableCell>
                                                             <TableCell>{user.role}</TableCell>
-                                                            {userRole !== 'viewer' && (
+                                                            {userRole !== 'viewer' && (() => {
+                                                                const isSelf = user.user_id === currentUserId;
+                                                                return (
                                                                 <TableCell align={direction === 'rtl' ? 'left' : 'right'}>
-                                                                    <IconButton onClick={() => showDialog(
-                                                                        <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
-                                                                            <UserForm organizationId={organizationId} onClose={closeDialog} refreshUsers={refreshUsers} user={user} />
-                                                                        </Suspense>
-                                                                    )}>
-                                                                        <EditIcon fontSize="small" />
-                                                                    </IconButton>
-                                                                    <IconButton
-                                                                        aria-label={`Delete ${user.email}`}
-                                                                        onClick={() => showDialog(
-                                                                            <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
-                                                                                <DeleteUserDialog user={user} handleClose={closeDialog} handleSuccess={() => { refreshUsers(); closeDialog(); }} />
-                                                                            </Suspense>
-                                                                        )}
-                                                                    >
-                                                                        <DeleteIcon fontSize="small" />
-                                                                    </IconButton>
+                                                                    <Tooltip title={isSelf ? localeMessages["cannot_edit_or_remove_self"] : ''}>
+                                                                        <span>
+                                                                            <IconButton
+                                                                                disabled={isSelf}
+                                                                                onClick={() => showDialog(
+                                                                                    <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
+                                                                                        <UserForm organizationId={organizationId} onClose={closeDialog} refreshUsers={refreshUsers} user={user} />
+                                                                                    </Suspense>
+                                                                                )}>
+                                                                                <EditIcon fontSize="small" />
+                                                                            </IconButton>
+                                                                        </span>
+                                                                    </Tooltip>
+                                                                    <Tooltip title={isSelf ? localeMessages["cannot_edit_or_remove_self"] : ''}>
+                                                                        <span>
+                                                                            <IconButton
+                                                                                disabled={isSelf}
+                                                                                aria-label={`Delete ${user.email}`}
+                                                                                onClick={() => showDialog(
+                                                                                    <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
+                                                                                        <DeleteUserDialog user={user} handleClose={closeDialog} handleSuccess={() => { refreshUsers(); closeDialog(); }} />
+                                                                                    </Suspense>
+                                                                                )}
+                                                                            >
+                                                                                <DeleteIcon fontSize="small" />
+                                                                            </IconButton>
+                                                                        </span>
+                                                                    </Tooltip>
                                                                 </TableCell>
-                                                            )}
+                                                                );
+                                                            })()}
                                                         </TableRow>
                                                     ))}
                                                 </TableBody>

@@ -1,6 +1,8 @@
 import pytest
 from django.urls import reverse
 
+from django_email_learning.models import OrganizationUser
+
 URL = reverse(
     "django_email_learning:api_platform:organization_users_list",
     kwargs={"organization_id": 1},
@@ -161,6 +163,43 @@ def test_other_roles_cannot_delete_organization_user(superadmin_client, client):
 
     delete_response = client.delete(get_single_user_url(1, org_users[0]["id"]))
     assert delete_response.status_code == 403
+
+
+def test_admin_cannot_delete_own_membership(org_admin_client, users):
+    own_org_user = OrganizationUser.objects.get(user=users["organization_admin"], organization_id=1)
+
+    response = org_admin_client.delete(get_single_user_url(1, own_org_user.id))
+
+    assert response.status_code == 403
+    assert OrganizationUser.objects.filter(id=own_org_user.id).exists()
+
+
+def test_admin_cannot_update_own_membership(org_admin_client, users):
+    response = org_admin_client.post(
+        get_single_user_url(1, users["organization_admin"].id),
+        data={"role": "editor"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 403
+    own_org_user = OrganizationUser.objects.get(user=users["organization_admin"], organization_id=1)
+    assert own_org_user.role == "admin"
+
+
+def test_admin_can_delete_another_admin(org_admin_client, superadmin_client, second_user):
+    create_response = superadmin_client.post(
+        URL,
+        data={"user_id": second_user.id, "role": "admin"},
+        content_type="application/json",
+    )
+    assert create_response.status_code == 201
+    org_users = superadmin_client.get(URL).json()["organization_users"]
+    other_admin = next(u for u in org_users if u["user_id"] == second_user.id)
+
+    response = org_admin_client.delete(get_single_user_url(1, other_admin["id"]))
+
+    assert response.status_code == 200
+    assert not OrganizationUser.objects.filter(id=other_admin["id"]).exists()
 
 
 def test_create_organization_user_instructor_includes_display_name_and_photo(superadmin_client, second_user):
