@@ -12,7 +12,7 @@ import { useAppContext } from '../../../src/render.jsx';
 import apiClient from '../../../src/apiClient.js';
 
 
-const UserForm = ({ onClose, organizationId, refreshUsers, user = null }) => {
+const UserForm = ({ onClose, organizationId, refreshUsers, user = null, disableRoleField = false }) => {
     const { localeMessages, apiBaseUrl } = useAppContext();
     const [email, setEmail] = useState(user ? user.email : '');
     const [role, setRole] = useState(user ? user.role : 'viewer');
@@ -127,7 +127,7 @@ const UserForm = ({ onClose, organizationId, refreshUsers, user = null }) => {
                 error={Boolean(displayNameError)}
                 helperText={displayNameError}
             />
-            <FormControl fullWidth>
+            <FormControl fullWidth disabled={disableRoleField}>
                 <InputLabel id="role-label">{localeMessages["role"]}</InputLabel>
                 <Select
                     labelId="role-label"
@@ -145,6 +145,11 @@ const UserForm = ({ onClose, organizationId, refreshUsers, user = null }) => {
                     <MenuItem value="instructor">{localeMessages["instructor"]}</MenuItem>
                     <MenuItem value="admin">{localeMessages["admin"]}</MenuItem>
                 </Select>
+                {disableRoleField && (
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                        {localeMessages["cannot_change_own_role"]}
+                    </Typography>
+                )}
             </FormControl>
             {selectedRoleDescription && (
                 <Typography variant="body2" color="text.secondary">

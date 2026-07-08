@@ -84,6 +84,16 @@ def test_is_organization_admin_false_for_non_admin_in_active_org(db, users):
     assert response.context["appContext"]["isOrganizationAdmin"] is False
 
 
+def test_current_user_id_matches_logged_in_user(db, users):
+    client = Client()
+    client.force_login(users["editor_user"])
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["currentUserId"] == users["editor_user"].id
+
+
 def test_organization_is_public_true_by_default(db, users):
     client = Client()
     client.force_login(users["organization_admin"])

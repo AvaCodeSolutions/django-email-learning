@@ -95,6 +95,8 @@ class SingleOrganization(BasePlatformView):
             "delete_user_with_email": _("Deleting USER_EMAIL"),
             "user_delete_confirmation": _("Are you sure you want to remove USER_EMAIL from this organization?"),
             "actions": _("Actions"),
+            "cannot_remove_self": _("You can't remove your own membership. Ask another admin to do this for you."),
+            "cannot_change_own_role": _("You can't change your own role. Ask another admin to do this for you."),
             "delete_note": _(
                 "Note: Removing a user from this organization will not delete their account."
                 " To permanently delete the user's account, you must do so separately within the Django Admin"

@@ -107,6 +107,11 @@ class SingleOrganizationUserView(View):
     def delete(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
         try:
             org_user = OrganizationUser.objects.get(id=kwargs["user_id"])
+            if org_user.user_id == request.user.id:
+                return JsonResponse(
+                    {"error": "You cannot remove your own membership. Ask another admin to do this for you."},
+                    status=403,
+                )
             org_user.delete()
             return JsonResponse({"message": "Organization user removed successfully"}, status=200)
         except OrganizationUser.DoesNotExist:
@@ -123,6 +128,11 @@ class SingleOrganizationUserView(View):
             org_user = OrganizationUser.objects.get(
                 organization_id=kwargs["organization_id"], user_id=kwargs["user_id"]
             )
+            if org_user.user_id == request.user.id and serializer.role != org_user.role:
+                return JsonResponse(
+                    {"error": "You cannot change your own role. Ask another admin to do this for you."},
+                    status=403,
+                )
             org_user.role = serializer.role
             org_user.display_name = serializer.display_name
             org_user.photo = serializer.photo
