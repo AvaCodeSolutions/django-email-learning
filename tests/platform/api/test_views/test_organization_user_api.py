@@ -183,6 +183,35 @@ def test_create_organization_user_instructor_includes_display_name_and_photo(sup
     assert data["photo"] == "org_user_photos/test-instructor.png"
 
 
+@pytest.mark.parametrize("client", ["viewer", "editor", "instructor"], indirect=["client"])
+def test_other_roles_cannot_update_organization_user(superadmin_client, client, second_user):
+    create_response = superadmin_client.post(
+        URL,
+        data={
+            "user_id": second_user.id,
+            "role": "viewer",
+        },
+        content_type="application/json",
+    )
+    assert create_response.status_code == 201
+
+    update_response = client.post(
+        get_single_user_url(1, second_user.id),
+        data={"role": "admin"},
+        content_type="application/json",
+    )
+    assert update_response.status_code == 403
+
+
+def test_anonymous_cannot_update_organization_user(anonymous_client, second_user):
+    response = anonymous_client.post(
+        get_single_user_url(1, second_user.id),
+        data={"role": "admin"},
+        content_type="application/json",
+    )
+    assert response.status_code == 401
+
+
 def test_update_organization_user_includes_display_name_and_photo(superadmin_client, second_user):
     create_response = superadmin_client.post(
         URL,

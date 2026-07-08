@@ -102,6 +102,7 @@ class OrganizationUsersView(View):
 
 
 @method_decorator(accessible_for(roles={"admin"}), name="delete")
+@method_decorator(accessible_for(roles={"admin"}), name="post")
 class SingleOrganizationUserView(View):
     def delete(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
         try:
