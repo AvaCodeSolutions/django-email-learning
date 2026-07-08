@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.12.0] — 2026-07-08
+
+### Added
+
+- **`can_add_member` feature flag and hook** — mirrors `can_create_course`: a `can_add_member` entry is included in `appContext.availableFeatures` by default (overridable by subclassing `get_available_features()`), and a new `OrganizationMemberCreationMixin.can_add_member()` hook (default `True`, overridable) is checked before creating an organization member via the API, with its result echoed back in the response. The "Add User" button on the organization page is disabled with a tooltip when not allowed.
+
+---
+
 ## [1.11.2] — 2026-07-08
 
 ### Fixed
