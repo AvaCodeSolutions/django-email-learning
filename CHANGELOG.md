@@ -6,6 +6,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.11.2] — 2026-07-08
+
+### Fixed
+
+- **Organization member management security** — the role/profile update endpoint (`POST /organizations/<id>/users/<user_id>/`) had no authorization check at all; it now correctly requires the admin role, matching the existing delete endpoint.
+- **Self-removal/self-demotion prevention** — an organization admin can no longer remove their own membership or change their own role. They can still update their own display name and photo. Another admin must perform those actions instead.
+
+---
+
 ## [1.11.1] — 2026-07-06
 
 ### Added
