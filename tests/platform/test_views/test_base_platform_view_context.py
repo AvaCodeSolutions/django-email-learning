@@ -94,6 +94,16 @@ def test_current_user_id_matches_logged_in_user(db, users):
     assert response.context["appContext"]["currentUserId"] == users["editor_user"].id
 
 
+def test_can_add_member_feature_present_by_default(db, users):
+    client = Client()
+    client.force_login(users["editor_user"])
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert "can_add_member" in response.context["appContext"]["availableFeatures"]
+
+
 def test_organization_is_public_true_by_default(db, users):
     client = Client()
     client.force_login(users["organization_admin"])

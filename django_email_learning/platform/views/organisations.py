@@ -95,6 +95,7 @@ class SingleOrganization(BasePlatformView):
             "delete_user_with_email": _("Deleting USER_EMAIL"),
             "user_delete_confirmation": _("Are you sure you want to remove USER_EMAIL from this organization?"),
             "actions": _("Actions"),
+            "cannot_add_member": _("Adding new members is not allowed."),
             "cannot_remove_self": _("You can't remove your own membership. Ask another admin to do this for you."),
             "cannot_change_own_role": _("You can't change your own role. Ask another admin to do this for you."),
             "delete_note": _(

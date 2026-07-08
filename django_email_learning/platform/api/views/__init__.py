@@ -45,6 +45,7 @@ from django_email_learning.platform.api.views.oauth import (
 )
 from django_email_learning.platform.api.views.organisations import (
     GetOrCreateUserByEmail,
+    OrganizationMemberCreationMixin,
     OrganizationsView,
     OrganizationUsersView,
     SingleOrganizationUserView,
@@ -64,6 +65,7 @@ __all__ = [
     "OauthGroupEnrollment",
     "ImapConnectionView",
     "OrganizationsView",
+    "OrganizationMemberCreationMixin",
     "OrganizationUsersView",
     "SingleOrganizationUserView",
     "SingleOrganizationView",

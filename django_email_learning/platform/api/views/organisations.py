@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth.models import User
 from django.db.utils import IntegrityError
-from django.http import JsonResponse
+from django.http import HttpRequest, JsonResponse
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -66,14 +66,30 @@ class OrganizationsView(View):
             return JsonResponse({"error": str(e)}, status=409)
 
 
+class OrganizationMemberCreationMixin:
+    """Provides the can_add_member hook shared by member-creation views."""
+
+    def can_add_member(self, request: HttpRequest, organization_id: int) -> bool:
+        """
+        Override to add custom member creation logic (e.g. seat limits, feature flags).
+        Return False to reject the request with a 403 before any DB work happens.
+        The result is also included in the create-member response so the client
+        always knows the current state after a mutation.
+        """
+        return True
+
+
 @method_decorator(accessible_for(roles={"admin"}), name="post")
 @method_decorator(accessible_for(roles={"admin"}), name="get")
-class OrganizationUsersView(View):
+class OrganizationUsersView(OrganizationMemberCreationMixin, View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        organization_id = kwargs["organization_id"]
+        if not self.can_add_member(request, organization_id):
+            return JsonResponse({"error": "Member creation not allowed."}, status=403)
         try:
             payload = json.loads(request.body)
             serializer = serializers.AddOrganizationUserRequest.model_validate(payload)
-            organization = Organization.objects.get(id=kwargs["organization_id"])
+            organization = Organization.objects.get(id=organization_id)
             org_user = OrganizationUser(
                 user_id=serializer.user_id,
                 organization=organization,
@@ -82,10 +98,9 @@ class OrganizationUsersView(View):
                 photo=serializer.photo,
             )
             org_user.save()
-            return JsonResponse(
-                serializers.OrganizationUserResponse.from_django_model(org_user, request).model_dump(),
-                status=201,
-            )
+            response_data = serializers.OrganizationUserResponse.from_django_model(org_user, request).model_dump()
+            response_data["can_add_member"] = self.can_add_member(request, organization_id)
+            return JsonResponse(response_data, status=201)
         except Organization.DoesNotExist:
             return JsonResponse({"error": "Organization not found"}, status=404)
         except ValidationError as e:
