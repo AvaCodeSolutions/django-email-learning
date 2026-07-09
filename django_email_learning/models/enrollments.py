@@ -270,10 +270,24 @@ class Certificate(models.Model):
     Certificate number is generated from course, enrollment, and a random suffix.
     """
 
+    class PdfEmailStatus(models.TextChoices):
+        PENDING = "pending", "Pending"
+        PROCESSING = "processing", "Processing"
+        SENT = "sent", "Sent"
+        FAILED = "failed", "Failed"
+
     enrollment = models.OneToOneField(Enrollment, on_delete=models.CASCADE, related_name="certificate")
     issued_at = models.DateTimeField(auto_now_add=True)
     name_on_certificate = models.CharField(max_length=200)
     random_suffix = models.IntegerField()
+    pdf_email_status = models.CharField(
+        max_length=20,
+        choices=PdfEmailStatus.choices,
+        default=PdfEmailStatus.PENDING,
+        db_index=True,
+    )
+    pdf_email_retry_count = models.PositiveSmallIntegerField(default=0)
+    pdf_email_sent_at = models.DateTimeField(null=True, blank=True)
 
     @property
     def certificate_number(self) -> str:

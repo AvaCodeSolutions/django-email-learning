@@ -11,6 +11,7 @@ from django_email_learning.jobs.deactivate_inactive_enrollments_job import (
     DeactivateInactiveEnrollmentsJob,
 )
 from django_email_learning.jobs.deliver_contents_job import DeliverContentsJob
+from django_email_learning.jobs.send_certificate_pdfs_job import SendCertificatePdfsJob
 from django_email_learning.jobs.send_newsletters_job import SendNewslettersJob
 from django_email_learning.jobs.send_reminders_job import SendRemindersJob
 from django_email_learning.models import JobName
@@ -81,6 +82,18 @@ class SendNewslettersJobView(View):
         except Exception as e:
             metric_service.job_execution_failed(job_name=JobName.SEND_NEWSLETTERS.value)
             return JsonResponse({"status": "SendNewslettersJob failed", "error": str(e)}, status=500)
+
+
+@method_decorator(check_api_key(), name="get")
+class SendCertificatePdfsJobView(View):
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            job = SendCertificatePdfsJob()
+            job.run()
+            return JsonResponse({"status": "SendCertificatePdfsJob triggered"}, status=202)
+        except Exception as e:
+            metric_service.job_execution_failed(job_name=JobName.SEND_CERTIFICATE_PDFS.value)
+            return JsonResponse({"status": "SendCertificatePdfsJob failed", "error": str(e)}, status=500)
 
 
 @method_decorator(check_api_key(), name="get")

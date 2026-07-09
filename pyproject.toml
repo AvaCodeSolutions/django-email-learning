@@ -38,6 +38,7 @@ django-email-learning-init = "django_email_learning.scripts.setup_dev:main"
 [project.optional-dependencies]
 ai = ["openai"]
 google = ["google-auth-oauthlib (>=1.3.0,<2.0.0)"]
+certificates = ["weasyprint (>=69.0,<70.0)"]
 
 [dependency-groups]
 dev = [
@@ -58,7 +59,8 @@ dev = [
     "python-dotenv[cli] (>=1.2.1,<2.0.0)",
     "types-qrcode (>=8.2.0.20250914,<9.0.0.0)",
     "openai (>=2.26.0,<3.0.0)",
-    "pytest-env (>=1.6.0,<2.0.0)"
+    "pytest-env (>=1.6.0,<2.0.0)",
+    "weasyprint (>=69.0,<70.0)"
 ]
 
 [build-system]

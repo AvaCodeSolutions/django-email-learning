@@ -31,6 +31,7 @@ Django Email Learning documentation
 
    technical/ai-configuration
    technical/management-commands
+   technical/certificate-pdfs
    technical/encryption-key-management
 
 

@@ -16,12 +16,23 @@ from django.views.generic.base import TemplateResponseMixin
 from django_email_learning.models import Certificate, ContentDelivery, EnrollmentStatus
 from django_email_learning.personalised.serializers import PublicQuizSerializer
 from django_email_learning.services import jwt_service
+from django_email_learning.services.certificate_pdf_service import generate_certificate_pdf
 from django_email_learning.services.command_models.unsubscribe_command import (
     UnsubscribeCommand,
 )
 from django_email_learning.services.command_models.verify_enrollment_command import (
     VerifyEnrollmentCommand,
 )
+
+
+def _lookup_certificate(certificate_number: str) -> Certificate:
+    id_parts = certificate_number.split("-")
+    if len(id_parts) != 4:
+        raise ValueError("Invalid certificate number format")
+    certificate_id, random_suffix = id_parts[2], id_parts[3]
+    return Certificate.objects.select_related("enrollment__course__organization").get(
+        id=certificate_id, random_suffix=random_suffix
+    )
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -427,18 +438,15 @@ class CertificateView(BaseTemplateView):
                 status_code=400,
                 title=_("Invalid Certificate"),
             )
-        id_parts = certificate_number.split("-")
-        if len(id_parts) != 4:
+        try:
+            certificate = _lookup_certificate(certificate_number)
+        except ValueError as e:
             return self.error_response(
                 message=_("Invalid certificate number format."),
-                exception=ValueError("Invalid certificate number format"),
+                exception=e,
                 status_code=400,
                 title=_("Invalid Certificate"),
             )
-        certificate_id = id_parts[2]
-        random_suffix = id_parts[3]
-        try:
-            certificate = Certificate.objects.get(id=certificate_id, random_suffix=random_suffix)
         except Certificate.DoesNotExist:
             return self.error_response(
                 message=_("Certificate not found."),
@@ -500,6 +508,41 @@ class CertificateView(BaseTemplateView):
                 | self.get_app_context(),
             }
         )
+
+
+class CertificateDownloadView(BaseTemplateView):
+    template_name = "personalised/certificate.html"
+
+    def get(self, request, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
+        certificate_number = kwargs.get("certificate_number")
+        if not certificate_number:
+            return self.error_response(
+                message=_("Certificate number is required."),
+                exception=ValueError("Certificate number is required"),
+                status_code=400,
+                title=_("Invalid Certificate"),
+            )
+        try:
+            certificate = _lookup_certificate(certificate_number)
+        except ValueError as e:
+            return self.error_response(
+                message=_("Invalid certificate number format."),
+                exception=e,
+                status_code=400,
+                title=_("Invalid Certificate"),
+            )
+        except Certificate.DoesNotExist:
+            return self.error_response(
+                message=_("Certificate not found."),
+                exception=ValueError("Certificate not found"),
+                status_code=404,
+                title=_("Certificate Not Found"),
+            )
+
+        pdf_bytes = generate_certificate_pdf(certificate)
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="certificate-{certificate_number}.pdf"'
+        return response
 
 
 # 1×1 transparent GIF (43 bytes)

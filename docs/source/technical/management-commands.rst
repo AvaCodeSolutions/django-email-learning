@@ -14,6 +14,7 @@ The project currently includes the following management commands:
 - ``deliver_contents``
 - ``send_reminders``
 - ``send_newsletters``
+- ``send_certificate_pdfs``
 - ``rotate_encryption_key``
 
 check_imap_connections
@@ -177,3 +178,34 @@ This command:
 - Emits a ``sendout_all_deliveries_failed`` metric and an ``ERROR`` log entry if every delivery permanently fails, keeping the sendout in **Scheduled** state for investigation
 
 See :doc:`../platform/newsletters` for configuration options.
+
+send_certificate_pdfs
+----------------------
+
+The ``send_certificate_pdfs`` management command emails a PDF certificate to learners whose ``Certificate`` is pending delivery.
+
+Usage
+~~~~~
+
+.. code-block:: bash
+
+    python manage.py send_certificate_pdfs
+
+You can also trigger it via HTTP:
+
+.. code-block:: http
+
+    GET /your_preferred_path/api/jobs/send_certificate_pdfs/
+    Authorization: Bearer <API_KEY>
+
+Function
+~~~~~~~~
+
+This command:
+
+- Claims certificates whose PDF email is still pending
+- Renders each certificate as a PDF (requires the ``certificates`` optional dependency group, see :doc:`certificate-pdfs`) and emails it as an attachment
+- Retries failures on subsequent runs up to ``CERTIFICATES.MAX_RETRIES`` (default 3), then marks the certificate permanently ``failed``
+- Certificates issued before this feature was installed are left alone — see :doc:`certificate-pdfs` for details
+
+See :doc:`certificate-pdfs` for configuration options and the on-demand download endpoint.

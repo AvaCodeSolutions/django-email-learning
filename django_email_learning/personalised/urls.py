@@ -2,6 +2,7 @@ from django.urls import path
 
 from django_email_learning.personalised.views import (
     AssignmentPublicView,
+    CertificateDownloadView,
     CertificateFormView,
     CertificateView,
     QuizPublicView,
@@ -21,6 +22,11 @@ urlpatterns = [
         "certificate/<str:certificate_number>/",
         CertificateView.as_view(),
         name="certificate",
+    ),
+    path(
+        "certificate/<str:certificate_number>/download/",
+        CertificateDownloadView.as_view(),
+        name="certificate_download",
     ),
     path("unsubscribe/", UnsubscribeView.as_view(), name="unsubscribe"),
     path("track/open/<str:hash_value>/", TrackOpenView.as_view(), name="track_open"),

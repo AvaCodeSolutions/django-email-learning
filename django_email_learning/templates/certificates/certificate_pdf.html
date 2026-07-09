@@ -1,0 +1,95 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            color: #1a1a1a;
+        }
+        .certificate {
+            box-sizing: border-box;
+            width: 297mm;
+            height: 210mm;
+            padding: 14mm;
+            background: linear-gradient(135deg, #6a5acd 0%, #636eec 100%);
+        }
+        .certificate-inner {
+            box-sizing: border-box;
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            border: 2px solid rgba(99, 110, 236, 0.5);
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 12mm;
+        }
+        .logo {
+            max-height: 20mm;
+            max-width: 60mm;
+            margin-bottom: 6mm;
+        }
+        .title {
+            font-size: 28pt;
+            font-weight: bold;
+            color: #636eec;
+            margin: 0 0 6mm 0;
+        }
+        .description {
+            font-size: 13pt;
+            max-width: 200mm;
+            margin: 0 0 10mm 0;
+            line-height: 1.5;
+        }
+        .name {
+            font-weight: bold;
+        }
+        .meta {
+            font-size: 10pt;
+            color: #555555;
+            margin-bottom: 8mm;
+        }
+        .qrcode {
+            width: 22mm;
+            height: 22mm;
+            margin-bottom: 4mm;
+        }
+        .footer {
+            font-size: 10pt;
+            color: #555555;
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate">
+        <div class="certificate-inner">
+            {% if logo_data_uri %}
+                <img class="logo" src="{{ logo_data_uri }}" alt="{{ organization_name }}" />
+            {% endif %}
+            <h1 class="title">{% translate "Certificate of Completion" %}</h1>
+            <p class="description">
+                {% blocktranslate %}This certifies that <span class="name">{{ name }}</span> has successfully completed the {{ course_title }} course{% endblocktranslate %}
+            </p>
+            <p class="meta">
+                {% translate "Issued on" %} {{ issue_date }}<br />
+                {% translate "Certificate Number" %}: {{ certificate_number }}
+            </p>
+            {% if qrcode_data_uri %}
+                <img class="qrcode" src="{{ qrcode_data_uri }}" alt="{% translate 'Verification QR code' %}" />
+            {% endif %}
+            <p class="footer">{% blocktranslate %}{{ organization_name }} Team{% endblocktranslate %}</p>
+        </div>
+    </div>
+</body>
+</html>

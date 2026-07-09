@@ -1,0 +1,17 @@
+{% extends "emails/base.html" %}
+{% load i18n %}
+
+{% block content %}
+
+    <p class="email-paragraph">{% translate "Hello there," %}</p>
+
+    <p class="email-paragraph">{% blocktranslate with course_title=course_title %}Congratulations on completing the course "{{ course_title }}"!{% endblocktranslate %}</p>
+
+    <p class="email-paragraph">{% translate "Your official Certificate of Completion is attached to this email as a PDF." %}</p>
+
+    <p class="email-paragraph">
+        {% translate "Best regards," %}<br />
+        {% blocktranslate with organization_name=organization_name %}{{ organization_name }} Team{% endblocktranslate %}
+    </p>
+
+{% endblock %}
