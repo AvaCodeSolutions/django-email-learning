@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.13.1] — 2026-07-09
+
+### Changed
+
+- **Optimized logo file sizes** — resized static logo assets to their actual display dimensions.
+
+---
+
 ## [1.13.0] — 2026-07-09
 
 ### Added
