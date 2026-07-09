@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.13.0] — 2026-07-09
+
+### Added
+
+- **Configurable learners-per-organization cap** — `Organization.get_learners_cap()`/`can_enroll_learner()` let you cap how many learners an organization can enroll, enforced in `EnrollCommand.execute()` across every enrollment path (platform, public, OAuth group enrollment, IMAP). Defaults to unlimited via `DJANGO_EMAIL_LEARNING["LEARNERS"]["MAX_LEARNERS_PER_ORGANIZATION"]`; set `LEARNERS_CAP_RESOLVER` to a dotted path to a `callable(organization) -> int` for custom per-organization logic (e.g. tiered plans). Exposed as a boolean only — `can_enroll_learner` in the platform organization API and `enrollmentOpen` in the public `appContext` — so clients can gate the UI without leaking capacity numbers.
+
+---
+
 ## [1.12.0] — 2026-07-08
 
 ### Added
