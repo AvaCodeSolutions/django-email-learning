@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.13.2] — 2026-07-09
+
+### Fixed
+
+- **`navbarCustomComponents` hidden on mobile** — these were only rendered in the top `AppBar` (`display: { xs: 'none', md: 'flex' }`), so they simply disappeared below the `md` breakpoint with no fallback. They now also render as individual rows inside the sidebar `Drawer` on mobile, grouped above the existing `sidebarCustomComponent` slot at the bottom of the sidebar. Desktop (`md+`) behavior is unchanged.
+
+---
+
 ## [1.13.1] — 2026-07-09
 
 ### Changed
