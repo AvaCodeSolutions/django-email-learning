@@ -180,6 +180,39 @@ describe('MenuBar', () => {
     expect(document.querySelector('my-search')).toBeInTheDocument();
   });
 
+  it('also renders navbar custom components inside the sidebar, for mobile', () => {
+    renderWithProviders(<MenuBar {...defaultProps} />, {
+      appContext: {
+        navbarCustomComponents: [{ slot: 'notifications', html: '<my-notifications></my-notifications>' }],
+      },
+    });
+    // Once in the AppBar (desktop) slot, once in the sidebar (mobile) slot.
+    expect(document.querySelectorAll('my-notifications')).toHaveLength(2);
+  });
+
+  it('renders navbar custom components above the sidebar custom component slot', () => {
+    renderWithProviders(<MenuBar {...defaultProps} />, {
+      appContext: {
+        navbarCustomComponents: [{ slot: 'notifications', html: '<my-notifications></my-notifications>' }],
+        sidebarCustomComponent: { componentTag: '<my-widget></my-widget>' },
+      },
+    });
+    const notifications = document.querySelectorAll('my-notifications');
+    const widget = document.querySelector('my-widget');
+    expect(widget).toBeInTheDocument();
+    // The sidebar copy of the navbar component must precede the sidebar widget in DOM order.
+    const sidebarNotifications = notifications[notifications.length - 1];
+    expect(
+      sidebarNotifications.compareDocumentPosition(widget) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
+  it('does not render the sidebar custom components wrapper when neither slot has content', () => {
+    renderWithProviders(<MenuBar {...defaultProps} />);
+    expect(document.querySelector('my-notifications')).not.toBeInTheDocument();
+    expect(document.querySelector('my-widget')).not.toBeInTheDocument();
+  });
+
   it('shows content delivery chip for platform admin when job status is present', async () => {
     global.fetch.mockImplementation((url) => {
       if (url.includes('/status/jobs/')) {
