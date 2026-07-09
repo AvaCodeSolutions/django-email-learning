@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.13.3] — 2026-07-09
+
+### Changed
+
+- **Minor style improvement** — x-padding removed from the navbar custom component for the mobile view so it can be adjusted by component creators.
+
+---
+
 ## [1.13.2] — 2026-07-09
 
 ### Fixed
