@@ -326,7 +326,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                     {navbarCustomComponents?.map((component) => (
                         <Box
                             key={component.slot}
-                            sx={{ display: { xs: 'block', md: 'none' }, py: '8px', px: '16px' }}
+                            sx={{ display: { xs: 'block', md: 'none' }, py: '8px' }}
                             dangerouslySetInnerHTML={{ __html: component.html }}
                         />
                     ))}
