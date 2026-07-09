@@ -185,6 +185,7 @@ class OrganizationView(TemplateView):
                 "organization": organization_data.model_dump(),
                 "enrollApiUrl": f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{enroll_api_path}",
                 "newsletterSubscribeApiUrl": f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{subscribe_api_path}",
+                "enrollmentOpen": organization.can_enroll_learner(),
                 "newsletters": newsletters,
                 "direction": "rtl" if lang_info["bidi"] else "ltr",
                 "termsOfServiceUrl": get_terms_of_service_url(),
@@ -300,6 +301,7 @@ class CourseView(TemplateView):
             "course": course_data.model_dump(),
             "organization": organization_data.model_dump(),
             "enrollApiUrl": f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{enroll_api_path}",
+            "enrollmentOpen": course.organization.can_enroll_learner(),
             "direction": "rtl" if lang_info["bidi"] else "ltr",
             "termsOfServiceUrl": get_terms_of_service_url(),
             "localeMessages": {

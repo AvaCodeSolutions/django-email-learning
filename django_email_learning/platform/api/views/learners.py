@@ -30,6 +30,9 @@ from django_email_learning.services.command_models.exceptions.blocked_email_erro
 from django_email_learning.services.command_models.exceptions.enrollment_already_exists_error import (
     EnrollmentAlreadyExistsError,
 )
+from django_email_learning.services.command_models.exceptions.learner_cap_exceeded_error import (
+    LearnerCapExceededError,
+)
 from django_email_learning.services.command_models.verify_enrollment_command import (
     VerifyEnrollmentCommand,
 )
@@ -150,6 +153,8 @@ class EnrollmentsView(PaginatedApiMixin, View):
             try:
                 command.execute()
             except BlockedEmailError as e:
+                return JsonResponse({"error": str(e)}, status=403)
+            except LearnerCapExceededError as e:
                 return JsonResponse({"error": str(e)}, status=403)
             except EnrollmentAlreadyExistsError as e:
                 return JsonResponse({"error": str(e)}, status=409)

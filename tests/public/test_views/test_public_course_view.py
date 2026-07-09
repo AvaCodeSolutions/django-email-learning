@@ -5,7 +5,7 @@ from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 
-from django_email_learning.models import ExternalReference
+from django_email_learning.models import ExternalReference, Learner
 
 
 @pytest.fixture
@@ -39,6 +39,7 @@ def test_course_view_anonymous_client(db, anonymous_client, course, course_lesso
     assert response.context["appContext"]["course"]["id"] == course.id
     assert response.context["page_title"] == response.context["appContext"]["course"]["title"]
     assert response.context["appContext"]["enrollApiUrl"].startswith("http")
+    assert response.context["appContext"]["enrollmentOpen"] is True
     assert response.context["appContext"]["course"]["target_audience"] == course.target_audience
     assert response.context["appContext"]["course"]["external_references"] == [
         {
@@ -53,6 +54,24 @@ def test_course_view_anonymous_client(db, anonymous_client, course, course_lesso
     assert json_ld["name"] == course.title
     assert json_ld["audience"]["audienceType"] == course.target_audience
     assert json_ld["teaches"] == ["Sample Lesson"]
+
+
+def test_course_view_enrollment_closed_when_cap_reached(db, anonymous_client, course, settings):
+    course.enabled = True
+    course.save()
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "LEARNERS": {"MAX_LEARNERS_PER_ORGANIZATION": 1},
+    }
+    Learner.objects.create(email="learner@example.com", organization=course.organization)
+
+    url = reverse(
+        "django_email_learning:public:course_view",
+        kwargs={"organization_id": 1, "course_slug": course.slug},
+    )
+    response = anonymous_client.get(url)
+    assert response.status_code == 200
+    assert response.context["appContext"]["enrollmentOpen"] is False
 
 
 def test_course_view_excludes_disabled_course(db, anonymous_client, course):

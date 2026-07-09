@@ -33,6 +33,23 @@ class Organization(models.Model):
         )
         return f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{path}"
 
+    def get_learners_cap(self) -> int:
+        """
+        Returns the maximum number of learners allowed for this organization.
+        0 means unlimited. Override this method (e.g. by subclassing Organization
+        as a proxy model, or monkey-patching) to implement custom capacity logic
+        such as per-plan tiering.
+        """
+        return (
+            getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("LEARNERS", {}).get("MAX_LEARNERS_PER_ORGANIZATION", 0)
+        )
+
+    def can_enroll_learner(self) -> bool:
+        cap = self.get_learners_cap()
+        if not cap:
+            return True
+        return self.learner_set.count() < cap
+
 
 class OrganizationUser(models.Model):
     class Roles(models.TextChoices):

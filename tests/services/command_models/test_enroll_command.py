@@ -12,6 +12,9 @@ from django_email_learning.services.command_models.exceptions.blocked_email_erro
 from django_email_learning.services.command_models.exceptions.enrollment_already_exists_error import (
     EnrollmentAlreadyExistsError,
 )
+from django_email_learning.services.command_models.exceptions.learner_cap_exceeded_error import (
+    LearnerCapExceededError,
+)
 
 
 def test_enroll_command(db, course):
@@ -115,3 +118,62 @@ def test_enroll_command_nonexistent_course(db, learner):
 
     # Check that no email is sent
     assert len(mail.outbox) == 0
+
+
+def test_enroll_command_rejects_new_learner_when_cap_reached(db, settings, course):
+    course.enabled = True
+    course.save()
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "LEARNERS": {"MAX_LEARNERS_PER_ORGANIZATION": 1},
+    }
+    Learner.objects.create(email="existing@example.com", organization_id=course.organization_id)
+
+    command = EnrollCommand(
+        command_name="enroll",
+        email="new@example.com",
+        course_slug=course.slug,
+        organization_id=course.organization_id,
+    )
+    with pytest.raises(LearnerCapExceededError):
+        command.execute()
+
+    assert not Learner.objects.filter(email="new@example.com").exists()
+    assert len(mail.outbox) == 0
+
+
+def test_enroll_command_allows_existing_learner_when_cap_reached(db, settings, course):
+    course.enabled = True
+    course.save()
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "LEARNERS": {"MAX_LEARNERS_PER_ORGANIZATION": 1},
+    }
+    learner = Learner.objects.create(email="existing@example.com", organization_id=course.organization_id)
+
+    command = EnrollCommand(
+        command_name="enroll",
+        email=learner.email,
+        course_slug=course.slug,
+        organization_id=course.organization_id,
+    )
+    command.execute()
+
+    assert Enrollment.objects.filter(learner=learner, course=course).exists()
+
+
+def test_enroll_command_unlimited_by_default(db, course):
+    course.enabled = True
+    course.save()
+    for i in range(5):
+        Learner.objects.create(email=f"learner{i}@example.com", organization_id=course.organization_id)
+
+    command = EnrollCommand(
+        command_name="enroll",
+        email="new@example.com",
+        course_slug=course.slug,
+        organization_id=course.organization_id,
+    )
+    command.execute()
+
+    assert Learner.objects.filter(email="new@example.com", organization_id=course.organization_id).exists()
