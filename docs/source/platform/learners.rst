@@ -61,19 +61,27 @@ When the cap is reached, new enrollment attempts fail with a 403 response and no
 Per-organization overrides
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you need a different limit per organization (e.g. tiered plans), override ``get_learners_cap()`` on a custom ``Organization`` subclass:
+If you need a different limit per organization (e.g. tiered plans), set ``LEARNERS_CAP_RESOLVER`` to the dotted path of a callable that receives the ``Organization`` instance and returns its cap:
 
 .. code-block:: python
 
+    DJANGO_EMAIL_LEARNING = {
+        "LEARNERS": {
+            "LEARNERS_CAP_RESOLVER": "myapp.capacity.get_learners_cap",
+        },
+        ...
+    }
+
+.. code-block:: python
+
+    # myapp/capacity.py
     from django_email_learning.models import Organization
 
-    class MyOrganization(Organization):
-        class Meta:
-            proxy = True
+    def get_learners_cap(organization: Organization) -> int:
+        # e.g. look up a per-organization quota from your own billing/plan model
+        return organization.plan.max_learners
 
-        def get_learners_cap(self) -> int:
-            # e.g. look up a per-organization quota from your own billing/plan model
-            return self.plan.max_learners
+When ``LEARNERS_CAP_RESOLVER`` is set, it takes precedence over ``MAX_LEARNERS_PER_ORGANIZATION`` for every organization.
 
 Checking capacity without enrolling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
