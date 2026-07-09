@@ -24,6 +24,9 @@ from django_email_learning.services.command_models.exceptions.blocked_email_erro
 from django_email_learning.services.command_models.exceptions.enrollment_already_exists_error import (
     EnrollmentAlreadyExistsError,
 )
+from django_email_learning.services.command_models.exceptions.learner_cap_exceeded_error import (
+    LearnerCapExceededError,
+)
 from django_email_learning.services.command_models.verify_enrollment_command import (
     VerifyEnrollmentCommand,
 )
@@ -112,6 +115,8 @@ class OauthGroupEnrollment(View):
                     logger.info(f"User {user.email} is already enrolled in course {handler.course_id}")
                 except BlockedEmailError:
                     logger.warning(f"User {user.email} is blocked from enrolling in course {handler.course_id}")
+                except LearnerCapExceededError:
+                    logger.info(f"Organization {course.organization_id} learner cap reached; skipping {user.email}")
                 except Exception as e:  # noqa: BLE001
                     logger.error(f"Failed to enroll user {user.email} for session {session.session_id}: {str(e)}")
             return JsonResponse({"message": "Enrollment process initiated"}, status=200)

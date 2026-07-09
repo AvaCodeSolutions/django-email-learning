@@ -4,7 +4,7 @@ import uuid
 import pytest
 from django.urls import reverse
 
-from django_email_learning.models import Enrollment, EnrollmentStatus
+from django_email_learning.models import Enrollment, EnrollmentStatus, Learner
 
 
 def get_url(organization_id: int, course_id: int) -> str:
@@ -58,3 +58,25 @@ def test_enrollments_view_post_creates_active_enrollment_and_sends_one_email(
 
     assert len(mailoutbox) == 1
     assert learner_email in mailoutbox[0].to
+
+
+def test_enrollments_view_post_rejects_new_learner_when_cap_reached(
+    org_admin_client, course, course_lesson_content, settings
+):
+    course.enabled = True
+    course.save()
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "LEARNERS": {"MAX_LEARNERS_PER_ORGANIZATION": 1},
+    }
+    Learner.objects.create(email="existing@example.com", organization_id=course.organization_id)
+    learner_email = f"{uuid.uuid4().hex}@example.com"
+
+    response = org_admin_client.post(
+        get_url(organization_id=1, course_id=course.id),
+        json.dumps({"learner_email": learner_email}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 403
+    assert not Learner.objects.filter(email=learner_email).exists()

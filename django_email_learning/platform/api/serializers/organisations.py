@@ -42,6 +42,7 @@ class OrganizationResponse(BaseModel):
     youtube_channel: Optional[str] = None
     linkedin_page: Optional[str] = None
     is_public: bool
+    can_enroll_learner: bool
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -63,6 +64,7 @@ class OrganizationResponse(BaseModel):
                 "youtube_channel": organization.youtube_channel,
                 "linkedin_page": organization.linkedin_page,
                 "is_public": organization.is_public,
+                "can_enroll_learner": organization.can_enroll_learner(),
             }
         )
 

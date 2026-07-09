@@ -17,6 +17,9 @@ from django_email_learning.services.command_models.exceptions.blocked_email_erro
 from django_email_learning.services.command_models.exceptions.enrollment_already_exists_error import (
     EnrollmentAlreadyExistsError,
 )
+from django_email_learning.services.command_models.exceptions.learner_cap_exceeded_error import (
+    LearnerCapExceededError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +52,9 @@ class EnrollView(View):
                 return JsonResponse({"status": "already_enrolled"}, status=200)
             except BlockedEmailError as e:
                 logger.error(f"Blocked email error: {e}")
+                return JsonResponse({"error": str(e)}, status=403)
+            except LearnerCapExceededError as e:
+                logger.info(f"Learner cap exceeded: {e}")
                 return JsonResponse({"error": str(e)}, status=403)
 
             if serlizer.subscribe_to_newsletter and course.newsletter_id:

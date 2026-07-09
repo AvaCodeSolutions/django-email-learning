@@ -3,7 +3,7 @@ from django.core.files.storage import default_storage
 from django.test import override_settings
 from django.urls import reverse
 
-from django_email_learning.models import Organization
+from django_email_learning.models import Learner, Organization
 
 
 def get_url() -> str:
@@ -231,3 +231,21 @@ def test_update_organization_to_private(superadmin_client):
 
     organization.refresh_from_db()
     assert organization.is_public is False
+
+
+def test_can_enroll_learner_reflects_cap(org_admin_client, settings):
+    organization = Organization.objects.get(id=1)
+
+    response = org_admin_client.get(update_url(organization.id))
+    assert response.status_code == 200
+    assert response.json().get("can_enroll_learner") is True
+
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "LEARNERS": {"MAX_LEARNERS_PER_ORGANIZATION": 1},
+    }
+    Learner.objects.create(email="learner@example.com", organization=organization)
+
+    response = org_admin_client.get(update_url(organization.id))
+    assert response.status_code == 200
+    assert response.json().get("can_enroll_learner") is False

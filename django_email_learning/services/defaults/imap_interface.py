@@ -18,6 +18,9 @@ from django_email_learning.services.command_models.exceptions.enrollment_already
 from django_email_learning.services.command_models.exceptions.invalid_course_slug_error import (
     InvalidCourseSlugError,
 )
+from django_email_learning.services.command_models.exceptions.learner_cap_exceeded_error import (
+    LearnerCapExceededError,
+)
 from django_email_learning.services.command_models.unsubscribe_command import (
     UnsubscribeCommand,
 )
@@ -66,6 +69,8 @@ class ImapInterface(ImapInterfaceProtocol):
             logger.warning(f"Enrollment already exists for email {email}: {str(e)}")
         except BlockedEmailError as e:
             logger.info(f"Blocked email {email}: {str(e)}")
+        except LearnerCapExceededError as e:
+            logger.info(f"Learner cap exceeded for organization {imap_connection.organization.id}: {str(e)}")
 
     def _verify(self, email: str, argument: str, imap_connection: ImapConnection) -> None:
         logger.info(f"Received verify command for {email} with argument '{argument}'")

@@ -1,5 +1,7 @@
 from django.urls import reverse
 
+from django_email_learning.models import Learner, Organization
+
 
 def test_organization_view_anonymous_client(db, anonymous_client):
     url = reverse("django_email_learning:public:organization_view", kwargs={"organization_id": 1})
@@ -8,9 +10,22 @@ def test_organization_view_anonymous_client(db, anonymous_client):
     assert response.context["appContext"]["organization"]["id"] == 1
     assert response.context["page_title"] == response.context["appContext"]["organization"]["name"]
     assert response.context["appContext"]["enrollApiUrl"].startswith("http")
+    assert response.context["appContext"]["enrollmentOpen"] is True
 
     # No course added yet, so courses list should be empty
     assert len(response.context["appContext"]["organization"]["courses"]) == 0
+
+
+def test_organization_view_enrollment_closed_when_cap_reached(db, anonymous_client, settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "LEARNERS": {"MAX_LEARNERS_PER_ORGANIZATION": 1},
+    }
+    Learner.objects.create(email="learner@example.com", organization=Organization.objects.get(id=1))
+    url = reverse("django_email_learning:public:organization_view", kwargs={"organization_id": 1})
+    response = anonymous_client.get(url)
+    assert response.status_code == 200
+    assert response.context["appContext"]["enrollmentOpen"] is False
 
 
 def test_organization_view_anonymous_client_with_courses(db, anonymous_client, course):

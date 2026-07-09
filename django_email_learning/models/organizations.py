@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
+from django.utils.module_loading import import_string
 
 User = get_user_model()
 
@@ -32,6 +33,30 @@ class Organization(models.Model):
             kwargs={"organization_id": self.id},
         )
         return f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{path}"
+
+    def get_learners_cap(self) -> int:
+        """
+        Returns the maximum number of learners allowed for this organization.
+        0 means unlimited.
+
+        Reads DJANGO_EMAIL_LEARNING["LEARNERS"]["MAX_LEARNERS_PER_ORGANIZATION"] by
+        default. If DJANGO_EMAIL_LEARNING["LEARNERS"]["LEARNERS_CAP_RESOLVER"] is set
+        to a dotted path to a callable(organization: Organization) -> int, that
+        callable is used instead, letting library users implement custom per-organization
+        logic (e.g. tiered plans).
+        """
+        learners_settings: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("LEARNERS", {})
+        resolver_path = learners_settings.get("LEARNERS_CAP_RESOLVER")
+        if resolver_path:
+            resolver = import_string(resolver_path)
+            return resolver(self)
+        return learners_settings.get("MAX_LEARNERS_PER_ORGANIZATION", 0)
+
+    def can_enroll_learner(self) -> bool:
+        cap = self.get_learners_cap()
+        if not cap:
+            return True
+        return self.learner_set.count() < cap
 
 
 class OrganizationUser(models.Model):
