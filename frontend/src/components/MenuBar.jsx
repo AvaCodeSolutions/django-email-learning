@@ -321,7 +321,18 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                 </>}
             </MenuList>
             </Box>
-            {sidebarCustomComponent && <Box sx={{ mt: 'auto' }} dangerouslySetInnerHTML={{ __html: sidebarCustomComponent.componentTag }} />}
+            {(navbarCustomComponents?.length > 0 || sidebarCustomComponent) && (
+                <Box sx={{ mt: 'auto' }}>
+                    {navbarCustomComponents?.map((component) => (
+                        <Box
+                            key={component.slot}
+                            sx={{ display: { xs: 'block', md: 'none' }, py: '8px', px: '16px' }}
+                            dangerouslySetInnerHTML={{ __html: component.html }}
+                        />
+                    ))}
+                    {sidebarCustomComponent && <Box dangerouslySetInnerHTML={{ __html: sidebarCustomComponent.componentTag }} />}
+                </Box>
+            )}
         </Drawer>
         </Box>)
 }
