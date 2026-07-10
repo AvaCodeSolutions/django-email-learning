@@ -1,9 +1,11 @@
 import uuid
 
 import pytest
+from django.core.files.base import ContentFile
 from django.urls import reverse
 
 from django_email_learning.models import Course, Enrollment, EnrollmentStatus, Learner
+from django_email_learning.services.utils import PRIVATE_FILE_STORAGE
 
 URL = reverse("django_email_learning:api_platform:learners_list", kwargs={"organization_id": 1})
 
@@ -137,3 +139,17 @@ def test_learners_view_without_course_filter_has_no_enrollment_progress(superadm
     item = data["items"][0]
     assert item.get("enrollment_status") is None
     assert item.get("enrollment_progress") is None
+
+
+def test_learners_view_photo_url_is_private_not_public(superadmin_client, course):
+    learner = Learner.objects.create(email="withphoto@example.com", organization_id=1)
+    learner.photo.save("photo.jpg", ContentFile(b"fake-photo-bytes"))
+    Enrollment.objects.create(learner=learner, course=course)
+
+    response = superadmin_client.get(URL)
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["photo"].startswith("/email_learning/platform/private_file/?token=")
+    assert "/media/" not in item["photo"]
+
+    PRIVATE_FILE_STORAGE.delete(learner.photo.name)

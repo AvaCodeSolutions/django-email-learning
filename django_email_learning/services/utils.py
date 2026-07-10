@@ -1,7 +1,11 @@
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage, Storage, storages
+from django.urls import reverse
+
+from django_email_learning.services import jwt_service
 
 DJANGO_EMAIL_LEARNING_CONFIGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
 
@@ -32,3 +36,14 @@ def get_private_file_storage() -> Storage:
 
 
 PRIVATE_FILE_STORAGE = get_private_file_storage()
+
+
+def build_private_file_url(organization_id: int, file_path: str) -> str:
+    """
+    Builds a signed, time-limited URL to PrivateFileView for a file stored in
+    PRIVATE_FILE_STORAGE. Access is re-checked against organization_id when the
+    URL is opened, not just at signing time.
+    """
+    payload = {"org_id": organization_id, "file_path": file_path}
+    token = jwt_service.generate_jwt(payload=payload, exp=datetime.now() + timedelta(hours=3))
+    return reverse("django_email_learning:platform:private_file_view") + f"?token={token}"

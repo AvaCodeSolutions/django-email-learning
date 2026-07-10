@@ -17,9 +17,10 @@ from typing import Literal
 from urllib import error, parse, request as urlrequest
 
 from django.core.files.base import ContentFile
-from django.core.files.storage import default_storage
 from django.urls import reverse
 from django.utils import timezone
+
+from django_email_learning.services.utils import PRIVATE_FILE_STORAGE
 
 logger = logging.getLogger(__name__)
 
@@ -273,7 +274,7 @@ class GoogleGroupEnrollmentHandler(BaseGroupEnrollmentHandler):
                     padded_data = data + "=" * (-len(data) % 4)
                     decoded_photo = base64.urlsafe_b64decode(padded_data)
 
-                    file_path = default_storage.save(
+                    file_path = PRIVATE_FILE_STORAGE.save(
                         f"uploads/{date_prefix}/{self.course_id}/{file_name}",
                         ContentFile(decoded_photo),
                     )

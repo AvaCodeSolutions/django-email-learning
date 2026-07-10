@@ -5,6 +5,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, ConfigDict, field_serializer
 
 from django_email_learning.models import EnrollmentStatus
+from django_email_learning.services.utils import build_private_file_url
 
 
 class InstructorResponse(BaseModel):
@@ -21,6 +22,7 @@ class LearnerResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     email: str
+    organization_id: int
     photo: Optional[Any] = None
     enrollments_count: EnrollmentsCount | None = None
     enrollment_status: Optional[str] = None
@@ -28,9 +30,9 @@ class LearnerResponse(BaseModel):
 
     @field_serializer("photo")
     def serialize_photo(self, photo: Optional[Any]) -> Optional[str]:
-        if photo:
-            return photo.url  # type: ignore[attr-defined]
-        return None
+        if not photo:
+            return None
+        return build_private_file_url(organization_id=self.organization_id, file_path=photo.name)  # type: ignore[attr-defined]
 
 
 class CourseSummaryResponse(BaseModel):

@@ -2,6 +2,7 @@ import datetime
 
 import pytest
 from django.core.files.base import ContentFile
+from django.test import Client
 from django.urls import reverse
 
 from django_email_learning.services import jwt_service
@@ -77,14 +78,17 @@ def test_token_missing_org_id_returns_400(superadmin_client):
 # --- Authorisation ---
 
 
-@pytest.mark.parametrize("client", ["editor", "viewer"], indirect=["client"])
-def test_editor_and_viewer_cannot_access_private_file(client, stored_file):
+def test_user_not_in_organization_cannot_access_private_file(second_user, stored_file):
+    non_member_client = Client()
+    non_member_client.force_login(second_user)
     token = make_token()
-    response = client.get(URL, {"token": token})
-    assert response.status_code == 404
+    response = non_member_client.get(URL, {"token": token})
+    # is_an_organization_member() rejects non-members before the view's own
+    # role check runs.
+    assert response.status_code == 403
 
 
-@pytest.mark.parametrize("client", ["superadmin", "org_admin", "instructor"], indirect=["client"])
+@pytest.mark.parametrize("client", ["superadmin", "org_admin", "instructor", "editor", "viewer"], indirect=["client"])
 def test_authorised_roles_can_access_private_file(client, stored_file):
     token = make_token()
     response = client.get(URL, {"token": token})
