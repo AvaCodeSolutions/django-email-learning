@@ -6,6 +6,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.14.0] — 2026-07-10
+
+### Fixed
+
+- **Learner photos stored in private storage, not public** — `Learner.photo` (including photos imported during Google Workspace group enrollment) was previously saved via Django's default public media storage, so anyone with the URL could view a learner's photo without authentication. It now uses the existing private-storage mechanism (`PRIVATE_FILE_STORAGE_ALIAS`/`PRIVATE_FILE_STORAGE_LOCATION`, or a local `private_files/` folder if unconfigured), served through an access-controlled endpoint. `PrivateFileView`'s allowed roles were broadened from admin/instructor to admin/editor/instructor/viewer to match who can already see the Learners page. Existing photos already in public storage are left as-is and continue to work via a fallback; only new photos go to private storage going forward.
+- **Google Workspace group enrollment OAuth redirect failing with "Scope has changed"** — Google commonly grants additional scopes (`openid`, `userinfo.email`, `userinfo.profile`) beyond what's requested, especially once a user has previously authorized the same OAuth client for another purpose. `oauthlib` treated any such scope mismatch as fatal, turning an otherwise-successful authorization into a 400. `OAUTHLIB_RELAX_TOKEN_SCOPE` is now set before the token exchange so a superset of granted scopes is no longer rejected.
+
+---
+
 ## [1.13.3] — 2026-07-09
 
 ### Changed
