@@ -5,7 +5,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, ConfigDict, field_serializer
 
 from django_email_learning.models import EnrollmentStatus
-from django_email_learning.services.utils import build_private_file_url
+from django_email_learning.services.utils import resolve_private_or_public_file_url
 
 
 class InstructorResponse(BaseModel):
@@ -32,7 +32,7 @@ class LearnerResponse(BaseModel):
     def serialize_photo(self, photo: Optional[Any]) -> Optional[str]:
         if not photo:
             return None
-        return build_private_file_url(organization_id=self.organization_id, file_path=photo.name)  # type: ignore[attr-defined]
+        return resolve_private_or_public_file_url(organization_id=self.organization_id, file_path=photo.name)  # type: ignore[attr-defined]
 
 
 class CourseSummaryResponse(BaseModel):

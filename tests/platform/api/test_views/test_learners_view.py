@@ -2,6 +2,7 @@ import uuid
 
 import pytest
 from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.urls import reverse
 
 from django_email_learning.models import Course, Enrollment, EnrollmentStatus, Learner
@@ -153,3 +154,18 @@ def test_learners_view_photo_url_is_private_not_public(superadmin_client, course
     assert "/media/" not in item["photo"]
 
     PRIVATE_FILE_STORAGE.delete(learner.photo.name)
+
+
+def test_learners_view_photo_falls_back_to_public_storage_for_legacy_photos(superadmin_client, course):
+    learner = Learner.objects.create(email="legacyphoto@example.com", organization_id=1)
+    legacy_path = "learner_photos/legacy.jpg"
+    default_storage.save(legacy_path, ContentFile(b"legacy-photo-bytes"))
+    Learner.objects.filter(id=learner.id).update(photo=legacy_path)
+    Enrollment.objects.create(learner=learner, course=course)
+
+    response = superadmin_client.get(URL)
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["photo"] == default_storage.url(legacy_path)
+
+    default_storage.delete(legacy_path)

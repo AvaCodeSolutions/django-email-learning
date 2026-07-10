@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage, Storage, storages
+from django.core.files.storage import FileSystemStorage, Storage, default_storage, storages
 from django.urls import reverse
 
 from django_email_learning.services import jwt_service
@@ -47,3 +47,17 @@ def build_private_file_url(organization_id: int, file_path: str) -> str:
     payload = {"org_id": organization_id, "file_path": file_path}
     token = jwt_service.generate_jwt(payload=payload, exp=datetime.now() + timedelta(hours=3))
     return reverse("django_email_learning:platform:private_file_view") + f"?token={token}"
+
+
+def resolve_private_or_public_file_url(organization_id: int, file_path: str) -> str | None:
+    """
+    Resolves a file's URL, preferring PRIVATE_FILE_STORAGE and falling back to
+    public storage. The fallback exists for fields that moved from public to
+    private storage without a data migration for already-existing files (e.g.
+    Learner.photo) — those files still physically live in public storage.
+    """
+    if PRIVATE_FILE_STORAGE.exists(file_path):
+        return build_private_file_url(organization_id=organization_id, file_path=file_path)
+    if default_storage.exists(file_path):
+        return default_storage.url(file_path)
+    return None

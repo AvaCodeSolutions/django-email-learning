@@ -14,7 +14,7 @@ from django.utils.translation import gettext_lazy as _
 from django_email_learning.services import jwt_service
 from django_email_learning.services.email_sender_service import email_sender_service
 from django_email_learning.services.metrics_service import metric_service
-from django_email_learning.services.utils import build_private_file_url, get_private_file_storage
+from django_email_learning.services.utils import get_private_file_storage, resolve_private_or_public_file_url
 
 from .course_contents import CourseContent
 from .courses import Course
@@ -71,7 +71,7 @@ class Learner(models.Model):
     def private_photo_url(self) -> str | None:
         if not self.photo:
             return None
-        return build_private_file_url(organization_id=self.organization_id, file_path=str(self.photo.name))
+        return resolve_private_or_public_file_url(organization_id=self.organization_id, file_path=str(self.photo.name))
 
     class Meta:
         unique_together = [["organization", "email"]]
