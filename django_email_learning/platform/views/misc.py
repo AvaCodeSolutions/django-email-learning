@@ -81,7 +81,7 @@ class PrivateFileView(View):
             and not OrganizationUser.objects.filter(
                 user=request.user,
                 organization_id=org_id,
-                role__in=["admin", "instructor"],
+                role__in=["admin", "editor", "instructor", "viewer"],
             ).exists()
         ):  # type: ignore[misc]
             return HttpResponseNotFound("File not found.")

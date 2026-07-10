@@ -88,6 +88,7 @@ class AssignmentSubmissionResponse(BaseModel):
             learner=LearnerResponse(
                 id=submission.delivery.enrollment.learner.id,  # type: ignore[union-attr]
                 email=submission.delivery.enrollment.learner.email,  # type: ignore[union-attr]
+                organization_id=submission.delivery.enrollment.learner.organization_id,  # type: ignore[union-attr]
                 photo=submission.delivery.enrollment.learner.photo,
             ),
             status=AssignmentSubmission.SubmissionStatus(submission.status),
@@ -140,6 +141,7 @@ class AssignmentSubmissionSummaryResponse(BaseModel):
             learner=LearnerResponse(
                 id=submission.delivery.enrollment.learner.id,  # type: ignore[union-attr]
                 email=submission.delivery.enrollment.learner.email,  # type: ignore[union-attr]
+                organization_id=submission.delivery.enrollment.learner.organization_id,  # type: ignore[union-attr]
                 photo=submission.delivery.enrollment.learner.photo,
             ),
             submitted_at=submission.submitted_at,

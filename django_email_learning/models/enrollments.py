@@ -14,6 +14,7 @@ from django.utils.translation import gettext_lazy as _
 from django_email_learning.services import jwt_service
 from django_email_learning.services.email_sender_service import email_sender_service
 from django_email_learning.services.metrics_service import metric_service
+from django_email_learning.services.utils import get_private_file_storage, resolve_private_or_public_file_url
 
 from .course_contents import CourseContent
 from .courses import Course
@@ -52,7 +53,7 @@ class Learner(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
     email = models.EmailField()
     created_at = models.DateTimeField(auto_now_add=True)
-    photo = models.ImageField(upload_to="learner_photos/", null=True, blank=True)
+    photo = models.ImageField(storage=get_private_file_storage, upload_to="learner_photos/", null=True, blank=True)
 
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self.email = self.email.lower()
@@ -65,6 +66,12 @@ class Learner(models.Model):
             "total": self.enrollments.count(),
             "completed": self.enrollments.filter(status=EnrollmentStatus.COMPLETED).count(),
         }
+
+    @property
+    def private_photo_url(self) -> str | None:
+        if not self.photo:
+            return None
+        return resolve_private_or_public_file_url(organization_id=self.organization_id, file_path=str(self.photo.name))
 
     class Meta:
         unique_together = [["organization", "email"]]
