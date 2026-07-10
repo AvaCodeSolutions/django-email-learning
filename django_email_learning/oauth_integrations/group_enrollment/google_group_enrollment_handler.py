@@ -1,5 +1,6 @@
 import base64
 import logging
+import os
 from typing import TYPE_CHECKING
 
 from django.conf import settings
@@ -79,6 +80,11 @@ class GoogleGroupEnrollmentHandler(BaseGroupEnrollmentHandler):
         flow = self._build_flow()
         flow.code_verifier = self.code_verifier
 
+        # Google commonly grants additional scopes we didn't request (e.g.
+        # openid, userinfo.email, userinfo.profile) alongside the ones we
+        # did. oauthlib treats any scope mismatch as fatal by default; relax
+        # that so it doesn't reject an otherwise-successful authorization.
+        os.environ.setdefault("OAUTHLIB_RELAX_TOKEN_SCOPE", "1")
         flow.fetch_token(code=self.code)
         credentials = flow.credentials
 
