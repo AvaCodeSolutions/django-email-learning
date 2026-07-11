@@ -6,6 +6,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.15.0] — 2026-07-11
+
+### Added
+
+- **Organization logo on verify-enrollment/unsubscribe/OAuth result pages** — these pages now resolve the relevant organization (via the enrollment, the unsubscribe token, or the course tied to the OAuth session) and show its uploaded logo, falling back to the platform-wide `DJANGO_EMAIL_LEARNING["LOGO"]` setting (or the built-in default) when the organization has none.
+- **"You can now close this window" hint** — shown under the success/error message on the verify-enrollment/unsubscribe/OAuth result pages once there's nothing left for the user to do.
+
+### Changed
+
+- **Redesigned verify-enrollment/unsubscribe/OAuth result page layout** — the card now fills the viewport height instead of hugging the top with a lot of empty space below on desktop, content is positioned using a golden-ratio split rather than dead-centering, and the drop shadow is softer.
+
+---
+
 ## [1.14.1] — 2026-07-10
 
 ### Fixed
