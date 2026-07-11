@@ -1,6 +1,6 @@
 from django.urls import reverse
 
-from django_email_learning.models import Learner, Organization
+from django_email_learning.models import Enrollment, EnrollmentStatus, Learner, Organization
 
 
 def test_organization_view_anonymous_client(db, anonymous_client):
@@ -16,12 +16,13 @@ def test_organization_view_anonymous_client(db, anonymous_client):
     assert len(response.context["appContext"]["organization"]["courses"]) == 0
 
 
-def test_organization_view_enrollment_closed_when_cap_reached(db, anonymous_client, settings):
+def test_organization_view_enrollment_closed_when_cap_reached(anonymous_client, settings, course):
     settings.DJANGO_EMAIL_LEARNING = {
         **settings.DJANGO_EMAIL_LEARNING,
         "LEARNERS": {"MAX_LEARNERS_PER_ORGANIZATION": 1},
     }
-    Learner.objects.create(email="learner@example.com", organization=Organization.objects.get(id=1))
+    learner = Learner.objects.create(email="learner@example.com", organization=Organization.objects.get(id=1))
+    Enrollment.objects.create(learner=learner, course=course, status=EnrollmentStatus.ACTIVE)
     url = reverse("django_email_learning:public:organization_view", kwargs={"organization_id": 1})
     response = anonymous_client.get(url)
     assert response.status_code == 200

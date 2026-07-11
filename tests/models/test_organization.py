@@ -1,4 +1,4 @@
-from django_email_learning.models import Learner, Organization
+from django_email_learning.models import Course, Enrollment, EnrollmentStatus, Learner, Organization
 
 
 def custom_learners_cap_resolver(organization: Organization) -> int:
@@ -25,23 +25,79 @@ def test_can_enroll_learner_unlimited_by_default(db):
     assert organization.can_enroll_learner() is True
 
 
-def test_can_enroll_learner_false_when_cap_reached(db, settings):
+def test_can_enroll_learner_false_when_cap_reached(db, settings, course):
     settings.DJANGO_EMAIL_LEARNING = {
         **settings.DJANGO_EMAIL_LEARNING,
         "LEARNERS": {"MAX_LEARNERS_PER_ORGANIZATION": 1},
     }
     organization = Organization.objects.get(id=1)
-    Learner.objects.create(email="learner@example.com", organization=organization)
+    learner = Learner.objects.create(email="learner@example.com", organization=organization)
+    Enrollment.objects.create(learner=learner, course=course, status=EnrollmentStatus.ACTIVE)
     assert organization.can_enroll_learner() is False
 
 
-def test_can_enroll_learner_true_when_under_cap(db, settings):
+def test_can_enroll_learner_true_when_under_cap(db, settings, course):
     settings.DJANGO_EMAIL_LEARNING = {
         **settings.DJANGO_EMAIL_LEARNING,
         "LEARNERS": {"MAX_LEARNERS_PER_ORGANIZATION": 2},
     }
     organization = Organization.objects.get(id=1)
-    Learner.objects.create(email="learner@example.com", organization=organization)
+    learner = Learner.objects.create(email="learner@example.com", organization=organization)
+    Enrollment.objects.create(learner=learner, course=course, status=EnrollmentStatus.ACTIVE)
+    assert organization.can_enroll_learner() is True
+
+
+def test_can_enroll_learner_ignores_learners_without_active_enrollment(db, settings, course):
+    """
+    Learners with no enrollment, or only non-active enrollments, shouldn't
+    count against the cap.
+    """
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "LEARNERS": {"MAX_LEARNERS_PER_ORGANIZATION": 1},
+    }
+    organization = Organization.objects.get(id=1)
+    Learner.objects.create(email="no-enrollment@example.com", organization=organization)
+
+    unverified_learner = Learner.objects.create(email="unverified@example.com", organization=organization)
+    Enrollment.objects.create(learner=unverified_learner, course=course, status=EnrollmentStatus.UNVERIFIED)
+
+    completed_learner = Learner.objects.create(email="completed@example.com", organization=organization)
+    Enrollment.objects.create(learner=completed_learner, course=course, status=EnrollmentStatus.COMPLETED)
+
+    deactivated_learner = Learner.objects.create(email="deactivated@example.com", organization=organization)
+    Enrollment.objects.create(
+        learner=deactivated_learner,
+        course=course,
+        status=EnrollmentStatus.DEACTIVATED,
+        deactivation_reason="canceled",
+    )
+
+    assert organization.can_enroll_learner() is True
+
+
+def test_can_enroll_learner_counts_distinct_learners_not_enrollments(db, settings, course):
+    """
+    A single learner active in multiple courses should only count once
+    against the cap. With a cap of 2, if the two enrollments were counted
+    instead of the one distinct learner, this would incorrectly report the
+    cap as reached.
+    """
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "LEARNERS": {"MAX_LEARNERS_PER_ORGANIZATION": 2},
+    }
+    organization = Organization.objects.get(id=1)
+    second_course = Course.objects.create(
+        title="Second Course",
+        slug="second-course",
+        description="Another course in the same organization.",
+        organization=organization,
+    )
+    learner = Learner.objects.create(email="learner@example.com", organization=organization)
+    Enrollment.objects.create(learner=learner, course=course, status=EnrollmentStatus.ACTIVE)
+    Enrollment.objects.create(learner=learner, course=second_course, status=EnrollmentStatus.ACTIVE)
+
     assert organization.can_enroll_learner() is True
 
 

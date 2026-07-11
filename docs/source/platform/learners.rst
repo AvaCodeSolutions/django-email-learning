@@ -56,6 +56,8 @@ The cap is nested under ``DJANGO_EMAIL_LEARNING`` in your Django settings:
 
 ``MAX_LEARNERS_PER_ORGANIZATION`` sets a global cap applied to every organization. A value of ``0`` (the default) means unlimited. A learner who is already enrolled somewhere in the organization is never blocked by the cap — it only applies when a *new* learner would be created.
 
+The cap only counts distinct learners with at least one **active** enrollment (``EnrollmentStatus.ACTIVE``). Learners with no enrollment, or only unverified, completed, or deactivated enrollments, don't count against it — and a learner active in multiple courses only counts once.
+
 When the cap is reached, new enrollment attempts fail with a 403 response and no ``Learner`` record is created.
 
 Per-organization overrides

@@ -1,7 +1,7 @@
 import pytest
 from django.urls import reverse
 
-from django_email_learning.models import Enrollment, Learner
+from django_email_learning.models import Enrollment, EnrollmentStatus, Learner
 
 URL = reverse("django_email_learning:api_public:enroll")
 
@@ -62,7 +62,8 @@ def test_enroll_view_rejects_new_learner_when_cap_reached(anonymous_client, cour
         **settings.DJANGO_EMAIL_LEARNING,
         "LEARNERS": {"MAX_LEARNERS_PER_ORGANIZATION": 1},
     }
-    Learner.objects.create(email="existing@example.com", organization_id=course.organization_id)
+    existing_learner = Learner.objects.create(email="existing@example.com", organization_id=course.organization_id)
+    Enrollment.objects.create(learner=existing_learner, course=course, status=EnrollmentStatus.ACTIVE)
 
     payload = {
         "organization_id": course.organization_id,
