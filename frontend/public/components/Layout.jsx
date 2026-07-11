@@ -17,7 +17,6 @@ const Layout = ({ children, fullHeight = false }) => {
                 minHeight: { xs: '100vh', md: 'calc(100vh - 64px)' },
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'center',
                 boxShadow: 1,
             } : {
                 boxShadow: 2,
