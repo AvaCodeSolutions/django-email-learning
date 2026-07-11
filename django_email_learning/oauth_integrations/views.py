@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from django_email_learning.apps import PLATFORM_ADMIN_GROUP_NAME
 from django_email_learning.models import Course, OrganizationUser
+from django_email_learning.personalised.views import _custom_logo_context
 from django_email_learning.services.jwt_service import (
     InvalidTokenException,
     decode_jwt,
@@ -41,7 +42,11 @@ def _command_result_response(  # type: ignore[no-untyped-def]
                 "errorMessage": error_message,
                 "closeWindow": True,
                 "direction": "rtl" if lang_info["bidi"] else "ltr",
-                "localeMessages": {"Confirm": _("Confirm")},
+                "customLogo": _custom_logo_context(),
+                "localeMessages": {
+                    "Confirm": _("Confirm"),
+                    "close_window_message": _("You can now close this window."),
+                },
             },
         },
         status=status_code,

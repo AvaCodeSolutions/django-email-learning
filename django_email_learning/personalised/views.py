@@ -3,6 +3,7 @@ import logging
 import uuid
 
 import qrcode
+from django.conf import settings
 from django.core.files.storage import default_storage
 from django.http import HttpResponse
 from django.urls import reverse
@@ -22,6 +23,20 @@ from django_email_learning.services.command_models.unsubscribe_command import (
 from django_email_learning.services.command_models.verify_enrollment_command import (
     VerifyEnrollmentCommand,
 )
+
+DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
+
+
+def _custom_logo_context() -> dict | None:
+    logo_settings = DJANGO_EMAIL_LEARNING_SETTINGS.get("LOGO")
+    if not logo_settings:
+        return None
+    return {
+        "horizontalLight": logo_settings.get("HORIZONTAL_LOCKUP", {}).get("LIGHT_BACKGROUND"),
+        "horizontalDark": logo_settings.get("HORIZONTAL_LOCKUP", {}).get("DARK_BACKGROUND"),
+        "verticalLight": logo_settings.get("VERTICAL_LOCKUP", {}).get("LIGHT_BACKGROUND"),
+        "verticalDark": logo_settings.get("VERTICAL_LOCKUP", {}).get("DARK_BACKGROUND"),
+    }
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -46,8 +61,10 @@ class BaseTemplateView(View, TemplateResponseMixin):
                     "ref": error_ref,
                     "errorMessage": message,
                     "direction": "rtl" if lang_info["bidi"] else "ltr",
+                    "customLogo": _custom_logo_context(),
                     "localeMessages": {
                         "error": _("Error"),
+                        "close_window_message": _("You can now close this window."),
                     },
                 },
                 "page_title": title,
@@ -93,6 +110,7 @@ class BaseTemplateView(View, TemplateResponseMixin):
         lang_info = get_language_info(current_lang_code)
         return {
             "direction": "rtl" if lang_info["bidi"] else "ltr",
+            "customLogo": _custom_logo_context(),
         }
 
     def delivery_from_token(self, request) -> ContentDelivery | HttpResponse:  # type: ignore[no-untyped-def]
@@ -364,7 +382,10 @@ class VerifyEnrollmentView(BaseTemplateView):
                 "page_title": _("Enrollment Verified"),
                 "appContext": {
                     "successMessage": _("Your enrollment has been successfully verified."),
-                    "localeMessages": {"Confirm": _("Confirm")},
+                    "localeMessages": {
+                        "Confirm": _("Confirm"),
+                        "close_window_message": _("You can now close this window."),
+                    },
                 }
                 | self.get_app_context(),
             }
@@ -408,7 +429,10 @@ class UnsubscribeView(BaseTemplateView):
                 "page_title": _("Unsubscribed"),
                 "appContext": {
                     "successMessage": _("You have been successfully unsubscribed from our mailing list."),
-                    "localeMessages": {"Confirm": _("Confirm")},
+                    "localeMessages": {
+                        "Confirm": _("Confirm"),
+                        "close_window_message": _("You can now close this window."),
+                    },
                 }
                 | self.get_app_context(),
             }
