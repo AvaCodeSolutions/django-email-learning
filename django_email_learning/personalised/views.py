@@ -3,6 +3,7 @@ import logging
 import uuid
 
 import qrcode
+from django.conf import settings
 from django.core.files.storage import default_storage
 from django.http import HttpResponse
 from django.urls import reverse
@@ -13,7 +14,13 @@ from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic.base import TemplateResponseMixin
 
-from django_email_learning.models import Certificate, ContentDelivery, EnrollmentStatus
+from django_email_learning.models import (
+    Certificate,
+    ContentDelivery,
+    Enrollment,
+    EnrollmentStatus,
+    Organization,
+)
 from django_email_learning.personalised.serializers import PublicQuizSerializer
 from django_email_learning.services import jwt_service
 from django_email_learning.services.command_models.unsubscribe_command import (
@@ -22,6 +29,33 @@ from django_email_learning.services.command_models.unsubscribe_command import (
 from django_email_learning.services.command_models.verify_enrollment_command import (
     VerifyEnrollmentCommand,
 )
+
+DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
+
+
+def _custom_logo_context() -> dict | None:
+    logo_settings = DJANGO_EMAIL_LEARNING_SETTINGS.get("LOGO")
+    if not logo_settings:
+        return None
+    return {
+        "horizontalLight": logo_settings.get("HORIZONTAL_LOCKUP", {}).get("LIGHT_BACKGROUND"),
+        "horizontalDark": logo_settings.get("HORIZONTAL_LOCKUP", {}).get("DARK_BACKGROUND"),
+        "verticalLight": logo_settings.get("VERTICAL_LOCKUP", {}).get("LIGHT_BACKGROUND"),
+        "verticalDark": logo_settings.get("VERTICAL_LOCKUP", {}).get("DARK_BACKGROUND"),
+    }
+
+
+def _logo_context(organization: Organization | None = None) -> dict | None:
+    """Prefers the organization's own logo, falling back to the platform-wide LOGO setting."""
+    if organization is not None and organization.logo:
+        org_logo_url = organization.logo.url
+        return {
+            "horizontalLight": org_logo_url,
+            "horizontalDark": org_logo_url,
+            "verticalLight": org_logo_url,
+            "verticalDark": org_logo_url,
+        }
+    return _custom_logo_context()
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -32,6 +66,7 @@ class BaseTemplateView(View, TemplateResponseMixin):
         exception: Exception | None,
         status_code: int = 500,
         title: str = _("Error"),
+        organization: Organization | None = None,
     ) -> HttpResponse:
         error_ref = uuid.uuid4().hex
         if exception:
@@ -46,8 +81,10 @@ class BaseTemplateView(View, TemplateResponseMixin):
                     "ref": error_ref,
                     "errorMessage": message,
                     "direction": "rtl" if lang_info["bidi"] else "ltr",
+                    "customLogo": _logo_context(organization),
                     "localeMessages": {
                         "error": _("Error"),
+                        "close_window_message": _("You can now close this window."),
                     },
                 },
                 "page_title": title,
@@ -88,11 +125,12 @@ class BaseTemplateView(View, TemplateResponseMixin):
             return decoded_token
         return request.GET.get("token", ""), decoded_token
 
-    def get_app_context(self) -> dict:  # type: ignore[no-untyped-def]
+    def get_app_context(self, organization: Organization | None = None) -> dict:  # type: ignore[no-untyped-def]
         current_lang_code = get_language()
         lang_info = get_language_info(current_lang_code)
         return {
             "direction": "rtl" if lang_info["bidi"] else "ltr",
+            "customLogo": _logo_context(organization),
         }
 
     def delivery_from_token(self, request) -> ContentDelivery | HttpResponse:  # type: ignore[no-untyped-def]
@@ -345,6 +383,9 @@ class VerifyEnrollmentView(BaseTemplateView):
         enrollment_id = decoded_token["enrollment_id"]
         verification_code = decoded_token["verification_code"]
 
+        enrollment = Enrollment.objects.select_related("course__organization").filter(id=enrollment_id).first()
+        organization = enrollment.course.organization if enrollment else None
+
         command = VerifyEnrollmentCommand(
             command_name="verify_enrollment",
             enrollment_id=enrollment_id,
@@ -357,6 +398,7 @@ class VerifyEnrollmentView(BaseTemplateView):
                 message=_("An error occurred during enrollment verification."),
                 exception=e,
                 title=_("Verification Error"),
+                organization=organization,
             )
 
         return self.render_to_response(
@@ -364,9 +406,12 @@ class VerifyEnrollmentView(BaseTemplateView):
                 "page_title": _("Enrollment Verified"),
                 "appContext": {
                     "successMessage": _("Your enrollment has been successfully verified."),
-                    "localeMessages": {"Confirm": _("Confirm")},
+                    "localeMessages": {
+                        "Confirm": _("Confirm"),
+                        "close_window_message": _("You can now close this window."),
+                    },
                 }
-                | self.get_app_context(),
+                | self.get_app_context(organization),
             }
         )
 
@@ -378,6 +423,7 @@ class UnsubscribeView(BaseTemplateView):
         decoded_token = self.get_decoded_token(request)
         if isinstance(decoded_token, HttpResponse):
             return decoded_token  # Return error response if token is invalid
+        organization = Organization.objects.filter(id=decoded_token["organization_id"]).first()
         if request.GET.get("confirm") != "true":
             return self.render_to_response(
                 context={
@@ -387,7 +433,7 @@ class UnsubscribeView(BaseTemplateView):
                         "confirmUrl": f"{request.path}?token={request.GET.get('token')}&confirm=true",
                         "localeMessages": {"Confirm": _("Confirm")},
                     }
-                    | self.get_app_context(),
+                    | self.get_app_context(organization),
                 }
             )
         command = UnsubscribeCommand(
@@ -402,15 +448,19 @@ class UnsubscribeView(BaseTemplateView):
                 message=_("An error occurred during unsubscription."),
                 exception=e,
                 title=_("Unsubscription Error"),
+                organization=organization,
             )
         return self.render_to_response(
             context={
                 "page_title": _("Unsubscribed"),
                 "appContext": {
                     "successMessage": _("You have been successfully unsubscribed from our mailing list."),
-                    "localeMessages": {"Confirm": _("Confirm")},
+                    "localeMessages": {
+                        "Confirm": _("Confirm"),
+                        "close_window_message": _("You can now close this window."),
+                    },
                 }
-                | self.get_app_context(),
+                | self.get_app_context(organization),
             }
         )
 

@@ -8,7 +8,8 @@ from django.views import View
 from pydantic import ValidationError
 
 from django_email_learning.apps import PLATFORM_ADMIN_GROUP_NAME
-from django_email_learning.models import Course, OrganizationUser
+from django_email_learning.models import Course, Organization, OrganizationUser
+from django_email_learning.personalised.views import _logo_context
 from django_email_learning.services.jwt_service import (
     InvalidTokenException,
     decode_jwt,
@@ -28,6 +29,7 @@ def _command_result_response(  # type: ignore[no-untyped-def]
     success_message: str | None = None,
     error_message: str | None = None,
     status_code: int = 200,
+    organization: Organization | None = None,
 ) -> HttpResponse:
     current_lang_code = get_language()
     lang_info = get_language_info(current_lang_code)
@@ -41,7 +43,11 @@ def _command_result_response(  # type: ignore[no-untyped-def]
                 "errorMessage": error_message,
                 "closeWindow": True,
                 "direction": "rtl" if lang_info["bidi"] else "ltr",
-                "localeMessages": {"Confirm": _("Confirm")},
+                "customLogo": _logo_context(organization),
+                "localeMessages": {
+                    "Confirm": _("Confirm"),
+                    "close_window_message": _("You can now close this window."),
+                },
             },
         },
         status=status_code,
@@ -134,12 +140,17 @@ class RedirectView(OAuthSessionRequestMixin, View):
                 status_code=400,
             )
 
+        organization = None
         try:
             session.state = SessionState.PROCESSING
             session.save(update_fields=["state"])
 
             decoded_request = decode_jwt(session.jwt_token)
             # command_payload = decoded_request.get("handler", {})
+            course_id = decoded_request.get("course_id")
+            if course_id is not None:
+                course = Course.objects.select_related("organization").filter(id=course_id).first()
+                organization = course.organization if course else None
             decoded_request["code"] = code
             decoded_request["state"] = session_id
             request_serializer_class = self.get_create_session_request_class()
@@ -154,6 +165,7 @@ class RedirectView(OAuthSessionRequestMixin, View):
                 page_title=_("Authorization Complete"),
                 success_message=_("Google authorization completed successfully. You can close this window."),
                 status_code=200,
+                organization=organization,
             )
         except InvalidTokenException:
             session.state = SessionState.FAILED
@@ -163,6 +175,7 @@ class RedirectView(OAuthSessionRequestMixin, View):
                 page_title=_("Authorization Error"),
                 error_message=_("Invalid OAuth session token."),
                 status_code=400,
+                organization=organization,
             )
         except Exception as e:  # noqa: BLE001
             logger.error(f"Error processing OAuth redirect: {str(e)}")
@@ -173,4 +186,5 @@ class RedirectView(OAuthSessionRequestMixin, View):
                 page_title=_("Authorization Error"),
                 error_message=str(e),
                 status_code=400,
+                organization=organization,
             )
