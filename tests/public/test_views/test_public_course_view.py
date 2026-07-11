@@ -5,7 +5,7 @@ from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 
-from django_email_learning.models import ExternalReference, Learner
+from django_email_learning.models import Enrollment, EnrollmentStatus, ExternalReference, Learner
 
 
 @pytest.fixture
@@ -63,7 +63,8 @@ def test_course_view_enrollment_closed_when_cap_reached(db, anonymous_client, co
         **settings.DJANGO_EMAIL_LEARNING,
         "LEARNERS": {"MAX_LEARNERS_PER_ORGANIZATION": 1},
     }
-    Learner.objects.create(email="learner@example.com", organization=course.organization)
+    learner = Learner.objects.create(email="learner@example.com", organization=course.organization)
+    Enrollment.objects.create(learner=learner, course=course, status=EnrollmentStatus.ACTIVE)
 
     url = reverse(
         "django_email_learning:public:course_view",

@@ -7,6 +7,8 @@ from django.db import models
 from django.urls import reverse
 from django.utils.module_loading import import_string
 
+from .enums.enrollment_status import EnrollmentStatus
+
 User = get_user_model()
 
 
@@ -56,7 +58,8 @@ class Organization(models.Model):
         cap = self.get_learners_cap()
         if not cap:
             return True
-        return self.learner_set.count() < cap
+        active_learner_count = self.learner_set.filter(enrollments__status=EnrollmentStatus.ACTIVE).distinct().count()
+        return active_learner_count < cap
 
 
 class OrganizationUser(models.Model):
