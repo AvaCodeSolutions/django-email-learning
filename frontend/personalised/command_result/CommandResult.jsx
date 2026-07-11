@@ -6,6 +6,7 @@ import logoVerticalLightUrl from '../../src/assets/logo-v-light.png';
 import logoVerticalDarkUrl from '../../src/assets/logo-v-dark.png';
 
 const GOLDEN_RATIO = 1.618;
+const GOLDEN_RATIO_SQUARED = GOLDEN_RATIO * GOLDEN_RATIO;
 
 const CommandResult = () => {
     const { successMessage, confirmationMessage, confirmUrl, errorMessage, ref, localeMessages, customLogo } = useAppContext();
@@ -36,7 +37,7 @@ const CommandResult = () => {
             {localeMessages.close_window_message}
         </Typography> }
     </Box>
-    <Box sx={{ flexGrow: GOLDEN_RATIO }} />
+    <Box sx={{ flexGrow: GOLDEN_RATIO_SQUARED }} />
     </Layout>
 }
 
