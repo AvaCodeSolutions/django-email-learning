@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.14.1] — 2026-07-10
+
+### Fixed
+
+- **Learners cap counted every learner, not just active ones** — `Organization.can_enroll_learner()` counted every `Learner` row against `MAX_LEARNERS_PER_ORGANIZATION`, regardless of enrollment status, so a learner with no enrollment (or only an unverified/completed/deactivated one) still counted toward the cap. It now counts only distinct learners with at least one active enrollment.
+
+---
+
 ## [1.14.0] — 2026-07-10
 
 ### Fixed
