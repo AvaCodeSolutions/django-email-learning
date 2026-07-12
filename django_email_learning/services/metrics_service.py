@@ -96,5 +96,8 @@ class MetricsService:
     def sendout_all_deliveries_failed(self, sendout_id: int, newsletter_id: int) -> None:
         self.metric_recorder.sendout_all_deliveries_failed(sendout_id, newsletter_id)
 
+    def sendout_blocked_by_resolver(self, sendout_id: int, newsletter_id: int) -> None:
+        self.metric_recorder.sendout_blocked_by_resolver(sendout_id, newsletter_id)
+
 
 metric_service = MetricsService()

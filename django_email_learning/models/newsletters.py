@@ -39,6 +39,7 @@ class Sendout(models.Model):
     class Status(models.TextChoices):
         SCHEDULED = "scheduled", "Scheduled"
         SENT = "sent", "Sent"
+        BLOCKED = "blocked", "Blocked"
 
     newsletter = models.ForeignKey(Newsletter, on_delete=models.CASCADE, related_name="sendouts")
     subject = models.CharField(max_length=500)
@@ -47,6 +48,7 @@ class Sendout(models.Model):
     sent_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.SCHEDULED, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    denied_attempts = models.PositiveSmallIntegerField(default=0)
 
     def __str__(self) -> str:
         return f"{self.subject} — {self.newsletter.title} ({self.status})"

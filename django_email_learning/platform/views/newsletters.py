@@ -30,6 +30,7 @@ class NewsletterDetailView(BasePlatformView):
         return {
             "scheduled": _("Scheduled"),
             "sent": _("Sent"),
+            "blocked": _("Blocked"),
             "all": _("All"),
             "subject": _("Subject"),
             "scheduled_at": _("Scheduled At"),
