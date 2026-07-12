@@ -6,6 +6,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.16.0] — 2026-07-12
+
+### Added
+
+- **Configurable `SENDOUT_ALLOWED_RESOLVER` for newsletter sendouts** — `DJANGO_EMAIL_LEARNING["NEWSLETTERS"]["SENDOUT_ALLOWED_RESOLVER"]` is a dotted-path callable `(sendout: Sendout) -> bool`, checked once per due sendout in `DatabaseSendoutQueue` right before it's fanned out to subscribers. Defaults to always-allowed. Mirrors the existing `LEARNERS_CAP_RESOLVER` pattern, and is useful for e.g. capping how many sendouts an organization can send per period. A denied sendout is moved straight to a new terminal `Sendout.Status.BLOCKED` state (`blocked_reason="denied_by_resolver"`) rather than retried, since a cap that's already hit this poll will almost certainly still be hit moments later.
+- **`SENDOUT_BLOCKED_MESSAGE` setting** — an optional plain string shown as a tooltip next to a sendout's "Blocked" status in the platform UI, so library users can explain to admins why sendouts get blocked, instead of a generic fallback message.
+
+---
+
 ## [1.15.0] — 2026-07-11
 
 ### Added
