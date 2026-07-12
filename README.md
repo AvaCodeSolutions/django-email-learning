@@ -24,6 +24,8 @@ It is inspired by the Darsnameh email-learning service, which unfortunately shut
 
 If you find this project useful, a ⭐ on GitHub helps others discover it.
 
+Want to try it online first? Create a free account on [InboxAcademy](https://inboxacademy.io), our hosted platform built on top of django-email-learning.
+
 ### Why an email learning platform?
 
 An email learning platform is a type of e-learning system where course content is delivered directly to learners’ inboxes. Platform admins can create courses, lessons, and quizzes, and configure the timing rules that determine when each next lesson or quiz is sent.

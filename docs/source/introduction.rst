@@ -14,6 +14,8 @@ already spend their time.
 
 If you find this project useful, a star on `GitHub`_ helps others discover it.
 
+Want to try it online first? Create a free account on `InboxAcademy <https://inboxacademy.io>`_, our hosted platform built on top of Django Email Learning.
+
 
 Key Features
 ------------
