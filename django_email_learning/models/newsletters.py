@@ -52,7 +52,6 @@ class Sendout(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.SCHEDULED, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     blocked_reason = models.CharField(max_length=50, choices=BlockedReason.choices, null=True, blank=True)
-    blocked_message = models.TextField(null=True, blank=True)
 
     def __str__(self) -> str:
         return f"{self.subject} — {self.newsletter.title} ({self.status})"

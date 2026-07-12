@@ -20,14 +20,6 @@ def always_deny_resolver(sendout: Sendout) -> bool:
     return False
 
 
-def custom_blocked_message_resolver(sendout: Sendout) -> str:
-    return f"Blocked sendout #{sendout.id} for testing."
-
-
-def none_blocked_message_resolver(sendout: Sendout) -> None:
-    return None
-
-
 @pytest.fixture(autouse=True)
 def _clear_resolver_calls():
     RESOLVER_CALLS.clear()
@@ -66,7 +58,6 @@ def test_fanout_allows_sendout_when_resolver_not_configured(db, sendout, subscri
     sendout.refresh_from_db()
     assert sendout.status == Sendout.Status.SCHEDULED
     assert sendout.blocked_reason is None
-    assert sendout.blocked_message is None
 
 
 def test_fanout_receives_the_sendout_instance(db, settings, sendout, subscriber):
@@ -102,54 +93,6 @@ def test_fanout_blocks_sendout_denied_by_resolver(db, settings, sendout, subscri
     assert sendout.status == Sendout.Status.BLOCKED
     assert sendout.blocked_reason == Sendout.BlockedReason.DENIED_BY_RESOLVER
     mock_metric.assert_called_once_with(sendout_id=sendout.id, newsletter_id=sendout.newsletter_id)
-
-
-def test_fanout_saves_blocked_message_from_resolver(db, settings, sendout, subscriber):
-    settings.DJANGO_EMAIL_LEARNING = {
-        **settings.DJANGO_EMAIL_LEARNING,
-        "NEWSLETTERS": {
-            "SENDOUT_ALLOWED_RESOLVER": "tests.services.defaults.test_database_sendout_queue.always_deny_resolver",
-            "SENDOUT_BLOCKED_MESSAGE_RESOLVER": (
-                "tests.services.defaults.test_database_sendout_queue.custom_blocked_message_resolver"
-            ),
-        },
-    }
-
-    DatabaseSendoutQueue().next_task()
-
-    sendout.refresh_from_db()
-    assert sendout.blocked_message == f"Blocked sendout #{sendout.id} for testing."
-
-
-def test_fanout_blocked_message_defaults_to_none_when_resolver_not_configured(db, settings, sendout, subscriber):
-    settings.DJANGO_EMAIL_LEARNING = {
-        **settings.DJANGO_EMAIL_LEARNING,
-        "NEWSLETTERS": {
-            "SENDOUT_ALLOWED_RESOLVER": "tests.services.defaults.test_database_sendout_queue.always_deny_resolver",
-        },
-    }
-
-    DatabaseSendoutQueue().next_task()
-
-    sendout.refresh_from_db()
-    assert sendout.blocked_message is None
-
-
-def test_fanout_blocked_message_resolver_can_return_none(db, settings, sendout, subscriber):
-    settings.DJANGO_EMAIL_LEARNING = {
-        **settings.DJANGO_EMAIL_LEARNING,
-        "NEWSLETTERS": {
-            "SENDOUT_ALLOWED_RESOLVER": "tests.services.defaults.test_database_sendout_queue.always_deny_resolver",
-            "SENDOUT_BLOCKED_MESSAGE_RESOLVER": (
-                "tests.services.defaults.test_database_sendout_queue.none_blocked_message_resolver"
-            ),
-        },
-    }
-
-    DatabaseSendoutQueue().next_task()
-
-    sendout.refresh_from_db()
-    assert sendout.blocked_message is None
 
 
 def test_blocked_sendout_is_not_polled_again(db, sendout, subscriber):

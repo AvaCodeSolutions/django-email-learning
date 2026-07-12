@@ -1,5 +1,6 @@
 from typing import Dict
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
@@ -27,6 +28,7 @@ class NewsletterDetailView(BasePlatformView):
         return context
 
     def get_locale_messages(self) -> Dict[str, str]:
+        newsletters_settings: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("NEWSLETTERS", {})
         return {
             "scheduled": _("Scheduled"),
             "sent": _("Sent"),
@@ -66,7 +68,8 @@ class NewsletterDetailView(BasePlatformView):
             ),
             "uploaded_image_delete_failed": _("Failed to delete image file. Please try again."),
             "newsletter_subscribers": _("Subscribers"),
-            "sendout_blocked_default_message": _("This sendout was blocked."),
+            "sendout_blocked_default_message": newsletters_settings.get("SENDOUT_BLOCKED_MESSAGE")
+            or _("This sendout was blocked."),
         }
 
 

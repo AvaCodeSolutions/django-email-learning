@@ -48,7 +48,7 @@ All newsletter settings are nested under ``DJANGO_EMAIL_LEARNING`` in your Djang
             "MAX_RETRIES": 3,       # per-subscriber retry limit (default 3)
             "MAX_SUBSCRIBERS": 500, # subscriber cap per newsletter (default: no limit)
             "SENDOUT_ALLOWED_RESOLVER": "myapp.newsletters.is_sendout_allowed",
-            "SENDOUT_BLOCKED_MESSAGE_RESOLVER": "myapp.newsletters.sendout_blocked_message",
+            "SENDOUT_BLOCKED_MESSAGE": "Monthly sendout limit reached for this organisation.",
         },
 
         # Optional: replace the default database-backed sendout queue.
@@ -93,16 +93,9 @@ The same hook exists on the public API subscription view (``django_email_learnin
         ).count()
         return sent_this_month < MONTHLY_CAP  # or e.g. organization.monthly_sendout_cap
 
-A denial is treated as final rather than retried: a cap that's already hit this poll will almost always still be hit moments later on the next one, so the sendout is moved straight to a terminal **Blocked** state instead of being left **Scheduled** to be re-checked forever. There is currently no automated way to reschedule a blocked sendout from the platform UI — it needs to be re-created, or have its status reset directly.
+A denial is treated as final rather than retried: a cap that's already hit this poll will almost always still be hit moments later on the next one, so the sendout is moved straight to a terminal **Blocked** state (with ``blocked_reason="denied_by_resolver"``) instead of being left **Scheduled** to be re-checked forever. There is currently no automated way to reschedule a blocked sendout from the platform UI — it needs to be re-created, or have its status reset directly.
 
-``SENDOUT_BLOCKED_MESSAGE_RESOLVER`` is an optional companion dotted path to a callable ``(sendout: Sendout) -> str | None``, called once at the moment a sendout is blocked. Its return value is saved to ``Sendout.blocked_message`` and shown in the platform UI (as a tooltip next to the **Blocked** status), so you can explain *why* in your own words — e.g. referencing the specific cap and current usage — rather than the generic fallback message:
-
-.. code-block:: python
-
-    def sendout_blocked_message(sendout: Sendout) -> str:
-        return f"Monthly limit of {MONTHLY_CAP} sendouts reached for this organisation."
-
-Because the message is generated and persisted once, at block time, it reflects the state that actually caused the block, even if that state (e.g. the cap usage) has since changed.
+``SENDOUT_BLOCKED_MESSAGE`` is an optional plain string shown in the platform UI as a tooltip next to the **Blocked** status, explaining to admins why a sendout was blocked. It applies to every blocked sendout — there's no per-sendout customisation — and falls back to a generic built-in message when unset. Unlike ``SENDOUT_ALLOWED_RESOLVER``, this isn't a dotted-path callable: it's read fresh from settings each time the newsletter page is rendered, not persisted on the ``Sendout`` row, so it always reflects your current configuration rather than the state at the moment a given sendout was blocked.
 
 Failure handling
 ----------------

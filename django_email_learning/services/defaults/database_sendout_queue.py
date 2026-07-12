@@ -37,25 +37,6 @@ def is_sendout_allowed(sendout: Sendout) -> bool:
     return True
 
 
-def get_sendout_blocked_message(sendout: Sendout) -> str | None:
-    """
-    Returns an optional human-readable message to show in the platform UI when a
-    sendout is blocked by SENDOUT_ALLOWED_RESOLVER.
-
-    Reads DJANGO_EMAIL_LEARNING["NEWSLETTERS"]["SENDOUT_BLOCKED_MESSAGE_RESOLVER"], a
-    dotted path to a callable(sendout: Sendout) -> str | None. Called once, at the
-    moment the sendout is blocked, so the message can reference state at that point
-    (e.g. "5/5 sendouts used this month") — it isn't recomputed afterwards. Returns
-    None when unconfigured, in which case the frontend falls back to a generic message.
-    """
-    conf: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
-    resolver_path = conf.get("NEWSLETTERS", {}).get("SENDOUT_BLOCKED_MESSAGE_RESOLVER")
-    if resolver_path:
-        resolver = import_string(resolver_path)
-        return resolver(sendout)
-    return None
-
-
 class DatabaseSendoutQueue(TaskQueueProtocol[SendoutDelivery]):
     def __init__(self) -> None:
         self._iterator: Iterator[SendoutDelivery] = iter([])
@@ -91,8 +72,7 @@ class DatabaseSendoutQueue(TaskQueueProtocol[SendoutDelivery]):
 
             due_sendout.status = Sendout.Status.BLOCKED
             due_sendout.blocked_reason = Sendout.BlockedReason.DENIED_BY_RESOLVER
-            due_sendout.blocked_message = get_sendout_blocked_message(due_sendout)
-            due_sendout.save(update_fields=["status", "blocked_reason", "blocked_message"])
+            due_sendout.save(update_fields=["status", "blocked_reason"])
             logger.warning(f"Sendout {due_sendout.id}: blocked by SENDOUT_ALLOWED_RESOLVER.")
             metric_service.sendout_blocked_by_resolver(
                 sendout_id=due_sendout.id,

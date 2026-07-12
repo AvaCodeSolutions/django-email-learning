@@ -417,7 +417,7 @@ function Newsletter() {
                                                     <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
                                                         {statusLabel(s.status)}
                                                         {s.status === 'blocked' && (
-                                                            <Tooltip title={s.blocked_message || localeMessages['sendout_blocked_default_message'] || 'This sendout was blocked.'}>
+                                                            <Tooltip title={localeMessages['sendout_blocked_default_message'] || 'This sendout was blocked.'}>
                                                                 <InfoOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
                                                             </Tooltip>
                                                         )}
