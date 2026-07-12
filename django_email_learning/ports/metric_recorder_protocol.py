@@ -80,3 +80,6 @@ class MetricRecorderProtocol(Protocol):
 
     def sendout_all_deliveries_failed(self, sendout_id: int, newsletter_id: int) -> None:
         ...
+
+    def sendout_blocked_by_resolver(self, sendout_id: int, newsletter_id: int) -> None:
+        ...

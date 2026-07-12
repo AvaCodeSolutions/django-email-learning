@@ -47,6 +47,8 @@ All newsletter settings are nested under ``DJANGO_EMAIL_LEARNING`` in your Djang
             "FROM_EMAIL": "newsletter@example.com",
             "MAX_RETRIES": 3,       # per-subscriber retry limit (default 3)
             "MAX_SUBSCRIBERS": 500, # subscriber cap per newsletter (default: no limit)
+            "SENDOUT_ALLOWED_RESOLVER": "myapp.newsletters.is_sendout_allowed",
+            "SENDOUT_BLOCKED_MESSAGE": "Monthly sendout limit reached for this organisation.",
         },
 
         # Optional: replace the default database-backed sendout queue.
@@ -69,9 +71,37 @@ All newsletter settings are nested under ``DJANGO_EMAIL_LEARNING`` in your Djang
 
 The same hook exists on the public API subscription view (``django_email_learning.public.api.views``) if you are using the API endpoint instead.
 
+``SENDOUT_ALLOWED_RESOLVER`` is checked once per due sendout, right before it's fanned out to subscribers, and defaults to always-allowed. It's a dotted path to a callable that takes the ``Sendout`` instance and returns a ``bool`` — useful for e.g. capping how many sendouts an organisation can send per period. Each due sendout is checked individually rather than caching the answer per organisation, since one sendout completing can change what should happen for the next one from the same organisation:
+
+.. code-block:: python
+
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from django_email_learning.models import Sendout
+
+    MONTHLY_CAP = 5
+
+    def is_sendout_allowed(sendout: Sendout) -> bool:
+        organization = sendout.newsletter.organization
+        since = timezone.now() - timedelta(days=30)
+        sent_this_month = Sendout.objects.filter(
+            newsletter__organization=organization,
+            status=Sendout.Status.SENT,
+            sent_at__gte=since,
+        ).count()
+        return sent_this_month < MONTHLY_CAP  # or e.g. organization.monthly_sendout_cap
+
+A denial is treated as final rather than retried: a cap that's already hit this poll will almost always still be hit moments later on the next one, so the sendout is moved straight to a terminal **Blocked** state (with ``blocked_reason="denied_by_resolver"``) instead of being left **Scheduled** to be re-checked forever. There is currently no automated way to reschedule a blocked sendout from the platform UI — it needs to be re-created, or have its status reset directly.
+
+``SENDOUT_BLOCKED_MESSAGE`` is an optional plain string shown in the platform UI as a tooltip next to the **Blocked** status, explaining to admins why a sendout was blocked. It applies to every blocked sendout — there's no per-sendout customisation — and falls back to a generic built-in message when unset. Unlike ``SENDOUT_ALLOWED_RESOLVER``, this isn't a dotted-path callable: it's read fresh from settings each time the newsletter page is rendered, not persisted on the ``Sendout`` row, so it always reflects your current configuration rather than the state at the moment a given sendout was blocked.
+
 Failure handling
 ----------------
 
 The delivery job tracks each subscriber independently. If a subset of deliveries fail (e.g. due to a bad address), those are retried on subsequent runs up to ``MAX_RETRIES`` times. The sendout is still marked **Sent** as long as at least one subscriber received it (best-effort completion).
 
 If *every* delivery permanently fails — which typically indicates an email configuration problem rather than individual bad addresses — the sendout is kept in **Scheduled** state, all failed deliveries are reset to pending, and a ``sendout_all_deliveries_failed`` metric and ``ERROR`` log entry are emitted so the issue is visible to operators.
+
+If ``SENDOUT_ALLOWED_RESOLVER`` denies a sendout, it's moved to **Blocked** (``blocked_reason="denied_by_resolver"``) and a ``sendout_blocked_by_resolver`` metric and ``WARNING`` log entry are emitted.

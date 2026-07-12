@@ -81,6 +81,7 @@ class SendoutView(NewsletterAccessMixin, View):
         if status_filter in (
             Sendout.Status.SCHEDULED,
             Sendout.Status.SENT,
+            Sendout.Status.BLOCKED,
         ):
             sendouts = sendouts.filter(status=status_filter)
 

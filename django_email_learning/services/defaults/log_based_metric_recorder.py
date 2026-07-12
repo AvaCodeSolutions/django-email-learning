@@ -225,3 +225,13 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
                 "newsletter_id": newsletter_id,
             },
         )
+
+    def sendout_blocked_by_resolver(self, sendout_id: int, newsletter_id: int) -> None:
+        logger.warning(
+            "Sendout blocked — SENDOUT_ALLOWED_RESOLVER denied it too many times",
+            extra={
+                "metric": "sendout_blocked_by_resolver",
+                "sendout_id": sendout_id,
+                "newsletter_id": newsletter_id,
+            },
+        )

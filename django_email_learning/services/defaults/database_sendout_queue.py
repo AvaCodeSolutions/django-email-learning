@@ -4,9 +4,11 @@ from typing import Iterator
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+from django.utils.module_loading import import_string
 
 from django_email_learning.models import NewsletterSubscriber, Sendout, SendoutDelivery
 from django_email_learning.ports.task_queue_protocol import TaskQueueProtocol
+from django_email_learning.services.metrics_service import metric_service
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +18,23 @@ BATCH_SIZE = 50
 def get_max_retries() -> int:
     conf: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
     return int(conf.get("NEWSLETTERS", {}).get("MAX_RETRIES", 3))
+
+
+def is_sendout_allowed(sendout: Sendout) -> bool:
+    """
+    Returns whether the given due sendout is allowed to be sent.
+
+    Reads DJANGO_EMAIL_LEARNING["NEWSLETTERS"]["SENDOUT_ALLOWED_RESOLVER"], a dotted
+    path to a callable(sendout: Sendout) -> bool. Defaults to always-allowed when unset,
+    letting library users implement custom logic (e.g. a cap on sendouts per period)
+    without forking the sending job.
+    """
+    conf: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
+    resolver_path = conf.get("NEWSLETTERS", {}).get("SENDOUT_ALLOWED_RESOLVER")
+    if resolver_path:
+        resolver = import_string(resolver_path)
+        return bool(resolver(sendout))
+    return True
 
 
 class DatabaseSendoutQueue(TaskQueueProtocol[SendoutDelivery]):
@@ -38,6 +57,31 @@ class DatabaseSendoutQueue(TaskQueueProtocol[SendoutDelivery]):
             return iter([])
 
         logger.debug(f"DatabaseSendoutQueue: {len(due_ids)} due sendout(s) found.")
+
+        # Step 1.5: filter out sendouts the configured resolver denies. A due sendout is
+        # checked individually (not cached per organization) since one sendout's outcome
+        # can change what should happen for the next one from the same organization. A
+        # denial is treated as permanent — a retry loop rarely helps here (a cap that's
+        # already hit this poll will likely still be hit on the next one moments later)
+        # — so the sendout is immediately moved to BLOCKED instead of staying SCHEDULED.
+        allowed_ids: list[int] = []
+        for due_sendout in Sendout.objects.filter(id__in=due_ids).select_related("newsletter__organization"):
+            if is_sendout_allowed(due_sendout):
+                allowed_ids.append(due_sendout.id)
+                continue
+
+            due_sendout.status = Sendout.Status.BLOCKED
+            due_sendout.blocked_reason = Sendout.BlockedReason.DENIED_BY_RESOLVER
+            due_sendout.save(update_fields=["status", "blocked_reason"])
+            logger.warning(f"Sendout {due_sendout.id}: blocked by SENDOUT_ALLOWED_RESOLVER.")
+            metric_service.sendout_blocked_by_resolver(
+                sendout_id=due_sendout.id,
+                newsletter_id=due_sendout.newsletter_id,
+            )
+
+        due_ids = allowed_ids
+        if not due_ids:
+            return iter([])
 
         # Step 2: lazy fan-out — create a SendoutDelivery for every current subscriber
         # that doesn't already have one (idempotent via ignore_conflicts).

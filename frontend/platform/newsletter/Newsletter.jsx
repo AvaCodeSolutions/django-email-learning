@@ -22,6 +22,7 @@ import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
+import Tooltip from '@mui/material/Tooltip';
 import { Tabs, Tab } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
@@ -29,6 +30,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import ListIcon from '@mui/icons-material/List';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import ContentEditor from '../../src/components/ContentEditor.jsx';
 import apiClient from '../../src/apiClient.js';
 import render, { useAppContext } from '../../src/render.jsx';
@@ -411,7 +413,16 @@ function Newsletter() {
                                                     </Box>
                                                 </TableCell>
                                                 <TableCell>{formatDate(s.scheduled_at)}</TableCell>
-                                                <TableCell>{statusLabel(s.status)}</TableCell>
+                                                <TableCell>
+                                                    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                                                        {statusLabel(s.status)}
+                                                        {s.status === 'blocked' && (
+                                                            <Tooltip title={localeMessages['sendout_blocked_default_message'] || 'This sendout was blocked.'}>
+                                                                <InfoOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                                                            </Tooltip>
+                                                        )}
+                                                    </Box>
+                                                </TableCell>
                                                 {isOrganizationAdmin && (
                                                     <TableCell align="right">
                                                         {s.status !== 'sent' && (
