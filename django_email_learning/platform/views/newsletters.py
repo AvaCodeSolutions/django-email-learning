@@ -66,6 +66,7 @@ class NewsletterDetailView(BasePlatformView):
             ),
             "uploaded_image_delete_failed": _("Failed to delete image file. Please try again."),
             "newsletter_subscribers": _("Subscribers"),
+            "sendout_blocked_default_message": _("This sendout was blocked."),
         }
 
 

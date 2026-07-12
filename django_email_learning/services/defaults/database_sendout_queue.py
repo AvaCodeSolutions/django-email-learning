@@ -20,11 +20,6 @@ def get_max_retries() -> int:
     return int(conf.get("NEWSLETTERS", {}).get("MAX_RETRIES", 3))
 
 
-def get_max_sendout_allowed_attempts() -> int:
-    conf: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
-    return int(conf.get("NEWSLETTERS", {}).get("SENDOUT_ALLOWED_MAX_ATTEMPTS", 3))
-
-
 def is_sendout_allowed(sendout: Sendout) -> bool:
     """
     Returns whether the given due sendout is allowed to be sent.
@@ -40,6 +35,25 @@ def is_sendout_allowed(sendout: Sendout) -> bool:
         resolver = import_string(resolver_path)
         return bool(resolver(sendout))
     return True
+
+
+def get_sendout_blocked_message(sendout: Sendout) -> str | None:
+    """
+    Returns an optional human-readable message to show in the platform UI when a
+    sendout is blocked by SENDOUT_ALLOWED_RESOLVER.
+
+    Reads DJANGO_EMAIL_LEARNING["NEWSLETTERS"]["SENDOUT_BLOCKED_MESSAGE_RESOLVER"], a
+    dotted path to a callable(sendout: Sendout) -> str | None. Called once, at the
+    moment the sendout is blocked, so the message can reference state at that point
+    (e.g. "5/5 sendouts used this month") — it isn't recomputed afterwards. Returns
+    None when unconfigured, in which case the frontend falls back to a generic message.
+    """
+    conf: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
+    resolver_path = conf.get("NEWSLETTERS", {}).get("SENDOUT_BLOCKED_MESSAGE_RESOLVER")
+    if resolver_path:
+        resolver = import_string(resolver_path)
+        return resolver(sendout)
+    return None
 
 
 class DatabaseSendoutQueue(TaskQueueProtocol[SendoutDelivery]):
@@ -63,30 +77,27 @@ class DatabaseSendoutQueue(TaskQueueProtocol[SendoutDelivery]):
 
         logger.debug(f"DatabaseSendoutQueue: {len(due_ids)} due sendout(s) found.")
 
-        # Step 1.5: filter out sendouts the configured resolver denies. A denied sendout
-        # is left SCHEDULED (retried next poll) until it's been denied
-        # SENDOUT_ALLOWED_MAX_ATTEMPTS times, at which point it's marked BLOCKED so it
-        # stops being polled.
-        max_sendout_allowed_attempts = get_max_sendout_allowed_attempts()
+        # Step 1.5: filter out sendouts the configured resolver denies. A due sendout is
+        # checked individually (not cached per organization) since one sendout's outcome
+        # can change what should happen for the next one from the same organization. A
+        # denial is treated as permanent — a retry loop rarely helps here (a cap that's
+        # already hit this poll will likely still be hit on the next one moments later)
+        # — so the sendout is immediately moved to BLOCKED instead of staying SCHEDULED.
         allowed_ids: list[int] = []
         for due_sendout in Sendout.objects.filter(id__in=due_ids).select_related("newsletter__organization"):
             if is_sendout_allowed(due_sendout):
                 allowed_ids.append(due_sendout.id)
                 continue
 
-            due_sendout.denied_attempts += 1
-            if due_sendout.denied_attempts >= max_sendout_allowed_attempts:
-                due_sendout.status = Sendout.Status.BLOCKED
-                logger.warning(
-                    f"Sendout {due_sendout.id}: blocked after {due_sendout.denied_attempts} denied attempt(s)."
-                )
-                metric_service.sendout_blocked_by_resolver(
-                    sendout_id=due_sendout.id,
-                    newsletter_id=due_sendout.newsletter_id,
-                )
-            else:
-                logger.debug(f"Sendout {due_sendout.id}: denied by SENDOUT_ALLOWED_RESOLVER, will retry.")
-            due_sendout.save(update_fields=["denied_attempts", "status"])
+            due_sendout.status = Sendout.Status.BLOCKED
+            due_sendout.blocked_reason = Sendout.BlockedReason.DENIED_BY_RESOLVER
+            due_sendout.blocked_message = get_sendout_blocked_message(due_sendout)
+            due_sendout.save(update_fields=["status", "blocked_reason", "blocked_message"])
+            logger.warning(f"Sendout {due_sendout.id}: blocked by SENDOUT_ALLOWED_RESOLVER.")
+            metric_service.sendout_blocked_by_resolver(
+                sendout_id=due_sendout.id,
+                newsletter_id=due_sendout.newsletter_id,
+            )
 
         due_ids = allowed_ids
         if not due_ids:
