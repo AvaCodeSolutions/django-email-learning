@@ -6,6 +6,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.19.0] — 2026-07-14
+
+### Fixed
+
+- **Stored XSS via unsanitized user text on public pages** — `Course.description`/`target_audience`, `Organization.description`, and `Certificate.name_on_certificate` are plain-text-intended fields (no rich-text editor exists for any of them) but were rendered via `dangerouslySetInnerHTML` on public, unauthenticated pages with no sanitization at any layer. A payload like `<img src=x onerror=alert(document.cookie)>` executed immediately for any visitor — including on the same page as the public enrollment form. Fixed at both layers: a new `strip_html()` helper strips all markup at write time (pydantic validators for `Course`/`Organization`, and `SubmitCertificateFormView`), and the affected React components (`Course.jsx`, `Organization.jsx`, `Certificate.jsx`) now use plain JSX interpolation instead of `dangerouslySetInnerHTML`, as defense in depth. Also fixed a JSON-LD script-tag injection on the same public course/organization pages: `json.dumps()` doesn't escape `<`/`>`, so a description containing `</script><script>...</script>` could close the JSON-LD `<script>` block early regardless of JSON string quoting; the JSON is now escaped the same way Django's `json_script` template filter does. See [GHSA-w7h2-pp89-53q3](https://github.com/AvaCodeSolutions/django-email-learning/security/advisories/GHSA-w7h2-pp89-53q3).
+- **No server-side sanitization on rich-text fields** — `Lesson.content` and `Sendout.body` are genuinely HTML-intended (both use the `ContentEditor` rich-text editor), but the API accepted whatever HTML was POSTed with no validation, so the editor's own UI restrictions could be bypassed with a direct request. Added a `sanitize_rich_text()` helper, an allowlist restricted to the tags/attributes the editor actually produces — paragraphs, headings, bold/italic, links, images (including width/height), lists, blockquotes, code blocks, and `text-align` styling — stripping `script`/`iframe`/`on*` attributes/`javascript:` hrefs/arbitrary CSS regardless of what's submitted.
+
+---
+
 ## [1.18.0] — 2026-07-13
 
 ### Fixed
