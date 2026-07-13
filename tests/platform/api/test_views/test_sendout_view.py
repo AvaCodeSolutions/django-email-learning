@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from django.urls import reverse
 from django.utils import timezone
@@ -13,6 +15,13 @@ def detail_url(organization_id: int, newsletter_id: int, sendout_id: int) -> str
             "newsletter_id": newsletter_id,
             "sendout_id": sendout_id,
         },
+    )
+
+
+def list_url(organization_id: int, newsletter_id: int) -> str:
+    return reverse(
+        "django_email_learning:api_platform:sendouts_list",
+        kwargs={"organization_id": organization_id, "newsletter_id": newsletter_id},
     )
 
 
@@ -78,3 +87,32 @@ def test_delete_sendout_unauthenticated(anonymous_client, scheduled_sendout):
     url = detail_url(1, scheduled_sendout.newsletter_id, scheduled_sendout.id)
     response = anonymous_client.delete(url)
     assert response.status_code == 401
+
+
+# --- CREATE / UPDATE sanitization ---
+
+
+def test_create_sendout_strips_script_but_keeps_allowed_formatting(superadmin_client, newsletter):
+    payload = {
+        "subject": "Weekly update",
+        "body": "<p>Hello <strong>world</strong></p><script>alert(document.cookie)</script>",
+        "scheduled_at": timezone.now().isoformat(),
+    }
+    response = superadmin_client.post(list_url(1, newsletter.id), json.dumps(payload), content_type="application/json")
+    assert response.status_code == 201
+    # SendoutResponse (returned on create) doesn't include body — check the stored value.
+    body = Sendout.objects.get(id=response.json()["id"]).body
+    assert "<script>" not in body
+    assert "<strong>world</strong>" in body
+
+
+def test_update_sendout_strips_script_tag(superadmin_client, scheduled_sendout):
+    payload = {
+        "subject": scheduled_sendout.subject,
+        "body": '<p>Updated</p><img src=x onerror="alert(1)">',
+        "scheduled_at": timezone.now().isoformat(),
+    }
+    url = detail_url(1, scheduled_sendout.newsletter_id, scheduled_sendout.id)
+    response = superadmin_client.patch(url, json.dumps(payload), content_type="application/json")
+    assert response.status_code == 200
+    assert "onerror" not in response.json()["body"]

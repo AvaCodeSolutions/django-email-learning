@@ -73,7 +73,7 @@ function Organization() {
                 }
                 <Stack spacing={2} sx={{ flex: 1, minWidth: 0, pt: { xs: 1, md: 3 }, px: { xs: 0.5, md: 1 } }}>
                     <Typography variant="h1" sx={{ mb: 0 }}>{ organization["name"] }</Typography>
-                    <Typography variant="body1" sx={{ color: 'text.secondary' }} dangerouslySetInnerHTML={{ __html: organization["description"] }} />
+                    <Typography variant="body1" sx={{ color: 'text.secondary' }}>{ organization["description"] }</Typography>
                     {(organization.website || organization.linkedin_page || organization.youtube_channel) && (
                         <Stack
                             direction={{ xs: 'column', sm: 'row' }}
@@ -240,8 +240,9 @@ function Organization() {
                                         WebkitLineClamp: 4,
                                         WebkitBoxOrient: 'vertical',
                                     }}
-                                    dangerouslySetInnerHTML={{ __html: course.description }}
-                                />
+                                >
+                                    {course.description}
+                                </Typography>
                                 <Box sx={{ mt: 'auto', pt: 1 }}>
                                     <Button
                                         variant="contained"

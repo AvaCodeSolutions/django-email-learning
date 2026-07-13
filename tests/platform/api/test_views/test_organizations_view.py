@@ -59,6 +59,24 @@ def test_post_organizations_view_as_superadmin(superadmin_client):
     assert response.json().get("youtube_channel") == payload["youtube_channel"]
 
 
+def test_create_organization_strips_html_from_description(superadmin_client):
+    payload = {
+        "name": "Scripted Org",
+        "description": "Nice org<script>alert(document.cookie)</script>",
+    }
+    response = superadmin_client.post(get_url(), data=payload, content_type="application/json")
+    assert response.status_code == 201
+    assert "<script>" not in response.json()["description"]
+
+
+def test_update_organization_strips_html_from_description(superadmin_client):
+    payload = {"description": 'Hijacked description <img src=x onerror="alert(1)">'}
+    response = superadmin_client.post(update_url(1), data=payload, content_type="application/json")
+    assert response.status_code == 200
+    assert "onerror" not in response.json()["description"]
+    assert "Hijacked description" in Organization.objects.get(id=1).description
+
+
 def test_post_organizations_view_optional_social_fields(superadmin_client):
     payload = {"name": "Optional Org", "description": "Optional fields omitted"}
 

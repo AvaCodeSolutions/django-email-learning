@@ -6,6 +6,7 @@ from django.urls import reverse
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from django_email_learning.models import Organization, OrganizationUser
+from django_email_learning.services.sanitize import strip_html
 from django_email_learning.services.storage_tools import (
     FileDoesNotExistError,
     move_file,
@@ -78,6 +79,11 @@ class CreateOrganizationRequest(BaseModel):
     linkedin_page: Optional[str] = Field(None, examples=["https://linkedin.com/company/xyz"])
     is_public: bool = Field(default=True, examples=[True])
 
+    @field_validator("description")
+    @classmethod
+    def strip_html_markup(cls, value: Optional[str]) -> Optional[str]:
+        return strip_html(value) if value else value
+
     def to_django_model(self) -> Organization:
         organization = Organization(
             name=self.name,
@@ -116,6 +122,11 @@ class UpdateOrganizationRequest(BaseModel):
     logo: Optional[str] = Field(None, examples=["/path/to/logo.png"])
     remove_logo: Optional[bool] = Field(None, examples=[True])
     is_public: Optional[bool] = Field(None, examples=[True])
+
+    @field_validator("description")
+    @classmethod
+    def strip_html_markup(cls, value: Optional[str]) -> Optional[str]:
+        return strip_html(value) if value else value
 
 
 class UserRole(enum.StrEnum):

@@ -28,6 +28,7 @@ from django_email_learning.personalised.api.serializers import (
 from django_email_learning.services import jwt_service
 from django_email_learning.services.email_sender_service import email_sender_service
 from django_email_learning.services.metrics_service import metric_service
+from django_email_learning.services.sanitize import strip_html
 from django_email_learning.services.utils import PRIVATE_FILE_STORAGE
 
 logger = logging.getLogger(__name__)
@@ -527,6 +528,9 @@ class SubmitCertificateFormView(View):
         token = payload.get("token")
         name = payload.get("name")
 
+        if not name:
+            return JsonResponse({"error": _("Name is required")}, status=400)
+        name = strip_html(name)
         if not name:
             return JsonResponse({"error": _("Name is required")}, status=400)
 

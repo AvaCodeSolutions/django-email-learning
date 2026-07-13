@@ -56,6 +56,24 @@ def test_course_view_anonymous_client(db, anonymous_client, course, course_lesso
     assert json_ld["teaches"] == ["Sample Lesson"]
 
 
+def test_course_view_json_ld_escapes_script_tag_in_description(db, anonymous_client, course):
+    course.enabled = True
+    course.description = "Nice course</script><script>alert(document.cookie)</script>"
+    course.save()
+
+    url = reverse(
+        "django_email_learning:public:course_view",
+        kwargs={"organization_id": 1, "course_slug": course.slug},
+    )
+    response = anonymous_client.get(url)
+
+    assert response.status_code == 200
+    raw_json_ld = response.context["json_ld"]
+    assert "</script>" not in raw_json_ld
+    # Still valid, parseable JSON that round-trips back to the original value.
+    assert json.loads(raw_json_ld)["description"] == course.description
+
+
 def test_course_view_enrollment_closed_when_cap_reached(db, anonymous_client, course, settings):
     course.enabled = True
     course.save()

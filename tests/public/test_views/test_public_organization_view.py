@@ -1,3 +1,5 @@
+import json
+
 from django.urls import reverse
 
 from django_email_learning.models import Enrollment, EnrollmentStatus, Learner, Organization
@@ -67,6 +69,20 @@ def test_organization_view_excludes_non_public_courses(db, anonymous_client, cou
 
     assert response.status_code == 200
     assert len(response.context["appContext"]["organization"]["courses"]) == 0
+
+
+def test_organization_view_json_ld_escapes_script_tag_in_course_description(db, anonymous_client, course):
+    course.enabled = True
+    course.description = "Nice course</script><script>alert(document.cookie)</script>"
+    course.save()
+    url = reverse("django_email_learning:public:organization_view", kwargs={"organization_id": 1})
+
+    response = anonymous_client.get(url)
+
+    assert response.status_code == 200
+    raw_json_ld = response.context["json_ld"]
+    assert "</script>" not in raw_json_ld
+    assert json.loads(raw_json_ld)["itemListElement"][0]["description"] == course.description
 
 
 def test_organization_view_retuns_404_for_non_public_organization(db, anonymous_client, course):

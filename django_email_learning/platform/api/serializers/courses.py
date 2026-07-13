@@ -2,7 +2,7 @@ import enum
 from typing import Callable, Optional
 
 from django.utils.translation import get_language_info
-from pydantic import BaseModel, ConfigDict, Field, field_serializer, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
 
 from django_email_learning.models import (
     Answer,
@@ -36,6 +36,7 @@ from django_email_learning.platform.api.serializers.quizzes import (
     QuizResponse,
     UpdateQuiz,
 )
+from django_email_learning.services.sanitize import strip_html
 
 
 class Identifier(BaseModel):
@@ -105,6 +106,11 @@ class CreateCourseRequest(BaseModel):
         examples=[[1, 2, 3]],
         description="List of organization user IDs to be assigned as instructors for this course.",
     )
+
+    @field_validator("description", "target_audience")
+    @classmethod
+    def strip_html_markup(cls, value: Optional[str]) -> Optional[str]:
+        return strip_html(value) if value else value
 
     def to_django_model(self, organization_id: int) -> Course:
         organization = Organization.objects.get(id=organization_id)
@@ -186,6 +192,11 @@ class UpdateCourseRequest(BaseModel):
     is_public: Optional[bool] = Field(None, examples=[True])
     send_certificate: Optional[bool] = Field(None, examples=[True])
     instructors: Optional[list[int]] = Field(None, examples=[1, 2, 3])
+
+    @field_validator("description", "target_audience")
+    @classmethod
+    def strip_html_markup(cls, value: Optional[str]) -> Optional[str]:
+        return strip_html(value) if value else value
 
     def to_django_model(self, course_id: int, organization_id: int) -> Course:
         try:

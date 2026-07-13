@@ -76,6 +76,36 @@ def test_create_course_lesson_content(superadmin_client, create_course):
     assert data["waiting_period"] == {"period": 2, "type": "days"}
 
 
+def test_create_lesson_content_strips_script_tag_but_keeps_allowed_formatting(superadmin_client, create_course):
+    url = get_url()
+    payload = {
+        "content": {
+            "title": LESSON_TITLE,
+            "content": "<p>Hello <strong>world</strong></p><script>alert(document.cookie)</script>",
+            "type": "lesson",
+        },
+        "priority": 1,
+        "waiting_period": {"period": 2, "type": "days"},
+    }
+    response = superadmin_client.post(url, json.dumps(payload), content_type="application/json")
+    assert response.status_code == 201
+    content = response.json()["lesson"]["content"]
+    assert "<script>" not in content
+    assert "<strong>world</strong>" in content
+
+
+def test_update_lesson_content_strips_script_tag(superadmin_client, course_lesson_content):
+    url = single_content_url(
+        course_content_id=course_lesson_content.id,
+        course_id=course_lesson_content.course.id,
+        organization_id=course_lesson_content.course.organization.id,
+    )
+    payload = {"lesson": {"content": '<p>Updated</p><img src=x onerror="alert(1)">'}}
+    response = superadmin_client.post(url, json.dumps(payload), content_type="application/json")
+    assert response.status_code == 200
+    assert "onerror" not in response.json()["lesson"]["content"]
+
+
 @pytest.mark.parametrize("title,content", [(None, LESSON_CONTENT), (LESSON_TITLE, None)])
 def test_validate_lesson_content(superadmin_client, create_course, title, content):
     url = get_url()

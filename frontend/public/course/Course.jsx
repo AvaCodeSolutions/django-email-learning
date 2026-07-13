@@ -210,8 +210,9 @@ function Course() {
                     <Typography
                         variant="body1"
                         sx={{ color: 'text.secondary' }}
-                        dangerouslySetInnerHTML={{ __html: course.description }}
-                    />
+                    >
+                        {course.description}
+                    </Typography>
                 )}
 
                 {/* Organization Info */}
@@ -241,14 +242,24 @@ function Course() {
                         <Grid size={{ xs: 12, md: organization.logo_url ? 9 : 12 }} sx={{ mx: 'auto', mt: 2 }}>
 
                             <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>
-                                <span dangerouslySetInnerHTML={{ __html: localeMessages['provided_by'].replace('ORGANIZATION_NAME', `<a href="${organization.public_url}" rel="noopener noreferrer">${organization.name}</a>`) }} />
+                                {(() => {
+                                    const [before, after] = localeMessages['provided_by'].split('ORGANIZATION_NAME');
+                                    return (
+                                        <>
+                                            {before}
+                                            <a href={organization.public_url} rel="noopener noreferrer">{organization.name}</a>
+                                            {after}
+                                        </>
+                                    );
+                                })()}
                             </Typography>
                             {organization.description && (
                                 <Typography
                                     variant="body2"
                                     sx={{ color: 'text.secondary', fontSize: '0.875rem' }}
-                                    dangerouslySetInnerHTML={{ __html: organization.description }}
-                                />
+                                >
+                                    {organization.description}
+                                </Typography>
                             )}
                         </Grid>
                     </Grid>
@@ -262,8 +273,9 @@ function Course() {
                         <Typography
                             variant="body2"
                             sx={{ color: 'text.secondary', direction: courseDirection }}
-                            dangerouslySetInnerHTML={{ __html: course.target_audience }}
-                        />
+                        >
+                            {course.target_audience}
+                        </Typography>
                     </Box>
                 )}
 

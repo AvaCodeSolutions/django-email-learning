@@ -1,7 +1,9 @@
 from datetime import datetime
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from django_email_learning.services.sanitize import sanitize_rich_text
 
 
 class NewsletterResponse(BaseModel):
@@ -54,11 +56,21 @@ class CreateSendoutRequest(BaseModel):
     body: str = Field(min_length=1)
     scheduled_at: datetime
 
+    @field_validator("body")
+    @classmethod
+    def sanitize_body(cls, value: str) -> str:
+        return sanitize_rich_text(value)
+
 
 class UpdateSendoutRequest(BaseModel):
     subject: str = Field(min_length=1, max_length=500)
     body: str = Field(min_length=1)
     scheduled_at: datetime
+
+    @field_validator("body")
+    @classmethod
+    def sanitize_body(cls, value: str) -> str:
+        return sanitize_rich_text(value)
 
 
 class SendoutDetailResponse(BaseModel):

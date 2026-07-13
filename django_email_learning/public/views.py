@@ -16,6 +16,22 @@ from django_email_learning.public.serializers import (
     PublicCourseSerializer,
 )
 
+# Same substitution Django's json_script template filter uses: these characters
+# are meaningless to a JSON parser (valid unicode escapes) but meaningful to an
+# HTML parser, which scans <script> contents for a literal "</script>" byte
+# sequence regardless of JSON string quoting. Without this, a description
+# containing "</script><script>...</script>" would prematurely close the
+# JSON-LD script block and open a new, executable one.
+_JSON_LD_SCRIPT_ESCAPES = {
+    ord(">"): "\\u003E",
+    ord("<"): "\\u003C",
+    ord("&"): "\\u0026",
+}
+
+
+def _dumps_for_script_tag(data: object) -> str:
+    return json.dumps(data).translate(_JSON_LD_SCRIPT_ESCAPES)
+
 
 def get_terms_of_service_url() -> str | None:
     return settings.DJANGO_EMAIL_LEARNING.get("TERMS_OF_SERVICE_URL")  # type: ignore[return-value]
@@ -55,7 +71,7 @@ def build_organization_courses_json_ld(courses: list[PublicCourseSerializer], or
         if course.image:
             course_data["image"] = course.image
         course_list.append(course_data)
-    return json.dumps(
+    return _dumps_for_script_tag(
         {
             "@context": "https://schema.org",
             "@type": "ItemList",
@@ -106,7 +122,7 @@ def build_single_course_json_ld(  # type: ignore[no-untyped-def]
     if course_data.lessons:
         course_json_ld["teaches"] = course_data.lessons
 
-    return json.dumps(course_json_ld)
+    return _dumps_for_script_tag(course_json_ld)
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")

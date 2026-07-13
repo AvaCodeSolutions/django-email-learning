@@ -55,6 +55,39 @@ def test_create_course_with_target_audience_and_external_references(superadmin_c
     assert response.json()["external_references"] == payload["external_references"]
 
 
+def test_create_course_strips_html_from_description_and_target_audience(superadmin_client):
+    payload = valid_create_course_payload(slug=uuid.uuid4().hex)
+    payload["description"] = "Nice course<script>alert(document.cookie)</script>"
+    payload["target_audience"] = '<img src=x onerror="alert(1)">Beginners'
+
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
+
+    assert response.status_code == 201
+    assert "<script>" not in response.json()["description"]
+    assert "onerror" not in response.json()["target_audience"]
+    assert response.json()["target_audience"] == "Beginners"
+
+
+def test_update_course_strips_html_from_description_and_target_audience(superadmin_client):
+    create_response = superadmin_client.post(
+        get_url(1), json.dumps(valid_create_course_payload()), content_type="application/json"
+    )
+    course_id = create_response.json()["id"]
+
+    update_payload = valid_update_course_payload(enabled=False)
+    update_payload["description"] = "Hijacked description <script>alert(1)</script>"
+    update_url = reverse(
+        "django_email_learning:api_platform:courses_detail",
+        kwargs={"organization_id": 1, "course_id": course_id},
+    )
+
+    response = superadmin_client.post(update_url, json.dumps(update_payload), content_type="application/json")
+
+    assert response.status_code == 200
+    assert "<script>" not in response.json()["description"]
+    assert "Hijacked description" in Course.objects.get(id=course_id).description
+
+
 def test_create_course_not_authenticated(anonymous_client):
     payload = valid_create_course_payload()
     response = anonymous_client.post(get_url(1), json.dumps(payload), content_type="application/json")

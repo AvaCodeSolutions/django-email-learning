@@ -34,6 +34,27 @@ def test_submit_certificate_form_view_valid_token(enrollment, anonymous_client):
     assert cert.name_on_certificate == NAME_ON_CERTIFICATE
 
 
+def test_submit_certificate_form_strips_html_from_name(enrollment, anonymous_client):
+    enrollment.status = EnrollmentStatus.ACTIVE
+    enrollment.save()
+    enrollment.status = EnrollmentStatus.COMPLETED
+    enrollment.save()
+
+    token_payload = {
+        "enrollment_id": enrollment.id,
+    }
+    token = jwt_service.generate_jwt(token_payload, exp=datetime.max.replace(tzinfo=timezone.get_current_timezone()))
+    response = anonymous_client.post(
+        URL,
+        data={"name": '<img src=x onerror="alert(document.cookie)">John Doe', "token": token},
+        content_type="application/json",
+    )
+    assert response.status_code == 200
+
+    enrollment.refresh_from_db()
+    assert enrollment.certificate.name_on_certificate == "John Doe"
+
+
 def test_submit_certificate_form_view_invalid_token(anonymous_client):
     token = "invalidtoken"
     response = anonymous_client.post(

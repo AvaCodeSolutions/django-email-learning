@@ -138,8 +138,25 @@ const CertificateContent = () => {
                         fontWeight: 500,
                         maxWidth: '80%',
                     }}
-                    dangerouslySetInnerHTML={{ __html: localeMessages['description'].replace(name, "<div style='font-size: 2em; padding: 0.5em; font-weight: 700;'>" + name + "</div>") }}
                 >
+                    {(() => {
+                        const description = localeMessages['description'];
+                        const index = description.indexOf(name);
+                        if (index === -1) {
+                            return description;
+                        }
+                        const before = description.slice(0, index);
+                        const after = description.slice(index + name.length);
+                        return (
+                            <>
+                                {before}
+                                <Box component="div" sx={{ fontSize: '2em', padding: '0.5em', fontWeight: 700 }}>
+                                    {name}
+                                </Box>
+                                {after}
+                            </>
+                        );
+                    })()}
                 </Typography>
                 <Grid container spacing={2} sx={{ pt: 2, mt: 4, width: '100%', minHeight: '100px', alignItems: 'flex-end' }}>
                     <Grid size={4} sx={{ textAlign: 'center' }} >
