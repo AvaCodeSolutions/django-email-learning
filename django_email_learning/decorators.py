@@ -80,11 +80,15 @@ def _resolve_active_organization_id(
        membership check for their own org while acting on an object that
        belongs to a different org.
     3. Only if ``allow_active_org_fallback`` is set: the session's
-       ``active_organization_id``, or the user's first org membership. This is
-       only safe for views that don't address a specific object by ID (e.g.
-       "list learners for my active org") — it resolves to "an org the user
-       happens to belong to", not "the org that owns the requested resource",
-       so it must never be used to gate access to a specific object.
+       ``active_organization_id``. This is only safe for views that don't
+       address a specific object by ID (e.g. "list learners for my active
+       org") — it resolves to "the org the user is currently working in",
+       not "the org that owns the requested resource", so it must never be
+       used to gate access to a specific object. Deliberately does not fall
+       back further to the user's first org membership — an arbitrary
+       membership is not the same as the org the user actually intends to
+       act on, so if the session hasn't been seeded yet we fail closed
+       rather than guess.
 
     Returns ``None`` if no organization could be resolved. Callers must treat
     that as "deny" rather than skipping the check.
@@ -94,12 +98,7 @@ def _resolve_active_organization_id(
     if resolve_org_id is not None:
         return resolve_org_id(request, view_kwargs)
     if allow_active_org_fallback:
-        org_id = request.session.get("active_organization_id")
-        if org_id:
-            return org_id
-        membership = request.user.memberships.first()  # type: ignore[union-attr]
-        if membership:
-            return membership.organization_id
+        return request.session.get("active_organization_id")
     return None
 
 
