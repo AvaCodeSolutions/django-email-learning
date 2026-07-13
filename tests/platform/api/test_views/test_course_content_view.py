@@ -3,6 +3,8 @@ import json
 import pytest
 from django.urls import reverse
 
+from django_email_learning.models import Course, CourseContent, CourseContentType, Lesson, Organization
+
 LESSON_TITLE = "Introduction to Python"
 LESSON_CONTENT = "Welcome to the Python course!"
 
@@ -736,3 +738,84 @@ def test_update_content_is_published(superadmin_client, course_lesson_content):
     data = response.json()
     assert data["id"] == course_lesson_content.id
     assert data["is_published"] is False
+
+
+# ---------------------------------------------------------------------------
+# Cross-organization IDOR regression tests (GHSA-q8c3-pjqw-h7rw)
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def other_org_course_content():
+    other_org = Organization.objects.create(pk=2, name="Other Organization")
+    other_course = Course.objects.create(
+        title="Other Org Course",
+        slug="other-org-course",
+        description="Belongs to a different organization.",
+        organization=other_org,
+    )
+    lesson = Lesson.objects.create(title="Other Org Lesson", content="Secret content")
+    return CourseContent.objects.create(
+        course=other_course,
+        priority=1,
+        type=CourseContentType.LESSON,
+        lesson=lesson,
+        waiting_period=0,
+    )
+
+
+def test_list_course_content_cross_organization_returns_404(editor_client, other_org_course_content):
+    url = reverse(
+        "django_email_learning:api_platform:course_contents_list",
+        kwargs={"organization_id": 1, "course_id": other_org_course_content.course_id},
+    )
+    response = editor_client.get(url)
+    assert response.status_code == 404
+
+
+def test_create_course_content_cross_organization_returns_404(editor_client, other_org_course_content):
+    url = reverse(
+        "django_email_learning:api_platform:course_contents_list",
+        kwargs={"organization_id": 1, "course_id": other_org_course_content.course_id},
+    )
+    payload = {
+        "content": {"title": "Injected", "content": "Injected content", "type": "lesson"},
+        "priority": 1,
+        "waiting_period": {"period": 1, "type": "days"},
+    }
+    response = editor_client.post(url, json.dumps(payload), content_type="application/json")
+    assert response.status_code == 404
+
+
+def test_get_single_course_content_cross_organization_returns_404(editor_client, other_org_course_content):
+    url = single_content_url(
+        course_content_id=other_org_course_content.id,
+        course_id=other_org_course_content.course_id,
+        organization_id=1,
+    )
+    response = editor_client.get(url)
+    assert response.status_code == 404
+
+
+def test_delete_single_course_content_cross_organization_returns_404(editor_client, other_org_course_content):
+    url = single_content_url(
+        course_content_id=other_org_course_content.id,
+        course_id=other_org_course_content.course_id,
+        organization_id=1,
+    )
+    response = editor_client.delete(url)
+    assert response.status_code == 404
+    assert CourseContent.objects.filter(id=other_org_course_content.id).exists()
+
+
+def test_update_single_course_content_cross_organization_returns_404(editor_client, other_org_course_content):
+    url = single_content_url(
+        course_content_id=other_org_course_content.id,
+        course_id=other_org_course_content.course_id,
+        organization_id=1,
+    )
+    payload = {"lesson": {"title": "Hijacked", "content": "Hijacked content"}}
+    response = editor_client.post(url, json.dumps(payload), content_type="application/json")
+    assert response.status_code == 404
+    other_org_course_content.lesson.refresh_from_db()
+    assert other_org_course_content.lesson.title == "Other Org Lesson"

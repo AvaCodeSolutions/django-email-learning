@@ -2,9 +2,16 @@ import pytest
 from django.urls import reverse
 
 from django_email_learning.models import (
+    Assignment,
     AssignmentFeedback,
     AssignmentSubmission,
     ContentDelivery,
+    Course,
+    CourseContent,
+    CourseContentType,
+    Enrollment,
+    Learner,
+    Organization,
     OrganizationUser,
 )
 
@@ -125,6 +132,45 @@ def test_assignment_submission_detail_view_includes_reviewer_info(
     assert payload["status"] == AssignmentSubmission.SubmissionStatus.APPROVED
     assert payload["reviewed_by"] is not None
     assert payload["reviewed_by"]["display_name"] == reviewer.display_name
+
+
+def test_assignment_submission_detail_view_cross_organization_returns_404(org_admin_client):
+    other_org = Organization.objects.create(pk=2, name="Other Organization")
+    other_course = Course.objects.create(
+        title="Other Org Course",
+        slug="other-org-course",
+        description="Belongs to a different organization.",
+        organization=other_org,
+    )
+    other_assignment = Assignment.objects.create(
+        title="Other Org Assignment",
+        description="desc",
+        is_blocking=True,
+        deadline_days=7,
+        requires_text_submission=True,
+        requires_file_submission=False,
+    )
+    other_content = CourseContent.objects.create(
+        course=other_course,
+        priority=1,
+        type=CourseContentType.ASSIGNMENT,
+        assignment=other_assignment,
+        waiting_period=0,
+    )
+    other_learner = Learner.objects.create(email="other-org-learner@example.com", organization=other_org)
+    other_enrollment = Enrollment.objects.create(learner=other_learner, course=other_course)
+    other_delivery = ContentDelivery.objects.create(enrollment=other_enrollment, course_content=other_content)
+    other_submission = AssignmentSubmission.objects.create(delivery=other_delivery, text_submission="Secret answer")
+
+    response = org_admin_client.get(
+        get_url(
+            organization_id=1,
+            course_id=other_course.id,
+            submission_id=other_submission.id,
+        )
+    )
+
+    assert response.status_code == 404
 
 
 def test_assignment_submission_detail_view_includes_feedbacks(

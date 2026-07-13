@@ -99,7 +99,7 @@ class LearnersView(PaginatedApiMixin, View):
 class SingleLearnerView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
-            learner = Learner.objects.get(id=kwargs["learner_id"])
+            learner = Learner.objects.get(id=kwargs["learner_id"], organization_id=kwargs["organization_id"])
             enrollments = Enrollment.objects.filter(learner=learner)
             enroolments_list = []
             for enrollment in enrollments:
@@ -178,7 +178,9 @@ class EnrollmentsView(PaginatedApiMixin, View):
 class EnrollmentView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
-            enrollment = Enrollment.objects.get(id=kwargs["enrollment_id"])
+            enrollment = Enrollment.objects.get(
+                id=kwargs["enrollment_id"], course__organization_id=kwargs["organization_id"]
+            )
             return JsonResponse(
                 serializers.EnrollmentResponse.from_django_model(enrollment).model_dump(),
                 status=200,
@@ -195,7 +197,11 @@ class EnrollmentsStatisticsView(View):
         course_id = kwargs["course_id"]
         a_week_ago = timezone.now() - timedelta(days=7)
         enrollments = (
-            Enrollment.objects.filter(course_id=course_id, enrolled_at__gte=a_week_ago)
+            Enrollment.objects.filter(
+                course_id=course_id,
+                course__organization_id=kwargs["organization_id"],
+                enrolled_at__gte=a_week_ago,
+            )
             .annotate(created_date=TruncDate("enrolled_at"))
             .values(
                 "created_date",

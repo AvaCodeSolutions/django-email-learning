@@ -92,7 +92,7 @@ class CourseContentView(View):
         payload = json.loads(request.body)
         try:
             serializer = serializers.CreateCourseContentRequest.model_validate(payload)
-            course = Course.objects.get(id=kwargs["course_id"])
+            course = Course.objects.get(id=kwargs["course_id"], organization_id=kwargs["organization_id"])
             if serializer.priority is None:
                 # Set priority to max existing priority + 1
                 max_priority = (
@@ -116,7 +116,7 @@ class CourseContentView(View):
 
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
-            course = Course.objects.get(id=kwargs["course_id"])
+            course = Course.objects.get(id=kwargs["course_id"], organization_id=kwargs["organization_id"])
             course_contents = course.coursecontent_set.all().order_by("priority")
             response_list = []
             for content in course_contents:
@@ -132,7 +132,7 @@ class ReorderCourseContentView(View):
         payload = json.loads(request.body)
         try:
             serializer = serializers.ReorderCourseContentsRequest.model_validate(payload)
-            course = Course.objects.get(id=kwargs["course_id"])
+            course = Course.objects.get(id=kwargs["course_id"], organization_id=kwargs["organization_id"])
             course_contents = {content.id: content for content in course.coursecontent_set.all()}
 
             with transaction.atomic():
@@ -170,7 +170,11 @@ class ReorderCourseContentView(View):
 class SingleCourseContentView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
-            course_content = CourseContent.objects.get(id=kwargs["course_content_id"])
+            course_content = CourseContent.objects.get(
+                id=kwargs["course_content_id"],
+                course_id=kwargs["course_id"],
+                course__organization_id=kwargs["organization_id"],
+            )
             return JsonResponse(
                 serializers.CourseContentResponse.model_validate(course_content).model_dump(),
                 status=200,
@@ -182,7 +186,11 @@ class SingleCourseContentView(View):
 
     def delete(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
         try:
-            course_content = CourseContent.objects.get(id=kwargs["course_content_id"])
+            course_content = CourseContent.objects.get(
+                id=kwargs["course_content_id"],
+                course_id=kwargs["course_id"],
+                course__organization_id=kwargs["organization_id"],
+            )
             course_content.delete()
             return JsonResponse({"message": "Course content deleted successfully"}, status=200)
         except CourseContent.DoesNotExist:
@@ -202,7 +210,9 @@ class SingleCourseContentView(View):
             return JsonResponse({"error": str(e)}, status=400)
 
         try:
-            return self._update_course_content_atomic(serializer, kwargs["course_content_id"])
+            return self._update_course_content_atomic(
+                serializer, kwargs["course_content_id"], kwargs["course_id"], kwargs["organization_id"]
+            )
         except CourseContent.DoesNotExist:
             return JsonResponse({"error": "Course content not found"}, status=404)
         except ValidationError as e:
@@ -212,9 +222,15 @@ class SingleCourseContentView(View):
 
     @transaction.atomic
     def _update_course_content_atomic(
-        self, serializer: serializers.UpdateCourseContentRequest, course_content_id: int
+        self,
+        serializer: serializers.UpdateCourseContentRequest,
+        course_content_id: int,
+        course_id: int,
+        organization_id: int,
     ) -> JsonResponse:
-        course_content = CourseContent.objects.get(id=course_content_id)
+        course_content = CourseContent.objects.get(
+            id=course_content_id, course_id=course_id, course__organization_id=organization_id
+        )
 
         if serializer.priority is not None:
             course_content.priority = serializer.priority
@@ -310,7 +326,7 @@ class SingleCourseContentView(View):
 class SingleCourseView(CourseCreationMixin, View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
-            course = Course.objects.get(id=kwargs["course_id"])
+            course = Course.objects.get(id=kwargs["course_id"], organization_id=kwargs["organization_id"])
             return JsonResponse(
                 serializers.CourseResponse.from_django_model(
                     course, abs_url_builder=request.build_absolute_uri
@@ -328,7 +344,9 @@ class SingleCourseView(CourseCreationMixin, View):
         payload = json.loads(request.body)
         try:
             serializer = serializers.UpdateCourseRequest.model_validate(payload)
-            course = serializer.to_django_model(course_id=kwargs["course_id"])
+            course = serializer.to_django_model(
+                course_id=kwargs["course_id"], organization_id=kwargs["organization_id"]
+            )
             course.save()
             return JsonResponse(
                 serializers.CourseResponse.from_django_model(
@@ -343,7 +361,7 @@ class SingleCourseView(CourseCreationMixin, View):
 
     def delete(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
         try:
-            course = Course.objects.get(id=kwargs["course_id"])
+            course = Course.objects.get(id=kwargs["course_id"], organization_id=kwargs["organization_id"])
             organization_id = course.organization_id
             course.delete()
             return JsonResponse(

@@ -1,6 +1,6 @@
 from django.urls import reverse
 
-from django_email_learning.models import EnrollmentStatus
+from django_email_learning.models import Course, Enrollment, EnrollmentStatus, Learner, Organization
 
 
 def get_url(enrollment_id):
@@ -42,6 +42,21 @@ def test_enrollment_api_expected_payload(viewer_client, content_delivery):
             assert event["event_data"]["course_content_type"] == content_delivery.course_content.type
 
     assert content_sent_event_found
+
+
+def test_enrollment_api_cross_organization_returns_404(viewer_client):
+    other_org = Organization.objects.create(pk=2, name="Other Organization")
+    other_course = Course.objects.create(
+        title="Other Org Course",
+        slug="other-org-course",
+        description="Belongs to a different organization.",
+        organization=other_org,
+    )
+    other_learner = Learner.objects.create(email="other-org-learner@example.com", organization=other_org)
+    other_enrollment = Enrollment.objects.create(learner=other_learner, course=other_course)
+
+    response = viewer_client.get(get_url(enrollment_id=other_enrollment.id))
+    assert response.status_code == 404
 
 
 def test_enrollment_api_email_opened_event(viewer_client, content_delivery):

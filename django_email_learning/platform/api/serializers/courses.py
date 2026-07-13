@@ -187,9 +187,9 @@ class UpdateCourseRequest(BaseModel):
     send_certificate: Optional[bool] = Field(None, examples=[True])
     instructors: Optional[list[int]] = Field(None, examples=[1, 2, 3])
 
-    def to_django_model(self, course_id: int) -> Course:
+    def to_django_model(self, course_id: int, organization_id: int) -> Course:
         try:
-            course = Course.objects.get(id=course_id)
+            course = Course.objects.get(id=course_id, organization_id=organization_id)
         except Course.DoesNotExist:
             raise ValueError(f"Course with id {course_id} does not exist.")
         if self.reset_imap_connection and self.imap_connection_id is not None:

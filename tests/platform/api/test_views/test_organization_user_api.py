@@ -1,7 +1,7 @@
 import pytest
 from django.urls import reverse
 
-from django_email_learning.models import OrganizationUser
+from django_email_learning.models import Organization, OrganizationUser
 
 URL = reverse(
     "django_email_learning:api_platform:organization_users_list",
@@ -202,6 +202,18 @@ def test_admin_can_update_own_display_name_and_photo_without_changing_role(org_a
     assert own_org_user.role == "admin"
     assert own_org_user.display_name == "My Own Name"
     assert own_org_user.photo == "org_user_photos/self.png"
+
+
+def test_admin_cannot_delete_membership_of_another_organization(org_admin_client, second_user):
+    other_org = Organization.objects.create(pk=2, name="Other Organization")
+    other_org_membership = OrganizationUser.objects.create(user=second_user, organization=other_org, role="admin")
+
+    # org_admin_client is an admin of organization 1, not organization 2 — the
+    # URL names organization 1, but the membership id belongs to organization 2.
+    response = org_admin_client.delete(get_single_user_url(1, other_org_membership.id))
+
+    assert response.status_code == 404
+    assert OrganizationUser.objects.filter(id=other_org_membership.id).exists()
 
 
 def test_admin_can_delete_another_admin(org_admin_client, superadmin_client, second_user):

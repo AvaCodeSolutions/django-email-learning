@@ -853,6 +853,51 @@ def test_delete_course_response_can_create_course_reflects_hook(sample_course, s
     assert response.json()["can_create_course"] is False
 
 
+@pytest.fixture()
+def other_org_course():
+    other_org = Organization.objects.create(pk=2, name="Other Organization")
+    return Course.objects.create(
+        title="Other Org Course",
+        slug="other-org-course",
+        description="Belongs to a different organization.",
+        organization=other_org,
+    )
+
+
+def test_get_single_course_cross_organization_returns_404(editor_client, other_org_course):
+    url = reverse(
+        "django_email_learning:api_platform:courses_detail",
+        kwargs={"organization_id": 1, "course_id": other_org_course.id},
+    )
+    response = editor_client.get(url)
+    assert response.status_code == 404
+
+
+def test_update_course_cross_organization_returns_error(editor_client, other_org_course):
+    url = reverse(
+        "django_email_learning:api_platform:courses_detail",
+        kwargs={"organization_id": 1, "course_id": other_org_course.id},
+    )
+    response = editor_client.post(
+        url,
+        json.dumps(valid_update_course_payload(title="Hijacked Title")),
+        content_type="application/json",
+    )
+    assert response.status_code != 200
+    other_org_course.refresh_from_db()
+    assert other_org_course.title == "Other Org Course"
+
+
+def test_delete_course_cross_organization_returns_404(editor_client, other_org_course):
+    url = reverse(
+        "django_email_learning:api_platform:courses_detail",
+        kwargs={"organization_id": 1, "course_id": other_org_course.id},
+    )
+    response = editor_client.delete(url)
+    assert response.status_code == 404
+    assert Course.objects.filter(id=other_org_course.id).exists()
+
+
 def test_update_course_send_certificate(superadmin_client):
     create_response = superadmin_client.post(
         get_url(1),

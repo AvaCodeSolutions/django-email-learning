@@ -121,7 +121,7 @@ class OrganizationUsersView(OrganizationMemberCreationMixin, View):
 class SingleOrganizationUserView(View):
     def delete(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
         try:
-            org_user = OrganizationUser.objects.get(id=kwargs["user_id"])
+            org_user = OrganizationUser.objects.get(id=kwargs["user_id"], organization_id=kwargs["organization_id"])
             if org_user.user_id == request.user.id:
                 return JsonResponse(
                     {"error": "You cannot remove your own membership. Ask another admin to do this for you."},
@@ -232,7 +232,18 @@ class SingleOrganizationView(View):
             return JsonResponse({"error": e.json()}, status=400)
 
 
-@method_decorator((is_an_organization_member(only_admin=True, allow_active_org_fallback=True)), name="post")
+def _resolve_get_or_create_user_organization_id(request, view_kwargs):  # type: ignore[no-untyped-def]
+    try:
+        payload = json.loads(request.body)
+    except (json.JSONDecodeError, TypeError):
+        return None
+    return payload.get("organization_id")
+
+
+@method_decorator(
+    (is_an_organization_member(only_admin=True, resolve_org_id=_resolve_get_or_create_user_organization_id)),
+    name="post",
+)
 class GetOrCreateUserByEmail(View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         payload = json.loads(request.body)

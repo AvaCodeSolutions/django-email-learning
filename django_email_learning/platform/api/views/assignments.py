@@ -67,7 +67,11 @@ class SubmittedAssignmentDetailView(View):
             submission = AssignmentSubmission.objects.select_related(
                 "delivery__course_content__assignment",
                 "delivery__enrollment__learner",
-            ).get(id=kwargs["submission_id"])
+            ).get(
+                id=kwargs["submission_id"],
+                delivery__course_content__course_id=kwargs["course_id"],
+                delivery__course_content__course__organization_id=kwargs["organization_id"],
+            )
             return JsonResponse(
                 serializers.AssignmentSubmissionResponse.from_django_model(
                     submission,
