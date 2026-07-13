@@ -9,7 +9,7 @@ from django_email_learning.platform.views.base import BasePlatformView
 
 
 @method_decorator(login_required, name="dispatch")
-@method_decorator(is_an_organization_member(), name="dispatch")
+@method_decorator(is_an_organization_member(allow_active_org_fallback=True), name="dispatch")
 class Learners(BasePlatformView):
     template_name = "platform/learners.html"
 

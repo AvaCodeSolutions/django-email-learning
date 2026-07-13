@@ -101,10 +101,23 @@ def superadmin_client(users):
     return client
 
 
+def _set_active_organization(client: Client, organization_id: int = 1) -> None:
+    """Seed the session's active_organization_id, mirroring what a real
+    session already has by the time a user is browsing the platform (it's
+    set on first page load by BasePlatformView.get_or_set_active_organization).
+    Org-scoped decorators resolve against the session rather than guessing
+    a membership, so fixtures simulating an in-progress session need this.
+    """
+    session = client.session
+    session["active_organization_id"] = organization_id
+    session.save()
+
+
 @pytest.fixture()
 def editor_client(users):
     client = Client()
     client.force_login(users["editor_user"])
+    _set_active_organization(client)
     return client
 
 
@@ -112,6 +125,7 @@ def editor_client(users):
 def instructor_client(users):
     client = Client()
     client.force_login(users["instructor_user"])
+    _set_active_organization(client)
     return client
 
 
@@ -119,6 +133,7 @@ def instructor_client(users):
 def platform_admin_client(users):
     client = Client()
     client.force_login(users["platform_admin"])
+    _set_active_organization(client)
     return client
 
 
@@ -126,6 +141,7 @@ def platform_admin_client(users):
 def org_admin_client(users):
     client = Client()
     client.force_login(users["organization_admin"])
+    _set_active_organization(client)
     return client
 
 
@@ -133,6 +149,7 @@ def org_admin_client(users):
 def viewer_client(users):
     client = Client()
     client.force_login(users["viewer_user"])
+    _set_active_organization(client)
     return client
 
 

@@ -10,7 +10,7 @@ from django_email_learning.platform.views.base import BasePlatformView
 
 
 @method_decorator(login_required, name="dispatch")
-@method_decorator(is_an_organization_member(only_admin=True), name="dispatch")
+@method_decorator(is_an_organization_member(only_admin=True, allow_active_org_fallback=True), name="dispatch")
 class Organizations(BasePlatformView):
     template_name = "platform/organizations.html"
 
