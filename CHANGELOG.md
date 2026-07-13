@@ -6,6 +6,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.18.0] — 2026-07-13
+
+### Fixed
+
+- **Cross-organization IDOR across course, learner, assignment, and organization-membership API views** — several API views verified the requester belongs to the `organization_id` in the URL, but then fetched the actual object (a `Course`, `CourseContent`, `Learner`, `Enrollment`, `AssignmentSubmission`, or `OrganizationUser`) by its own ID alone, without checking it belonged to that organization. This let a member of one organization read, modify, or delete another organization's data by substituting a different ID:
+  - `SingleCourseView`, `CourseContentView`, `ReorderCourseContentView`, and `SingleCourseContentView` now scope every `Course`/`CourseContent` lookup by `organization_id`. The two delete paths were the most severe — any editor/instructor/admin of their own organization could previously delete another organization's entire course or any content item in it.
+  - `SingleOrganizationUserView.delete` now scopes by `organization_id`, closing a path that let an organization admin remove any user's membership from *any other* organization.
+  - `GetOrCreateUserByEmail` now authorizes against the organization named in the request body instead of the requester's own active organization, closing a path that let an org admin trigger an invite/password-reset email that named an organization they have no relationship to.
+  - `SingleLearnerView`, `EnrollmentView`, and `EnrollmentsStatisticsView` now scope their queries by `organization_id`.
+  - `SubmittedAssignmentDetailView` now scopes by `organization_id` and `course_id`.
+
+  See [GHSA-q8c3-pjqw-h7rw](https://github.com/AvaCodeSolutions/django-email-learning/security/advisories/GHSA-q8c3-pjqw-h7rw).
+
+---
+
 ## [1.17.0] — 2026-07-13
 
 ### Fixed
