@@ -26,7 +26,7 @@ DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING"
 
 
 @method_decorator(ensure_csrf_cookie, name="get")
-@method_decorator(is_an_organization_member(), name="get")
+@method_decorator(is_an_organization_member(allow_active_org_fallback=True), name="get")
 @method_decorator(is_platform_admin(), name="post")
 class OrganizationsView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
@@ -232,7 +232,7 @@ class SingleOrganizationView(View):
             return JsonResponse({"error": e.json()}, status=400)
 
 
-@method_decorator((is_an_organization_member(only_admin=True)), name="post")
+@method_decorator((is_an_organization_member(only_admin=True, allow_active_org_fallback=True)), name="post")
 class GetOrCreateUserByEmail(View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         payload = json.loads(request.body)

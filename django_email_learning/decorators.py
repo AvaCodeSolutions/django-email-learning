@@ -61,26 +61,53 @@ def accessible_for(roles: set[str]) -> typing.Callable:
     return decorator
 
 
-def _resolve_active_organization_id(request: typing.Any, view_kwargs: dict) -> typing.Optional[int]:
-    """Resolve the active organization ID for a request.
+def _resolve_active_organization_id(
+    request: typing.Any,
+    view_kwargs: dict,
+    resolve_org_id: typing.Optional[typing.Callable] = None,
+    allow_active_org_fallback: bool = False,
+) -> typing.Optional[int]:
+    """Resolve the organization ID that authorization should be checked against.
 
     Resolution order:
-    1. URL kwarg ``organization_id`` (API / detail views)
-    2. ``active_organization_id`` stored in the session (template views after first load)
-    3. The user's first org membership (template views before session is populated)
+    1. URL kwarg ``organization_id`` (API / detail views) — the caller explicitly
+       named the organization it wants to act on.
+    2. ``resolve_org_id(request, view_kwargs)``, if provided — looks up the
+       organization that *owns* the object referenced elsewhere in the URL
+       (e.g. a ``course_id`` that isn't itself scoped by an ``organization_id``
+       segment). This is required for any view keyed on an object ID rather
+       than an explicit organization ID, otherwise a user could pass the
+       membership check for their own org while acting on an object that
+       belongs to a different org.
+    3. Only if ``allow_active_org_fallback`` is set: the session's
+       ``active_organization_id``, or the user's first org membership. This is
+       only safe for views that don't address a specific object by ID (e.g.
+       "list learners for my active org") — it resolves to "an org the user
+       happens to belong to", not "the org that owns the requested resource",
+       so it must never be used to gate access to a specific object.
+
+    Returns ``None`` if no organization could be resolved. Callers must treat
+    that as "deny" rather than skipping the check.
     """
     if "organization_id" in view_kwargs:
         return view_kwargs["organization_id"]
-    org_id = request.session.get("active_organization_id")
-    if org_id:
-        return org_id
-    membership = request.user.memberships.first()  # type: ignore[union-attr]
-    if membership:
-        return membership.organization_id
+    if resolve_org_id is not None:
+        return resolve_org_id(request, view_kwargs)
+    if allow_active_org_fallback:
+        org_id = request.session.get("active_organization_id")
+        if org_id:
+            return org_id
+        membership = request.user.memberships.first()  # type: ignore[union-attr]
+        if membership:
+            return membership.organization_id
     return None
 
 
-def is_an_organization_member(only_admin: bool = False) -> typing.Callable:
+def is_an_organization_member(
+    only_admin: bool = False,
+    resolve_org_id: typing.Optional[typing.Callable] = None,
+    allow_active_org_fallback: bool = False,
+) -> typing.Callable:
     def decorator(view_func: typing.Callable) -> typing.Callable:
         @wraps(view_func)
         def _wrapped_view(request, *view_args, **view_kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
@@ -89,7 +116,14 @@ def is_an_organization_member(only_admin: bool = False) -> typing.Callable:
                 return JsonResponse({"error": "Unauthorized"}, status=401)
 
             if not user.is_superuser:
-                organization_id = _resolve_active_organization_id(request, view_kwargs)
+                organization_id = _resolve_active_organization_id(
+                    request,
+                    view_kwargs,
+                    resolve_org_id=resolve_org_id,
+                    allow_active_org_fallback=allow_active_org_fallback,
+                )
+                if organization_id is None:
+                    return JsonResponse({"error": "Forbidden"}, status=403)
                 qs = OrganizationUser.objects.filter(  # type: ignore[misc]
                     user=user,
                     organization_id=organization_id,

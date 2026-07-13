@@ -51,7 +51,7 @@ class ApiKeys(BasePlatformView):
 
 
 @method_decorator(login_required, name="dispatch")
-@method_decorator(is_an_organization_member(), name="dispatch")
+@method_decorator(is_an_organization_member(allow_active_org_fallback=True), name="dispatch")
 class PrivateFileView(View):
     """
     A view to serve private files stored in the location defined by PRIVATE_FILE_STORAGE.
@@ -95,7 +95,7 @@ class PrivateFileView(View):
 
 
 @method_decorator(login_required, name="dispatch")
-@method_decorator(is_an_organization_member(), name="dispatch")
+@method_decorator(is_an_organization_member(allow_active_org_fallback=True), name="dispatch")
 class Analytics(BasePlatformView):
     template_name = "platform/analytics.html"
 

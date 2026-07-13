@@ -1,7 +1,7 @@
 import pytest
 from django.urls import reverse
 
-from django_email_learning.models import CourseContent, CourseContentType, Lesson
+from django_email_learning.models import Course, CourseContent, CourseContentType, Lesson, Organization
 
 
 def get_url(course_id: int = 1) -> str:
@@ -80,3 +80,22 @@ def test_course_has_content_true_when_course_has_content(superadmin_client, cour
 
     assert response.status_code == 200
     assert response.context["appContext"]["courseHasContent"] is True
+
+
+def test_editor_cannot_view_course_in_another_organization(editor_client, course):
+    other_org = Organization.objects.create(name="Another Organization")
+    other_org_course = Course.objects.create(
+        title="Other Org Course",
+        slug="other-org-course",
+        description="Belongs to a different organization.",
+        organization=other_org,
+    )
+
+    response = editor_client.get(get_url(other_org_course.id))
+
+    assert response.status_code == 403
+
+
+def test_view_of_nonexistent_course_is_forbidden(editor_client):
+    response = editor_client.get(get_url(999999))
+    assert response.status_code == 403

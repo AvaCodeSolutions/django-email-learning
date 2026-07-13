@@ -149,8 +149,12 @@ class Courses(BasePlatformView):
         }
 
 
+def _resolve_course_organization_id(request, view_kwargs):  # type: ignore[no-untyped-def]
+    return Course.objects.filter(pk=view_kwargs["course_id"]).values_list("organization_id", flat=True).first()
+
+
 @method_decorator(login_required, name="dispatch")
-@method_decorator(is_an_organization_member(), name="dispatch")
+@method_decorator(is_an_organization_member(resolve_org_id=_resolve_course_organization_id), name="dispatch")
 class CourseView(BasePlatformView):
     template_name = "platform/course.html"
 

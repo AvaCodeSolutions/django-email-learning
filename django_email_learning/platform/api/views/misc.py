@@ -78,7 +78,7 @@ class SingleApiKeyView(View):
             return JsonResponse({"error": str(e)}, status=409)
 
 
-@method_decorator(is_an_organization_member(), name="get")
+@method_decorator(is_an_organization_member(allow_active_org_fallback=True), name="get")
 class JobsStatus(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         jobs_status = {}
@@ -184,7 +184,7 @@ class FileView(View):
         return JsonResponse({"message": "File deleted successfully"}, status=200)
 
 
-@method_decorator(is_an_organization_member(), name="post")
+@method_decorator(is_an_organization_member(allow_active_org_fallback=True), name="post")
 class UpdateSessionView(View):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
