@@ -6,6 +6,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [1.17.0] — 2026-07-13
+
+### Fixed
+
+- **Cross-organization course access (IDOR) on the course detail page** — `CourseView` didn't verify that the requested `course_id` belonged to an organization the requester is a member of, so any authenticated member of any organization could view another organization's course details by changing the ID in the URL. `is_an_organization_member()` now requires an explicit way to resolve which organization a request should be checked against — either an `organization_id` in the URL, or a `resolve_org_id` callable that looks up the requested object's owning organization — and fails closed (403) instead of silently falling back to an organization the requester happens to belong to. See [GHSA-6w35-hmhh-pv63](https://github.com/AvaCodeSolutions/django-email-learning/security/advisories/GHSA-6w35-hmhh-pv63).
+- **Removed the "first org membership" fallback from `is_an_organization_member()`** — views that authorize against the requester's active organization rather than a specific object (`Learners`, `Analytics`, the organizations list, `PrivateFileView`, `JobsStatus`, the session-update endpoint) previously fell back to an arbitrary org membership if the session hadn't been seeded yet, which isn't necessarily the org the requester is actually working in. This fallback now only ever consults the session and denies the request if it's empty, rather than guessing. If your app's login redirect lands directly on one of those views instead of a page that populates the session first (e.g. the courses list), that first request may now get a 403 — redirect through a page that sets `active_organization_id` first, or set it explicitly before those requests.
+
+---
+
 ## [1.16.0] — 2026-07-12
 
 ### Added
