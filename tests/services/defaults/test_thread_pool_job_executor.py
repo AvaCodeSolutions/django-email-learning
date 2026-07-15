@@ -49,3 +49,17 @@ def test_submit_marks_job_failed_when_the_job_raises() -> None:
 
     assert job_execution.status == JobStatus.FAILED.value
     assert job_execution.error == "boom"
+
+
+def test_submit_marks_job_failed_when_dispatch_fails_before_run_job_starts() -> None:
+    """Covers a failure in the lookup/registry/constructor phase, before
+    _run_job (and its FAILED-marking decorator) ever gets a chance to run."""
+    job_execution = JobExecution.objects.create(job_name="unregistered_job", status=JobStatus.RUNNING.value)
+
+    executor = ThreadPoolJobExecutor()
+    executor.submit(job_name="unregistered_job", job_execution_id=job_execution.id)
+
+    job_execution = _wait_until_finished(job_execution)
+
+    assert job_execution.status == JobStatus.FAILED.value
+    assert job_execution.error == "'unregistered_job'"

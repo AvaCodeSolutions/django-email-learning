@@ -3,8 +3,6 @@ import logging
 from django.core.management.base import BaseCommand, CommandParser
 
 from django_email_learning.jobs.deliver_contents_job import DeliverContentsJob
-from django_email_learning.models import JobName
-from django_email_learning.services.metrics_service import metric_service
 
 
 class Command(BaseCommand):
@@ -44,7 +42,8 @@ class Command(BaseCommand):
             logger.warning("DeliverContentsJob interrupted by user")
 
         except Exception as e:
-            metric_service.job_execution_failed(job_name=JobName.DELIVER_CONTENTS.value)
+            # track_job_execution already records the job_execution_failed
+            # metric from inside _run_job; don't double-count it here.
             self.stdout.write(self.style.ERROR(f"Content delivery job failed: {str(e)}"))
             logger.error(f"DeliverContentsJob failed: {str(e)}", exc_info=True)
             raise

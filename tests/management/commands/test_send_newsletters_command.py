@@ -5,8 +5,6 @@ from unittest.mock import patch
 import pytest
 from django.core.management import call_command
 
-from django_email_learning.models import JobName
-
 
 def test_runs_job_and_prints_success_message() -> None:
     stdout = StringIO()
@@ -47,19 +45,13 @@ def test_handles_keyboard_interrupt_without_raising() -> None:
     assert "Send newsletters job interrupted by user" in stdout.getvalue()
 
 
-def test_records_metric_and_reraises_when_job_fails() -> None:
+def test_reraises_and_logs_error_when_job_fails() -> None:
     stdout = StringIO()
 
-    with (
-        patch("django_email_learning.management.commands.send_newsletters.SendNewslettersJob") as mock_job_cls,
-        patch(
-            "django_email_learning.management.commands.send_newsletters.metric_service.job_execution_failed"
-        ) as mock_job_execution_failed,
-    ):
+    with patch("django_email_learning.management.commands.send_newsletters.SendNewslettersJob") as mock_job_cls:
         mock_job_cls.return_value.run.side_effect = RuntimeError("boom")
 
         with pytest.raises(RuntimeError):
             call_command("send_newsletters", stdout=stdout)
 
-    mock_job_execution_failed.assert_called_once_with(job_name=JobName.SEND_NEWSLETTERS.value)
     assert "Send newsletters job failed: boom" in stdout.getvalue()

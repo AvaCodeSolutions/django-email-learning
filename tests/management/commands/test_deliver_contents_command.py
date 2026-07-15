@@ -1,10 +1,11 @@
 import logging
 from io import StringIO
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 from django.core.management import call_command
 
+from django_email_learning.jobs.deliver_contents_job import DeliverContentsJob
 from django_email_learning.models import JobName
 
 
@@ -47,19 +48,31 @@ def test_handles_keyboard_interrupt_without_raising() -> None:
     assert "Content delivery job interrupted by user" in stdout.getvalue()
 
 
-def test_records_metric_and_reraises_when_job_fails() -> None:
+def test_reraises_and_logs_error_when_job_fails() -> None:
     stdout = StringIO()
 
-    with (
-        patch("django_email_learning.management.commands.deliver_contents.DeliverContentsJob") as mock_job_cls,
-        patch(
-            "django_email_learning.management.commands.deliver_contents.metric_service.job_execution_failed"
-        ) as mock_job_execution_failed,
-    ):
+    with patch("django_email_learning.management.commands.deliver_contents.DeliverContentsJob") as mock_job_cls:
         mock_job_cls.return_value.run.side_effect = RuntimeError("boom")
 
         with pytest.raises(RuntimeError):
             call_command("deliver_contents", stdout=stdout)
 
-    mock_job_execution_failed.assert_called_once_with(job_name=JobName.DELIVER_CONTENTS.value)
     assert "Content delivery job failed: boom" in stdout.getvalue()
+
+
+def test_job_execution_failed_metric_recorded_exactly_once_when_job_actually_fails(db) -> None:
+    """Regression test: the command used to also call job_execution_failed
+    itself, double-counting the metric that track_job_execution now already
+    emits from inside the real job's _run_job on failure."""
+    stdout = StringIO()
+    raising_queue = Mock()
+    raising_queue.next_task.side_effect = RuntimeError("boom")
+
+    with (
+        patch.object(DeliverContentsJob, "get_delivery_queue", return_value=raising_queue),
+        patch("django_email_learning.services.metrics_service.metric_service.job_execution_failed") as mock_failed,
+    ):
+        with pytest.raises(RuntimeError):
+            call_command("deliver_contents", stdout=stdout)
+
+    mock_failed.assert_called_once_with(job_name=JobName.DELIVER_CONTENTS.value)
