@@ -52,12 +52,16 @@ class SendNewslettersJob:
     def __init__(self) -> None:
         self.sendout_queue: TaskQueueProtocol[SendoutDelivery] = self._get_sendout_queue()
 
-    def run(self) -> None:
+    def start(self) -> JobExecution | None:
         job_execution = JobExecution.start_if_not_running(job_name=JobName.SEND_NEWSLETTERS.value)
         if job_execution is None:
             logger.warning("Another instance of SendNewslettersJob is already running. Exiting this run.")
-            return
-        self._run_job(job_execution)
+        return job_execution
+
+    def run(self) -> None:
+        job_execution = self.start()
+        if job_execution is not None:
+            self._run_job(job_execution)
 
     @track_job_execution(
         metric_service=metric_service,

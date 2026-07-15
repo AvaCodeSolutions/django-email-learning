@@ -448,6 +448,34 @@ Optional integer controlling how many threads the ``deliver_contents`` job uses 
    Set ``DELIVERY_WORKERS`` to a value your SMTP provider can handle — most transactional email services impose per-second rate limits. A value between 2 and 10 is typical. Each worker uses its own database connection, so ensure your database connection pool is sized accordingly.
 
 
+**JOB_EXECUTOR** / **JOB_EXECUTOR_MAX_WORKERS**
+
+Controls how the HTTP job-trigger endpoints (see :doc:`technical/management-commands`) run jobs in the background.
+
+- ``JOB_EXECUTOR_MAX_WORKERS``: Optional integer controlling how many threads the default executor uses to run jobs concurrently. Defaults to ``4``.
+- ``JOB_EXECUTOR``: Optional dotted import path to a custom executor, for library users who want jobs dispatched to Celery, RQ, Django-Q, or another backend instead of the default in-process thread pool. The class (or instance) must implement :class:`JobExecutorProtocol <django_email_learning.ports.job_executor_protocol.JobExecutorProtocol>`:
+
+  .. code-block:: python
+
+      class JobExecutorProtocol(Protocol):
+          def submit(self, job_name: str, job_execution_id: int) -> None: ...
+
+  ``submit()`` is expected to return immediately and eventually call the corresponding job's ``_run_job()`` with the ``JobExecution`` row looked up by ``job_execution_id`` — only primitive, JSON-serializable arguments cross this boundary, so a real broker-backed implementation doesn't need to pickle live Django model instances.
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
+        'JOB_EXECUTOR_MAX_WORKERS': 8,
+        'JOB_EXECUTOR': 'myapp.executors.CeleryJobExecutor',
+    }
+
+.. note::
+   ``JOB_EXECUTOR_MAX_WORKERS`` only applies to the default ``ThreadPoolJobExecutor`` and is ignored once you supply your own ``JOB_EXECUTOR``.
+
+
 **NEWSLETTERS**
 
 Optional configuration for the newsletter feature.

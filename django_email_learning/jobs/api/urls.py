@@ -5,6 +5,7 @@ from django_email_learning.jobs.api.views import (
     CleanupJobExecutionsView,
     DeactivateInactiveEnrollmentsJobView,
     DeliverContentsJobView,
+    JobExecutionStatusView,
     SendNewslettersJobView,
     SendQuizRemindersJobView,
 )
@@ -41,5 +42,10 @@ urlpatterns = [
         "cleanup_job_executions/",
         CleanupJobExecutionsView.as_view(),
         name="cleanup_job_executions",
+    ),
+    path(
+        "executions/<int:job_execution_id>/",
+        JobExecutionStatusView.as_view(),
+        name="job_execution_status",
     ),
 ]

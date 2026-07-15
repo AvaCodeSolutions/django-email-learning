@@ -17,6 +17,7 @@ class JobStatus(StrEnum):
     RUNNING = "running"
     COMPLETED = "completed"
     STALE = "stale"
+    FAILED = "failed"
 
 
 class JobExecution(models.Model):
@@ -27,6 +28,7 @@ class JobExecution(models.Model):
         max_length=50,
         choices=[(status.value, status.name) for status in JobStatus],
     )
+    error = models.TextField(null=True, blank=True)
 
     class Meta:
         constraints = [
