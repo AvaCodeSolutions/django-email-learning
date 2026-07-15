@@ -450,7 +450,7 @@ Optional integer controlling how many threads the ``deliver_contents`` job uses 
 
 **JOB_EXECUTOR** / **JOB_EXECUTOR_MAX_WORKERS**
 
-Controls how the HTTP job-trigger endpoints (see :doc:`technical/management-commands`) run jobs in the background.
+Controls how the HTTP job-trigger endpoints (see :doc:`technical/jobs-api`) run jobs in the background.
 
 - ``JOB_EXECUTOR_MAX_WORKERS``: Optional integer controlling how many threads the default executor uses to run jobs concurrently. Defaults to ``4``.
 - ``JOB_EXECUTOR``: Optional dotted import path to a custom executor, for library users who want jobs dispatched to Celery, RQ, Django-Q, or another backend instead of the default in-process thread pool. The class (or instance) must implement :class:`JobExecutorProtocol <django_email_learning.ports.job_executor_protocol.JobExecutorProtocol>`:

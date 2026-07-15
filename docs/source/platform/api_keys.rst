@@ -25,6 +25,8 @@ This is particularly useful when:
 * You need to integrate Django Email Learning with other automation tools
 * You prefer managing scheduled tasks through external job schedulers
 
+See :doc:`../technical/jobs-api` for the job-trigger endpoints' request/response contract, including asynchronous execution and status polling.
+
 Access Requirements
 -------------------
 
