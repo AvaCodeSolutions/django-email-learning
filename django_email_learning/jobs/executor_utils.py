@@ -1,12 +1,12 @@
-from typing import Callable, TypeVar
+from typing import Callable
 
 from django.conf import settings
 from django.utils.module_loading import import_string
 
-T = TypeVar("T")
+from django_email_learning.ports.job_executor_protocol import JobExecutorProtocol
 
 
-def resolve_executor(default_factory: Callable[[], T]) -> T:
+def resolve_executor(default_factory: Callable[[], JobExecutorProtocol]) -> JobExecutorProtocol:
     conf: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
     try:
         cls_or_obj = import_string(conf["JOB_EXECUTOR"])
