@@ -101,3 +101,24 @@ def test_deletes_old_stale_rows(db) -> None:
 
     assert not JobExecution.objects.filter(pk=old_stale.pk).exists()
     assert JobExecution.objects.filter(pk=recent_stale.pk).exists()
+
+
+def test_deletes_old_failed_rows(db) -> None:
+    cutoff_time = timezone.now() - timedelta(days=3)
+
+    old_failed = _create_job_execution(
+        job_name=JobName.CHECK_IMAP.value,
+        status=JobStatus.FAILED.value,
+        finished_at=cutoff_time,
+    )
+    recent_failed = _create_job_execution(
+        job_name=JobName.DELIVER_CONTENTS.value,
+        status=JobStatus.FAILED.value,
+        finished_at=timezone.now(),
+    )
+
+    stdout = StringIO()
+    call_command("cleanup_job_executions", days=2, stdout=stdout)
+
+    assert not JobExecution.objects.filter(pk=old_failed.pk).exists()
+    assert JobExecution.objects.filter(pk=recent_failed.pk).exists()

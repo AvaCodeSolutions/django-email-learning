@@ -32,7 +32,7 @@ class Command(BaseCommand):
 
         cutoff = timezone.now() - timedelta(days=days)
         queryset = JobExecution.objects.filter(
-            status__in=[JobStatus.COMPLETED.value, JobStatus.STALE.value],
+            status__in=[JobStatus.COMPLETED.value, JobStatus.STALE.value, JobStatus.FAILED.value],
             finished_at__isnull=False,
             finished_at__lt=cutoff,
         )

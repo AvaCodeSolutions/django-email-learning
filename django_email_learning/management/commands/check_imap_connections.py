@@ -3,8 +3,6 @@ import logging
 from django.core.management.base import BaseCommand, CommandParser
 
 from django_email_learning.jobs.check_imap_job import CheckIMAPJob
-from django_email_learning.models import JobName
-from django_email_learning.services.metrics_service import metric_service
 
 
 class Command(BaseCommand):
@@ -44,7 +42,8 @@ class Command(BaseCommand):
             logger.warning("Check IMAP job interrupted by user")
 
         except Exception as e:
-            metric_service.job_execution_failed(job_name=JobName.CHECK_IMAP.value)
+            # track_job_execution already records the job_execution_failed
+            # metric from inside _run_job; don't double-count it here.
             self.stdout.write(self.style.ERROR(f"Check IMAP job failed: {str(e)}"))
             logger.error(f"Check IMAP job failed: {str(e)}", exc_info=True)
             raise

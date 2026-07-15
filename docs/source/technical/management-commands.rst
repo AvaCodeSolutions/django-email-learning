@@ -16,6 +16,8 @@ The project currently includes the following management commands:
 - ``send_newsletters``
 - ``rotate_encryption_key``
 
+Every command above except ``rotate_encryption_key`` also has an HTTP trigger endpoint under ``/api/jobs/...`` — see :doc:`jobs-api` for the request/response contract, including asynchronous execution and status polling.
+
 check_imap_connections
 ----------------------
 
@@ -98,7 +100,7 @@ Usage
 
 If you don't have the option to set a cron job or similar scheduling mechanism on the server, or you prefer to use a third-party service,
 you can trigger the command via the provided HTTP endpoint. ``/api/jobs/deliver-contents/``
-Ensure that you have the necessary authentication and permissions set up to access this endpoint securely. See :doc:`../platform/api_keys` for more details.
+Ensure that you have the necessary authentication and permissions set up to access this endpoint securely. See :doc:`../platform/api_keys` for more details and :doc:`jobs-api` for the response contract.
 
 
 Function
@@ -157,7 +159,7 @@ Usage
 
     python manage.py send_newsletters
 
-You can also trigger it via HTTP:
+You can also trigger it via HTTP (see :doc:`jobs-api` for the response contract):
 
 .. code-block:: http
 

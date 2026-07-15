@@ -6,6 +6,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.0.0] — 2026-07-15
+
+### Changed
+
+- **Job-trigger HTTP endpoints now run asynchronously** — `deliver_contents`, `check_imap_connections`, `send_quiz_reminders`, `deactivate_inactive_enrollments`, and `send_newsletters` now hand the job off to a pluggable executor instead of running it inline and blocking the request until it finishes. This is a breaking change to the response contract of all five endpoints:
+  - A successful trigger now returns `202` immediately with a `job_execution_id`, before the job has actually finished. Job success/failure is **no longer reflected in the trigger response** — poll the new `GET /api/jobs/executions/<job_execution_id>/` endpoint instead.
+  - Hitting an endpoint while that job is already running now returns `409` with the `job_execution_id` of the in-progress execution, instead of silently returning `202` without doing anything (the previous, undocumented behavior).
+  - `500` is now reserved for the rare case where the job couldn't even be handed off to the executor (e.g. the configured backend is unreachable), rather than the job itself failing.
+  - By default, jobs run on an in-process `ThreadPoolExecutor` (size configurable via the new `JOB_EXECUTOR_MAX_WORKERS` setting, default `4`). Library users can plug in Celery, RQ, Django-Q, or another backend by implementing `JobExecutorProtocol` (`django_email_learning.ports.job_executor_protocol`) and pointing the new `JOB_EXECUTOR` setting at it — see the installation docs.
+  - See the [async job execution issue](https://github.com/AvaCodeSolutions/django-email-learning/issues/720) for the full design rationale.
+
+### Added
+
+- **New `GET /api/jobs/executions/<job_execution_id>/` endpoint** — returns `job_name`, `status` (`running`/`completed`/`failed`/`stale`), `started_at`, `finished_at`, and `error` for a specific job execution. Use this to check the outcome of a job triggered via the endpoints above.
+- **`JobStatus.FAILED`** and a new `JobExecution.error` field — a job that raises now gets an explicit `failed` row with the exception message attached, instead of being left at `running` until the 2-hour staleness sweep reclassifies it as `stale`. Requires a new migration.
+- **`JOB_EXECUTOR` / `JOB_EXECUTOR_MAX_WORKERS` settings** — see above.
+
 ## [1.19.0] — 2026-07-14
 
 ### Fixed
