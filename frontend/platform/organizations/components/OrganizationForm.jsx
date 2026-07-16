@@ -164,13 +164,19 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
             <Typography variant="subtitle2" sx={{ mb: 1 }}>{localeMessages["social_links"]}</Typography>
             <Stack spacing={2}>
                 {socialLinks.map((link, index) => (
-                    <Stack key={index} direction="row" spacing={1} sx={{ alignItems: 'flex-start' }}>
-                        <FormControl sx={{ minWidth: 160 }} margin="normal">
+                    <Stack
+                        key={index}
+                        direction="row"
+                        spacing={1}
+                        sx={{ alignItems: 'flex-start', '& .MuiFormControl-root': { marginTop: '0 !important' } }}
+                    >
+                        <FormControl sx={{ minWidth: 160 }} size="small">
                             <InputLabel id={`social-link-platform-label-${index}`}>{localeMessages["social_link_platform"]}</InputLabel>
                             <Select
                                 labelId={`social-link-platform-label-${index}`}
                                 label={localeMessages["social_link_platform"]}
                                 value={link.platform}
+                                size="small"
                                 onChange={(e) => updateSocialLinkPlatform(index, e.target.value)}
                             >
                                 {platformOptionsFor(link.platform).map((option) => (
@@ -182,13 +188,12 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
                             label={localeMessages["social_link_url"]}
                             type="url"
                             fullWidth
-                            margin="normal"
                             value={link.url}
                             error={Boolean(link.urlHelperText)}
                             helperText={link.urlHelperText}
                             onChange={(e) => updateSocialLinkUrl(index, e.target.value)}
                         />
-                        <IconButton aria-label={localeMessages["remove_social_link"]} onClick={() => removeSocialLink(index)} sx={{ mt: 2 }}>
+                        <IconButton aria-label={localeMessages["remove_social_link"]} onClick={() => removeSocialLink(index)}>
                             <DeleteIcon fontSize="small" />
                         </IconButton>
                     </Stack>
