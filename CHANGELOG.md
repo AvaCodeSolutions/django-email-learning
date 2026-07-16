@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.1.2] — 2026-07-16
+
+### Fixed
+
+- **Organization logo deleted on every unrelated field update** — `OrganizationForm`'s local logo state was never seeded from the organization's existing logo, so it was indistinguishable from "user explicitly removed the logo." Saving any change (name, description, `is_public`, social links) on an organization that already had a logo silently wiped it. Fixed by seeding from the existing logo path and only signaling a change when it actually differs from that baseline, matching the pattern already used for course images. See [#725](https://github.com/AvaCodeSolutions/django-email-learning/issues/725).
+
 ## [2.1.1] — 2026-07-16
 
 ### Changed
