@@ -103,11 +103,9 @@ const defaultOptions = {
       styleOverrides: {
         root: ({ theme }) => ({
           '.MuiTableBody-root &': {
-            '&:nth-of-type(odd)': {
-              backgroundColor: theme.palette.mode === 'light' ? 'rgba(124, 134, 255, 0.05)' : 'rgba(255, 255, 255, 0.03)',
-            },
+            backgroundColor: theme.palette.mode === 'light' ? alpha(theme.palette.background.dark, 0.5) : 'rgba(255, 255, 255, 0.03)',
             '&:hover': {
-              backgroundColor: theme.palette.mode === 'light' ? 'rgba(124, 134, 255, 0.12)' : 'rgba(255, 255, 255, 0.08)',
+              backgroundColor: theme.palette.mode === 'light' ? alpha(theme.palette.background.dark, 0.25) : 'rgba(255, 255, 255, 0.08)',
             },
             '& td, & th': {
               paddingTop: 12,
@@ -261,7 +259,7 @@ const defaultOptions = {
             fontSize: '1.2rem',
           },
           '&:hover': {
-            backgroundColor: theme.palette.mode === 'light' ? 'rgba(124, 134, 255, 0.16)' : 'rgba(255, 255, 255, 0.12)',
+            backgroundColor: theme.palette.mode === 'light' ? alpha(theme.palette.primary.main, 0.16) : 'rgba(255, 255, 255, 0.12)',
             borderColor: theme.palette.primary.main,
           },
           transition: 'color 0.3s, background-color 0.3s, border-color 0.3s',
@@ -282,6 +280,11 @@ const defaultOptions = {
       defaultProps: {
         size: 'small',
       },
+      styleOverrides: {
+        root: {
+          padding: '8px 20px',
+        },
+      },
       variants: [
         {
             props: { variant: 'contained' },
@@ -290,31 +293,13 @@ const defaultOptions = {
                 boxShadow: 'none',
                 borderRadius: 8,
                 color: '#ffffff',
-                backgroundColor: theme.palette.primary.dark,
-                position: 'relative',
-                isolation: 'isolate',
-                zIndex: 0,
-                overflow: 'hidden',
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  inset: 0,
-                  borderRadius: 'inherit',
-                  backgroundImage: theme.palette.mode === 'dark'
-                    ? `linear-gradient(135deg, ${darken(theme.palette.secondary.main, 0.5)} 0%, ${theme.palette.primary.dark} 100%)`
-                    : `linear-gradient(135deg, ${theme.palette.secondary.dark} 0%, ${theme.palette.primary.dark} 100%)`,
-                  opacity: 0,
-                  zIndex: -1,
-                  transition: 'opacity 400ms ease-in-out',
-                  pointerEvents: 'none',
-                },
+                backgroundColor: theme.palette.primary.main,
+                transition: 'background-color 0.25s ease, box-shadow 0.25s ease',
                 '&:hover': {
+                    backgroundColor: theme.palette.primary.dark,
                     boxShadow: theme.palette.mode === 'dark'
                       ? `0 0 0 1px ${alpha(theme.palette.primary.main, 0.7)}, 0 0 10px 1px ${alpha(theme.palette.primary.main, 0.3)}`
                       : `0 0 0 1px ${alpha(theme.palette.primary.main, 0.2)}, 0 0 18px 3px ${alpha(theme.palette.primary.main, 0.14)}`,
-                    '&::before': {
-                      opacity: 1,
-                    },
                 },
             }),
         },
@@ -326,7 +311,7 @@ const defaultOptions = {
                 borderRadius: 8,
             transition: 'background-color 0.25s ease, color 0.25s ease',
             '&:hover': {
-              backgroundColor: theme.palette.mode === 'light' ? 'rgba(124, 134, 255, 0.16)' : 'rgba(255, 255, 255, 0.12)',
+              backgroundColor: theme.palette.mode === 'light' ? alpha(theme.palette.primary.main, 0.16) : 'rgba(255, 255, 255, 0.12)',
             },
             }),
         },
@@ -339,7 +324,7 @@ const defaultOptions = {
             borderColor: theme.palette.border.main,
             transition: 'background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease',
             '&:hover': {
-              backgroundColor: theme.palette.mode === 'light' ? 'rgba(124, 134, 255, 0.16)' : 'rgba(255, 255, 255, 0.12)',
+              backgroundColor: theme.palette.mode === 'light' ? alpha(theme.palette.primary.main, 0.16) : 'rgba(255, 255, 255, 0.12)',
               borderColor: theme.palette.primary.main,
             },
             }),
@@ -366,16 +351,12 @@ const defaultOptions = {
     MuiTableHead: {
       styleOverrides: {
         root: ({ theme }) => ({
-          backgroundColor: theme.palette.mode === 'light'
-            ? 'rgba(124, 134, 255, 0.06)'
-            : theme.palette.background.dark,
+          backgroundColor: theme.palette.mode === 'light' ? theme.palette.common.white : theme.palette.background.dark,
           '* th': {
-            fontWeight: 400,
+            fontWeight: 600,
             paddingTop: '10px',
             paddingBottom: '10px',
-            backgroundColor: theme.palette.mode === 'light'
-              ? 'rgba(124, 134, 255, 0.06)'
-              : theme.palette.background.dark,
+            backgroundColor: theme.palette.mode === 'light' ? theme.palette.common.white : theme.palette.background.dark,
           },
         }),
       },
@@ -390,7 +371,7 @@ const lightPalette = {
       secondary: '#00000099',
     },
     background: {
-      main: '#f8f8fa',
+      main: '#fbfcfc',
       box: '#ffffff',
       dark: '#f2f4f5ff',
       nav: '#ffffffff',
@@ -402,7 +383,7 @@ const lightPalette = {
       main: '#a93e6bff',
     },
     primary: {
-      main: '#7c86ff',
+      main: '#4f46e5',
       text: 'rgb(91, 103, 243)',
     },
     status: statusPalette,
@@ -428,7 +409,7 @@ const darkPalette = {
       main: '#ff6b9d',
     },
     primary: {
-      main: '#7c86ff',
+      main: '#4f46e5',
       text: 'rgb(184, 190, 255)',
     },
     // soft lavender-white for links — matches outlined button text, distinct from pure purple chrome

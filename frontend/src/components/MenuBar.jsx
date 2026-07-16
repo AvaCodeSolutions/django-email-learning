@@ -49,25 +49,58 @@ function OrganizationsSelect({organizations, activeOrganizationId, changeOrganiz
     )
 }
 
-function NavItem({ page, isActive }) {
+function NavItem({ page, isActive, isExactMatch }) {
+    const icon = (
+        <ListItemIcon sx={(theme) => ({ minWidth: 30, color: alpha(theme.palette.text.primary, 0.6), '& .MuiSvgIcon-root': { fontSize: '1.1rem' } })}>
+            {page.icon}
+        </ListItemIcon>
+    );
+    const text = (
+        <ListItemText
+            primary={page.name}
+            slotProps={{ primary: { fontSize: '0.9rem', fontWeight: isActive ? 600 : 400, color: 'inherit' } }}
+        />
+    );
+    const activeStyles = (theme) => ({
+        backgroundColor: theme.palette.mode === 'dark'
+            ? alpha(theme.palette.primary.main, 0.18)
+            : alpha(theme.palette.background.dark, 0.5),
+        borderInlineStart: `3px solid ${theme.palette.primary.main}`,
+    });
+
+    if (isExactMatch) {
+        return (
+            <Box
+                component="li"
+                aria-current="page"
+                sx={(theme) => ({
+                    display: 'flex',
+                    alignItems: 'center',
+                    py: '8px',
+                    px: '16px',
+                    ...activeStyles(theme),
+                })}
+            >
+                {icon}
+                {text}
+            </Box>
+        );
+    }
+
     return (
         <MenuItem sx={(theme) => ({
-            backgroundColor: isActive
-                ? theme.palette.mode === 'dark'
-                    ? alpha(theme.palette.primary.main, 0.18)
-                    : theme.palette.deepPurple[50]
-                : 'transparent',
-            borderInlineStart: isActive
-                ? `3px solid ${theme.palette.primary.main}`
-                : '3px solid transparent',
+            ...(isActive ? activeStyles(theme) : { backgroundColor: 'transparent', borderInlineStart: '3px solid transparent' }),
             '& .MuiTouchRipple-root': { color: theme.palette.primary.main },
+            // MUI's MenuItem ships its own `.MuiMenuItem-root .MuiListItemIcon-root { minWidth: 36px }`
+            // rule with higher specificity than a plain sx on ListItemIcon, so it silently wins over
+            // the 30px set in NavItem's `icon` unless forced here.
+            '& .MuiListItemIcon-root': { minWidth: '30px !important' },
             padding: 0,
             '&:hover': {
-                backgroundColor: theme.palette.mode === 'dark'
-                    ? alpha(theme.palette.primary.main, 0.12)
-                    : theme.palette.deepPurple[50],
+                backgroundColor: theme.palette.primary.main,
             },
-            '&:hover .MuiListItemIcon-root': { color: theme.palette.primary.main },
+            '&:hover .MuiListItemIcon-root': { color: '#ffffff' },
+            '&:hover .MuiListItemText-primary': { color: '#ffffff' },
         })}>
             <Link
                 href={page.href}
@@ -75,18 +108,8 @@ function NavItem({ page, isActive }) {
                 color="inherit"
                 sx={{ display: 'flex', alignItems: 'center', width: '100%', py: '8px', px: '16px' }}
             >
-                <ListItemIcon sx={(theme) => ({
-                    minWidth: 35,
-                    color: isActive
-                        ? theme.palette.primary.main
-                        : theme.palette.mode === 'dark' ? theme.palette.deepPurple[300] : theme.palette.deepPurple[500],
-                })}>
-                    {page.icon}
-                </ListItemIcon>
-                <ListItemText
-                    primary={page.name}
-                    slotProps={{ primary: { fontSize: '0.95rem', fontWeight: isActive ? 600 : 400, color: isActive ? 'primary.main' : 'inherit' } }}
-                />
+                {icon}
+                {text}
             </Link>
         </MenuItem>
     );
@@ -199,6 +222,14 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
         return currentPath === pagePath || (pagePath !== '/' && currentPath.startsWith(`${pagePath}/`));
     };
 
+    const isCurrentPage = (href) => {
+        if (typeof window === 'undefined') {
+            return false;
+        }
+        const pagePath = new URL(href, window.location.origin).pathname.replace(/\/+$/, '') || '/';
+        return currentPath === pagePath;
+    };
+
         const healthStatus = deliverContentsJobStatus?.job_health_status || 'healthy';
         const statusConfig = jobsStatusMap[healthStatus] || jobsStatusMap.healthy;
         const executionTime = deliverContentsJobStatus?.last_execution_started_at
@@ -260,7 +291,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                             {localeMessages['administration'] || 'Administration'}
                         </Typography>
                     </Divider>
-                    {adminPages.map((page) => <NavItem key={page.name} page={page} isActive={isActivePage(page.href)} />)}
+                    {adminPages.map((page) => <NavItem key={page.name} page={page} isActive={isActivePage(page.href)} isExactMatch={isCurrentPage(page.href)} />)}
                 </>}
 
                 {/* ── Platform ── */}
@@ -269,7 +300,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                         {localeMessages['platform_section'] || 'Platform'}
                     </Typography>
                 </Divider>
-                {platformPages.map((page) => <NavItem key={page.name} page={page} isActive={isActivePage(page.href)} />)}
+                {platformPages.map((page) => <NavItem key={page.name} page={page} isActive={isActivePage(page.href)} isExactMatch={isCurrentPage(page.href)} />)}
 
                 {/* ── Settings ── (platform admin only, always expanded) */}
                 {settingsPages.length > 0 && <>
@@ -278,7 +309,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                             {localeMessages['settings'] || 'Settings'}
                         </Typography>
                     </Divider>
-                    {settingsPages.map((page) => <NavItem key={page.name} page={page} isActive={isActivePage(page.href)} />)}
+                    {settingsPages.map((page) => <NavItem key={page.name} page={page} isActive={isActivePage(page.href)} isExactMatch={isCurrentPage(page.href)} />)}
                 </>}
 
                 {/* ── Appearance ── */}

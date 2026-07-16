@@ -5,7 +5,7 @@ import { Box, Typography, Link } from '@mui/material';
 
 const Layout = ({ children, fullHeight = false }) => {
     return (<>
-        <GlobalStyles styles={(theme) => ({ body: { margin: 0, padding: 0, backgroundColor: theme.palette.background.dark, color: theme.palette.text.primary } })} />
+        <GlobalStyles styles={(theme) => ({ body: { margin: 0, padding: 0, backgroundColor: theme.palette.mode === 'light' ? '#fcfcfc' : theme.palette.background.dark, color: theme.palette.text.primary } })} />
         <Container sx={{
             backgroundColor: 'background.paper',
             padding: 4,
