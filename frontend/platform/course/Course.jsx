@@ -486,7 +486,7 @@ function Course() {
 
                     {activeTab === 'content' && (
                         <>
-                            <Box sx={{ px: 1, display: 'flex', flexDirection: {xs:'column', md: 'row'}, flexWrap: { md: 'wrap' }, alignItems: { xs: 'stretch', md: 'flex-start' }, pb: 2, width: '100%', '& > .MuiButton-root': { flex: { md: '0 0 calc(100% / 3 - 8px)', lg: '0 0 calc(100% / 5 - 8px)' } } }}>
+                            <Box sx={{ px: 1, display: 'flex', flexDirection: {xs:'column', md: 'row'}, flexWrap: { md: 'wrap' }, alignItems: { xs: 'stretch', md: 'flex-start' }, pb: 2, width: '100%', '& > .MuiButton-root': { flex: { md: '0 0 auto' } } }}>
                                 {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon />} sx={{ marginBottom: {xs: 1, md: 2}, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
                                 setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><LessonForm
                                     header={localeMessages["new_lesson"]}
