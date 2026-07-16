@@ -18,4 +18,4 @@
 
 {% endif %}
 {% translate "Best regards," %}
-{% blocktranslate %}The {{ organization_name }} Team{% endblocktranslate %}
+{% blocktranslate %}{{ organization_name }}{% endblocktranslate %}

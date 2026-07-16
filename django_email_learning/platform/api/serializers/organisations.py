@@ -5,7 +5,7 @@ from typing import Any, Callable, Optional
 from django.urls import reverse
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from django_email_learning.models import Organization, OrganizationUser
+from django_email_learning.models import Organization, OrganizationUser, SocialLink
 from django_email_learning.services.sanitize import strip_html
 from django_email_learning.services.storage_tools import (
     FileDoesNotExistError,
@@ -32,6 +32,25 @@ class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class SocialLinkRequest(BaseModel):
+    platform: str = Field(examples=[SocialLink.Platform.WEBSITE.value])
+    url: str = Field(examples=["https://example.com"])
+
+    @field_validator("platform")
+    @classmethod
+    def validate_platform(cls, value: str) -> str:
+        if value not in SocialLink.Platform.values:
+            raise ValueError(f"Invalid platform: {value}")
+        return value
+
+
+class SocialLinkResponse(BaseModel):
+    platform: str
+    url: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class OrganizationResponse(BaseModel):
     id: int
     name: str
@@ -39,9 +58,7 @@ class OrganizationResponse(BaseModel):
     logo_path: Optional[str] = None
     description: Optional[str] = None
     public_url: str
-    website: Optional[str] = None
-    youtube_channel: Optional[str] = None
-    linkedin_page: Optional[str] = None
+    social_links: list[SocialLinkResponse] = []
     is_public: bool
     can_enroll_learner: bool
 
@@ -61,9 +78,7 @@ class OrganizationResponse(BaseModel):
                 "logo_path": organization.logo.name if organization.logo else None,
                 "description": organization.description,
                 "public_url": abs_url_builder(url),
-                "website": organization.website,
-                "youtube_channel": organization.youtube_channel,
-                "linkedin_page": organization.linkedin_page,
+                "social_links": list(organization.social_links.all()),
                 "is_public": organization.is_public,
                 "can_enroll_learner": organization.can_enroll_learner(),
             }
@@ -74,9 +89,7 @@ class CreateOrganizationRequest(BaseModel):
     name: str = Field(min_length=1, examples=["AvaCode"])
     description: Optional[str] = Field(None, examples=["A description of the organization."])
     logo: Optional[str] = Field(None, examples=["/path/to/logo.png"])
-    website: Optional[str] = Field(None, examples=["https://example.com"])
-    youtube_channel: Optional[str] = Field(None, examples=["https://youtube.com/channel/xyz"])
-    linkedin_page: Optional[str] = Field(None, examples=["https://linkedin.com/company/xyz"])
+    social_links: list[SocialLinkRequest] = Field(default_factory=list)
     is_public: bool = Field(default=True, examples=[True])
 
     @field_validator("description")
@@ -88,13 +101,13 @@ class CreateOrganizationRequest(BaseModel):
         organization = Organization(
             name=self.name,
             description=self.description,
-            website=self.website,
-            youtube_channel=self.youtube_channel,
-            linkedin_page=self.linkedin_page,
             is_public=self.is_public,
         )
         organization.save()
         organization.refresh_from_db()
+        SocialLink.objects.bulk_create(
+            SocialLink(organization=organization, platform=link.platform, url=link.url) for link in self.social_links
+        )
         if self.logo:
             try:
                 allowed_extensions = [".jpg", ".jpeg", ".png", ".svg"]
@@ -116,9 +129,7 @@ class UpdateOrganizationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: Optional[str] = Field(None, min_length=1, examples=["AvaCode"])
     description: Optional[str] = Field(None, examples=["A description of the organization."])
-    website: Optional[str] = Field(None, examples=["https://example.com"])
-    youtube_channel: Optional[str] = Field(None, examples=["https://youtube.com/channel/xyz"])
-    linkedin_page: Optional[str] = Field(None, examples=["https://linkedin.com/company/xyz"])
+    social_links: Optional[list[SocialLinkRequest]] = None
     logo: Optional[str] = Field(None, examples=["/path/to/logo.png"])
     remove_logo: Optional[bool] = Field(None, examples=[True])
     is_public: Optional[bool] = Field(None, examples=[True])

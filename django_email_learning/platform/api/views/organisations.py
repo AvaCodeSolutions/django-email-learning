@@ -19,6 +19,7 @@ from django_email_learning.decorators import (
 from django_email_learning.models import (
     Organization,
     OrganizationUser,
+    SocialLink,
 )
 from django_email_learning.platform.api import serializers
 
@@ -181,15 +182,15 @@ class SingleOrganizationView(View):
                 organization.logo = serializer.logo
             if serializer.remove_logo:
                 organization.logo = None
-            if serializer.website is not None:
-                organization.website = serializer.website
-            if serializer.youtube_channel is not None:
-                organization.youtube_channel = serializer.youtube_channel
-            if serializer.linkedin_page is not None:
-                organization.linkedin_page = serializer.linkedin_page
             if serializer.is_public is not None:
                 organization.is_public = serializer.is_public
             organization.save()
+            if serializer.social_links is not None:
+                organization.social_links.all().delete()
+                SocialLink.objects.bulk_create(
+                    SocialLink(organization=organization, platform=link.platform, url=link.url)
+                    for link in serializer.social_links
+                )
             return JsonResponse(
                 serializers.OrganizationResponse.from_django_model(
                     organization,

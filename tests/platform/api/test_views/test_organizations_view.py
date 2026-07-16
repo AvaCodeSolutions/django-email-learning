@@ -3,7 +3,7 @@ from django.core.files.storage import default_storage
 from django.test import override_settings
 from django.urls import reverse
 
-from django_email_learning.models import Enrollment, EnrollmentStatus, Learner, Organization
+from django_email_learning.models import Enrollment, EnrollmentStatus, Learner, Organization, SocialLink
 
 
 def get_url() -> str:
@@ -47,16 +47,28 @@ def test_post_organizations_view_as_superadmin(superadmin_client):
     payload = {
         "name": "New Org",
         "description": "A newly created organization",
-        "website": "https://new-org.example.com",
-        "linkedin_page": "https://www.linkedin.com/company/new-org",
-        "youtube_channel": "https://www.youtube.com/@new-org",
+        "social_links": [
+            {"platform": "website", "url": "https://new-org.example.com"},
+            {"platform": "linkedin", "url": "https://www.linkedin.com/company/new-org"},
+            {"platform": "youtube", "url": "https://www.youtube.com/@new-org"},
+        ],
     }
     response = superadmin_client.post(get_url(), data=payload, content_type="application/json")
     assert response.status_code == 201
     assert response.json().get("name") == "New Org"
-    assert response.json().get("website") == payload["website"]
-    assert response.json().get("linkedin_page") == payload["linkedin_page"]
-    assert response.json().get("youtube_channel") == payload["youtube_channel"]
+    assert sorted(response.json().get("social_links"), key=lambda link: link["platform"]) == sorted(
+        payload["social_links"], key=lambda link: link["platform"]
+    )
+
+
+def test_post_organizations_view_rejects_invalid_social_link_platform(superadmin_client):
+    payload = {
+        "name": "Invalid Platform Org",
+        "description": "Should be rejected",
+        "social_links": [{"platform": "myspace", "url": "https://myspace.com/new-org"}],
+    }
+    response = superadmin_client.post(get_url(), data=payload, content_type="application/json")
+    assert response.status_code == 400
 
 
 def test_create_organization_strips_html_from_description(superadmin_client):
@@ -83,14 +95,10 @@ def test_post_organizations_view_optional_social_fields(superadmin_client):
     response = superadmin_client.post(get_url(), data=payload, content_type="application/json")
 
     assert response.status_code == 201
-    assert response.json().get("website") is None
-    assert response.json().get("linkedin_page") is None
-    assert response.json().get("youtube_channel") is None
+    assert response.json().get("social_links") == []
 
     organization = Organization.objects.get(id=response.json()["id"])
-    assert organization.website is None
-    assert organization.linkedin_page is None
-    assert organization.youtube_channel is None
+    assert organization.social_links.count() == 0
 
 
 @pytest.fixture
@@ -133,16 +141,16 @@ def test_update_organizations_view(superadmin_client, existing_logo_path):
     initial_name = organization.name
     initial_description = organization.description
     initial_logo = organization.logo
-    initial_website = organization.website
-    initial_linkedin_page = organization.linkedin_page
-    initial_youtube_channel = organization.youtube_channel
+    initial_social_links = list(organization.social_links.values("platform", "url"))
     payload = {
         "name": "Updated Org",
         "description": "Updated description",
         "logo": existing_logo_path,
-        "website": "https://updated-org.example.com",
-        "linkedin_page": "https://www.linkedin.com/company/updated-org",
-        "youtube_channel": "https://www.youtube.com/@updated-org",
+        "social_links": [
+            {"platform": "website", "url": "https://updated-org.example.com"},
+            {"platform": "linkedin", "url": "https://www.linkedin.com/company/updated-org"},
+            {"platform": "youtube", "url": "https://www.youtube.com/@updated-org"},
+        ],
     }
     response = superadmin_client.post(update_url(organization.id), data=payload, content_type="application/json")
     assert response.status_code == 200
@@ -150,23 +158,24 @@ def test_update_organizations_view(superadmin_client, existing_logo_path):
     assert response.json().get("name") == "Updated Org"
     assert response.json().get("description") == "Updated description"
     assert response.json().get("logo").endswith(f"/{existing_logo_path}")
-    assert response.json().get("website") == payload["website"]
-    assert response.json().get("linkedin_page") == payload["linkedin_page"]
-    assert response.json().get("youtube_channel") == payload["youtube_channel"]
+    assert sorted(response.json().get("social_links"), key=lambda link: link["platform"]) == sorted(
+        payload["social_links"], key=lambda link: link["platform"]
+    )
     assert response.json().get("name") != initial_name
     assert response.json().get("description") != initial_description
     assert response.json().get("logo") != initial_logo
-    assert response.json().get("website") != initial_website
-    assert response.json().get("linkedin_page") != initial_linkedin_page
-    assert response.json().get("youtube_channel") != initial_youtube_channel
+    assert response.json().get("social_links") != initial_social_links
 
 
 def test_update_organizations_view_optional_social_fields(superadmin_client):
     organization = Organization.objects.first()
-    organization.website = "https://existing-org.example.com"
-    organization.linkedin_page = "https://www.linkedin.com/company/existing-org"
-    organization.youtube_channel = "https://www.youtube.com/@existing-org"
-    organization.save()
+    SocialLink.objects.create(organization=organization, platform="website", url="https://existing-org.example.com")
+    SocialLink.objects.create(
+        organization=organization, platform="linkedin", url="https://www.linkedin.com/company/existing-org"
+    )
+    SocialLink.objects.create(
+        organization=organization, platform="youtube", url="https://www.youtube.com/@existing-org"
+    )
 
     payload = {
         "name": "Renamed Org",
@@ -176,14 +185,14 @@ def test_update_organizations_view_optional_social_fields(superadmin_client):
     response = superadmin_client.post(update_url(organization.id), data=payload, content_type="application/json")
 
     assert response.status_code == 200
-    assert response.json().get("website") == organization.website
-    assert response.json().get("linkedin_page") == organization.linkedin_page
-    assert response.json().get("youtube_channel") == organization.youtube_channel
+    expected_social_links = sorted(
+        [{"platform": link.platform, "url": link.url} for link in organization.social_links.all()],
+        key=lambda link: link["platform"],
+    )
+    assert sorted(response.json().get("social_links"), key=lambda link: link["platform"]) == expected_social_links
 
     organization.refresh_from_db()
-    assert organization.website == "https://existing-org.example.com"
-    assert organization.linkedin_page == "https://www.linkedin.com/company/existing-org"
-    assert organization.youtube_channel == "https://www.youtube.com/@existing-org"
+    assert organization.social_links.count() == 3
 
 
 @pytest.mark.parametrize("client", ["viewer", "editor", "instructor"], indirect=True)

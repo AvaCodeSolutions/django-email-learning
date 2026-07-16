@@ -7,11 +7,24 @@ import { Alert, Box, Button, Card, CardContent, CardMedia, Dialog, Grid, Stack, 
 import LanguageIcon from '@mui/icons-material/Language';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import YouTubeIcon from '@mui/icons-material/YouTube';
+import LinkIcon from '@mui/icons-material/Link';
 import SchoolIcon from '@mui/icons-material/School';
 import { alpha, ThemeProvider } from '@mui/material/styles';
 import { useAppContext } from '../../src/render.jsx';
 import { lightTheme } from '../../src/theme/themes';
 
+
+const SOCIAL_LINK_ICONS = {
+    website: LanguageIcon,
+    youtube: YouTubeIcon,
+    linkedin: LinkedInIcon,
+};
+
+const SOCIAL_LINK_LABEL_KEYS = {
+    website: 'website',
+    youtube: 'youtube_channel',
+    linkedin: 'linkedin_page',
+};
 
 function Organization() {
 
@@ -74,76 +87,39 @@ function Organization() {
                 <Stack spacing={2} sx={{ flex: 1, minWidth: 0, pt: { xs: 1, md: 3 }, px: { xs: 0.5, md: 1 } }}>
                     <Typography variant="h1" sx={{ mb: 0 }}>{ organization["name"] }</Typography>
                     <Typography variant="body1" sx={{ color: 'text.secondary' }}>{ organization["description"] }</Typography>
-                    {(organization.website || organization.linkedin_page || organization.youtube_channel) && (
+                    {organization.social_links && organization.social_links.length > 0 && (
                         <Stack
                             direction={{ xs: 'column', sm: 'row' }}
                             spacing={{ xs: 0.75, sm: 1.25 }}
                             useFlexGap
                             sx={{ pt: 1, alignItems: { xs: 'stretch', sm: 'center' }, flexWrap: 'wrap' }}
                         >
-                            {organization.website && (
-                                <Button
-                                    component="a"
-                                    href={organization.website}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    variant="outlined"
-                                    color="primary"
-                                    size="small"
-                                    startIcon={<LanguageIcon fontSize="small" />}
-                                    sx={{
-                                        width: { xs: '100%', sm: 'auto' },
-                                        borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
-                                        '&:hover': {
+                            {organization.social_links.map((link) => {
+                                const Icon = SOCIAL_LINK_ICONS[link.platform] || LinkIcon;
+                                const labelKey = SOCIAL_LINK_LABEL_KEYS[link.platform];
+                                return (
+                                    <Button
+                                        key={link.platform}
+                                        component="a"
+                                        href={link.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        variant="outlined"
+                                        color="primary"
+                                        size="small"
+                                        startIcon={<Icon fontSize="small" />}
+                                        sx={{
+                                            width: { xs: '100%', sm: 'auto' },
                                             borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
-                                        },
-                                    }}
-                                >
-                                    {localeMessages['website']}
-                                </Button>
-                            )}
-                            {organization.linkedin_page && (
-                                <Button
-                                    component="a"
-                                    href={organization.linkedin_page}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    variant="outlined"
-                                    color="primary"
-                                    size="small"
-                                    startIcon={<LinkedInIcon fontSize="small" />}
-                                    sx={{
-                                        width: { xs: '100%', sm: 'auto' },
-                                        borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
-                                        '&:hover': {
-                                            borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
-                                        },
-                                    }}
-                                >
-                                    {localeMessages['linkedin_page']}
-                                </Button>
-                            )}
-                            {organization.youtube_channel && (
-                                <Button
-                                    component="a"
-                                    href={organization.youtube_channel}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    variant="outlined"
-                                    color="primary"
-                                    size="small"
-                                    startIcon={<YouTubeIcon fontSize="small" />}
-                                    sx={{
-                                        width: { xs: '100%', sm: 'auto' },
-                                        borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
-                                        '&:hover': {
-                                            borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
-                                        },
-                                    }}
-                                >
-                                    {localeMessages['youtube_channel']}
-                                </Button>
-                            )}
+                                            '&:hover': {
+                                                borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
+                                            },
+                                        }}
+                                    >
+                                        {localeMessages[labelKey] || link.platform}
+                                    </Button>
+                                );
+                            })}
                         </Stack>
                     )}
                 </Stack>

@@ -14,6 +14,7 @@ from django_email_learning.models import Course, Newsletter, Organization
 from django_email_learning.public.serializers import (
     OrganizationSerializer,
     PublicCourseSerializer,
+    SocialLinkSerializer,
 )
 
 # Same substitution Django's json_script template filter uses: these characters
@@ -39,16 +40,7 @@ def get_terms_of_service_url() -> str | None:
 
 def get_organization_json_ld_links(organization: Organization) -> dict[str, object]:
     json_ld_links: dict[str, object] = {"url": organization.public_url}
-    same_as: list[str] = []
-
-    if organization.website:
-        same_as.append(organization.website)
-
-    if organization.linkedin_page:
-        same_as.append(organization.linkedin_page)
-
-    if organization.youtube_channel:
-        same_as.append(organization.youtube_channel)
+    same_as = [link.url for link in organization.social_links.all()]
 
     if same_as:
         json_ld_links["sameAs"] = same_as
@@ -152,6 +144,7 @@ class OrganizationView(TemplateView):
                 ),
                 to_attr="courses",
             ),
+            "social_links",
         )
         if organization_details.exists():
             organization = organization_details.first()
@@ -180,9 +173,10 @@ class OrganizationView(TemplateView):
                 description=organization.description,
                 courses=courses,
                 public_url=organization.public_url,
-                website=organization.website,
-                youtube_channel=organization.youtube_channel,
-                linkedin_page=organization.linkedin_page,
+                social_links=[
+                    SocialLinkSerializer(platform=link.platform, url=link.url)
+                    for link in organization.social_links.all()
+                ],
             )
             enroll_api_path = reverse("django_email_learning:api_public:enroll")
             subscribe_api_path = reverse(
@@ -270,12 +264,16 @@ class CourseView(TemplateView):
         organization_id: int = kwargs.get("organization_id")  # type: ignore[assignment]
         context = super().get_context_data(**kwargs)
         try:
-            course = Course.objects.select_related("organization").get(
-                slug=course_slug,
-                organization__id=organization_id,
-                enabled=True,
-                is_public=True,
-                organization__is_public=True,
+            course = (
+                Course.objects.select_related("organization")
+                .prefetch_related("organization__social_links")
+                .get(
+                    slug=course_slug,
+                    organization__id=organization_id,
+                    enabled=True,
+                    is_public=True,
+                    organization__is_public=True,
+                )
             )
         except Course.DoesNotExist:
             raise Http404(_("Course does not exist"))
@@ -306,9 +304,10 @@ class CourseView(TemplateView):
             else None,
             description=course.organization.description,
             public_url=course.organization.public_url,
-            website=course.organization.website,
-            youtube_channel=course.organization.youtube_channel,
-            linkedin_page=course.organization.linkedin_page,
+            social_links=[
+                SocialLinkSerializer(platform=link.platform, url=link.url)
+                for link in course.organization.social_links.all()
+            ],
         )
         enroll_api_path = reverse("django_email_learning:api_public:enroll")
         current_lang_code = get_language()

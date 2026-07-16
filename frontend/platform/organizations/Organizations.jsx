@@ -137,9 +137,7 @@ function Organizations() {
                         initialName={org.name}
                         initialDescription={org.description}
                         initialLogoUrl={org.logo}
-                        initialWebsite={org.website}
-                        initialLinkedinPage={org.linkedin_page}
-                        initialYoutubeChannel={org.youtube_channel}
+                        initialSocialLinks={org.social_links}
                         initialIsPublic={org.is_public}
                         organizationId={org.id}
                       /></Suspense>);

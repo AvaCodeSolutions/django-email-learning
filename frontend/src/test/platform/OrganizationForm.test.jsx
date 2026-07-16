@@ -25,6 +25,11 @@ const localeMessages = {
   linkedin_page: 'LinkedIn page',
   youtube_channel: 'YouTube channel',
   invalid_url_helper_text: 'Enter a valid URL starting with http:// or https://',
+  social_links: 'Social links',
+  add_social_link: 'Add link',
+  social_link_platform: 'Platform',
+  social_link_url: 'URL',
+  remove_social_link: 'Remove link',
 };
 
 const createProps = {
@@ -76,17 +81,40 @@ describe('OrganizationForm', () => {
     });
   });
 
-  it('shows URL validation error for invalid website URL', async () => {
+  it('shows URL validation error for invalid social link URL', async () => {
     const user = userEvent.setup();
     renderWithProviders(<OrganizationForm {...createProps} />, {
       appContext: { localeMessages },
     });
-    await user.type(screen.getByLabelText('Website'), 'not-a-url');
+    await user.click(screen.getByRole('button', { name: 'Add link' }));
+    await user.type(screen.getByLabelText('URL'), 'not-a-url');
     await user.click(screen.getByRole('button', { name: 'Create' }));
     await waitFor(() => {
       expect(
         screen.getByText('Enter a valid URL starting with http:// or https://')
       ).toBeInTheDocument();
+    });
+  });
+
+  it('adds a social link and submits it with the form', async () => {
+    global.fetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ id: '1', name: 'Acme Corp' }),
+    });
+    const user = userEvent.setup();
+    renderWithProviders(<OrganizationForm {...createProps} />, {
+      appContext: { localeMessages },
+    });
+    await user.type(screen.getByLabelText(/Name/), 'Acme Corp');
+    await user.type(screen.getByLabelText(/Description/), 'A great company.');
+    await user.click(screen.getByRole('button', { name: 'Add link' }));
+    await user.type(screen.getByLabelText('URL'), 'https://acme.example.com');
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+    const [, options] = global.fetch.mock.calls.at(-1);
+    expect(JSON.parse(options.body)).toMatchObject({
+      social_links: [{ platform: 'website', url: 'https://acme.example.com' }],
     });
   });
 

@@ -20,5 +20,5 @@ from .imap_connections import ImapConnection, InboxFolder, is_domain_or_ip
 from .jobs import JobExecution, JobName, JobStatus
 from .mixin_models import EncryptionMixin
 from .newsletters import Newsletter, NewsletterSubscriber, Sendout, SendoutDelivery
-from .organizations import Organization, OrganizationUser
+from .organizations import Organization, OrganizationUser, SocialLink
 from .submissions import AssignmentFeedback, AssignmentSubmission, QuizSubmission

@@ -30,6 +30,11 @@ class PublicCourseSerializer(BaseModel):
         return language_dict.get(language_code, language_code)
 
 
+class SocialLinkSerializer(BaseModel):
+    platform: str
+    url: str
+
+
 class OrganizationSerializer(BaseModel):
     id: int
     name: str
@@ -37,9 +42,7 @@ class OrganizationSerializer(BaseModel):
     description: str | None = None
     courses: list[PublicCourseSerializer] = []
     public_url: str | None = None
-    website: str | None = None
-    youtube_channel: str | None = None
-    linkedin_page: str | None = None
+    social_links: list[SocialLinkSerializer] = []
 
     @field_serializer("description")
     def serialize_description_with_br(self, description: str | None) -> str | None:
