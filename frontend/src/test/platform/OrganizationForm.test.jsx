@@ -162,6 +162,7 @@ describe('OrganizationForm', () => {
         initialName="Acme Corp"
         initialDescription="A great company."
         initialLogoUrl="https://example.com/logo.png"
+        initialLogoPath="organization_logos/1/logo.png"
       />,
       { appContext: { localeMessages } }
     );
@@ -171,5 +172,35 @@ describe('OrganizationForm', () => {
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());
     const [, options] = global.fetch.mock.calls.at(-1);
     expect(JSON.parse(options.body)).toMatchObject({ remove_logo: true });
+  });
+
+  it('does not send remove_logo when saving without touching an existing logo', async () => {
+    global.fetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ id: '1', name: 'Acme Corp Updated' }),
+    });
+    const user = userEvent.setup();
+    renderWithProviders(
+      <OrganizationForm
+        {...createProps}
+        createMode={false}
+        organizationId="1"
+        initialName="Acme Corp"
+        initialDescription="A great company."
+        initialLogoUrl="https://example.com/logo.png"
+        initialLogoPath="organization_logos/1/logo.png"
+      />,
+      { appContext: { localeMessages } }
+    );
+
+    // The logo widget is never touched here - only an unrelated field is edited.
+    await user.type(screen.getByLabelText(/Name/), ' Updated');
+    await user.click(screen.getByRole('button', { name: 'Update' }));
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+    const [, options] = global.fetch.mock.calls.at(-1);
+    const body = JSON.parse(options.body);
+    expect(body).not.toHaveProperty('remove_logo');
+    expect(body).not.toHaveProperty('logo');
   });
 });
