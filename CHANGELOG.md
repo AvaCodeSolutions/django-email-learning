@@ -6,6 +6,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.1.1] — 2026-07-16
+
+### Changed
+
+- **Platform UI restyle** — no functional/API changes, visual only:
+  - Primary color changed from purple (`#7c86ff`) to indigo (`#4f46e5`); several places that had the old purple hardcoded as a literal instead of a theme reference were fixed to track the theme color going forward.
+  - Sidebar: the active nav item no longer renders as a clickable link when it's the exact current page (still highlighted, and still a link, when a sub-page of that section is active); lighter active/hover backgrounds; icon color now derives from the surrounding text color instead of a fixed purple.
+  - Buttons: dropped the gradient hover overlay on contained buttons in favor of a flat color that darkens on hover; increased default padding.
+  - Tables: removed alternating row stripes in favor of one flat light-gray tint for all rows; header is now white/bold in light mode instead of purple-tinted.
+  - Public organization/course pages: hero boxes and the newsletter subscription box switched from a light-purple wash to light gray, and the newsletter box's email field/submit button are now a single attached control; mobile-only centering fixes for the org logo, org name, and course card enroll buttons.
+
 ## [2.1.0] — 2026-07-16
 
 ### Changed
