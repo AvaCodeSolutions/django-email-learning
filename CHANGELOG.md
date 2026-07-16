@@ -6,6 +6,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.1.0] — 2026-07-16
+
+### Changed
+
+- **`Organization.website`/`youtube_channel`/`linkedin_page` replaced by a `SocialLink` model** — these three fixed `URLField`s are gone; social links are now stored as `SocialLink` rows (`organization` FK, `platform` enum currently `website`/`youtube`/`linkedin`, `url`), so adding a new platform in the future is just a new enum choice rather than a schema change.
+  - `GET`/`POST` responses for `/api/platform/organizations/` and `/api/platform/organizations/<id>/`, and the public organization/course pages, now return `social_links: [{platform, url}, ...]` instead of the flat `website`/`youtube_channel`/`linkedin_page` fields. The bundled platform admin form and public organization page (both included in this package) are updated to match.
+  - `POST` requests to create or update an organization now take `social_links: [{platform, url}, ...]` instead of the three flat fields. On update, omitting `social_links` leaves existing links untouched; passing a list fully replaces them.
+  - Existing data is migrated automatically: a data migration backfills `SocialLink` rows from the old fields before they're dropped, so no manual backfill step is needed when upgrading.
+  - The platform admin organization form and the public organization page now render a generic, repeatable list of social links instead of three hardcoded fields.
+  - See [#722](https://github.com/AvaCodeSolutions/django-email-learning/issues/722) for the full design rationale.
+
 ## [2.0.1] — 2026-07-16
 
 ### Fixed
