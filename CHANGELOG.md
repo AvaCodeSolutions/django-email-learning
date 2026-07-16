@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.0.1] — 2026-07-16
+
+### Fixed
+
+- **Missing OAuth scope for Google group enrollment** — `GoogleGroupEnrollmentHandler` requested `admin.directory.user.readonly` and `admin.directory.group.readonly` but not `admin.directory.group.member.readonly`, which is required to read group membership. Added the missing scope.
+
 ## [2.0.0] — 2026-07-15
 
 ### Changed
