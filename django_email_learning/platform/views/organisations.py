@@ -53,6 +53,11 @@ class Organizations(BasePlatformView):
             "website": _("Website"),
             "linkedin_page": _("LinkedIn page"),
             "youtube_channel": _("YouTube channel"),
+            "social_links": _("Social links"),
+            "add_social_link": _("Add link"),
+            "social_link_platform": _("Platform"),
+            "social_link_url": _("URL"),
+            "remove_social_link": _("Remove link"),
         }
 
 

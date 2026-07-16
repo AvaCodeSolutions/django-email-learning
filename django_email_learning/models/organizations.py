@@ -16,9 +16,6 @@ class Organization(models.Model):
     name = models.CharField(max_length=200, unique=True)
     logo = models.ImageField(upload_to="organization_logos/", null=True, blank=True)
     description = models.TextField(null=True, blank=True)
-    website = models.URLField(max_length=500, null=True, blank=True)
-    youtube_channel = models.URLField(max_length=500, null=True, blank=True)
-    linkedin_page = models.URLField(max_length=500, null=True, blank=True)
     is_public = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
@@ -60,6 +57,26 @@ class Organization(models.Model):
             return True
         active_learner_count = self.learner_set.filter(enrollments__status=EnrollmentStatus.ACTIVE).distinct().count()
         return active_learner_count < cap
+
+
+class SocialLink(models.Model):
+    class Platform(models.TextChoices):
+        WEBSITE = "website", "Website"
+        YOUTUBE = "youtube", "YouTube"
+        LINKEDIN = "linkedin", "LinkedIn"
+
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="social_links")
+    platform = models.CharField(max_length=20, choices=Platform.choices)
+    url = models.URLField(max_length=500)
+
+    class Meta:
+        ordering = ["platform"]
+        constraints = [
+            models.UniqueConstraint(fields=["organization", "platform"], name="unique_organization_platform")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.organization.name} - {self.platform}"
 
 
 class OrganizationUser(models.Model):
