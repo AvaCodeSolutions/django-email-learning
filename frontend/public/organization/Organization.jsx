@@ -70,7 +70,7 @@ function Organization() {
                 mb: 4,
                 borderRadius: 2,
                 backgroundColor: (theme) => theme.palette.mode === 'light'
-                    ? alpha(theme.palette.primary.main, 0.05)
+                    ? '#fafafa'
                     : alpha(theme.palette.common.white, 0.04),
             }}
         >
@@ -80,12 +80,12 @@ function Organization() {
                 sx={{ alignItems: { xs: 'stretch', md: 'flex-start' } }}
             >
                 { organization["logo_url"] &&
-                    <Box sx={{ flexShrink: 0 }}>
+                    <Box sx={{ flexShrink: 0, textAlign: { xs: 'center', md: 'left' } }}>
                         <Box component="img" src={ organization["logo_url"] } alt={`${organization["name"]} Logo`} sx={{ maxWidth: 220, width: '100%', height: 'auto' }} />
                     </Box>
                 }
                 <Stack spacing={2} sx={{ flex: 1, minWidth: 0, pt: { xs: 1, md: 3 }, px: { xs: 0.5, md: 1 } }}>
-                    <Typography variant="h1" sx={{ mb: 0 }}>{ organization["name"] }</Typography>
+                    <Typography variant="h1" sx={{ mb: 0, textAlign: { xs: 'center', md: 'left' } }}>{ organization["name"] }</Typography>
                     <Typography variant="body1" sx={{ color: 'text.secondary' }}>{ organization["description"] }</Typography>
                     {organization.social_links && organization.social_links.length > 0 && (
                         <Stack
@@ -219,13 +219,14 @@ function Organization() {
                                 >
                                     {course.description}
                                 </Typography>
-                                <Box sx={{ mt: 'auto', pt: 1 }}>
+                                <Box sx={{ mt: 'auto', pt: 1, textAlign: { xs: 'center', md: 'left' } }}>
                                     <Button
                                         variant="contained"
                                         color="secondary"
                                         rel="noopener noreferrer"
                                         onClick={() => showModalForCourse(course)}
                                         disabled={course.enrolled}
+                                        sx={{ px: { xs: 5 } }}
                                     >
                                         {course.enrolled ? localeMessages['enrolled'] : localeMessages['enroll_now']}
                                     </Button>

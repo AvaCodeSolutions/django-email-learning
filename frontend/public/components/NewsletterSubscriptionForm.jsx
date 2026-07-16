@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { getCookie } from '../../src/utils.js';
-import { Alert, Box, Button, Checkbox, FormControlLabel, FormGroup, TextField, Typography } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { Alert, Box, Button, Checkbox, FormControlLabel, FormGroup, Stack, TextField, Typography } from '@mui/material';
 
 export default function NewsletterSubscriptionForm({ newsletters, subscribeApiUrl, localeMessages }) {
     const [email, setEmail] = useState('');
@@ -62,60 +61,95 @@ export default function NewsletterSubscriptionForm({ newsletters, subscribeApiUr
     }
 
     return (
-        <Box
-            component="form"
-            onSubmit={handleSubmit}
-            sx={{
-                p: { xs: 2, md: 3 },
-                mt: 4,
-                borderRadius: 2,
-                backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.05),
-            }}
-        >
-            <Typography variant="h2" sx={{ mb: 1, fontSize: '1.25rem' }}>
-                {localeMessages['newsletters']}
-            </Typography>
-            <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
-                {localeMessages['newsletter_subscribe_intro']}
-            </Typography>
-
-            {status === 'error' && (
-                <Alert severity="error" sx={{ mb: 2 }}>{localeMessages['newsletter_subscribe_error']}</Alert>
-            )}
-            {status === 'select_one' && (
-                <Alert severity="warning" sx={{ mb: 2 }}>{localeMessages['newsletter_select_one']}</Alert>
-            )}
-
-            <FormGroup sx={{ mb: 2 }}>
-                {newsletters.map(n => (
-                    <FormControlLabel
-                        key={n.id}
-                        control={
-                            <Checkbox
-                                checked={!!checkedIds[n.id]}
-                                onChange={() => toggleNewsletter(n.id)}
-                            />
-                        }
-                        label={n.title}
-                    />
-                ))}
-            </FormGroup>
-
-            <TextField
-                label={localeMessages['email']}
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                error={!!emailError}
-                helperText={emailError}
-                fullWidth
-                required
-                sx={{ mb: 2 }}
+        <Box sx={{ position: 'relative', mt: '57px' }}>
+            <Box
+                sx={{
+                    position: 'absolute',
+                    top: '40px',
+                    left: '-24px',
+                    right: '-24px',
+                    bottom: '-32px',
+                    zIndex: 0,
+                    borderRadius: '0 0 8px 8px',
+                    backgroundColor: '#fafafa',
+                }}
             />
+            <Box
+                component="form"
+                onSubmit={handleSubmit}
+                sx={{
+                    position: 'relative',
+                    zIndex: 1,
+                    py: { xs: 4, md: 7 },
+                    px: { xs: 3, md: 6 },
+                    mx: { xs: 2, md: '18%' },
+                    borderRadius: 2,
+                    backgroundColor: '#fefefe',
+                    border: 'solid 1px #ededed50',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                }}
+            >
+                <Typography variant="h2" sx={{ mb: 1, fontSize: '1.25rem' }}>
+                    {localeMessages['newsletters']}
+                </Typography>
+                <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+                    {localeMessages['newsletter_subscribe_intro']}
+                </Typography>
 
-            <Button type="submit" variant="contained" disabled={submitting}>
-                {localeMessages['newsletter_subscribe']}
-            </Button>
+                {status === 'error' && (
+                    <Alert severity="error" sx={{ mb: 2 }}>{localeMessages['newsletter_subscribe_error']}</Alert>
+                )}
+                {status === 'select_one' && (
+                    <Alert severity="warning" sx={{ mb: 2 }}>{localeMessages['newsletter_select_one']}</Alert>
+                )}
+
+                <FormGroup sx={{ mb: 2 }}>
+                    {newsletters.map(n => (
+                        <FormControlLabel
+                            key={n.id}
+                            control={
+                                <Checkbox
+                                    checked={!!checkedIds[n.id]}
+                                    onChange={() => toggleNewsletter(n.id)}
+                                />
+                            }
+                            label={n.title}
+                        />
+                    ))}
+                </FormGroup>
+
+                <Stack direction="row" spacing={0} sx={{ mb: 2, alignItems: 'flex-start' }}>
+                    <TextField
+                        label={localeMessages['email']}
+                        type="email"
+                        size="medium"
+                        value={email}
+                        onChange={e => setEmail(e.target.value)}
+                        error={!!emailError}
+                        helperText={emailError}
+                        fullWidth
+                        required
+                        sx={{
+                            '& .MuiOutlinedInput-root': {
+                                backgroundColor: '#fff',
+                                borderTopLeftRadius: 8,
+                                borderBottomLeftRadius: 8,
+                                borderTopRightRadius: 0,
+                                borderBottomRightRadius: 0,
+                            },
+                        }}
+                    />
+
+                    <Button
+                        type="submit"
+                        variant="contained"
+                        disabled={submitting}
+                        sx={{ flexShrink: 0, height: '56px', borderRadius: '0 8px 8px 0' }}
+                    >
+                        {localeMessages['newsletter_subscribe']}
+                    </Button>
+                </Stack>
+            </Box>
         </Box>
     );
 }

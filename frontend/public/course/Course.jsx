@@ -199,7 +199,7 @@ function Course() {
                 mb: 4,
                 borderRadius: 2,
                 backgroundColor: (theme) => theme.palette.mode === 'light'
-                    ? alpha(theme.palette.primary.main, 0.05)
+                    ? alpha(theme.palette.background.dark, 0.5)
                     : alpha(theme.palette.common.white, 0.04),
                 direction: courseDirection,
             }}
