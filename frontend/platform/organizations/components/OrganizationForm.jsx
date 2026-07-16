@@ -13,7 +13,7 @@ const PLATFORM_OPTIONS = [
     { value: "linkedin", labelKey: "linkedin_page" },
 ];
 
-function OrganizationForm({ successCallback, failureCallback, cancelCallback, createMode, initialName, initialDescription, initialLogoUrl, initialSocialLinks, initialIsPublic, organizationId }) {
+function OrganizationForm({ successCallback, failureCallback, cancelCallback, createMode, initialName, initialDescription, initialLogoUrl, initialLogoPath, initialSocialLinks, initialIsPublic, organizationId }) {
     const { localeMessages, apiBaseUrl, direction, defaultOrgSetting, defaultOrgSettings } = useAppContext();
     const defaultVisibility = defaultOrgSetting?.isPublic ?? defaultOrgSettings?.isPublic ?? true;
     const [name, setName] = useState(initialName || "");
@@ -23,7 +23,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
     );
     const [nameHelperText, setNameHelperText] = useState("");
     const [descriptionHelperText, setDescriptionHelperText] = useState("");
-    const [logoServerPath, setLogoServerPath] = useState(null);
+    const [logoServerPath, setLogoServerPath] = useState(initialLogoPath || null);
     const [isPublic, setIsPublic] = useState(initialIsPublic ?? defaultVisibility);
     const [errorMessage, setErrorMessage] = useState();
 
@@ -115,12 +115,12 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
             is_public: isPublic,
         };
 
-        if (logoServerPath) {
-            payload.logo = logoServerPath;
-        }
-
-        if (!logoServerPath && initialLogoUrl) {
-            payload.remove_logo = true;
+        if (logoServerPath !== (initialLogoPath || null)) {
+            if (logoServerPath) {
+                payload.logo = logoServerPath;
+            } else {
+                payload.remove_logo = true;
+            }
         }
 
         apiClient.post(`${apiBaseUrl}/organizations/${organizationId}/`, payload)
