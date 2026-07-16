@@ -23,8 +23,11 @@ const ThemeSwitcher = () => {
       sx={(theme) => ({
         py: '8px',
         px: '16px',
+        // MUI's MenuItem ships its own `.MuiMenuItem-root .MuiListItemIcon-root { minWidth: 36px }`
+        // rule with higher specificity than a plain sx on ListItemIcon, so it silently wins over
+        // the 30px set below unless forced here (matches NavItem in MenuBar.jsx).
         '& .MuiListItemIcon-root': { minWidth: '30px !important' },
-        '&:hover': { backgroundColor: '#4f46e5' },
+        '&:hover': { backgroundColor: theme.palette.primary.main },
         '&:hover .MuiListItemIcon-root': { color: '#ffffff' },
         '&:hover .MuiListItemText-primary': { color: '#ffffff' },
       })}

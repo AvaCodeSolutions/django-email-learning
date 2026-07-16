@@ -311,7 +311,7 @@ const defaultOptions = {
                 borderRadius: 8,
             transition: 'background-color 0.25s ease, color 0.25s ease',
             '&:hover': {
-              backgroundColor: theme.palette.mode === 'light' ? 'rgba(124, 134, 255, 0.16)' : 'rgba(255, 255, 255, 0.12)',
+              backgroundColor: theme.palette.mode === 'light' ? alpha(theme.palette.primary.main, 0.16) : 'rgba(255, 255, 255, 0.12)',
             },
             }),
         },
@@ -324,7 +324,7 @@ const defaultOptions = {
             borderColor: theme.palette.border.main,
             transition: 'background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease',
             '&:hover': {
-              backgroundColor: theme.palette.mode === 'light' ? 'rgba(124, 134, 255, 0.16)' : 'rgba(255, 255, 255, 0.12)',
+              backgroundColor: theme.palette.mode === 'light' ? alpha(theme.palette.primary.main, 0.16) : 'rgba(255, 255, 255, 0.12)',
               borderColor: theme.palette.primary.main,
             },
             }),

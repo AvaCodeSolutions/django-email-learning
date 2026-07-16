@@ -91,10 +91,13 @@ function NavItem({ page, isActive, isExactMatch }) {
         <MenuItem sx={(theme) => ({
             ...(isActive ? activeStyles(theme) : { backgroundColor: 'transparent', borderInlineStart: '3px solid transparent' }),
             '& .MuiTouchRipple-root': { color: theme.palette.primary.main },
+            // MUI's MenuItem ships its own `.MuiMenuItem-root .MuiListItemIcon-root { minWidth: 36px }`
+            // rule with higher specificity than a plain sx on ListItemIcon, so it silently wins over
+            // the 30px set in NavItem's `icon` unless forced here.
             '& .MuiListItemIcon-root': { minWidth: '30px !important' },
             padding: 0,
             '&:hover': {
-                backgroundColor: '#4f46e5',
+                backgroundColor: theme.palette.primary.main,
             },
             '&:hover .MuiListItemIcon-root': { color: '#ffffff' },
             '&:hover .MuiListItemText-primary': { color: '#ffffff' },
