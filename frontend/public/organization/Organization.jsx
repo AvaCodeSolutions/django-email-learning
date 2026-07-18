@@ -3,7 +3,7 @@ import render from '../../src/render.jsx';
 import Layout from '../components/Layout.jsx';
 import EnrollmentForm from '../components/EnrollmentForm.jsx';
 import NewsletterSubscriptionForm from '../components/NewsletterSubscriptionForm.jsx';
-import { Alert, Box, Button, Card, CardContent, CardMedia, Dialog, Grid, Stack, SvgIcon, Typography, Link } from '@mui/material';
+import { Alert, Box, Button, Card, CardContent, CardMedia, Dialog, Grid, IconButton, Stack, SvgIcon, Tooltip, Typography, Link } from '@mui/material';
 import LanguageIcon from '@mui/icons-material/Language';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import YouTubeIcon from '@mui/icons-material/YouTube';
@@ -126,35 +126,36 @@ function Organization() {
                     <Typography variant="body1" sx={{ color: 'text.secondary' }}>{ organization["description"] }</Typography>
                     {organization.social_links && organization.social_links.length > 0 && (
                         <Stack
-                            direction={{ xs: 'column', sm: 'row' }}
-                            spacing={{ xs: 0.75, sm: 1.25 }}
+                            direction="row"
+                            spacing={1}
                             useFlexGap
-                            sx={{ pt: 1, alignItems: { xs: 'stretch', sm: 'center' }, flexWrap: 'wrap' }}
+                            sx={{ pt: 1, alignItems: 'center', justifyContent: { xs: 'center', md: 'flex-start' }, flexWrap: 'wrap' }}
                         >
                             {organization.social_links.map((link) => {
                                 const Icon = SOCIAL_LINK_ICONS[link.platform] || LinkIcon;
                                 const labelKey = SOCIAL_LINK_LABEL_KEYS[link.platform];
+                                const label = localeMessages[labelKey] || link.platform;
                                 return (
-                                    <Button
-                                        key={link.platform}
-                                        component="a"
-                                        href={link.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        variant="outlined"
-                                        color="primary"
-                                        size="small"
-                                        startIcon={<Icon fontSize="small" />}
-                                        sx={{
-                                            width: { xs: '100%', sm: 'auto' },
-                                            borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
-                                            '&:hover': {
-                                                borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
-                                            },
-                                        }}
-                                    >
-                                        {localeMessages[labelKey] || link.platform}
-                                    </Button>
+                                    <Tooltip key={link.platform} title={label}>
+                                        <IconButton
+                                            component="a"
+                                            href={link.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            aria-label={label}
+                                            sx={{
+                                                color: 'text.secondary',
+                                                border: '1px solid',
+                                                borderColor: (theme) => alpha(theme.palette.text.secondary, 0.3),
+                                                '&:hover': {
+                                                    color: 'primary.main',
+                                                    borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
+                                                },
+                                            }}
+                                        >
+                                            <Icon fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
                                 );
                             })}
                         </Stack>
