@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.2.1] — 2026-07-18
+
+### Added
+
+- **`SocialLink` icons in newsletters** — Added the social links icon to the footer of newsletter email template.
+
 ## [2.2.0] — 2026-07-18
 
 ### Added
