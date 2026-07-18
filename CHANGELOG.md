@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.1.3] — 2026-07-16
+
+### Added
+
+- **Course slug auto-populates from the title when creating a course** — the slug field now live-derives from the title as you type (lowercased, hyphenated, capped at 50 characters), until you edit the slug field directly, at which point auto-sync stops and the slug stays exactly as typed. Edit mode is unaffected — the slug field there was already locked once a course exists. See [#730](https://github.com/AvaCodeSolutions/django-email-learning/issues/730).
+
 ## [2.1.2] — 2026-07-16
 
 ### Fixed
