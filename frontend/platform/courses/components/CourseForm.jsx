@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Divider, IconButton, MenuItem, Stack, TextField, Tooltip, FormControlLabel, Switch, Typography, LinearProgress } from '@mui/material';
+import { Alert, Box, Button, ClickAwayListener, Divider, IconButton, MenuItem, Stack, TextField, Tooltip, FormControlLabel, Switch, Typography, LinearProgress, useMediaQuery, useTheme } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import RequiredTextField  from '../../../src/components/RequiredTextField.jsx';
 import AddImapConnectionForm from '../components/AddImapConnectionForm.jsx';
@@ -34,11 +34,18 @@ const externalReferencesChanged = (originalReferences, currentReferences) => {
 
 function CourseForm({successCallback, failureCallback, cancelCallback, activeOrganizationId, createMode, courseId}) {
     const { localeMessages, apiBaseUrl, direction, languageOptions = [], availableFeatures = [], organizationIsPublic } = useAppContext();
+    const theme = useTheme();
+    const isMobileView = useMediaQuery(theme.breakpoints.down('md'));
     const newslettersEnabled = availableFeatures.includes('newsletters');
     const createNewsletterEnabled = availableFeatures.includes('create_newsletter');
     const [courseTitle, setCourseTitle] = useState("")
     const [courseSlug, setCourseSlug] = useState("")
     const [slugManuallyEdited, setSlugManuallyEdited] = useState(false)
+    const [slugFieldFocused, setSlugFieldFocused] = useState(false)
+    const [slugTooltipOpen, setSlugTooltipOpen] = useState(false)
+    const [imapTooltipOpen, setImapTooltipOpen] = useState(false)
+    const [newsletterTooltipOpen, setNewsletterTooltipOpen] = useState(false)
+    const [instructorsTooltipOpen, setInstructorsTooltipOpen] = useState(false)
     const [courseDescription, setCourseDescription] = useState("")
     const [courseTargetAudience, setCourseTargetAudience] = useState("")
     const [courseLanguage, setCourseLanguage] = useState("")
@@ -404,14 +411,32 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                                         setCourseSlug(slugify(value));
                                     }
                                 }} />
-              <Tooltip title={createMode ? localeMessages["slug_tooltip"] : ""}>
+              {isMobileView ? (
+                                <RequiredTextField label={localeMessages["course_slug"]} helperText={slugHelperText || (createMode && slugFieldFocused ? localeMessages["slug_tooltip"] : "")} fullWidth margin="normal" value={courseSlug} onChange={(e) => {
+                                    setCourseSlug(e.target.value);
+                                    if (createMode) {
+                                        setSlugManuallyEdited(true);
+                                    }
+                                }} onFocus={() => setSlugFieldFocused(true)} onBlur={() => setSlugFieldFocused(false)} slotProps={{ htmlInput: { pattern: '^\\S+$', title: localeMessages['slug_no_space'] }, ...(!slugHelperText ? { formHelperText: { sx: { color: 'text.secondary' } } } : {}) }} {...(!createMode ? { disabled: true } : {})} />
+              ) : (
+              <ClickAwayListener onClickAway={() => setSlugTooltipOpen(false)}>
+              <Tooltip
+                title={createMode ? localeMessages["slug_tooltip"] : ""}
+                open={slugTooltipOpen}
+                onClose={() => setSlugTooltipOpen(false)}
+                disableFocusListener
+                disableHoverListener
+                disableTouchListener
+              >
                                 <RequiredTextField label={localeMessages["course_slug"]} helperText={slugHelperText} fullWidth margin="normal" value={courseSlug} onChange={(e) => {
                                     setCourseSlug(e.target.value);
                                     if (createMode) {
                                         setSlugManuallyEdited(true);
                                     }
-                                }} slotProps={{ htmlInput: { pattern: '^\\S+$', title: localeMessages['slug_no_space'] } }} {...(!createMode ? { disabled: true } : {})} />
+                                }} onClick={() => createMode && setSlugTooltipOpen((prev) => !prev)} slotProps={{ htmlInput: { pattern: '^\\S+$', title: localeMessages['slug_no_space'] } }} {...(!createMode ? { disabled: true } : {})} />
               </Tooltip>
+              </ClickAwayListener>
+              )}
                             <RequiredTextField
                                 label={localeMessages["course_language"]}
                                 helperText={languageHelperText}
@@ -532,11 +557,20 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
               <FormControlLabel
                 control={<Switch onChange={() => switchImapConnection()} checked={addImapConnection} dir={direction} />}
                 label={localeMessages["add_imap_connection"]} sx={{ m: 0 }} />
-                <Tooltip title={localeMessages["imap_connection_tooltip"]}>
-                    <IconButton size="small">
+                <ClickAwayListener onClickAway={() => setImapTooltipOpen(false)}>
+                <Tooltip
+                    title={localeMessages["imap_connection_tooltip"]}
+                    open={imapTooltipOpen}
+                    onClose={() => setImapTooltipOpen(false)}
+                    disableFocusListener
+                    disableHoverListener
+                    disableTouchListener
+                >
+                    <IconButton size="small" aria-label={localeMessages["imap_connection_tooltip"]} onClick={() => setImapTooltipOpen((prev) => !prev)}>
                         <InfoOutlinedIcon fontSize="small" />
                     </IconButton>
                 </Tooltip>
+                </ClickAwayListener>
 
 
               { addImapConnection && <Box sx={{ py: 2 }}>
@@ -551,11 +585,20 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 <FormControlLabel
                     control={<Switch onChange={() => setAddNewsletter(!addNewsletter)} checked={addNewsletter} dir={direction} />}
                     label={localeMessages["add_newsletter"]} sx={{ m: 0 }} />
-                <Tooltip title={localeMessages["newsletter_tooltip"]}>
-                    <IconButton size="small">
+                <ClickAwayListener onClickAway={() => setNewsletterTooltipOpen(false)}>
+                <Tooltip
+                    title={localeMessages["newsletter_tooltip"]}
+                    open={newsletterTooltipOpen}
+                    onClose={() => setNewsletterTooltipOpen(false)}
+                    disableFocusListener
+                    disableHoverListener
+                    disableTouchListener
+                >
+                    <IconButton size="small" aria-label={localeMessages["newsletter_tooltip"]} onClick={() => setNewsletterTooltipOpen((prev) => !prev)}>
                         <InfoOutlinedIcon fontSize="small" />
                     </IconButton>
                 </Tooltip>
+                </ClickAwayListener>
                 {addNewsletter && (
                     <Box sx={{ py: 2 }}>
                         <AddNewsletterForm
@@ -574,11 +617,20 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     label={localeMessages["add_instructors"]}
                     sx={{ m: 0 }}
                 />
-                <Tooltip title={localeMessages["instructors_tooltip"]}>
-                    <IconButton size="small">
+                <ClickAwayListener onClickAway={() => setInstructorsTooltipOpen(false)}>
+                <Tooltip
+                    title={localeMessages["instructors_tooltip"]}
+                    open={instructorsTooltipOpen}
+                    onClose={() => setInstructorsTooltipOpen(false)}
+                    disableFocusListener
+                    disableHoverListener
+                    disableTouchListener
+                >
+                    <IconButton size="small" aria-label={localeMessages["instructors_tooltip"]} onClick={() => setInstructorsTooltipOpen((prev) => !prev)}>
                         <InfoOutlinedIcon fontSize="small" />
                     </IconButton>
                 </Tooltip>
+                </ClickAwayListener>
               </Box>
               {addInstructors && <Box sx={{ py: 2 }}>
                 <AddInstructorsSection
