@@ -11,6 +11,13 @@ const PLATFORM_OPTIONS = [
     { value: "website", labelKey: "website" },
     { value: "youtube", labelKey: "youtube_channel" },
     { value: "linkedin", labelKey: "linkedin_page" },
+    { value: "facebook", labelKey: "facebook_page" },
+    { value: "instagram", labelKey: "instagram" },
+    { value: "tiktok", labelKey: "tiktok" },
+    { value: "x", labelKey: "twitter_x" },
+    { value: "whatsapp", labelKey: "whatsapp_channel" },
+    { value: "telegram", labelKey: "telegram_channel" },
+    { value: "substack", labelKey: "substack" },
 ];
 
 function OrganizationForm({ successCallback, failureCallback, cancelCallback, createMode, initialName, initialDescription, initialLogoUrl, initialLogoPath, initialSocialLinks, initialIsPublic, organizationId }) {
