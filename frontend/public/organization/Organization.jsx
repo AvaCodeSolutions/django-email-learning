@@ -57,6 +57,21 @@ const SOCIAL_LINK_ICONS = {
 // than the others at the same fontSize unless scaled down slightly here.
 const COMPACT_ICON_PLATFORMS = new Set(['x']);
 
+// Per-brand hover styling. `website` is intentionally omitted - it isn't a
+// real brand, so it keeps the generic indigo hover used as the fallback.
+const BRAND_HOVER_STYLES = {
+    youtube: { backgroundColor: '#ff0000', color: '#ffffff', borderColor: '#ff0000' },
+    x: { backgroundColor: '#000000', color: '#ffffff', borderColor: '#000000' },
+    substack: { backgroundColor: '#ff6719', color: '#ffffff', borderColor: '#ff6719' },
+    facebook: { backgroundColor: '#1877f2', color: '#ffffff', borderColor: '#1877f2' },
+    // Instagram's real mark is a gradient; this is a commonly used single-color stand-in.
+    instagram: { backgroundColor: '#e4405f', color: '#ffffff', borderColor: '#e4405f' },
+    linkedin: { backgroundColor: '#0a66c2', color: '#ffffff', borderColor: '#0a66c2' },
+    whatsapp: { backgroundColor: '#25d366', color: '#ffffff', borderColor: '#25d366' },
+    telegram: { backgroundColor: '#26a5e4', color: '#ffffff', borderColor: '#26a5e4' },
+    tiktok: { backgroundColor: '#000000', color: '#ffffff', borderColor: '#000000' },
+};
+
 const SOCIAL_LINK_LABEL_KEYS = {
     website: 'website',
     youtube: 'youtube_channel',
@@ -142,6 +157,7 @@ function Organization() {
                                 const Icon = SOCIAL_LINK_ICONS[link.platform] || LinkIcon;
                                 const labelKey = SOCIAL_LINK_LABEL_KEYS[link.platform];
                                 const label = localeMessages[labelKey] || link.platform;
+                                const brandHover = BRAND_HOVER_STYLES[link.platform];
                                 return (
                                     <Tooltip key={link.platform} title={label}>
                                         <IconButton
@@ -154,7 +170,8 @@ function Organization() {
                                                 color: 'text.secondary',
                                                 border: '1px solid',
                                                 borderColor: (theme) => alpha(theme.palette.text.secondary, 0.3),
-                                                '&:hover': {
+                                                transition: 'background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease',
+                                                '&:hover': brandHover || {
                                                     color: 'primary.main',
                                                     borderColor: (theme) => alpha(theme.palette.primary.main, 0.5),
                                                 },
