@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../test-utils';
 import CourseForm from '../../../platform/courses/components/CourseForm';
@@ -11,6 +11,7 @@ const localeMessages = {
   course_slug: 'Slug',
   slug_tooltip: 'The course slug is used in URLs. You can not edit it later.',
   slug_no_space: 'Slug cannot contain spaces. Use hyphens instead.',
+  imap_connection_tooltip: 'Connect an inbox so learners can interact with this course by email.',
 };
 
 const createProps = {
@@ -78,5 +79,64 @@ describe('CourseForm slug auto-population', () => {
     await user.type(titleField, ' Updated');
 
     expect(screen.getByLabelText(/Slug/)).toHaveValue('existing-slug');
+  });
+
+  it('shows the slug tooltip as helper text on focus in mobile view, and hides it on blur', async () => {
+    const matchMediaSpy = vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+
+    const user = userEvent.setup();
+    renderWithProviders(<CourseForm {...createProps} />, {
+      appContext: { localeMessages },
+    });
+
+    const slugField = screen.getByLabelText(/Slug/);
+    expect(screen.queryByText(localeMessages.slug_tooltip)).not.toBeInTheDocument();
+
+    await user.click(slugField);
+    expect(screen.getByText(localeMessages.slug_tooltip)).toBeInTheDocument();
+
+    await user.tab();
+    expect(screen.queryByText(localeMessages.slug_tooltip)).not.toBeInTheDocument();
+
+    matchMediaSpy.mockRestore();
+  });
+
+  it('opens the slug tooltip on click (desktop) and dismisses it on click-away', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CourseForm {...createProps} />, {
+      appContext: { localeMessages },
+    });
+
+    expect(screen.queryByText(localeMessages.slug_tooltip)).not.toBeInTheDocument();
+
+    await user.click(screen.getByLabelText(/Slug/));
+    expect(screen.getByText(localeMessages.slug_tooltip)).toBeInTheDocument();
+
+    await user.click(document.body);
+    await waitFor(() => expect(screen.queryByText(localeMessages.slug_tooltip)).not.toBeInTheDocument());
+  });
+
+  it('opens an info tooltip on click and dismisses it on click-away', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CourseForm {...createProps} />, {
+      appContext: { localeMessages },
+    });
+
+    expect(screen.queryByText(localeMessages.imap_connection_tooltip)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: localeMessages.imap_connection_tooltip }));
+    expect(screen.getByText(localeMessages.imap_connection_tooltip)).toBeInTheDocument();
+
+    await user.click(document.body);
+    await waitFor(() => expect(screen.queryByText(localeMessages.imap_connection_tooltip)).not.toBeInTheDocument());
   });
 });
