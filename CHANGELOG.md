@@ -6,6 +6,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.2.0] — 2026-07-18
+
+### Added
+
+- **7 new `SocialLink` platforms** — Facebook, Instagram, TikTok, X (Twitter), WhatsApp Channel, Telegram Channel, and Substack, alongside the existing Website/YouTube/LinkedIn. Purely additive (existing data untouched). Available in both the platform admin organization form and the public organization page. See [#733](https://github.com/AvaCodeSolutions/django-email-learning/issues/733).
+
+### Changed
+
+- **Public organization page social links redesigned** — replaced the outlined text+icon buttons with compact circular icon-only buttons (label shown as a tooltip on hover), centered on mobile. Each icon now hovers to its own brand color instead of a generic accent color.
+
 ## [2.1.4] — 2026-07-16
 
 ### Changed
