@@ -226,6 +226,13 @@ class OrganizationView(TemplateView):
                     "linkedin_page": _("LinkedIn"),
                     "youtube_channel": _("YouTube"),
                     "website": _("Website"),
+                    "facebook_page": _("Facebook"),
+                    "instagram": _("Instagram"),
+                    "tiktok": _("TikTok"),
+                    "twitter_x": _("X (Twitter)"),
+                    "whatsapp_channel": _("WhatsApp"),
+                    "telegram_channel": _("Telegram"),
+                    "substack": _("Substack"),
                     "terms_of_service_confirmation": _(
                         "By enrolling, you agree to our"
                         " <a href='TERMS_OF_SERVICE_URL' target='_blank'>Terms of Service</a>."

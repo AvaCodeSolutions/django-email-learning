@@ -24,6 +24,13 @@ const localeMessages = {
   website: 'Website',
   linkedin_page: 'LinkedIn page',
   youtube_channel: 'YouTube channel',
+  facebook_page: 'Facebook page',
+  instagram: 'Instagram',
+  tiktok: 'TikTok',
+  twitter_x: 'X (Twitter)',
+  whatsapp_channel: 'WhatsApp channel',
+  telegram_channel: 'Telegram channel',
+  substack: 'Substack',
   invalid_url_helper_text: 'Enter a valid URL starting with http:// or https://',
   social_links: 'Social links',
   add_social_link: 'Add link',
@@ -202,5 +209,20 @@ describe('OrganizationForm', () => {
     const body = JSON.parse(options.body);
     expect(body).not.toHaveProperty('remove_logo');
     expect(body).not.toHaveProperty('logo');
+  });
+
+  it('offers all 10 platforms and disables Add link once all are used', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<OrganizationForm {...createProps} />, {
+      appContext: { localeMessages },
+    });
+
+    const addLinkButton = screen.getByRole('button', { name: 'Add link' });
+    for (let i = 0; i < 10; i++) {
+      await user.click(addLinkButton);
+    }
+
+    expect(screen.getAllByLabelText('URL')).toHaveLength(10);
+    expect(addLinkButton).toBeDisabled();
   });
 });

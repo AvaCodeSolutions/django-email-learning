@@ -64,6 +64,13 @@ class SocialLink(models.Model):
         WEBSITE = "website", "Website"
         YOUTUBE = "youtube", "YouTube"
         LINKEDIN = "linkedin", "LinkedIn"
+        FACEBOOK = "facebook", "Facebook"
+        INSTAGRAM = "instagram", "Instagram"
+        TIKTOK = "tiktok", "TikTok"
+        X = "x", "X (Twitter)"
+        WHATSAPP = "whatsapp", "WhatsApp Channel"
+        TELEGRAM = "telegram", "Telegram Channel"
+        SUBSTACK = "substack", "Substack"
 
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="social_links")
     platform = models.CharField(max_length=20, choices=Platform.choices)

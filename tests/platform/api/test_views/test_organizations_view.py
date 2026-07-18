@@ -61,6 +61,27 @@ def test_post_organizations_view_as_superadmin(superadmin_client):
     )
 
 
+def test_post_organizations_view_accepts_new_social_link_platforms(superadmin_client):
+    payload = {
+        "name": "New Platforms Org",
+        "description": "Covers the newly added social link platforms",
+        "social_links": [
+            {"platform": "facebook", "url": "https://facebook.com/new-org"},
+            {"platform": "instagram", "url": "https://instagram.com/new-org"},
+            {"platform": "tiktok", "url": "https://tiktok.com/@new-org"},
+            {"platform": "x", "url": "https://x.com/new-org"},
+            {"platform": "whatsapp", "url": "https://whatsapp.com/channel/new-org"},
+            {"platform": "telegram", "url": "https://t.me/new-org"},
+            {"platform": "substack", "url": "https://new-org.substack.com"},
+        ],
+    }
+    response = superadmin_client.post(get_url(), data=payload, content_type="application/json")
+    assert response.status_code == 201
+    assert sorted(response.json().get("social_links"), key=lambda link: link["platform"]) == sorted(
+        payload["social_links"], key=lambda link: link["platform"]
+    )
+
+
 def test_post_organizations_view_rejects_invalid_social_link_platform(superadmin_client):
     payload = {
         "name": "Invalid Platform Org",
