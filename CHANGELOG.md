@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.1.4] — 2026-07-16
+
+### Changed
+
+- **Course form tooltip UX on mobile** — the slug field's explanatory tooltip no longer relies on hover (unclear/inconsistent on touch); it now shows as helper text under the field while focused, and clears on blur. All tooltips in the course form (slug, IMAP connection, newsletter, instructors) now open on click/tap instead of hover or touch-hold. The three icon-only info buttons also gained an `aria-label`, since they previously had no accessible name at all.
+
 ## [2.1.3] — 2026-07-16
 
 ### Added
