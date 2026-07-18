@@ -91,4 +91,42 @@ class EmailTemplatePreview(TemplateView):
             "assignment": assignment,
             "next_content": content.get_next() if content else None,
             "content_title": "assignment programming exercise",
+            "social_links": [
+                {
+                    "platform": "website",
+                    "url": "https://example.com",
+                },
+                {
+                    "platform": "linkedin",
+                    "url": "https://linkedin.com/company/example",
+                },
+                {
+                    "platform": "x",
+                    "url": "https://x.com/example",
+                },
+                {
+                    "platform": "facebook",
+                    "url": "https://facebook.com/example",
+                },
+                {
+                    "platform": "instagram",
+                    "url": "https://instagram.com/example",
+                },
+                {
+                    "platform": "tiktok",
+                    "url": "https://tiktok.com/@example",
+                },
+                {
+                    "platform": "whatsapp",
+                    "url": "https://wa.me/1234567890",
+                },
+                {
+                    "platform": "youtube",
+                    "url": "https://youtube.com/channel/example",
+                },
+                {
+                    "platform": "telegram",
+                    "url": "https://t.me/example",
+                },
+            ],
         }

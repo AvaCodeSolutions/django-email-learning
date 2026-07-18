@@ -17,8 +17,10 @@ from django_email_learning.models import (
     JobStatus,
     Newsletter,
     NewsletterSubscriber,
+    Organization,
     Sendout,
     SendoutDelivery,
+    SocialLink,
 )
 
 
@@ -110,6 +112,36 @@ def test_process_delivery_success_marks_sendout_sent_when_last(db, delivery, sen
     sendout.refresh_from_db()
     assert sendout.status == Sendout.Status.SENT
     assert sendout.sent_at is not None
+
+
+def test_process_delivery_includes_organization_social_links_in_email(db, delivery, newsletter):
+    organization = Organization.objects.get(id=newsletter.organization_id)
+    SocialLink.objects.create(organization=organization, platform="website", url="https://example.com")
+    SocialLink.objects.create(
+        organization=organization, platform="linkedin", url="https://linkedin.com/company/example"
+    )
+
+    with patch("django_email_learning.jobs.send_newsletters_job.email_sender_service.send") as send_mock:
+        SendNewslettersJob().process_delivery(delivery)
+
+    sent_message = send_mock.call_args[0][0]
+    html_body = sent_message.alternatives[0][0]
+    assert 'href="https://example.com"' in html_body
+    assert 'data-platform="website"' in html_body
+    assert 'aria-label="Website"' in html_body
+    assert 'href="https://linkedin.com/company/example"' in html_body
+    assert 'data-platform="linkedin"' in html_body
+    assert 'aria-label="LinkedIn"' in html_body
+    assert "<svg" in html_body
+
+
+def test_process_delivery_omits_social_links_section_when_none_exist(db, delivery):
+    with patch("django_email_learning.jobs.send_newsletters_job.email_sender_service.send") as send_mock:
+        SendNewslettersJob().process_delivery(delivery)
+
+    sent_message = send_mock.call_args[0][0]
+    html_body = sent_message.alternatives[0][0]
+    assert 'class="email-social-links"' not in html_body
 
 
 def test_process_delivery_sendout_stays_scheduled_while_others_pending(db, sendout, newsletter):

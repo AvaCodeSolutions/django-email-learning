@@ -180,6 +180,7 @@ class SendNewslettersJob:
             "body": sendout.body,
             "newsletter_title": sendout.newsletter.title,
             "unsubscribe_url": full_unsubscribe_url,
+            "social_links": sendout.newsletter.organization.social_links.all(),
         }
 
         msg = EmailMultiAlternatives(
