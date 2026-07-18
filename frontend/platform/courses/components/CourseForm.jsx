@@ -8,6 +8,7 @@ import { useAppContext } from '../../../src/render.jsx';
 import ImageUpload from '../../../src/components/ImageUpload.jsx';
 import { useEffect, useState } from 'react';
 import apiClient from '../../../src/apiClient.js';
+import { slugify } from '../../../src/utils.js';
 
 const MAX_EXTERNAL_REFERENCES = 10;
 
@@ -37,6 +38,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     const createNewsletterEnabled = availableFeatures.includes('create_newsletter');
     const [courseTitle, setCourseTitle] = useState("")
     const [courseSlug, setCourseSlug] = useState("")
+    const [slugManuallyEdited, setSlugManuallyEdited] = useState(false)
     const [courseDescription, setCourseDescription] = useState("")
     const [courseTargetAudience, setCourseTargetAudience] = useState("")
     const [courseLanguage, setCourseLanguage] = useState("")
@@ -395,9 +397,20 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     return (<Box sx={{ p: 2 }}>
               { (!createMode && courseTitle=="") ? <LinearProgress /> : <>
               { errorMessage && <Alert severity="error" sx={{ marginBottom: "10px" }}>{errorMessage}</Alert> }
-              <RequiredTextField label={localeMessages["course_title"]} helperText={titleHelperText} fullWidth margin="normal" value={courseTitle} onChange={(e) => setCourseTitle(e.target.value)} />
+              <RequiredTextField label={localeMessages["course_title"]} helperText={titleHelperText} fullWidth margin="normal" value={courseTitle} onChange={(e) => {
+                                    const value = e.target.value;
+                                    setCourseTitle(value);
+                                    if (createMode && !slugManuallyEdited) {
+                                        setCourseSlug(slugify(value));
+                                    }
+                                }} />
               <Tooltip title={createMode ? localeMessages["slug_tooltip"] : ""}>
-                                <RequiredTextField label={localeMessages["course_slug"]} helperText={slugHelperText} fullWidth margin="normal" value={courseSlug} onChange={(e) => setCourseSlug(e.target.value)} slotProps={{ htmlInput: { pattern: '^\\S+$', title: localeMessages['slug_no_space'] } }} {...(!createMode ? { disabled: true } : {})} />
+                                <RequiredTextField label={localeMessages["course_slug"]} helperText={slugHelperText} fullWidth margin="normal" value={courseSlug} onChange={(e) => {
+                                    setCourseSlug(e.target.value);
+                                    if (createMode) {
+                                        setSlugManuallyEdited(true);
+                                    }
+                                }} slotProps={{ htmlInput: { pattern: '^\\S+$', title: localeMessages['slug_no_space'] } }} {...(!createMode ? { disabled: true } : {})} />
               </Tooltip>
                             <RequiredTextField
                                 label={localeMessages["course_language"]}

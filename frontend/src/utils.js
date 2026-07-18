@@ -1,3 +1,12 @@
+export const slugify = (value) => {
+    return value
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 50);
+}
+
 export const getCookie = (name) => {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
