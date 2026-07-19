@@ -1,0 +1,135 @@
+import json
+
+from django.conf import settings
+from django.http import HttpResponse
+from django.urls import reverse
+from django.views import View
+
+from django_email_learning.public.api.views import embeddable_enrollment_enabled
+
+# The token is stripped back out below - reversing with a real token isn't
+# needed since we only want the fixed prefix in front of it.
+_TOKEN_PLACEHOLDER = "TOKEN_PLACEHOLDER"
+
+_EMBED_SCRIPT_TEMPLATE = """(function () {
+  if (customElements.get('del-enroll-form')) {
+    return;
+  }
+
+  var API_BASE = __API_BASE_JSON__;
+
+  function escapeHtml(value) {
+    var div = document.createElement('div');
+    div.textContent = value;
+    return div.innerHTML;
+  }
+
+  class DelEnrollForm extends HTMLElement {
+    connectedCallback() {
+      var token = this.getAttribute('token') || '';
+      var courseId = this.getAttribute('course_id') || '';
+      var showNewsletter = this.hasAttribute('news_letter_check');
+      var newsletterTitle = this.getAttribute('newsletter_title') || '';
+      var buttonBgColor = this.getAttribute('button_bg_color') || '#4f46e5';
+      var buttonTextColor = this.getAttribute('button_text_color') || '#ffffff';
+
+      var shadow = this.attachShadow({ mode: 'open' });
+      shadow.innerHTML =
+        '<style>' +
+        ':host { display:block; width:350px; max-width:100%; }' +
+        'form { font-family: ui-sans-serif, system-ui, sans-serif; }' +
+        '.field-group { display:flex; align-items:stretch; border:1px solid #d1d5db;' +
+        ' border-radius:6px; overflow:hidden; }' +
+        '.field-group input[type="email"] { flex:1; min-width:0; border:none;' +
+        ' padding:10px 12px; font-size:14px; font-family:inherit; outline:none; }' +
+        '.field-group button { flex-shrink:0; border:none; padding:10px 16px;' +
+        ' font-size:14px; font-family:inherit; cursor:pointer; white-space:nowrap; }' +
+        'label { display:flex; align-items:center; gap:6px; font-size:14px; margin-top:8px; }' +
+        '.message { font-size:14px; margin-top:8px; }' +
+        '</style>' +
+        '<form>' +
+        '<div class="field-group">' +
+        '<input type="email" name="email" placeholder="Your email address" required />' +
+        '<button type="submit" style="background:' + escapeHtml(buttonBgColor) +
+        ';color:' + escapeHtml(buttonTextColor) + ';">Enroll</button>' +
+        '</div>' +
+        (showNewsletter
+          ? '<label><input type="checkbox" name="subscribe_to_newsletter" /> Subscribe to ' +
+            escapeHtml(newsletterTitle) + '</label>'
+          : '') +
+        '<p class="message" style="display:none;"></p>' +
+        '</form>';
+
+      var form = shadow.querySelector('form');
+      var message = shadow.querySelector('.message');
+
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        message.style.display = 'none';
+        fetch(API_BASE + token + '/enrollments/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: form.email.value,
+            course_slug: courseId,
+            subscribe_to_newsletter: form.subscribe_to_newsletter ? form.subscribe_to_newsletter.checked : false
+          })
+        })
+          .then(function (response) {
+            return response.json().then(function (data) { return { ok: response.ok, data: data }; });
+          })
+          .then(function (result) {
+            message.style.display = 'block';
+            if (result.ok && result.data.status === 'already_enrolled') {
+              message.textContent = "You're already enrolled in this course.";
+            } else if (result.ok) {
+              message.textContent = "You're enrolled! Check your email to confirm.";
+              form.reset();
+            } else {
+              message.textContent = (result.data && result.data.error) || 'Something went wrong. Please try again.';
+            }
+          })
+          .catch(function () {
+            message.style.display = 'block';
+            message.textContent = 'Something went wrong. Please try again.';
+          });
+      });
+    }
+  }
+
+  customElements.define('del-enroll-form', DelEnrollForm);
+})();
+"""
+
+
+def embed_api_base_url() -> str:
+    """The fixed URL prefix shared by every embed_enroll URL for this
+    deployment (i.e. everything up to the token), e.g.
+    'https://yourdomain.com/email-learning/api/public/embed/'. Computed via
+    reverse() with a placeholder token so it stays correct regardless of the
+    URL prefix a library user mounted django_email_learning.urls under.
+    """
+    placeholder_path = reverse(
+        "django_email_learning:api_public:embed_enroll",
+        kwargs={"token": _TOKEN_PLACEHOLDER},
+    )
+    base_path = placeholder_path.replace(f"{_TOKEN_PLACEHOLDER}/enrollments/", "")
+    return f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{base_path}"
+
+
+def build_embed_script_js() -> str:
+    """The del-enroll-form custom element definition. Deliberately generic -
+    contains no course/organization/token data, only the deployment's fixed
+    API base URL - so it's the same content for every widget placement and
+    every course, safe to cache aggressively.
+    """
+    return _EMBED_SCRIPT_TEMPLATE.replace("__API_BASE_JSON__", json.dumps(embed_api_base_url()))
+
+
+class EmbedScriptView(View):
+    def get(self, request, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
+        if not embeddable_enrollment_enabled():
+            return HttpResponse(status=404)
+        response = HttpResponse(build_embed_script_js(), content_type="application/javascript")
+        response["Cache-Control"] = "public, max-age=3600"
+        return response

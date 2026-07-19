@@ -21,7 +21,10 @@ def embed_enroll_url(token: str) -> str:
 def test_embed_enroll_view_disabled_by_default(anonymous_client, course, embed_token, settings):
     course.enabled = True
     course.save()
-    assert not settings.DJANGO_EMAIL_LEARNING.get("EMBEDDABLE_ENROLLMENT_ENABLED")
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "EMBEDDABLE_ENROLLMENT_ENABLED": False,
+    }
 
     payload = {"email": "test@example.com", "course_slug": course.slug}
     response = anonymous_client.post(embed_enroll_url(embed_token), data=payload, content_type="application/json")
@@ -29,7 +32,11 @@ def test_embed_enroll_view_disabled_by_default(anonymous_client, course, embed_t
     assert not Enrollment.objects.filter(course=course).exists()
 
 
-def test_embed_enroll_view_disabled_rejects_preflight(anonymous_client, embed_token):
+def test_embed_enroll_view_disabled_rejects_preflight(anonymous_client, embed_token, settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "EMBEDDABLE_ENROLLMENT_ENABLED": False,
+    }
     response = anonymous_client.options(embed_enroll_url(embed_token), HTTP_ORIGIN="https://third-party.example")
     assert response.status_code == 404
 
@@ -102,7 +109,16 @@ def test_embed_enroll_view_preflight_when_enabled(anonymous_client, embed_token,
         "EMBEDDABLE_ENROLLMENT_ENABLED": True,
     }
 
-    response = anonymous_client.options(embed_enroll_url(embed_token), HTTP_ORIGIN="https://third-party.example")
+    # HTTP_ACCESS_CONTROL_REQUEST_METHOD is what makes this a *real* CORS
+    # preflight in the eyes of django-cors-headers' middleware - without it,
+    # this test would pass even if that middleware were intercepting and
+    # short-circuiting real preflights with a headerless response before this
+    # view ever ran (see CORS_URLS_REGEX in django_service/settings.py).
+    response = anonymous_client.options(
+        embed_enroll_url(embed_token),
+        HTTP_ORIGIN="https://third-party.example",
+        HTTP_ACCESS_CONTROL_REQUEST_METHOD="POST",
+    )
     assert response.status_code == 204
     assert response["Access-Control-Allow-Origin"] == "*"
     assert "POST" in response["Access-Control-Allow-Methods"]

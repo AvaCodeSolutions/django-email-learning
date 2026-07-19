@@ -1,10 +1,12 @@
 import json
 import logging
 
+from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models, transaction
 from django.db.utils import IntegrityError
 from django.http import HttpRequest, JsonResponse
+from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -17,6 +19,11 @@ from django_email_learning.models import (
     CourseContentType,
 )
 from django_email_learning.platform.api import serializers
+from django_email_learning.platform.api.embed_snippet import (
+    build_embed_script_tag,
+    build_embed_widget_tag,
+)
+from django_email_learning.public.api.views import embeddable_enrollment_enabled
 from django_email_learning.services.command_models.send_lesson_command import (
     SendLessonCommand,
 )
@@ -377,6 +384,35 @@ class SingleCourseView(CourseCreationMixin, View):
             return JsonResponse({"error": e.json()}, status=400)
         except (IntegrityError, ValueError) as e:
             return JsonResponse({"error": str(e)}, status=409)
+
+
+@method_decorator(accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get")
+class EmbedSnippetView(View):
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        if not embeddable_enrollment_enabled():
+            return JsonResponse({"error": "Embeddable enrollment is not enabled for this deployment."}, status=404)
+
+        try:
+            course = Course.objects.select_related("organization", "newsletter").get(
+                id=kwargs["course_id"], organization_id=kwargs["organization_id"]
+            )
+        except Course.DoesNotExist:
+            return JsonResponse({"error": "Course not found"}, status=404)
+
+        if not course.public_url:
+            return JsonResponse({"error": "Course must be public and enabled to be embeddable."}, status=409)
+
+        token = course.organization.get_or_create_embed_token()
+        script_path = reverse("django_email_learning:public:embed_script")
+        script_url = f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{script_path}"
+
+        script_html = build_embed_script_tag(script_url)
+        widget_html = build_embed_widget_tag(
+            token=token,
+            course_slug=course.slug,
+            newsletter_title=course.newsletter.title if course.newsletter else None,
+        )
+        return JsonResponse({"script_html": script_html, "widget_html": widget_html}, status=200)
 
 
 @method_decorator(accessible_for(roles={"admin", "editor", "instructor"}), name="post")

@@ -471,6 +471,13 @@ The embed token is a **publishable** identifier, not a secret: it's designed to 
 
 The embed endpoints are CSRF-exempt and respond with a permissive ``Access-Control-Allow-Origin: *`` header so any third-party page can call them directly (they never require cookies/credentials). To compensate, they apply their own rate limiting, configurable via ``EMBEDDABLE_ENROLLMENT_RATE_LIMITS``:
 
+.. important::
+   If your project also installs `django-cors-headers <https://pypi.org/project/django-cors-headers/>`_ (this library's own reference project does, for its platform SPA), its middleware intercepts **every** CORS preflight (``OPTIONS``) request by default and replies itself — before any view runs — with headers only for origins listed in your ``CORS_ALLOWED_ORIGINS``. Since a third-party embedding site is never in that list, its preflight gets a response with no ``Access-Control-Allow-Origin`` header at all, and the browser blocks the real request — even though the embed view's own CORS handling would have allowed it. Exclude the embed paths from ``django-cors-headers`` so it leaves them alone entirely:
+
+   .. code-block:: python
+
+       CORS_URLS_REGEX = r"^(?!.*/api/public/embed/).*$"
+
 - ``PER_IP_LIMIT``: Maximum requests allowed per client IP within the window. Defaults to ``20``.
 - ``PER_IP_WINDOW_SECONDS``: Length of the per-IP window, in seconds. Defaults to ``300`` (5 minutes).
 - ``PER_EMAIL_LIMIT``: Maximum requests allowed per submitted email address within the window. Defaults to ``5``.

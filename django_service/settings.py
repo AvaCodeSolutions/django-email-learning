@@ -76,6 +76,17 @@ CSRF_TRUSTED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 CSRF_COOKIE_SECURE = False
 
+# django-cors-headers intercepts every OPTIONS preflight by default and
+# replies itself (before the view runs) with headers only for origins in
+# CORS_ALLOWED_ORIGINS above. The public embed endpoints intentionally allow
+# *any* origin without credentials and already implement that themselves
+# (see PublicCorsMixin in django_email_learning/public/api/views.py), so they
+# must be excluded here - otherwise corsheaders' own bare preflight response
+# (with no CORS headers, since the embedding site's origin is never in
+# CORS_ALLOWED_ORIGINS) reaches the browser first and the real request is
+# blocked before PublicCorsMixin ever gets a chance to run.
+CORS_URLS_REGEX = r"^(?!.*/api/public/embed/).*$"
+
 
 ROOT_URLCONF = "django_service.urls"
 
@@ -119,7 +130,7 @@ DJANGO_EMAIL_LEARNING = {
         "TEXT_EDITING_MODEL": LanguageModel.GPT_4O_MINI.model_name,
     },
     "AMP_ENABLED": os.environ.get("AMP_ENABLED", "False").lower() == "true",
-    "EMBEDDABLE_ENROLLMENT_ENABLED": os.environ.get("EMBEDDABLE_ENROLLMENT_ENABLED", "False").lower() == "true",
+    "EMBEDDABLE_ENROLLMENT_ENABLED": True,
     "NEWSLETTERS": {
         "FROM_EMAIL": os.environ.get("NEWSLETTER_FROM_EMAIL", "webmaster@localhost"),
     },

@@ -14,6 +14,7 @@ from django_email_learning.platform.views.base import (
     QUIZ_DEFAULTS,
     BasePlatformView,
 )
+from django_email_learning.public.api.views import embeddable_enrollment_enabled
 
 
 @method_decorator(login_required, name="dispatch")
@@ -167,6 +168,7 @@ class CourseView(BasePlatformView):
         context["appContext"]["courseEnabled"] = course.enabled
         context["appContext"]["coursePublicUrl"] = course.public_url
         context["appContext"]["courseHasContent"] = CourseContent.objects.filter(course=course).exists()
+        context["appContext"]["embeddableEnrollmentEnabled"] = embeddable_enrollment_enabled()
         context["appContext"]["customComponent"] = None
         context["appContext"]["quizDefaults"] = {
             "limitedAttempts": QUIZ_DEFAULTS.get("LIMITED_ATTEMPTS", True),
@@ -191,6 +193,19 @@ class CourseView(BasePlatformView):
             "view_public_course_page": _("Public page"),
             "copy_public_course_link": _("Copy public course link"),
             "public_course_link_copied": _("Link copied!"),
+            "add_to_your_site": _("Add to your site"),
+            "embed_code_dialog_title": _("Embed on your site"),
+            "embed_code_dialog_description": _(
+                "Paste these snippets into your own website's HTML to let visitors enroll directly from your site."
+            ),
+            "embed_script_step_title": _("1. Add this once to your site (e.g. in your footer)"),
+            "embed_widget_step_title": _("2. Place this wherever you want the enrollment form to appear"),
+            "embed_code_loading": _("Loading embed code..."),
+            "embed_code_error": _("Couldn't load the embed code. Please try again."),
+            "copy_embed_script": _("Copy script"),
+            "copy_embed_widget": _("Copy widget tag"),
+            "embed_code_copied": _("Copied!"),
+            "close": _("Close"),
             "enable_course": _("Enable COURSE_NAME"),
             "course_enable_confirmation": _("Are you sure you want to enable the course COURSE_NAME?"),
             "continue": _("Continue"),
