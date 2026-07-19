@@ -431,6 +431,39 @@ If AMP is enabled, you must also add trusted AMP mail client origins to Django's
 .. note::
    Keep AMP disabled in environments where you have not completed sender registration and trusted-origin configuration.
 
+**EMBEDDABLE_ENROLLMENT_ENABLED**
+
+Optional flag to enable cross-origin enroll/newsletter-subscribe endpoints, for embedding the enrollment widget on third-party sites (e.g. an organization's own marketing site) rather than only on the pages this library serves itself.
+
+By default, this is disabled and only the first-party endpoints exist:
+
+- ``POST /api/public/enrollments/``
+- ``POST /api/public/organizations/<organization_id>/newsletters/subscribe/``
+
+These require a same-origin CSRF cookie, so they only work from pages served by this library itself.
+
+Setting ``EMBEDDABLE_ENROLLMENT_ENABLED`` to ``True`` additionally enables two cross-origin counterparts:
+
+- ``POST /api/public/embed/enrollments/``
+- ``POST /api/public/embed/organizations/<organization_id>/newsletters/subscribe/``
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
+        'EMBEDDABLE_ENROLLMENT_ENABLED': True,
+    }
+
+The embed endpoints are CSRF-exempt and respond with a permissive ``Access-Control-Allow-Origin: *`` header so any third-party page can call them directly (they never require cookies/credentials). To compensate, they apply their own rate limiting: 20 requests per 5 minutes per client IP, and 5 requests per hour per submitted email address.
+
+.. note::
+   The rate limiting above uses Django's configured ``CACHES`` backend. The default per-process ``LocMemCache`` under-counts requests across multiple worker processes, so configure a shared backend (e.g. Redis or Memcached) in production for these limits to be effective.
+
+.. important::
+   Only enable this if you actually intend to embed the enrollment widget on third-party sites. Keep it disabled otherwise, since it trades CSRF protection for an open CORS policy on these two endpoints.
+
 **DELIVERY_WORKERS**
 
 Optional integer controlling how many threads the ``deliver_contents`` job uses to process deliveries concurrently. Defaults to ``1``, which preserves the original sequential behaviour.
