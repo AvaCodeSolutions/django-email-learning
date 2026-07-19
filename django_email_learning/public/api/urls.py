@@ -16,9 +16,9 @@ urlpatterns = [
         NewsletterSubscribeView.as_view(),
         name="newsletter_subscribe",
     ),
-    path("embed/enrollments/", EmbeddableEnrollView.as_view(), name="embed_enroll"),
+    path("embed/<str:token>/enrollments/", EmbeddableEnrollView.as_view(), name="embed_enroll"),
     path(
-        "embed/organizations/<int:organization_id>/newsletters/subscribe/",
+        "embed/<str:token>/newsletters/subscribe/",
         EmbeddableNewsletterSubscribeView.as_view(),
         name="embed_newsletter_subscribe",
     ),

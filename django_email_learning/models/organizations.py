@@ -1,3 +1,5 @@
+import base64
+import uuid
 from typing import Any
 
 from django.conf import settings
@@ -19,9 +21,21 @@ class Organization(models.Model):
     is_public = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
+    embed_token = models.CharField(max_length=64, unique=True, null=True, blank=True, editable=False)
 
     def __str__(self) -> str:
         return self.name
+
+    @staticmethod
+    def generate_embed_token() -> str:
+        """Generates an opaque, publishable identifier for the embeddable enroll/
+        newsletter-subscribe API (see EMBEDDABLE_ENROLLMENT_ENABLED).
+
+        Unlike ApiKey.key, this is not a secret - it's designed to sit in a
+        third-party site's public page source - so it's stored unencrypted and
+        looked up by direct equality rather than decrypted per-row.
+        """
+        return base64.urlsafe_b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes).decode().rstrip("=")
 
     @property
     def public_url(self) -> str | None:

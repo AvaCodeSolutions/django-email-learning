@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import List
 
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse, JsonResponse
@@ -8,9 +9,10 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from pydantic import ValidationError
 
-from django_email_learning.models import Course, Newsletter, NewsletterSubscriber
+from django_email_learning.models import Course, Newsletter, NewsletterSubscriber, Organization
 from django_email_learning.public.api.rate_limiting import get_client_ip, is_rate_limited
 from django_email_learning.public.api.serializers import (
+    EmbeddableEnrollmentRequest,
     EnrollmentRequest,
     NewsletterSubscribeRequest,
 )
@@ -33,9 +35,13 @@ DEFAULT_RATE_LIMITS = {
     "PER_IP_WINDOW_SECONDS": 300,
     "PER_EMAIL_LIMIT": 5,
     "PER_EMAIL_WINDOW_SECONDS": 3600,
+    "PER_TOKEN_LIMIT": 60,
+    "PER_TOKEN_WINDOW_SECONDS": 300,
 }
 
 TOO_MANY_REQUESTS_MESSAGE = "Too many requests. Please try again later."
+NOT_FOUND_MESSAGE = "Not found"
+INVALID_JSON_MESSAGE = "Invalid JSON payload"
 
 
 def embeddable_enrollment_enabled() -> bool:
@@ -47,57 +53,102 @@ def get_rate_limit_settings() -> dict:
     return {**DEFAULT_RATE_LIMITS, **configured}
 
 
-class EnrollView(View):
-    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
-        # Logic for enrolling a user via public API
-        payload = json.loads(request.body)
-        try:
-            serlizer = EnrollmentRequest.model_validate(payload)
-            try:
-                course = Course.objects.get(
-                    slug=serlizer.course_slug,
-                    organization_id=serlizer.organization_id,
-                    is_public=True,
-                )
-            except Course.DoesNotExist:
-                return JsonResponse({"error": "Course not found"}, status=404)
+def _default_max_subscribers() -> int:
+    return (
+        getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("NEWSLETTERS", {}).get("MAX_SUBSCRIBER_PER_NEWSLETTER", 500)
+    )
 
-            command = EnrollCommand(
-                email=serlizer.email,
-                course_slug=serlizer.course_slug,
-                organization_id=serlizer.organization_id,
+
+def _perform_enrollment(
+    *, organization_id: int, email: str, course_slug: str, subscribe_to_newsletter: bool
+) -> JsonResponse:
+    try:
+        course = Course.objects.get(slug=course_slug, organization_id=organization_id, is_public=True)
+    except Course.DoesNotExist:
+        return JsonResponse({"error": "Course not found"}, status=404)
+
+    command = EnrollCommand(email=email, course_slug=course_slug, organization_id=organization_id)
+    try:
+        command.execute()
+    except EnrollmentAlreadyExistsError as e:
+        logger.info(f"Enrollment already exists: {e}")
+        return JsonResponse({"status": "already_enrolled"}, status=200)
+    except BlockedEmailError as e:
+        logger.error(f"Blocked email error: {e}")
+        return JsonResponse({"error": str(e)}, status=403)
+    except LearnerCapExceededError as e:
+        logger.info(f"Learner cap exceeded: {e}")
+        return JsonResponse({"error": str(e)}, status=403)
+
+    if subscribe_to_newsletter and course.newsletter_id:
+        NewsletterSubscriber.objects.get_or_create(newsletter_id=course.newsletter_id, email=email)
+
+    return JsonResponse({"status": "enrolled"}, status=200)
+
+
+def _perform_newsletter_subscribe(
+    *, organization_id: int, email: str, newsletter_ids: List[int], max_subscribers: int
+) -> JsonResponse:
+    newsletters = {n.id: n for n in Newsletter.objects.filter(id__in=newsletter_ids, organization_id=organization_id)}
+
+    invalid = set(newsletter_ids) - set(newsletters)
+    if invalid:
+        return JsonResponse({"error": "One or more newsletter IDs are invalid."}, status=400)
+
+    for newsletter in newsletters.values():
+        already_subscribed = NewsletterSubscriber.objects.filter(newsletter=newsletter, email=email).exists()
+        if not already_subscribed and newsletter.subscribers.count() >= max_subscribers:
+            return JsonResponse(
+                {"error": f'Newsletter "{newsletter.title}" has reached its maximum number of subscribers.'},
+                status=400,
             )
 
-            try:
-                command.execute()
-            except EnrollmentAlreadyExistsError as e:
-                logger.info(f"Enrollment already exists: {e}")
-                return JsonResponse({"status": "already_enrolled"}, status=200)
-            except BlockedEmailError as e:
-                logger.error(f"Blocked email error: {e}")
-                return JsonResponse({"error": str(e)}, status=403)
-            except LearnerCapExceededError as e:
-                logger.info(f"Learner cap exceeded: {e}")
-                return JsonResponse({"error": str(e)}, status=403)
+    for newsletter_id in newsletters:
+        NewsletterSubscriber.objects.get_or_create(newsletter_id=newsletter_id, email=email)
 
-            if serlizer.subscribe_to_newsletter and course.newsletter_id:
-                NewsletterSubscriber.objects.get_or_create(
-                    newsletter_id=course.newsletter_id,
-                    email=serlizer.email,
-                )
+    return JsonResponse({"status": "subscribed"}, status=200)
 
-            return JsonResponse({"status": "enrolled"}, status=200)
 
+class EnrollView(View):
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            payload = EnrollmentRequest.model_validate(json.loads(request.body))
         except ValidationError as e:
             return JsonResponse({"error": str(e)}, status=400)
+
+        return _perform_enrollment(
+            organization_id=payload.organization_id,
+            email=payload.email,
+            course_slug=payload.course_slug,
+            subscribe_to_newsletter=payload.subscribe_to_newsletter,
+        )
+
+
+class NewsletterSubscribeView(View):
+    def get_max_subscribers(self) -> int:
+        return _default_max_subscribers()
+
+    def post(self, request, organization_id: int, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        payload = json.loads(request.body)
+        try:
+            data = NewsletterSubscribeRequest.model_validate(payload)
+        except ValidationError as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+        return _perform_newsletter_subscribe(
+            organization_id=organization_id,
+            email=data.email,
+            newsletter_ids=data.newsletter_ids,
+            max_subscribers=self.get_max_subscribers(),
+        )
 
 
 class PublicCorsMixin:
     """Adds a wide-open CORS policy on top of a view, for endpoints meant to be
     called cross-origin from third-party sites embedding a widget. These take
     no cookies/credentials, so an open origin policy carries no session-hijack
-    risk on its own; callers still go through EMBEDDABLE_ENROLLMENT_ENABLED and
-    rate limiting below.
+    risk on its own; callers still go through EMBEDDABLE_ENROLLMENT_ENABLED, a
+    per-organization embed_token, and rate limiting below.
     """
 
     def dispatch(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
@@ -112,21 +163,40 @@ class PublicCorsMixin:
         return response
 
 
-@method_decorator(csrf_exempt, name="dispatch")
-class EmbeddableEnrollView(PublicCorsMixin, EnrollView):
-    """Cross-origin counterpart to EnrollView for embedding on third-party
-    sites. Disabled unless DJANGO_EMAIL_LEARNING["EMBEDDABLE_ENROLLMENT_ENABLED"]
-    is set, since opening this up is a per-deployment decision, not a default.
+class EmbedTokenResolverMixin:
+    """Resolves the Organization addressed by the embed_token URL segment
+    before dispatching to the view, and 404s if embedding is disabled
+    deployment-wide or the token doesn't match any organization. A bad token
+    is intentionally indistinguishable from a disabled feature, so callers
+    can't use this to enumerate valid tokens.
     """
+
+    organization: Organization
 
     def dispatch(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
         if not embeddable_enrollment_enabled():
-            return JsonResponse({"error": "Not found"}, status=404)
-        return super().dispatch(request, *args, **kwargs)
+            return JsonResponse({"error": NOT_FOUND_MESSAGE}, status=404)
+        try:
+            self.organization = Organization.objects.get(embed_token=kwargs.get("token"))
+        except Organization.DoesNotExist:
+            return JsonResponse({"error": NOT_FOUND_MESSAGE}, status=404)
+        return super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
 
-    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+
+@method_decorator(csrf_exempt, name="dispatch")
+class EmbeddableEnrollView(EmbedTokenResolverMixin, PublicCorsMixin, View):
+    """Cross-origin counterpart to EnrollView for embedding on third-party
+    sites, addressed by a per-organization embed_token in the URL rather than
+    a caller-supplied organization_id (which would let anyone target any
+    organization). Disabled unless
+    DJANGO_EMAIL_LEARNING["EMBEDDABLE_ENROLLMENT_ENABLED"] is set, since
+    opening this up is a per-deployment decision, not a default.
+    """
+
+    def post(self, request, token: str, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         rate_limits = get_rate_limit_settings()
         client_ip = get_client_ip(request)
+
         if is_rate_limited(
             f"public_api:embed_enroll:ip:{client_ip}",
             limit=rate_limits["PER_IP_LIMIT"],
@@ -135,81 +205,50 @@ class EmbeddableEnrollView(PublicCorsMixin, EnrollView):
             logger.warning(f"Embedded enrollment rate limit exceeded for IP {client_ip}")
             return JsonResponse({"error": TOO_MANY_REQUESTS_MESSAGE}, status=429)
 
-        try:
-            email = EnrollmentRequest.model_validate(json.loads(request.body)).email
-        except (json.JSONDecodeError, ValidationError):
-            email = None  # let the base view's own parsing report the real error
-
-        if email and is_rate_limited(
-            f"public_api:embed_enroll:email:{email.lower()}",
-            limit=rate_limits["PER_EMAIL_LIMIT"],
-            window_seconds=rate_limits["PER_EMAIL_WINDOW_SECONDS"],
+        if is_rate_limited(
+            f"public_api:embed_enroll:token:{token}",
+            limit=rate_limits["PER_TOKEN_LIMIT"],
+            window_seconds=rate_limits["PER_TOKEN_WINDOW_SECONDS"],
         ):
-            logger.warning(f"Embedded enrollment rate limit exceeded for email {mask_email(email)}")
+            logger.warning(f"Embedded enrollment rate limit exceeded for organization {self.organization.id}")
             return JsonResponse({"error": TOO_MANY_REQUESTS_MESSAGE}, status=429)
 
-        return super().post(request, *args, **kwargs)
-
-
-class NewsletterSubscribeView(View):
-    def get_max_subscribers(self) -> int:
-        return (
-            getattr(settings, "DJANGO_EMAIL_LEARNING", {})
-            .get("NEWSLETTERS", {})
-            .get("MAX_SUBSCRIBER_PER_NEWSLETTER", 500)
-        )
-
-    def post(self, request, organization_id: int, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
-        payload = json.loads(request.body)
         try:
-            data = NewsletterSubscribeRequest.model_validate(payload)
+            payload = EmbeddableEnrollmentRequest.model_validate(json.loads(request.body))
+        except json.JSONDecodeError:
+            return JsonResponse({"error": INVALID_JSON_MESSAGE}, status=400)
         except ValidationError as e:
             return JsonResponse({"error": str(e)}, status=400)
 
-        newsletters = {
-            n.id: n
-            for n in Newsletter.objects.filter(
-                id__in=data.newsletter_ids,
-                organization_id=organization_id,
-            )
-        }
+        if is_rate_limited(
+            f"public_api:embed_enroll:email:{payload.email.lower()}",
+            limit=rate_limits["PER_EMAIL_LIMIT"],
+            window_seconds=rate_limits["PER_EMAIL_WINDOW_SECONDS"],
+        ):
+            logger.warning(f"Embedded enrollment rate limit exceeded for email {mask_email(payload.email)}")
+            return JsonResponse({"error": TOO_MANY_REQUESTS_MESSAGE}, status=429)
 
-        invalid = set(data.newsletter_ids) - set(newsletters)
-        if invalid:
-            return JsonResponse({"error": "One or more newsletter IDs are invalid."}, status=400)
-
-        max_subscribers = self.get_max_subscribers()
-        for newsletter in newsletters.values():
-            already_subscribed = NewsletterSubscriber.objects.filter(newsletter=newsletter, email=data.email).exists()
-            if not already_subscribed and newsletter.subscribers.count() >= max_subscribers:
-                return JsonResponse(
-                    {"error": f'Newsletter "{newsletter.title}" has reached its maximum number of subscribers.'},
-                    status=400,
-                )
-
-        for newsletter_id in newsletters:
-            NewsletterSubscriber.objects.get_or_create(
-                newsletter_id=newsletter_id,
-                email=data.email,
-            )
-
-        return JsonResponse({"status": "subscribed"}, status=200)
+        return _perform_enrollment(
+            organization_id=self.organization.id,
+            email=payload.email,
+            course_slug=payload.course_slug,
+            subscribe_to_newsletter=payload.subscribe_to_newsletter,
+        )
 
 
 @method_decorator(csrf_exempt, name="dispatch")
-class EmbeddableNewsletterSubscribeView(PublicCorsMixin, NewsletterSubscribeView):
+class EmbeddableNewsletterSubscribeView(EmbedTokenResolverMixin, PublicCorsMixin, View):
     """Cross-origin counterpart to NewsletterSubscribeView, gated by the same
-    EMBEDDABLE_ENROLLMENT_ENABLED setting as EmbeddableEnrollView.
+    embed_token/EMBEDDABLE_ENROLLMENT_ENABLED checks as EmbeddableEnrollView.
     """
 
-    def dispatch(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
-        if not embeddable_enrollment_enabled():
-            return JsonResponse({"error": "Not found"}, status=404)
-        return super().dispatch(request, *args, **kwargs)
+    def get_max_subscribers(self) -> int:
+        return _default_max_subscribers()
 
-    def post(self, request, organization_id: int, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+    def post(self, request, token: str, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         rate_limits = get_rate_limit_settings()
         client_ip = get_client_ip(request)
+
         if is_rate_limited(
             f"public_api:embed_newsletter_subscribe:ip:{client_ip}",
             limit=rate_limits["PER_IP_LIMIT"],
@@ -218,17 +257,32 @@ class EmbeddableNewsletterSubscribeView(PublicCorsMixin, NewsletterSubscribeView
             logger.warning(f"Embedded newsletter subscribe rate limit exceeded for IP {client_ip}")
             return JsonResponse({"error": TOO_MANY_REQUESTS_MESSAGE}, status=429)
 
-        try:
-            email = NewsletterSubscribeRequest.model_validate(json.loads(request.body)).email
-        except (json.JSONDecodeError, ValidationError):
-            email = None  # let the base view's own parsing report the real error
+        if is_rate_limited(
+            f"public_api:embed_newsletter_subscribe:token:{token}",
+            limit=rate_limits["PER_TOKEN_LIMIT"],
+            window_seconds=rate_limits["PER_TOKEN_WINDOW_SECONDS"],
+        ):
+            logger.warning(f"Embedded newsletter subscribe rate limit exceeded for organization {self.organization.id}")
+            return JsonResponse({"error": TOO_MANY_REQUESTS_MESSAGE}, status=429)
 
-        if email and is_rate_limited(
-            f"public_api:embed_newsletter_subscribe:email:{email.lower()}",
+        try:
+            data = NewsletterSubscribeRequest.model_validate(json.loads(request.body))
+        except json.JSONDecodeError:
+            return JsonResponse({"error": INVALID_JSON_MESSAGE}, status=400)
+        except ValidationError as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+        if is_rate_limited(
+            f"public_api:embed_newsletter_subscribe:email:{data.email.lower()}",
             limit=rate_limits["PER_EMAIL_LIMIT"],
             window_seconds=rate_limits["PER_EMAIL_WINDOW_SECONDS"],
         ):
-            logger.warning(f"Embedded newsletter subscribe rate limit exceeded for email {mask_email(email)}")
+            logger.warning(f"Embedded newsletter subscribe rate limit exceeded for email {mask_email(data.email)}")
             return JsonResponse({"error": TOO_MANY_REQUESTS_MESSAGE}, status=429)
 
-        return super().post(request, organization_id, *args, **kwargs)
+        return _perform_newsletter_subscribe(
+            organization_id=self.organization.id,
+            email=data.email,
+            newsletter_ids=data.newsletter_ids,
+            max_subscribers=self.get_max_subscribers(),
+        )

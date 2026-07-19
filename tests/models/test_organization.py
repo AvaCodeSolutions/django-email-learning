@@ -1,3 +1,6 @@
+import pytest
+from django.db import IntegrityError, transaction
+
 from django_email_learning.models import Course, Enrollment, EnrollmentStatus, Learner, Organization
 
 
@@ -120,3 +123,21 @@ def test_get_learners_cap_resolver_receives_the_organization(db, settings):
     }
     other_org = Organization.objects.create(name="Other Org")
     assert other_org.get_learners_cap() == 0
+
+
+def test_generate_embed_token_returns_distinct_values(db):
+    assert Organization.generate_embed_token() != Organization.generate_embed_token()
+
+
+def test_embed_token_defaults_to_null(db):
+    organization = Organization.objects.create(name="Fresh Org")
+    assert organization.embed_token is None
+
+
+def test_embed_token_must_be_unique(db):
+    Organization.objects.create(name="Org A", embed_token="shared-token")
+    organization_b = Organization.objects.create(name="Org B")
+    organization_b.embed_token = "shared-token"
+
+    with pytest.raises(IntegrityError), transaction.atomic():
+        organization_b.save(update_fields=["embed_token"])
