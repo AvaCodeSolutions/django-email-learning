@@ -131,5 +131,5 @@ class EmbedScriptView(View):
         if not embeddable_enrollment_enabled():
             return HttpResponse(status=404)
         response = HttpResponse(build_embed_script_js(), content_type="application/javascript")
-        response["Cache-Control"] = "no-cache"
+        response["Cache-Control"] = "public, max-age=3600"
         return response

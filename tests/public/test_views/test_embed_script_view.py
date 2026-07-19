@@ -18,7 +18,7 @@ def test_embed_script_served_when_enabled(anonymous_client, settings):
 
     assert response.status_code == 200
     assert response["Content-Type"] == "application/javascript"
-    assert response["Cache-Control"] == "no-cache"
+    assert response["Cache-Control"] == "public, max-age=3600"
     content = response.content.decode()
     assert "customElements.define('del-enroll-form'" in content
     assert "class DelEnrollForm extends HTMLElement" in content
