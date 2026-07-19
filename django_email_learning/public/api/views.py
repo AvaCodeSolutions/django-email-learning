@@ -1,11 +1,15 @@
 import json
 import logging
 
-from django.http import JsonResponse
+from django.conf import settings
+from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from pydantic import ValidationError
 
 from django_email_learning.models import Course, Newsletter, NewsletterSubscriber
+from django_email_learning.public.api.rate_limiting import get_client_ip, is_rate_limited
 from django_email_learning.public.api.serializers import (
     EnrollmentRequest,
     NewsletterSubscribeRequest,
@@ -20,8 +24,20 @@ from django_email_learning.services.command_models.exceptions.enrollment_already
 from django_email_learning.services.command_models.exceptions.learner_cap_exceeded_error import (
     LearnerCapExceededError,
 )
+from django_email_learning.services.utils import mask_email
 
 logger = logging.getLogger(__name__)
+
+PER_IP_LIMIT = 20
+PER_IP_WINDOW_SECONDS = 300
+PER_EMAIL_LIMIT = 5
+PER_EMAIL_WINDOW_SECONDS = 3600
+
+TOO_MANY_REQUESTS_MESSAGE = "Too many requests. Please try again later."
+
+
+def embeddable_enrollment_enabled() -> bool:
+    return bool(getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("EMBEDDABLE_ENROLLMENT_ENABLED", False))
 
 
 class EnrollView(View):
@@ -69,10 +85,66 @@ class EnrollView(View):
             return JsonResponse({"error": str(e)}, status=400)
 
 
+class PublicCorsMixin:
+    """Adds a wide-open CORS policy on top of a view, for endpoints meant to be
+    called cross-origin from third-party sites embedding a widget. These take
+    no cookies/credentials, so an open origin policy carries no session-hijack
+    risk on its own; callers still go through EMBEDDABLE_ENROLLMENT_ENABLED and
+    rate limiting below.
+    """
+
+    def dispatch(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
+        if request.method == "OPTIONS":
+            response = HttpResponse(status=204)
+        else:
+            response = super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
+        response["Access-Control-Allow-Origin"] = "*"
+        response["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        response["Access-Control-Allow-Headers"] = "Content-Type"
+        response["Access-Control-Max-Age"] = "86400"
+        return response
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class EmbeddableEnrollView(PublicCorsMixin, EnrollView):
+    """Cross-origin counterpart to EnrollView for embedding on third-party
+    sites. Disabled unless DJANGO_EMAIL_LEARNING["EMBEDDABLE_ENROLLMENT_ENABLED"]
+    is set, since opening this up is a per-deployment decision, not a default.
+    """
+
+    def dispatch(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
+        if not embeddable_enrollment_enabled():
+            return JsonResponse({"error": "Not found"}, status=404)
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        client_ip = get_client_ip(request)
+        if is_rate_limited(
+            f"public_api:embed_enroll:ip:{client_ip}",
+            limit=PER_IP_LIMIT,
+            window_seconds=PER_IP_WINDOW_SECONDS,
+        ):
+            logger.warning(f"Embedded enrollment rate limit exceeded for IP {client_ip}")
+            return JsonResponse({"error": TOO_MANY_REQUESTS_MESSAGE}, status=429)
+
+        try:
+            email = EnrollmentRequest.model_validate(json.loads(request.body)).email
+        except (json.JSONDecodeError, ValidationError):
+            email = None  # let the base view's own parsing report the real error
+
+        if email and is_rate_limited(
+            f"public_api:embed_enroll:email:{email.lower()}",
+            limit=PER_EMAIL_LIMIT,
+            window_seconds=PER_EMAIL_WINDOW_SECONDS,
+        ):
+            logger.warning(f"Embedded enrollment rate limit exceeded for email {mask_email(email)}")
+            return JsonResponse({"error": TOO_MANY_REQUESTS_MESSAGE}, status=429)
+
+        return super().post(request, *args, **kwargs)
+
+
 class NewsletterSubscribeView(View):
     def get_max_subscribers(self) -> int:
-        from django.conf import settings
-
         return (
             getattr(settings, "DJANGO_EMAIL_LEARNING", {})
             .get("NEWSLETTERS", {})
@@ -114,3 +186,40 @@ class NewsletterSubscribeView(View):
             )
 
         return JsonResponse({"status": "subscribed"}, status=200)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class EmbeddableNewsletterSubscribeView(PublicCorsMixin, NewsletterSubscribeView):
+    """Cross-origin counterpart to NewsletterSubscribeView, gated by the same
+    EMBEDDABLE_ENROLLMENT_ENABLED setting as EmbeddableEnrollView.
+    """
+
+    def dispatch(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
+        if not embeddable_enrollment_enabled():
+            return JsonResponse({"error": "Not found"}, status=404)
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, organization_id: int, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        client_ip = get_client_ip(request)
+        if is_rate_limited(
+            f"public_api:embed_newsletter_subscribe:ip:{client_ip}",
+            limit=PER_IP_LIMIT,
+            window_seconds=PER_IP_WINDOW_SECONDS,
+        ):
+            logger.warning(f"Embedded newsletter subscribe rate limit exceeded for IP {client_ip}")
+            return JsonResponse({"error": TOO_MANY_REQUESTS_MESSAGE}, status=429)
+
+        try:
+            email = NewsletterSubscribeRequest.model_validate(json.loads(request.body)).email
+        except (json.JSONDecodeError, ValidationError):
+            email = None  # let the base view's own parsing report the real error
+
+        if email and is_rate_limited(
+            f"public_api:embed_newsletter_subscribe:email:{email.lower()}",
+            limit=PER_EMAIL_LIMIT,
+            window_seconds=PER_EMAIL_WINDOW_SECONDS,
+        ):
+            logger.warning(f"Embedded newsletter subscribe rate limit exceeded for email {mask_email(email)}")
+            return JsonResponse({"error": TOO_MANY_REQUESTS_MESSAGE}, status=429)
+
+        return super().post(request, organization_id, *args, **kwargs)
