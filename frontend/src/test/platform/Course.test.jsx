@@ -160,7 +160,14 @@ describe('Course', () => {
       const user = userEvent.setup();
       global.fetch.mockImplementation((url) => {
         if (url.includes('/embed_snippet/')) {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve({ html: '<div>snippet-html</div>' }) });
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                script_html: '<script src="https://example.com/embed/del-enroll-form.js"></script>',
+                widget_html: '<del-enroll-form token="tok" course_id="sample-course"></del-enroll-form>',
+              }),
+          });
         }
         if (url.includes('/contents')) {
           return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
@@ -173,7 +180,12 @@ describe('Course', () => {
 
       await user.click(screen.getByRole('button', { name: 'Add to your site' }));
 
-      expect(await screen.findByText('<div>snippet-html</div>')).toBeInTheDocument();
+      expect(
+        await screen.findByText('<script src="https://example.com/embed/del-enroll-form.js"></script>')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('<del-enroll-form token="tok" course_id="sample-course"></del-enroll-form>')
+      ).toBeInTheDocument();
     });
 
     it('shows an error message when the embed snippet fails to load', async () => {
@@ -200,7 +212,14 @@ describe('Course', () => {
       const user = userEvent.setup();
       global.fetch.mockImplementation((url) => {
         if (url.includes('/embed_snippet/')) {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve({ html: '<div>snippet-html</div>' }) });
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                script_html: '<script src="https://example.com/embed/del-enroll-form.js"></script>',
+                widget_html: '<del-enroll-form token="tok" course_id="sample-course"></del-enroll-form>',
+              }),
+          });
         }
         if (url.includes('/contents')) {
           return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
@@ -212,7 +231,7 @@ describe('Course', () => {
       });
 
       await user.click(screen.getByRole('button', { name: 'Add to your site' }));
-      await screen.findByText('<div>snippet-html</div>');
+      await screen.findByText('<del-enroll-form token="tok" course_id="sample-course"></del-enroll-form>');
       await user.click(screen.getByRole('button', { name: 'Close' }));
 
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
