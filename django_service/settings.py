@@ -119,6 +119,7 @@ DJANGO_EMAIL_LEARNING = {
         "TEXT_EDITING_MODEL": LanguageModel.GPT_4O_MINI.model_name,
     },
     "AMP_ENABLED": os.environ.get("AMP_ENABLED", "False").lower() == "true",
+    "EMBEDDABLE_ENROLLMENT_ENABLED": os.environ.get("EMBEDDABLE_ENROLLMENT_ENABLED", "False").lower() == "true",
     "NEWSLETTERS": {
         "FROM_EMAIL": os.environ.get("NEWSLETTER_FROM_EMAIL", "webmaster@localhost"),
     },

@@ -431,6 +431,78 @@ If AMP is enabled, you must also add trusted AMP mail client origins to Django's
 .. note::
    Keep AMP disabled in environments where you have not completed sender registration and trusted-origin configuration.
 
+**EMBEDDABLE_ENROLLMENT_ENABLED**
+
+Optional flag to enable cross-origin enroll/newsletter-subscribe endpoints, for embedding the enrollment widget on third-party sites (e.g. an organization's own marketing site) rather than only on the pages this library serves itself.
+
+By default, this is disabled and only the first-party endpoints exist:
+
+- ``POST /api/public/enrollments/``
+- ``POST /api/public/organizations/<organization_id>/newsletters/subscribe/``
+
+These require a same-origin CSRF cookie, so they only work from pages served by this library itself.
+
+Setting ``EMBEDDABLE_ENROLLMENT_ENABLED`` to ``True`` additionally enables two cross-origin counterparts, addressed by a per-organization token instead of a plain ``organization_id``:
+
+- ``POST /api/public/embed/<embed_token>/enrollments/``
+- ``POST /api/public/embed/<embed_token>/newsletters/subscribe/``
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
+        'EMBEDDABLE_ENROLLMENT_ENABLED': True,
+    }
+
+The flag alone isn't enough to make an organization embeddable — each organization also needs its own ``embed_token`` (an ``Organization`` field, ``None`` by default). Generate or rotate one with:
+
+.. code-block:: bash
+
+    python manage.py generate_embed_token <organization_id>
+
+This prints the token to use in the embed URL. Rotating (running the command again) immediately invalidates the previous token — anyone still using the old value gets a 404 on their next request. There is currently no platform UI for this; use the management command or the Django admin.
+
+.. important::
+   A request to an embed URL with an unset ``EMBEDDABLE_ENROLLMENT_ENABLED``, or with a token that doesn't match any organization, returns the same 404 either way — this is deliberate, so a caller can't use the response to enumerate which tokens are valid.
+
+The embed token is a **publishable** identifier, not a secret: it's designed to sit in a third-party site's public page source, so it identifies which organization a request is for but doesn't authenticate the caller — anyone who copies it out of that page source can call the API as that organization. It's stored unencrypted and isn't accepted anywhere in the request body (an ``organization_id`` field in the JSON payload, if present, is ignored — the organization comes only from the URL).
+
+The embed endpoints are CSRF-exempt and respond with a permissive ``Access-Control-Allow-Origin: *`` header so any third-party page can call them directly (they never require cookies/credentials). To compensate, they apply their own rate limiting, configurable via ``EMBEDDABLE_ENROLLMENT_RATE_LIMITS``:
+
+- ``PER_IP_LIMIT``: Maximum requests allowed per client IP within the window. Defaults to ``20``.
+- ``PER_IP_WINDOW_SECONDS``: Length of the per-IP window, in seconds. Defaults to ``300`` (5 minutes).
+- ``PER_EMAIL_LIMIT``: Maximum requests allowed per submitted email address within the window. Defaults to ``5``.
+- ``PER_EMAIL_WINDOW_SECONDS``: Length of the per-email window, in seconds. Defaults to ``3600`` (1 hour).
+- ``PER_TOKEN_LIMIT``: Maximum requests allowed per organization's embed token within the window, regardless of which IP or email they come from. Defaults to ``60``.
+- ``PER_TOKEN_WINDOW_SECONDS``: Length of the per-token window, in seconds. Defaults to ``300`` (5 minutes).
+
+The per-token limit is what actually isolates organizations from each other: the IP and email limits are shared pools across the whole deployment, but each organization's token has its own independent bucket, so one organization's traffic (or a leaked token being abused) can't exhaust another's quota. Any keys you omit fall back to their default shown above.
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
+        'EMBEDDABLE_ENROLLMENT_ENABLED': True,
+        'EMBEDDABLE_ENROLLMENT_RATE_LIMITS': {
+            'PER_IP_LIMIT': 40,
+            'PER_IP_WINDOW_SECONDS': 300,
+            'PER_EMAIL_LIMIT': 10,
+            'PER_EMAIL_WINDOW_SECONDS': 3600,
+            'PER_TOKEN_LIMIT': 120,
+            'PER_TOKEN_WINDOW_SECONDS': 300,
+        },
+    }
+
+.. note::
+   The rate limiting above uses Django's configured ``CACHES`` backend. The default per-process ``LocMemCache`` under-counts requests across multiple worker processes, so configure a shared backend (e.g. Redis or Memcached) in production for these limits to be effective.
+
+.. important::
+   Only enable this if you actually intend to embed the enrollment widget on third-party sites. Keep it disabled otherwise, since it trades CSRF protection for an open CORS policy on these two endpoints.
+
 **DELIVERY_WORKERS**
 
 Optional integer controlling how many threads the ``deliver_contents`` job uses to process deliveries concurrently. Defaults to ``1``, which preserves the original sequential behaviour.
