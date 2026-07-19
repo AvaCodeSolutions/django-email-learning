@@ -6,6 +6,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.3.0] — 2026-07-20
+
+### Added
+
+- **Embeddable public enroll & newsletter-subscribe API** — Opt-in cross-origin endpoints (`DJANGO_EMAIL_LEARNING["EMBEDDABLE_ENROLLMENT_ENABLED"]`) at `/api/public/embed/<embed_token>/...`, for embedding the enroll/subscribe forms on third-party sites. Each organization gets its own `embed_token` (a publishable identifier, not a secret) instead of a caller-supplied `organization_id`, with independent per-IP/per-email/per-token rate limits (`EMBEDDABLE_ENROLLMENT_RATE_LIMITS`). See [#737](https://github.com/AvaCodeSolutions/django-email-learning/issues/737).
+- **"Add to your site" embed-code button** — On the course detail page, public and enabled courses now show an "Add to your site" button that opens a dialog with a ready-to-paste `<script>` tag and a `<del-enroll-form>` custom element tag, letting organizations embed the enrollment form on their own website with no coding required. Automatically includes a newsletter subscribe checkbox when the course has a linked newsletter. See [#738](https://github.com/AvaCodeSolutions/django-email-learning/issues/738).
+
 ## [2.2.1] — 2026-07-18
 
 ### Added
