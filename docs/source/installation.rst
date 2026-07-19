@@ -456,7 +456,29 @@ Setting ``EMBEDDABLE_ENROLLMENT_ENABLED`` to ``True`` additionally enables two c
         'EMBEDDABLE_ENROLLMENT_ENABLED': True,
     }
 
-The embed endpoints are CSRF-exempt and respond with a permissive ``Access-Control-Allow-Origin: *`` header so any third-party page can call them directly (they never require cookies/credentials). To compensate, they apply their own rate limiting: 20 requests per 5 minutes per client IP, and 5 requests per hour per submitted email address.
+The embed endpoints are CSRF-exempt and respond with a permissive ``Access-Control-Allow-Origin: *`` header so any third-party page can call them directly (they never require cookies/credentials). To compensate, they apply their own rate limiting, configurable via ``EMBEDDABLE_ENROLLMENT_RATE_LIMITS``:
+
+- ``PER_IP_LIMIT``: Maximum requests allowed per client IP within the window. Defaults to ``20``.
+- ``PER_IP_WINDOW_SECONDS``: Length of the per-IP window, in seconds. Defaults to ``300`` (5 minutes).
+- ``PER_EMAIL_LIMIT``: Maximum requests allowed per submitted email address within the window. Defaults to ``5``.
+- ``PER_EMAIL_WINDOW_SECONDS``: Length of the per-email window, in seconds. Defaults to ``3600`` (1 hour).
+
+Any keys you omit fall back to their default shown above.
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
+        'EMBEDDABLE_ENROLLMENT_ENABLED': True,
+        'EMBEDDABLE_ENROLLMENT_RATE_LIMITS': {
+            'PER_IP_LIMIT': 40,
+            'PER_IP_WINDOW_SECONDS': 300,
+            'PER_EMAIL_LIMIT': 10,
+            'PER_EMAIL_WINDOW_SECONDS': 3600,
+        },
+    }
 
 .. note::
    The rate limiting above uses Django's configured ``CACHES`` backend. The default per-process ``LocMemCache`` under-counts requests across multiple worker processes, so configure a shared backend (e.g. Redis or Memcached) in production for these limits to be effective.

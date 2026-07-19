@@ -28,16 +28,23 @@ from django_email_learning.services.utils import mask_email
 
 logger = logging.getLogger(__name__)
 
-PER_IP_LIMIT = 20
-PER_IP_WINDOW_SECONDS = 300
-PER_EMAIL_LIMIT = 5
-PER_EMAIL_WINDOW_SECONDS = 3600
+DEFAULT_RATE_LIMITS = {
+    "PER_IP_LIMIT": 20,
+    "PER_IP_WINDOW_SECONDS": 300,
+    "PER_EMAIL_LIMIT": 5,
+    "PER_EMAIL_WINDOW_SECONDS": 3600,
+}
 
 TOO_MANY_REQUESTS_MESSAGE = "Too many requests. Please try again later."
 
 
 def embeddable_enrollment_enabled() -> bool:
     return bool(getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("EMBEDDABLE_ENROLLMENT_ENABLED", False))
+
+
+def get_rate_limit_settings() -> dict:
+    configured = getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("EMBEDDABLE_ENROLLMENT_RATE_LIMITS", {})
+    return {**DEFAULT_RATE_LIMITS, **configured}
 
 
 class EnrollView(View):
@@ -118,11 +125,12 @@ class EmbeddableEnrollView(PublicCorsMixin, EnrollView):
         return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        rate_limits = get_rate_limit_settings()
         client_ip = get_client_ip(request)
         if is_rate_limited(
             f"public_api:embed_enroll:ip:{client_ip}",
-            limit=PER_IP_LIMIT,
-            window_seconds=PER_IP_WINDOW_SECONDS,
+            limit=rate_limits["PER_IP_LIMIT"],
+            window_seconds=rate_limits["PER_IP_WINDOW_SECONDS"],
         ):
             logger.warning(f"Embedded enrollment rate limit exceeded for IP {client_ip}")
             return JsonResponse({"error": TOO_MANY_REQUESTS_MESSAGE}, status=429)
@@ -134,8 +142,8 @@ class EmbeddableEnrollView(PublicCorsMixin, EnrollView):
 
         if email and is_rate_limited(
             f"public_api:embed_enroll:email:{email.lower()}",
-            limit=PER_EMAIL_LIMIT,
-            window_seconds=PER_EMAIL_WINDOW_SECONDS,
+            limit=rate_limits["PER_EMAIL_LIMIT"],
+            window_seconds=rate_limits["PER_EMAIL_WINDOW_SECONDS"],
         ):
             logger.warning(f"Embedded enrollment rate limit exceeded for email {mask_email(email)}")
             return JsonResponse({"error": TOO_MANY_REQUESTS_MESSAGE}, status=429)
@@ -200,11 +208,12 @@ class EmbeddableNewsletterSubscribeView(PublicCorsMixin, NewsletterSubscribeView
         return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, organization_id: int, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        rate_limits = get_rate_limit_settings()
         client_ip = get_client_ip(request)
         if is_rate_limited(
             f"public_api:embed_newsletter_subscribe:ip:{client_ip}",
-            limit=PER_IP_LIMIT,
-            window_seconds=PER_IP_WINDOW_SECONDS,
+            limit=rate_limits["PER_IP_LIMIT"],
+            window_seconds=rate_limits["PER_IP_WINDOW_SECONDS"],
         ):
             logger.warning(f"Embedded newsletter subscribe rate limit exceeded for IP {client_ip}")
             return JsonResponse({"error": TOO_MANY_REQUESTS_MESSAGE}, status=429)
@@ -216,8 +225,8 @@ class EmbeddableNewsletterSubscribeView(PublicCorsMixin, NewsletterSubscribeView
 
         if email and is_rate_limited(
             f"public_api:embed_newsletter_subscribe:email:{email.lower()}",
-            limit=PER_EMAIL_LIMIT,
-            window_seconds=PER_EMAIL_WINDOW_SECONDS,
+            limit=rate_limits["PER_EMAIL_LIMIT"],
+            window_seconds=rate_limits["PER_EMAIL_WINDOW_SECONDS"],
         ):
             logger.warning(f"Embedded newsletter subscribe rate limit exceeded for email {mask_email(email)}")
             return JsonResponse({"error": TOO_MANY_REQUESTS_MESSAGE}, status=429)

@@ -108,3 +108,28 @@ def test_embed_enroll_view_rate_limits_by_ip_when_enabled(anonymous_client, cour
 
     assert responses[-1].status_code == 429
     assert sum(1 for r in responses if r.status_code == 429) == 1
+
+
+def test_embed_enroll_view_honours_configured_rate_limits(anonymous_client, course, settings):
+    cache.clear()
+    course.enabled = True
+    course.save()
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "EMBEDDABLE_ENROLLMENT_ENABLED": True,
+        "EMBEDDABLE_ENROLLMENT_RATE_LIMITS": {
+            "PER_IP_LIMIT": 2,
+            "PER_IP_WINDOW_SECONDS": 300,
+        },
+    }
+
+    responses = []
+    for i in range(3):
+        payload = {
+            "organization_id": course.organization_id,
+            "email": f"configured{i}@example.com",
+            "course_slug": course.slug,
+        }
+        responses.append(anonymous_client.post(URL, data=payload, content_type="application/json"))
+
+    assert [r.status_code for r in responses] == [200, 200, 429]
