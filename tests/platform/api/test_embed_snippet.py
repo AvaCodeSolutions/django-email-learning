@@ -1,46 +1,46 @@
-from django_email_learning.platform.api.embed_snippet import build_embed_snippet
+from django_email_learning.platform.api.embed_snippet import (
+    build_embed_script_tag,
+    build_embed_widget_tag,
+)
 
 
-def test_build_embed_snippet_without_newsletter():
-    html = build_embed_snippet(
-        embed_enroll_url="https://example.com/api/public/embed/tok123/enrollments/",
-        course_slug="my-course",
-        newsletter_title=None,
-    )
-    assert "<label" not in html
-    assert "https://example.com/api/public/embed/tok123/enrollments/" in html
-    assert '"my-course"' in html
-    assert 'type="email"' in html
+def test_build_embed_script_tag():
+    html = build_embed_script_tag("https://example.com/public/embed/del-enroll-form.js")
+    assert html == '<script src="https://example.com/public/embed/del-enroll-form.js"></script>'
 
 
-def test_build_embed_snippet_with_newsletter():
-    html = build_embed_snippet(
-        embed_enroll_url="https://example.com/api/public/embed/tok123/enrollments/",
-        course_slug="my-course",
-        newsletter_title="Weekly Tips",
-    )
-    assert "<label" in html
-    assert "Subscribe to Weekly Tips" in html
-    assert 'name="subscribe_to_newsletter"' in html
+def test_build_embed_script_tag_escapes_url():
+    html = build_embed_script_tag('https://example.com/"><script>alert(1)</script>')
+    assert "<script>alert(1)</script>" not in html
+    assert "&quot;" in html
 
 
-def test_build_embed_snippet_escapes_html_in_newsletter_title():
-    html = build_embed_snippet(
-        embed_enroll_url="https://example.com/api/public/embed/tok123/enrollments/",
-        course_slug="my-course",
-        newsletter_title="<script>alert(1)</script>",
-    )
+def test_build_embed_widget_tag_without_newsletter():
+    html = build_embed_widget_tag(token="tok123", course_slug="my-course", newsletter_title=None)
+    assert html == '<del-enroll-form token="tok123" course_id="my-course"></del-enroll-form>'
+    assert "news_letter_check" not in html
+
+
+def test_build_embed_widget_tag_with_newsletter():
+    html = build_embed_widget_tag(token="tok123", course_slug="my-course", newsletter_title="Weekly Tips")
+    assert 'token="tok123"' in html
+    assert 'course_id="my-course"' in html
+    assert "news_letter_check" in html
+    assert 'newsletter_title="Weekly Tips"' in html
+
+
+def test_build_embed_widget_tag_escapes_newsletter_title():
+    html = build_embed_widget_tag(token="tok123", course_slug="my-course", newsletter_title="<script>alert(1)</script>")
     assert "<script>alert(1)</script>" not in html
     assert "&lt;script&gt;" in html
 
 
-def test_build_embed_snippet_json_encodes_url_and_slug_for_js_context():
-    # A slug/URL containing a quote must not be able to break out of the JS
-    # string literal it's embedded in.
-    html = build_embed_snippet(
-        embed_enroll_url='https://example.com/enroll/"; alert(1); "',
-        course_slug='slug"; alert(2); "',
+def test_build_embed_widget_tag_escapes_attribute_values():
+    html = build_embed_widget_tag(
+        token='tok"><script>alert(1)</script>',
+        course_slug='slug"><script>alert(2)</script>',
         newsletter_title=None,
     )
-    assert '"; alert(1); "' not in html.split("<script>")[1]
-    assert '\\"' in html
+    assert "<script>alert(1)</script>" not in html
+    assert "<script>alert(2)</script>" not in html
+    assert "&quot;" in html

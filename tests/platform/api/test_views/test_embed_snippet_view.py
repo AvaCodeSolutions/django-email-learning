@@ -18,7 +18,8 @@ def _make_public(course: Course) -> Course:
     return course
 
 
-def test_embed_snippet_disabled_by_default(superadmin_client, course):
+def test_embed_snippet_disabled_by_default(superadmin_client, course, settings):
+    settings.DJANGO_EMAIL_LEARNING = {**settings.DJANGO_EMAIL_LEARNING, "EMBEDDABLE_ENROLLMENT_ENABLED": False}
     _make_public(course)
     response = superadmin_client.get(get_url(1, course.id))
     assert response.status_code == 404
@@ -44,10 +45,14 @@ def test_embed_snippet_success(superadmin_client, course, settings):
     response = superadmin_client.get(get_url(1, course.id))
 
     assert response.status_code == 200
-    html = response.json()["html"]
-    assert 'type="email"' in html
-    assert course.slug in html
-    assert "subscribe_to_newsletter" not in html or "<label" not in html
+    data = response.json()
+    script_path = reverse("django_email_learning:public:embed_script")
+    assert (
+        data["script_html"] == f'<script src="{settings.DJANGO_EMAIL_LEARNING["SITE_BASE_URL"]}{script_path}"></script>'
+    )
+    assert "<del-enroll-form" in data["widget_html"]
+    assert f'course_id="{course.slug}"' in data["widget_html"]
+    assert "news_letter_check" not in data["widget_html"]
 
 
 def test_embed_snippet_includes_newsletter_checkbox_when_linked(superadmin_client, course, settings):
@@ -59,9 +64,9 @@ def test_embed_snippet_includes_newsletter_checkbox_when_linked(superadmin_clien
     response = superadmin_client.get(get_url(1, course.id))
 
     assert response.status_code == 200
-    html = response.json()["html"]
-    assert "<label" in html
-    assert "Subscribe to Weekly Digest" in html
+    widget_html = response.json()["widget_html"]
+    assert "news_letter_check" in widget_html
+    assert 'newsletter_title="Weekly Digest"' in widget_html
 
 
 def test_embed_snippet_escapes_newsletter_title(superadmin_client, course, settings):
@@ -73,9 +78,9 @@ def test_embed_snippet_escapes_newsletter_title(superadmin_client, course, setti
     response = superadmin_client.get(get_url(1, course.id))
 
     assert response.status_code == 200
-    html = response.json()["html"]
-    assert "<script>alert(1)</script>" not in html
-    assert "&lt;script&gt;" in html
+    widget_html = response.json()["widget_html"]
+    assert "<script>alert(1)</script>" not in widget_html
+    assert "&lt;script&gt;" in widget_html
 
 
 def test_embed_snippet_lazily_generates_token(superadmin_client, course, settings):
@@ -89,7 +94,7 @@ def test_embed_snippet_lazily_generates_token(superadmin_client, course, setting
     assert response.status_code == 200
     organization.refresh_from_db()
     assert organization.embed_token is not None
-    assert organization.embed_token in response.json()["html"]
+    assert organization.embed_token in response.json()["widget_html"]
 
 
 def test_embed_snippet_reuses_existing_token(superadmin_client, course, settings):
@@ -100,8 +105,8 @@ def test_embed_snippet_reuses_existing_token(superadmin_client, course, settings
     second = superadmin_client.get(get_url(1, course.id))
 
     organization = Organization.objects.get(id=1)
-    assert organization.embed_token in first.json()["html"]
-    assert organization.embed_token in second.json()["html"]
+    assert organization.embed_token in first.json()["widget_html"]
+    assert organization.embed_token in second.json()["widget_html"]
 
 
 def test_embed_snippet_not_authenticated(anonymous_client, course, settings):

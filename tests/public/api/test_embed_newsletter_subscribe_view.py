@@ -24,7 +24,10 @@ def embed_subscribe_url(token: str) -> str:
 
 
 def test_embed_subscribe_disabled_by_default(anonymous_client, newsletter, embed_token, settings):
-    assert not settings.DJANGO_EMAIL_LEARNING.get("EMBEDDABLE_ENROLLMENT_ENABLED")
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "EMBEDDABLE_ENROLLMENT_ENABLED": False,
+    }
 
     response = anonymous_client.post(
         embed_subscribe_url(embed_token),
@@ -65,6 +68,25 @@ def test_embed_subscribe_creates_subscriber_when_enabled(anonymous_client, newsl
     assert response.status_code == 200
     assert response["Access-Control-Allow-Origin"] == "*"
     assert NewsletterSubscriber.objects.filter(newsletter=newsletter, email="user@example.com").exists()
+
+
+def test_embed_subscribe_preflight_when_enabled(anonymous_client, embed_token, settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "EMBEDDABLE_ENROLLMENT_ENABLED": True,
+    }
+
+    # HTTP_ACCESS_CONTROL_REQUEST_METHOD makes this a real CORS preflight in
+    # django-cors-headers' eyes - see the matching comment in
+    # test_embed_enroll_view.py for why this header matters.
+    response = anonymous_client.options(
+        embed_subscribe_url(embed_token),
+        HTTP_ORIGIN="https://third-party.example",
+        HTTP_ACCESS_CONTROL_REQUEST_METHOD="POST",
+    )
+    assert response.status_code == 204
+    assert response["Access-Control-Allow-Origin"] == "*"
+    assert "POST" in response["Access-Control-Allow-Methods"]
 
 
 def test_embed_subscribe_invalid_json_returns_400(anonymous_client, embed_token, settings):

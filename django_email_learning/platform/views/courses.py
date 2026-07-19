@@ -196,11 +196,14 @@ class CourseView(BasePlatformView):
             "add_to_your_site": _("Add to your site"),
             "embed_code_dialog_title": _("Embed on your site"),
             "embed_code_dialog_description": _(
-                "Paste this snippet into your own website's HTML to let visitors enroll directly from your site."
+                "Paste these snippets into your own website's HTML to let visitors enroll directly from your site."
             ),
+            "embed_script_step_title": _("1. Add this once to your site (e.g. in your footer)"),
+            "embed_widget_step_title": _("2. Place this wherever you want the enrollment form to appear"),
             "embed_code_loading": _("Loading embed code..."),
             "embed_code_error": _("Couldn't load the embed code. Please try again."),
-            "copy_embed_code": _("Copy embed code"),
+            "copy_embed_script": _("Copy script"),
+            "copy_embed_widget": _("Copy widget tag"),
             "embed_code_copied": _("Copied!"),
             "close": _("Close"),
             "enable_course": _("Enable COURSE_NAME"),

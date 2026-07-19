@@ -19,7 +19,10 @@ from django_email_learning.models import (
     CourseContentType,
 )
 from django_email_learning.platform.api import serializers
-from django_email_learning.platform.api.embed_snippet import build_embed_snippet
+from django_email_learning.platform.api.embed_snippet import (
+    build_embed_script_tag,
+    build_embed_widget_tag,
+)
 from django_email_learning.public.api.views import embeddable_enrollment_enabled
 from django_email_learning.services.command_models.send_lesson_command import (
     SendLessonCommand,
@@ -400,15 +403,16 @@ class EmbedSnippetView(View):
             return JsonResponse({"error": "Course must be public and enabled to be embeddable."}, status=409)
 
         token = course.organization.get_or_create_embed_token()
-        embed_enroll_path = reverse("django_email_learning:api_public:embed_enroll", kwargs={"token": token})
-        embed_enroll_url = f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{embed_enroll_path}"
+        script_path = reverse("django_email_learning:public:embed_script")
+        script_url = f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{script_path}"
 
-        html = build_embed_snippet(
-            embed_enroll_url=embed_enroll_url,
+        script_html = build_embed_script_tag(script_url)
+        widget_html = build_embed_widget_tag(
+            token=token,
             course_slug=course.slug,
             newsletter_title=course.newsletter.title if course.newsletter else None,
         )
-        return JsonResponse({"html": html}, status=200)
+        return JsonResponse({"script_html": script_html, "widget_html": widget_html}, status=200)
 
 
 @method_decorator(accessible_for(roles={"admin", "editor", "instructor"}), name="post")

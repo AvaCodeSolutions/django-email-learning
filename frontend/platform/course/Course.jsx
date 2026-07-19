@@ -30,6 +30,51 @@ const CustomComponentSlot = memo(function CustomComponentSlot({ html, display })
   );
 });
 
+function EmbedCodeBlock({ label, code, copied, onCopy, copyLabel, copiedLabel }) {
+  return (
+    <Box sx={{ mb: 2 }}>
+      <Typography variant="subtitle2" sx={{ mb: 0.5 }}>{label}</Typography>
+      <Box sx={{ position: 'relative' }}>
+        <Box
+          component="pre"
+          sx={{
+            backgroundColor: 'grey.100',
+            p: 2,
+            pr: 5,
+            borderRadius: 1,
+            overflowX: 'auto',
+            fontSize: '0.75rem',
+            fontFamily: 'monospace',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+            m: 0,
+          }}
+        >
+          {code}
+        </Box>
+        <Tooltip title={copied ? copiedLabel : copyLabel}>
+          <IconButton
+            size="small"
+            onClick={onCopy}
+            aria-label={copyLabel}
+            sx={{
+              position: 'absolute',
+              top: 8,
+              insetInlineEnd: 8,
+              backgroundColor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              '&:hover': { color: 'primary.dark' },
+            }}
+          >
+            <ContentCopyIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
+    </Box>
+  );
+}
+
 const QuizForm = lazy(() => import("./components/QuizForm.jsx"));
 const LessonForm = lazy(() => import("./components/LessonForm.jsx"));
 const AssignmentForm = lazy(() => import("./components/AssignmentForm.jsx"));
@@ -42,10 +87,12 @@ function Course() {
     const [courseEnabled, setCourseEnabled] = useState(courseEnabledFromContext);
     const [publicUrlCopied, setPublicUrlCopied] = useState(false);
     const [embedDialogOpen, setEmbedDialogOpen] = useState(false);
-    const [embedSnippetHtml, setEmbedSnippetHtml] = useState(null);
+    const [embedScriptHtml, setEmbedScriptHtml] = useState(null);
+    const [embedWidgetHtml, setEmbedWidgetHtml] = useState(null);
     const [embedSnippetLoading, setEmbedSnippetLoading] = useState(false);
     const [embedSnippetError, setEmbedSnippetError] = useState(false);
-    const [embedCodeCopied, setEmbedCodeCopied] = useState(false);
+    const [embedScriptCopied, setEmbedScriptCopied] = useState(false);
+    const [embedWidgetCopied, setEmbedWidgetCopied] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false)
     const [dialogContent, setDialogContent] = useState(null)
     const [contentLoaded, setContentLoaded] = useState(false)
@@ -203,13 +250,16 @@ function Course() {
 
     const handleOpenEmbedDialog = () => {
         setEmbedDialogOpen(true);
-        if (embedSnippetHtml || embedSnippetLoading) {
+        if (embedWidgetHtml || embedSnippetLoading) {
             return;
         }
         setEmbedSnippetLoading(true);
         setEmbedSnippetError(false);
         apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/embed_snippet/`)
-            .then(data => setEmbedSnippetHtml(data.html))
+            .then(data => {
+                setEmbedScriptHtml(data.script_html);
+                setEmbedWidgetHtml(data.widget_html);
+            })
             .catch(error => {
                 console.error('Failed to load embed snippet:', error);
                 setEmbedSnippetError(true);
@@ -221,13 +271,23 @@ function Course() {
         setEmbedDialogOpen(false);
     }
 
-    const handleCopyEmbedCode = async () => {
+    const handleCopyEmbedScript = async () => {
         try {
-            await navigator.clipboard.writeText(embedSnippetHtml);
-            setEmbedCodeCopied(true);
-            setTimeout(() => setEmbedCodeCopied(false), 2000);
+            await navigator.clipboard.writeText(embedScriptHtml);
+            setEmbedScriptCopied(true);
+            setTimeout(() => setEmbedScriptCopied(false), 2000);
         } catch (error) {
-            console.error('Failed to copy embed code:', error);
+            console.error('Failed to copy embed script:', error);
+        }
+    }
+
+    const handleCopyEmbedWidget = async () => {
+        try {
+            await navigator.clipboard.writeText(embedWidgetHtml);
+            setEmbedWidgetCopied(true);
+            setTimeout(() => setEmbedWidgetCopied(false), 2000);
+        } catch (error) {
+            console.error('Failed to copy embed widget tag:', error);
         }
     }
 
@@ -622,44 +682,25 @@ function Course() {
                     {!embedSnippetLoading && embedSnippetError && (
                         <Alert severity="error">{localeMessages["embed_code_error"]}</Alert>
                     )}
-                    {!embedSnippetLoading && !embedSnippetError && embedSnippetHtml && (
-                        <Box sx={{ position: 'relative' }}>
-                            <Box
-                                component="pre"
-                                sx={{
-                                    backgroundColor: 'grey.100',
-                                    p: 2,
-                                    pr: 5,
-                                    borderRadius: 1,
-                                    overflowX: 'auto',
-                                    fontSize: '0.75rem',
-                                    fontFamily: 'monospace',
-                                    whiteSpace: 'pre-wrap',
-                                    wordBreak: 'break-word',
-                                    m: 0,
-                                }}
-                            >
-                                {embedSnippetHtml}
-                            </Box>
-                            <Tooltip title={embedCodeCopied ? localeMessages["embed_code_copied"] : localeMessages["copy_embed_code"]}>
-                                <IconButton
-                                    size="small"
-                                    onClick={handleCopyEmbedCode}
-                                    aria-label={localeMessages["copy_embed_code"]}
-                                    sx={{
-                                        position: 'absolute',
-                                        top: 8,
-                                        insetInlineEnd: 8,
-                                        backgroundColor: 'background.paper',
-                                        border: '1px solid',
-                                        borderColor: 'divider',
-                                        '&:hover': { color: 'primary.dark' },
-                                    }}
-                                >
-                                    <ContentCopyIcon fontSize="small" />
-                                </IconButton>
-                            </Tooltip>
-                        </Box>
+                    {!embedSnippetLoading && !embedSnippetError && embedWidgetHtml && (
+                        <>
+                            <EmbedCodeBlock
+                                label={localeMessages["embed_script_step_title"]}
+                                code={embedScriptHtml}
+                                copied={embedScriptCopied}
+                                onCopy={handleCopyEmbedScript}
+                                copyLabel={localeMessages["copy_embed_script"]}
+                                copiedLabel={localeMessages["embed_code_copied"]}
+                            />
+                            <EmbedCodeBlock
+                                label={localeMessages["embed_widget_step_title"]}
+                                code={embedWidgetHtml}
+                                copied={embedWidgetCopied}
+                                onCopy={handleCopyEmbedWidget}
+                                copyLabel={localeMessages["copy_embed_widget"]}
+                                copiedLabel={localeMessages["embed_code_copied"]}
+                            />
+                        </>
                     )}
                 </DialogContent>
                 <DialogActions>

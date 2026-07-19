@@ -1,5 +1,6 @@
 from django.urls import path
 
+from django_email_learning.public.embed_script import EmbedScriptView
 from django_email_learning.public.newsletter_views import NewsletterUnsubscribeView
 from django_email_learning.public.views import CourseView, OrganizationView
 
@@ -20,5 +21,10 @@ urlpatterns = [
         "newsletters/unsubscribe/<uuid:token>/",
         NewsletterUnsubscribeView.as_view(),
         name="newsletter_unsubscribe",
+    ),
+    path(
+        "embed/del-enroll-form.js",
+        EmbedScriptView.as_view(),
+        name="embed_script",
     ),
 ]
