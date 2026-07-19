@@ -10,8 +10,9 @@ import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import InsightsIcon from '@mui/icons-material/Insights';
 import PublicIcon from '@mui/icons-material/Public';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import CodeIcon from '@mui/icons-material/Code';
 import { useState, useEffect, memo } from 'react';
-import { Box, Grid, Button, Dialog, LinearProgress, Typography, Alert, Tabs, Tab, Badge, Link, IconButton, Tooltip } from '@mui/material'
+import { Box, Grid, Button, Dialog, DialogTitle, DialogContent, DialogActions, LinearProgress, Typography, Alert, Tabs, Tab, Badge, Link, IconButton, Tooltip } from '@mui/material'
 import { useTheme } from '@mui/material/styles';
 import ContentTable from './components/ContentTable.jsx';
 import SubmittedAssignmentsSection from './components/SubmittedAssignmentsSection.jsx';
@@ -37,9 +38,14 @@ const EnableCourseSwitchPopup = lazy(() => import("../courses/components/EnableC
 
 
 function Course() {
-    const { courseTitle, courseId, courseEnabled: courseEnabledFromContext, courseHasContent, coursePublicUrl, localeMessages, direction, userRole, isInstructor, apiBaseUrl, platformBaseUrl, customComponent } = useAppContext();
+    const { courseTitle, courseId, courseEnabled: courseEnabledFromContext, courseHasContent, coursePublicUrl, embeddableEnrollmentEnabled, localeMessages, direction, userRole, isInstructor, apiBaseUrl, platformBaseUrl, customComponent } = useAppContext();
     const [courseEnabled, setCourseEnabled] = useState(courseEnabledFromContext);
     const [publicUrlCopied, setPublicUrlCopied] = useState(false);
+    const [embedDialogOpen, setEmbedDialogOpen] = useState(false);
+    const [embedSnippetHtml, setEmbedSnippetHtml] = useState(null);
+    const [embedSnippetLoading, setEmbedSnippetLoading] = useState(false);
+    const [embedSnippetError, setEmbedSnippetError] = useState(false);
+    const [embedCodeCopied, setEmbedCodeCopied] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false)
     const [dialogContent, setDialogContent] = useState(null)
     const [contentLoaded, setContentLoaded] = useState(false)
@@ -195,6 +201,36 @@ function Course() {
         }
     }
 
+    const handleOpenEmbedDialog = () => {
+        setEmbedDialogOpen(true);
+        if (embedSnippetHtml || embedSnippetLoading) {
+            return;
+        }
+        setEmbedSnippetLoading(true);
+        setEmbedSnippetError(false);
+        apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/embed_snippet/`)
+            .then(data => setEmbedSnippetHtml(data.html))
+            .catch(error => {
+                console.error('Failed to load embed snippet:', error);
+                setEmbedSnippetError(true);
+            })
+            .finally(() => setEmbedSnippetLoading(false));
+    }
+
+    const handleCloseEmbedDialog = () => {
+        setEmbedDialogOpen(false);
+    }
+
+    const handleCopyEmbedCode = async () => {
+        try {
+            await navigator.clipboard.writeText(embedSnippetHtml);
+            setEmbedCodeCopied(true);
+            setTimeout(() => setEmbedCodeCopied(false), 2000);
+        } catch (error) {
+            console.error('Failed to copy embed code:', error);
+        }
+    }
+
     const handleClose = (event, reason) => {
         if (reason !== "backdropClick" && reason !== "escapeKeyDown") {
             setDialogOpen(false);
@@ -343,7 +379,7 @@ function Course() {
             )}
             <Grid size={{xs: 12}} sx={{ px: { xs: 0, md: 2 }, pt: 2, pb: 3 }}>
                 {courseEnabled && coursePublicUrl && (
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mx: { xs: 2, md: 0 }, mb: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 1, mx: { xs: 2, md: 0 }, mb: 1 }}>
                         <Box
                             sx={{
                                 display: 'flex',
@@ -390,6 +426,35 @@ function Course() {
                                 </IconButton>
                             </Tooltip>
                         </Box>
+                        {embeddableEnrollmentEnabled && (
+                            <Box
+                                component="button"
+                                type="button"
+                                onClick={handleOpenEmbedDialog}
+                                aria-label={localeMessages["add_to_your_site"]}
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 0.75,
+                                    pl: 1.5,
+                                    pr: 1.5,
+                                    py: 0.2,
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    borderRadius: 2,
+                                    background: 'none',
+                                    cursor: 'pointer',
+                                    color: 'text.primary',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 500,
+                                    fontFamily: 'inherit',
+                                    '&:hover': { color: 'primary.dark', borderColor: 'primary.dark' },
+                                }}
+                            >
+                                <CodeIcon fontSize="small" />
+                                {localeMessages["add_to_your_site"]}
+                            </Box>
+                        )}
                     </Box>
                 )}
                 {courseEnabled === false && (
@@ -538,6 +603,68 @@ function Course() {
 
             <Dialog open={dialogOpen} onClose={handleClose} fullWidth maxWidth={dialogMaxWidth} sx={{ '& .MuiDialog-paper': { mx: { xs: '4px', sm: 4 }, width: { xs: 'calc(100% - 8px)', sm: undefined } }, '& .MuiDialogTitle-root': { px: { xs: 2, sm: 3 } }, '& .MuiDialogContent-root': { px: { xs: 2, sm: 3 } }, '& .MuiDialogActions-root': { px: { xs: 2, sm: 3 } } }}>
                 {dialogContent}
+            </Dialog>
+
+            <Dialog open={embedDialogOpen} onClose={handleCloseEmbedDialog} fullWidth maxWidth="sm">
+                <DialogTitle>{localeMessages["embed_code_dialog_title"]}</DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        {localeMessages["embed_code_dialog_description"]}
+                    </Typography>
+                    {embedSnippetLoading && (
+                        <Box sx={{ py: 2 }}>
+                            <LinearProgress />
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                {localeMessages["embed_code_loading"]}
+                            </Typography>
+                        </Box>
+                    )}
+                    {!embedSnippetLoading && embedSnippetError && (
+                        <Alert severity="error">{localeMessages["embed_code_error"]}</Alert>
+                    )}
+                    {!embedSnippetLoading && !embedSnippetError && embedSnippetHtml && (
+                        <Box sx={{ position: 'relative' }}>
+                            <Box
+                                component="pre"
+                                sx={{
+                                    backgroundColor: 'grey.100',
+                                    p: 2,
+                                    pr: 5,
+                                    borderRadius: 1,
+                                    overflowX: 'auto',
+                                    fontSize: '0.75rem',
+                                    fontFamily: 'monospace',
+                                    whiteSpace: 'pre-wrap',
+                                    wordBreak: 'break-word',
+                                    m: 0,
+                                }}
+                            >
+                                {embedSnippetHtml}
+                            </Box>
+                            <Tooltip title={embedCodeCopied ? localeMessages["embed_code_copied"] : localeMessages["copy_embed_code"]}>
+                                <IconButton
+                                    size="small"
+                                    onClick={handleCopyEmbedCode}
+                                    aria-label={localeMessages["copy_embed_code"]}
+                                    sx={{
+                                        position: 'absolute',
+                                        top: 8,
+                                        insetInlineEnd: 8,
+                                        backgroundColor: 'background.paper',
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        '&:hover': { color: 'primary.dark' },
+                                    }}
+                                >
+                                    <ContentCopyIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseEmbedDialog}>{localeMessages["close"]}</Button>
+                </DialogActions>
             </Dialog>
         </Base>
     )

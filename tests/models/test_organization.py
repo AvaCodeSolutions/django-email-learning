@@ -141,3 +141,23 @@ def test_embed_token_must_be_unique(db):
 
     with pytest.raises(IntegrityError), transaction.atomic():
         organization_b.save(update_fields=["embed_token"])
+
+
+def test_get_or_create_embed_token_generates_and_persists(db):
+    organization = Organization.objects.create(name="Fresh Org")
+    assert organization.embed_token is None
+
+    token = organization.get_or_create_embed_token()
+
+    assert token is not None
+    organization.refresh_from_db()
+    assert organization.embed_token == token
+
+
+def test_get_or_create_embed_token_is_idempotent(db):
+    organization = Organization.objects.create(name="Fresh Org")
+
+    first = organization.get_or_create_embed_token()
+    second = organization.get_or_create_embed_token()
+
+    assert first == second

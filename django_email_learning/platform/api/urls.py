@@ -5,6 +5,7 @@ from django_email_learning.platform.api.views import (
     ApiKeyView,
     CourseContentView,
     CourseView,
+    EmbedSnippetView,
     EnrollmentsStatisticsView,
     EnrollmentsView,
     EnrollmentView,
@@ -101,6 +102,11 @@ urlpatterns = [
         "organizations/<int:organization_id>/courses/<int:course_id>/",
         SingleCourseView.as_view(),
         name="courses_detail",
+    ),
+    path(
+        "organizations/<int:organization_id>/courses/<int:course_id>/embed_snippet/",
+        EmbedSnippetView.as_view(),
+        name="course_embed_snippet",
     ),
     path(
         "organizations/<int:organization_id>/courses/<int:course_id>/contents/",

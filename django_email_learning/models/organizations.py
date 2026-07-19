@@ -37,6 +37,16 @@ class Organization(models.Model):
         """
         return base64.urlsafe_b64encode(uuid.uuid4().bytes + uuid.uuid4().bytes).decode().rstrip("=")
 
+    def get_or_create_embed_token(self) -> str:
+        """Returns the organization's embed_token, generating and persisting one
+        on first use so features built on it (e.g. the course embed snippet)
+        work without requiring an admin to run generate_embed_token first.
+        """
+        if not self.embed_token:
+            self.embed_token = self.generate_embed_token()
+            self.save(update_fields=["embed_token"])
+        return self.embed_token
+
     @property
     def public_url(self) -> str | None:
         if not self.is_public:
