@@ -158,7 +158,12 @@ describe('Base', () => {
       originalLocation = window.location;
       Object.defineProperty(window, 'location', {
         writable: true,
-        value: { href: '', pathname: originalLocation.pathname, origin: originalLocation.origin },
+        value: {
+          href: '',
+          pathname: originalLocation.pathname,
+          origin: originalLocation.origin,
+          reload: vi.fn(),
+        },
       });
       global.fetch.mockImplementation((url) => {
         if (url.includes('/status/jobs/')) {
@@ -187,7 +192,7 @@ describe('Base', () => {
       Object.defineProperty(window, 'location', { writable: true, value: originalLocation });
     });
 
-    it('navigates to the courses list after picking a different organization', async () => {
+    it('reloads the page after picking a different organization', async () => {
       const user = userEvent.setup();
       renderWithProviders(
         <Base breadCrumbList={[{ label: 'Home', href: '/' }]}>
@@ -202,10 +207,10 @@ describe('Base', () => {
       await user.click(await screen.findByLabelText('Select organization'));
       await user.click(await screen.findByRole('option', { name: 'Org Two' }));
 
-      await waitFor(() => expect(window.location.href).toBe('/platform/courses/'));
+      await waitFor(() => expect(window.location.reload).toHaveBeenCalled());
     });
 
-    it('does not navigate on initial mount when an organization is restored from localStorage', async () => {
+    it('does not reload on initial mount when an organization is restored from localStorage', async () => {
       const user = userEvent.setup();
       localStorage.setItem('activeOrganizationId', '1');
       renderWithProviders(
@@ -218,7 +223,7 @@ describe('Base', () => {
       await screen.findByLabelText('Select organization');
       // Give any stray effects a tick to run before asserting nothing navigated.
       await waitFor(() => expect(global.fetch).toHaveBeenCalled());
-      expect(window.location.href).toBe('');
+      expect(window.location.reload).not.toHaveBeenCalled();
     });
   });
 });
