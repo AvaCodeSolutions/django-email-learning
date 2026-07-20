@@ -15,22 +15,60 @@ def test_build_embed_script_tag_escapes_url():
     assert "&quot;" in html
 
 
-def test_build_embed_widget_tag_without_newsletter():
-    html = build_embed_widget_tag(token="tok123", course_slug="my-course", newsletter_title=None)
-    assert html == '<del-enroll-form token="tok123" course_id="my-course"></del-enroll-form>'
+def test_build_embed_widget_tag_without_newsletter_or_image():
+    html = build_embed_widget_tag(
+        token="tok123", course_slug="my-course", course_title="My Course", course_image_url=None, newsletter_title=None
+    )
+    assert html == '<del-enroll-form token="tok123" course_id="my-course" course_title="My Course"></del-enroll-form>'
     assert "news_letter_check" not in html
+    assert "course_image" not in html
 
 
 def test_build_embed_widget_tag_with_newsletter():
-    html = build_embed_widget_tag(token="tok123", course_slug="my-course", newsletter_title="Weekly Tips")
+    html = build_embed_widget_tag(
+        token="tok123",
+        course_slug="my-course",
+        course_title="My Course",
+        course_image_url=None,
+        newsletter_title="Weekly Tips",
+    )
     assert 'token="tok123"' in html
     assert 'course_id="my-course"' in html
     assert "news_letter_check" in html
     assert 'newsletter_title="Weekly Tips"' in html
 
 
+def test_build_embed_widget_tag_with_image():
+    html = build_embed_widget_tag(
+        token="tok123",
+        course_slug="my-course",
+        course_title="My Course",
+        course_image_url="https://example.com/course.jpg",
+        newsletter_title=None,
+    )
+    assert 'course_image="https://example.com/course.jpg"' in html
+
+
 def test_build_embed_widget_tag_escapes_newsletter_title():
-    html = build_embed_widget_tag(token="tok123", course_slug="my-course", newsletter_title="<script>alert(1)</script>")
+    html = build_embed_widget_tag(
+        token="tok123",
+        course_slug="my-course",
+        course_title="My Course",
+        course_image_url=None,
+        newsletter_title="<script>alert(1)</script>",
+    )
+    assert "<script>alert(1)</script>" not in html
+    assert "&lt;script&gt;" in html
+
+
+def test_build_embed_widget_tag_escapes_course_title():
+    html = build_embed_widget_tag(
+        token="tok123",
+        course_slug="my-course",
+        course_title="<script>alert(1)</script>",
+        course_image_url=None,
+        newsletter_title=None,
+    )
     assert "<script>alert(1)</script>" not in html
     assert "&lt;script&gt;" in html
 
@@ -39,6 +77,8 @@ def test_build_embed_widget_tag_escapes_attribute_values():
     html = build_embed_widget_tag(
         token='tok"><script>alert(1)</script>',
         course_slug='slug"><script>alert(2)</script>',
+        course_title="My Course",
+        course_image_url=None,
         newsletter_title=None,
     )
     assert "<script>alert(1)</script>" not in html

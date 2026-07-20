@@ -11,33 +11,58 @@ from django_email_learning.public.api.views import embeddable_enrollment_enabled
 # needed since we only want the fixed prefix in front of it.
 _TOKEN_PLACEHOLDER = "TOKEN_PLACEHOLDER"
 
-_EMBED_SCRIPT_TEMPLATE = """(function () {
+_EMBED_SCRIPT_TEMPLATE = r"""(function () {
   if (customElements.get('del-enroll-form')) {
     return;
   }
 
   var API_BASE = __API_BASE_JSON__;
 
-  function escapeHtml(value) {
-    var div = document.createElement('div');
-    div.textContent = value;
-    return div.innerHTML;
+  // Only allow http(s) image URLs so a malicious course_image attribute can't
+  // smuggle in a javascript:/data: URI.
+  function safeImageUrl(value) {
+    try {
+      var url = new URL(value, window.location.href);
+      return (url.protocol === 'http:' || url.protocol === 'https:') ? url.href : '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  // Only allow simple CSS color values (hex, rg[b/a](), hsl[a](), or a plain
+  // keyword) so button_bg_color/button_text_color can't break out of the
+  // style attribute or inject extra declarations.
+  function safeCssColor(value, fallback) {
+    return /^(#[0-9a-fA-F]{3,8}|rgba?\([\d.,\s%]+\)|hsla?\([\d.,\s%]+\)|[a-zA-Z]+)$/.test(value)
+      ? value
+      : fallback;
   }
 
   class DelEnrollForm extends HTMLElement {
     connectedCallback() {
       var token = this.getAttribute('token') || '';
       var courseId = this.getAttribute('course_id') || '';
+      var courseTitle = this.getAttribute('course_title') || '';
+      var courseImage = safeImageUrl(this.getAttribute('course_image') || '');
       var showNewsletter = this.hasAttribute('news_letter_check');
       var newsletterTitle = this.getAttribute('newsletter_title') || '';
-      var buttonBgColor = this.getAttribute('button_bg_color') || '#4f46e5';
-      var buttonTextColor = this.getAttribute('button_text_color') || '#ffffff';
+      var buttonBgColor = safeCssColor(this.getAttribute('button_bg_color') || '', '#4f46e5');
+      var buttonTextColor = safeCssColor(this.getAttribute('button_text_color') || '', '#ffffff');
+      var isPreview = this.hasAttribute('preview');
 
       var shadow = this.attachShadow({ mode: 'open' });
-      shadow.innerHTML =
-        '<style>' +
-        ':host { display:block; width:350px; max-width:100%; }' +
+
+      // Build the DOM with createElement/textContent/setAttribute rather than
+      // string-concatenated innerHTML. Every attribute here carries a
+      // user-controllable value, and this keeps them as data (impossible to
+      // break out of an attribute or inject markup/handlers).
+      var style = document.createElement('style');
+      style.textContent =
+        ':host { display:block; width:350px; max-width:100%; font-family: ui-sans-serif, system-ui, sans-serif; }' +
         'form { font-family: ui-sans-serif, system-ui, sans-serif; }' +
+        '.course-image { display:block; width:100%; max-height:180px; object-fit:cover;' +
+        ' border-radius:6px; margin-bottom:10px; }' +
+        '.course-title { font-size:16px; font-weight:600; margin:0 0 10px; }' +
         '.field-group { display:flex; align-items:stretch; border:1px solid #d1d5db;' +
         ' border-radius:6px; overflow:hidden; }' +
         '.field-group input[type="email"] { flex:1; min-width:0; border:none;' +
@@ -45,23 +70,71 @@ _EMBED_SCRIPT_TEMPLATE = """(function () {
         '.field-group button { flex-shrink:0; border:none; padding:10px 16px;' +
         ' font-size:14px; font-family:inherit; cursor:pointer; white-space:nowrap; }' +
         'label { display:flex; align-items:center; gap:6px; font-size:14px; margin-top:8px; }' +
-        '.message { font-size:14px; margin-top:8px; }' +
-        '</style>' +
-        '<form>' +
-        '<div class="field-group">' +
-        '<input type="email" name="email" placeholder="Your email address" required />' +
-        '<button type="submit" style="background:' + escapeHtml(buttonBgColor) +
-        ';color:' + escapeHtml(buttonTextColor) + ';">Enroll</button>' +
-        '</div>' +
-        (showNewsletter
-          ? '<label><input type="checkbox" name="subscribe_to_newsletter" /> Subscribe to ' +
-            escapeHtml(newsletterTitle) + '</label>'
-          : '') +
-        '<p class="message" style="display:none;"></p>' +
-        '</form>';
+        '.message { font-size:14px; margin-top:8px; }';
+      shadow.appendChild(style);
 
-      var form = shadow.querySelector('form');
-      var message = shadow.querySelector('.message');
+      if (courseImage) {
+        var image = document.createElement('img');
+        image.className = 'course-image';
+        image.setAttribute('src', courseImage);
+        image.setAttribute('alt', '');
+        shadow.appendChild(image);
+      }
+
+      if (courseTitle) {
+        var title = document.createElement('h3');
+        title.className = 'course-title';
+        title.textContent = courseTitle;
+        shadow.appendChild(title);
+      }
+
+      var form = document.createElement('form');
+
+      var fieldGroup = document.createElement('div');
+      fieldGroup.className = 'field-group';
+
+      var emailInput = document.createElement('input');
+      emailInput.type = 'email';
+      emailInput.name = 'email';
+      emailInput.placeholder = 'Your email address';
+      emailInput.required = true;
+      if (isPreview) {
+        emailInput.readOnly = true;
+        emailInput.tabIndex = -1;
+      }
+      fieldGroup.appendChild(emailInput);
+
+      var submitButton = document.createElement('button');
+      submitButton.type = 'submit';
+      submitButton.textContent = 'Enroll';
+      submitButton.disabled = isPreview;
+      submitButton.style.background = buttonBgColor;
+      submitButton.style.color = buttonTextColor;
+      fieldGroup.appendChild(submitButton);
+
+      form.appendChild(fieldGroup);
+
+      if (showNewsletter) {
+        var newsletterLabel = document.createElement('label');
+        var newsletterCheckbox = document.createElement('input');
+        newsletterCheckbox.type = 'checkbox';
+        newsletterCheckbox.name = 'subscribe_to_newsletter';
+        newsletterCheckbox.disabled = isPreview;
+        newsletterLabel.appendChild(newsletterCheckbox);
+        newsletterLabel.appendChild(document.createTextNode(' Subscribe to ' + newsletterTitle));
+        form.appendChild(newsletterLabel);
+      }
+
+      var message = document.createElement('p');
+      message.className = 'message';
+      message.style.display = 'none';
+      form.appendChild(message);
+
+      shadow.appendChild(form);
+
+      if (isPreview) {
+        return;
+      }
 
       form.addEventListener('submit', function (event) {
         event.preventDefault();

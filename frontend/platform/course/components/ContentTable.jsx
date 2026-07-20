@@ -300,7 +300,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                                 )}
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, px: 1 }}>
                                     <Typography variant="caption" color="text.disabled">{localeMessages["published"] || 'Published'}:</Typography>
-                                    <Switch size="small" checked={content.is_published} onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} inputProps={{ 'aria-label': `${localeMessages["published"] || 'Published'}: ${content.title}` }} />
+                                    <Switch size="small" checked={content.is_published} onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} slotProps={{ input: { 'aria-label': `${localeMessages["published"] || 'Published'}: ${content.title}` } }} />
                                 </Box>
                                 {userRole !== 'viewer' && <>
                                     <Box sx={{ width: '1px', height: '14px', backgroundColor: 'divider' }} />
@@ -341,7 +341,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                                 )}
                             </Box>
                         </TableCell>
-                        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={direction == 'rtl' ? 'right' : 'left'}><Switch checked={content.is_published} onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} inputProps={{ 'aria-label': `${localeMessages["published"] || 'Published'}: ${content.title}` }} /></TableCell>
+                        <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={direction == 'rtl' ? 'right' : 'left'}><Switch checked={content.is_published} onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} slotProps={{ input: { 'aria-label': `${localeMessages["published"] || 'Published'}: ${content.title}` } }} /></TableCell>
                         {userRole !== 'viewer' && <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={direction == 'rtl' ? 'right' : 'left'}>
                             <IconButton aria-label={localeMessages["delete"]} onClick={() => deleteContent(content.id)}><DeleteIcon /></IconButton>
                             {canSendLesson && content.type === 'lesson' && (

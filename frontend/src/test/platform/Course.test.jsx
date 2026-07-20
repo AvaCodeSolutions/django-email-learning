@@ -6,6 +6,11 @@ import Course from '../../../platform/course/Course';
 
 vi.mock('../../render.jsx');
 vi.mock('vite/modulepreload-polyfill', () => ({}));
+vi.mock('@melloware/coloris', () => {
+  const coloris = vi.fn();
+  coloris.init = vi.fn();
+  return { default: coloris };
+});
 
 const localeMessages = {
   course_management: 'Courses',
@@ -20,12 +25,19 @@ const localeMessages = {
   tab_manage_course_content: 'Manage Course Content',
   total_enrollments: 'Total Enrollments',
   add_to_your_site: 'Add to your site',
+  embed_customize_form_title: 'Customize your form',
   embed_code_dialog_title: 'Embed on your site',
   embed_code_dialog_description: 'Paste this snippet into your own website.',
   embed_code_loading: 'Loading embed code...',
   embed_code_error: "Couldn't load the embed code. Please try again.",
   copy_embed_code: 'Copy embed code',
   embed_code_copied: 'Copied!',
+  embed_preview_title: 'Preview',
+  embed_include_course_title: 'Show course title',
+  embed_include_course_image: 'Show course image',
+  embed_include_newsletter_check: 'Include newsletter subscribe checkbox',
+  embed_button_bg_color_label: 'Button background',
+  embed_button_text_color_label: 'Button text color',
   close: 'Close',
 };
 
@@ -184,7 +196,9 @@ describe('Course', () => {
         await screen.findByText('<script src="https://example.com/embed/del-enroll-form.js"></script>')
       ).toBeInTheDocument();
       expect(
-        screen.getByText('<del-enroll-form token="tok" course_id="sample-course"></del-enroll-form>')
+        screen.getByText(
+          '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
+        )
       ).toBeInTheDocument();
     });
 
@@ -231,10 +245,225 @@ describe('Course', () => {
       });
 
       await user.click(screen.getByRole('button', { name: 'Add to your site' }));
-      await screen.findByText('<del-enroll-form token="tok" course_id="sample-course"></del-enroll-form>');
+      await screen.findByText(
+        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
+      );
       await user.click(screen.getByRole('button', { name: 'Close' }));
 
       await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    });
+
+    it('does not show the newsletter checkbox switch when the course has no linked newsletter', async () => {
+      const user = userEvent.setup();
+      global.fetch.mockImplementation((url) => {
+        if (url.includes('/embed_snippet/')) {
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                script_html: '<script src="https://example.com/embed/del-enroll-form.js"></script>',
+                widget_html: '<del-enroll-form token="tok" course_id="sample-course"></del-enroll-form>',
+              }),
+          });
+        }
+        if (url.includes('/contents')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      });
+      renderWithProviders(<Course />, {
+        appContext: { ...publicContext, embeddableEnrollmentEnabled: true },
+      });
+
+      await user.click(screen.getByRole('button', { name: 'Add to your site' }));
+      await screen.findByText(
+        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
+      );
+
+      expect(screen.queryByText('Include newsletter subscribe checkbox')).not.toBeInTheDocument();
+    });
+
+    it('shows a newsletter checkbox switch and removes the checkbox from the snippet when turned off', async () => {
+      const user = userEvent.setup();
+      global.fetch.mockImplementation((url) => {
+        if (url.includes('/embed_snippet/')) {
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                script_html: '<script src="https://example.com/embed/del-enroll-form.js"></script>',
+                widget_html:
+                  '<del-enroll-form token="tok" course_id="sample-course" news_letter_check newsletter_title="Weekly"></del-enroll-form>',
+              }),
+          });
+        }
+        if (url.includes('/contents')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      });
+      renderWithProviders(<Course />, {
+        appContext: { ...publicContext, embeddableEnrollmentEnabled: true },
+      });
+
+      await user.click(screen.getByRole('button', { name: 'Add to your site' }));
+      await screen.findByText(
+        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course" news_letter_check newsletter_title="Weekly"></del-enroll-form>'
+      );
+
+      const toggle = screen.getByRole('switch', { name: 'Include newsletter subscribe checkbox' });
+      expect(toggle).toBeChecked();
+
+      await user.click(toggle);
+
+      expect(toggle).not.toBeChecked();
+      await screen.findByText(
+        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
+      );
+    });
+
+    it('reflects a custom button background color typed into the color field', async () => {
+      const user = userEvent.setup();
+      global.fetch.mockImplementation((url) => {
+        if (url.includes('/embed_snippet/')) {
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                script_html: '<script src="https://example.com/embed/del-enroll-form.js"></script>',
+                widget_html: '<del-enroll-form token="tok" course_id="sample-course"></del-enroll-form>',
+              }),
+          });
+        }
+        if (url.includes('/contents')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      });
+      renderWithProviders(<Course />, {
+        appContext: { ...publicContext, embeddableEnrollmentEnabled: true },
+      });
+
+      await user.click(screen.getByRole('button', { name: 'Add to your site' }));
+      await screen.findByText(
+        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
+      );
+
+      const bgColorField = screen.getByLabelText('Button background');
+      await user.clear(bgColorField);
+      await user.type(bgColorField, '#16a34a');
+
+      await screen.findByText(
+        '<del-enroll-form button_bg_color="#16a34a" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
+      );
+    });
+
+    it('shows a course title switch and removes course_title from the snippet when turned off', async () => {
+      const user = userEvent.setup();
+      global.fetch.mockImplementation((url) => {
+        if (url.includes('/embed_snippet/')) {
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                script_html: '<script src="https://example.com/embed/del-enroll-form.js"></script>',
+                widget_html:
+                  '<del-enroll-form token="tok" course_id="sample-course" course_title="Sample Course"></del-enroll-form>',
+              }),
+          });
+        }
+        if (url.includes('/contents')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      });
+      renderWithProviders(<Course />, {
+        appContext: { ...publicContext, embeddableEnrollmentEnabled: true },
+      });
+
+      await user.click(screen.getByRole('button', { name: 'Add to your site' }));
+      await screen.findByText(
+        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course" course_title="Sample Course"></del-enroll-form>'
+      );
+
+      const toggle = screen.getByRole('switch', { name: 'Show course title' });
+      expect(toggle).toBeChecked();
+
+      await user.click(toggle);
+
+      expect(toggle).not.toBeChecked();
+      await screen.findByText(
+        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
+      );
+    });
+
+    it('does not show the course image switch when the course has no image', async () => {
+      const user = userEvent.setup();
+      global.fetch.mockImplementation((url) => {
+        if (url.includes('/embed_snippet/')) {
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                script_html: '<script src="https://example.com/embed/del-enroll-form.js"></script>',
+                widget_html: '<del-enroll-form token="tok" course_id="sample-course"></del-enroll-form>',
+              }),
+          });
+        }
+        if (url.includes('/contents')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      });
+      renderWithProviders(<Course />, {
+        appContext: { ...publicContext, embeddableEnrollmentEnabled: true },
+      });
+
+      await user.click(screen.getByRole('button', { name: 'Add to your site' }));
+      await screen.findByText(
+        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
+      );
+
+      expect(screen.queryByText('Show course image')).not.toBeInTheDocument();
+    });
+
+    it('shows a course image switch and removes course_image from the snippet when turned off', async () => {
+      const user = userEvent.setup();
+      global.fetch.mockImplementation((url) => {
+        if (url.includes('/embed_snippet/')) {
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({
+                script_html: '<script src="https://example.com/embed/del-enroll-form.js"></script>',
+                widget_html:
+                  '<del-enroll-form token="tok" course_id="sample-course" course_title="Sample Course" course_image="https://example.com/course.jpg"></del-enroll-form>',
+              }),
+          });
+        }
+        if (url.includes('/contents')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      });
+      renderWithProviders(<Course />, {
+        appContext: { ...publicContext, embeddableEnrollmentEnabled: true },
+      });
+
+      await user.click(screen.getByRole('button', { name: 'Add to your site' }));
+      await screen.findByText(
+        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course" course_title="Sample Course" course_image="https://example.com/course.jpg"></del-enroll-form>'
+      );
+
+      const toggle = screen.getByRole('switch', { name: 'Show course image' });
+      expect(toggle).toBeChecked();
+
+      await user.click(toggle);
+
+      expect(toggle).not.toBeChecked();
+      await screen.findByText(
+        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course" course_title="Sample Course"></del-enroll-form>'
+      );
     });
   });
 });

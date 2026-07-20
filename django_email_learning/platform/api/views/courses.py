@@ -410,6 +410,8 @@ class EmbedSnippetView(View):
         widget_html = build_embed_widget_tag(
             token=token,
             course_slug=course.slug,
+            course_title=course.title,
+            course_image_url=request.build_absolute_uri(course.image.url) if course.image else None,
             newsletter_title=course.newsletter.title if course.newsletter else None,
         )
         return JsonResponse({"script_html": script_html, "widget_html": widget_html}, status=200)

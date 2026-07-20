@@ -12,13 +12,15 @@ import PublicIcon from '@mui/icons-material/Public';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CodeIcon from '@mui/icons-material/Code';
 import { useState, useEffect, memo } from 'react';
-import { Box, Grid, Button, Dialog, DialogTitle, DialogContent, DialogActions, LinearProgress, Typography, Alert, Tabs, Tab, Badge, Link, IconButton, Tooltip } from '@mui/material'
+import { Box, Grid, Button, Dialog, DialogTitle, DialogContent, DialogActions, LinearProgress, Typography, Alert, Tabs, Tab, Badge, Link, IconButton, Tooltip, Switch, FormControlLabel, TextField, InputAdornment, GlobalStyles } from '@mui/material'
 import { useTheme } from '@mui/material/styles';
 import ContentTable from './components/ContentTable.jsx';
 import SubmittedAssignmentsSection from './components/SubmittedAssignmentsSection.jsx';
 import CourseAnalyticsSection from './components/CourseAnalyticsSection.jsx';
 import { lazy, Suspense } from "react";
 import apiClient from '../../src/apiClient.js';
+import Coloris from '@melloware/coloris';
+import '@melloware/coloris/dist/coloris.css';
 
 const CustomComponentSlot = memo(function CustomComponentSlot({ html, display }) {
   return (
@@ -38,7 +40,7 @@ function EmbedCodeBlock({ label, code, copied, onCopy, copyLabel, copiedLabel })
         <Box
           component="pre"
           sx={{
-            backgroundColor: 'grey.100',
+            backgroundColor: '#f4f4f4',
             p: 2,
             pr: 5,
             borderRadius: 1,
@@ -93,6 +95,11 @@ function Course() {
     const [embedSnippetError, setEmbedSnippetError] = useState(false);
     const [embedScriptCopied, setEmbedScriptCopied] = useState(false);
     const [embedWidgetCopied, setEmbedWidgetCopied] = useState(false);
+    const [includeNewsletterCheck, setIncludeNewsletterCheck] = useState(true);
+    const [includeCourseTitle, setIncludeCourseTitle] = useState(true);
+    const [includeCourseImage, setIncludeCourseImage] = useState(true);
+    const [buttonBgColor, setButtonBgColor] = useState('#4f46e5');
+    const [buttonTextColor, setButtonTextColor] = useState('#ffffff');
     const [dialogOpen, setDialogOpen] = useState(false)
     const [dialogContent, setDialogContent] = useState(null)
     const [contentLoaded, setContentLoaded] = useState(false)
@@ -271,6 +278,82 @@ function Course() {
         setEmbedDialogOpen(false);
     }
 
+    // Loads the del-enroll-form custom element definition (idempotent - the
+    // script itself no-ops if already defined) so the preview below the
+    // embed code can render the widget exactly as it'll look on the org's
+    // own site.
+    useEffect(() => {
+        if (!embedScriptHtml) {
+            return;
+        }
+        const scriptSrc = embedScriptHtml.match(/src="([^"]+)"/)?.[1];
+        if (!scriptSrc || document.querySelector(`script[src="${scriptSrc}"]`)) {
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = scriptSrc;
+        document.head.appendChild(script);
+    }, [embedScriptHtml]);
+
+    // Sets up the two color-picker inputs below. Runs once - Coloris attaches
+    // itself to any current/future element matching the selector, so it
+    // doesn't need to re-run when the dialog opens/closes.
+    useEffect(() => {
+        Coloris.init();
+        Coloris({
+            el: '.coloris-input',
+            // MUI's TextField already manages the input's surrounding DOM via
+            // React; letting Coloris also wrap the field and inject its own
+            // swatch button fights that on every re-render (breaks the
+            // picker, throws off alignment). We show our own swatch instead
+            // (see the InputAdornment below).
+            wrap: false,
+            theme: 'polaroid',
+            alpha: false,
+            format: 'hex',
+            onChange: (color, currentEl) => {
+                if (currentEl?.id === 'embed-button-bg-color') {
+                    setButtonBgColor(color);
+                } else if (currentEl?.id === 'embed-button-text-color') {
+                    setButtonTextColor(color);
+                }
+            },
+        });
+    }, []);
+
+    // Whether the fetched snippet includes a newsletter checkbox at all (i.e.
+    // whether the course has a linked newsletter) - independent of whether
+    // the user currently wants it included in the snippet they'll copy.
+    const hasLinkedNewsletter = Boolean(embedWidgetHtml?.includes('news_letter_check'));
+    // Whether the course has an image at all - the "show image" switch only
+    // makes sense to offer when there's actually an image to show.
+    const hasCourseImage = Boolean(embedWidgetHtml?.includes('course_image='));
+
+    const displayedEmbedWidgetHtml = (() => {
+        if (!embedWidgetHtml) {
+            return embedWidgetHtml;
+        }
+        let html = embedWidgetHtml;
+        if (hasLinkedNewsletter && !includeNewsletterCheck) {
+            html = html.replace(/\s*news_letter_check/, '').replace(/\s*newsletter_title="[^"]*"/, '');
+        }
+        if (!includeCourseTitle) {
+            html = html.replace(/\s*course_title="[^"]*"/, '');
+        }
+        if (hasCourseImage && !includeCourseImage) {
+            html = html.replace(/\s*course_image="[^"]*"/, '');
+        }
+        const escapedBg = buttonBgColor.replace(/"/g, '&quot;');
+        const escapedText = buttonTextColor.replace(/"/g, '&quot;');
+        html = html.replace(
+            '<del-enroll-form ',
+            `<del-enroll-form button_bg_color="${escapedBg}" button_text_color="${escapedText}" `,
+        );
+        return html;
+    })();
+
+    const embedWidgetPreviewHtml = displayedEmbedWidgetHtml?.replace('<del-enroll-form ', '<del-enroll-form preview ');
+
     const handleCopyEmbedScript = async () => {
         try {
             await navigator.clipboard.writeText(embedScriptHtml);
@@ -283,7 +366,7 @@ function Course() {
 
     const handleCopyEmbedWidget = async () => {
         try {
-            await navigator.clipboard.writeText(embedWidgetHtml);
+            await navigator.clipboard.writeText(displayedEmbedWidgetHtml);
             setEmbedWidgetCopied(true);
             setTimeout(() => setEmbedWidgetCopied(false), 2000);
         } catch (error) {
@@ -665,9 +748,129 @@ function Course() {
                 {dialogContent}
             </Dialog>
 
+            {/* Coloris's popup defaults to a lower z-index than MUI's Dialog
+                (1300), so without this it opens invisibly behind the dialog. */}
+            <GlobalStyles styles={{ '.clr-picker': { zIndex: 1400 } }} />
+
             <Dialog open={embedDialogOpen} onClose={handleCloseEmbedDialog} fullWidth maxWidth="sm">
-                <DialogTitle>{localeMessages["embed_code_dialog_title"]}</DialogTitle>
+                {!embedSnippetLoading && !embedSnippetError && embedWidgetHtml && (
+                    <Box sx={{ px: 3, pt: 3 }}>
+                        <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                            {localeMessages["embed_preview_title"]}
+                        </Typography>
+                        <Box
+                            sx={{
+                                p: 2,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                                pointerEvents: 'none',
+                                display: 'flex',
+                                justifyContent: 'center',
+                            }}
+                            aria-hidden="true"
+                            dangerouslySetInnerHTML={{ __html: embedWidgetPreviewHtml }}
+                        />
+                    </Box>
+                )}
+                <DialogTitle>{localeMessages["embed_customize_form_title"]}</DialogTitle>
                 <DialogContent>
+                    {!embedSnippetLoading && !embedSnippetError && embedWidgetHtml && (
+                        <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
+                            <TextField
+                                id="embed-button-bg-color"
+                                label={localeMessages["embed_button_bg_color_label"]}
+                                value={buttonBgColor}
+                                onChange={(event) => setButtonBgColor(event.target.value)}
+                                size="small"
+                                sx={{ mt: '12px' }}
+                                slotProps={{
+                                    htmlInput: { className: 'coloris-input' },
+                                    input: {
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <Box
+                                                    sx={{
+                                                        width: 18,
+                                                        height: 18,
+                                                        borderRadius: '4px',
+                                                        border: '1px solid',
+                                                        borderColor: 'divider',
+                                                        backgroundColor: buttonBgColor,
+                                                    }}
+                                                />
+                                            </InputAdornment>
+                                        ),
+                                    },
+                                }}
+                            />
+                            <TextField
+                                id="embed-button-text-color"
+                                label={localeMessages["embed_button_text_color_label"]}
+                                value={buttonTextColor}
+                                onChange={(event) => setButtonTextColor(event.target.value)}
+                                size="small"
+                                slotProps={{
+                                    htmlInput: { className: 'coloris-input' },
+                                    input: {
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <Box
+                                                    sx={{
+                                                        width: 18,
+                                                        height: 18,
+                                                        borderRadius: '4px',
+                                                        border: '1px solid',
+                                                        borderColor: 'divider',
+                                                        backgroundColor: buttonTextColor,
+                                                    }}
+                                                />
+                                            </InputAdornment>
+                                        ),
+                                    },
+                                }}
+                            />
+                        </Box>
+                    )}
+                    {!embedSnippetLoading && !embedSnippetError && embedWidgetHtml && (
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={includeCourseTitle}
+                                    onChange={(event) => setIncludeCourseTitle(event.target.checked)}
+                                />
+                            }
+                            label={localeMessages["embed_include_course_title"]}
+                            sx={{ mb: 1, mt: '10px', ml: 0, mr: 0 }}
+                        />
+                    )}
+                    {hasCourseImage && (
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={includeCourseImage}
+                                    onChange={(event) => setIncludeCourseImage(event.target.checked)}
+                                />
+                            }
+                            label={localeMessages["embed_include_course_image"]}
+                            sx={{ mb: 1, mt: '10px', ml: 0, mr: 0 }}
+                        />
+                    )}
+                    {hasLinkedNewsletter && (
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={includeNewsletterCheck}
+                                    onChange={(event) => setIncludeNewsletterCheck(event.target.checked)}
+                                />
+                            }
+                            label={localeMessages["embed_include_newsletter_check"]}
+                            sx={{ mb: 1, mt: '10px', ml: 0, mr: 0 }}
+                        />
+                    )}
+                    <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+                        {localeMessages["embed_code_dialog_title"]}
+                    </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         {localeMessages["embed_code_dialog_description"]}
                     </Typography>
@@ -694,7 +897,7 @@ function Course() {
                             />
                             <EmbedCodeBlock
                                 label={localeMessages["embed_widget_step_title"]}
-                                code={embedWidgetHtml}
+                                code={displayedEmbedWidgetHtml}
                                 copied={embedWidgetCopied}
                                 onCopy={handleCopyEmbedWidget}
                                 copyLabel={localeMessages["copy_embed_widget"]}
