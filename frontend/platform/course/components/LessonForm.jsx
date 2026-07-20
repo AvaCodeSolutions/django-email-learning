@@ -36,8 +36,9 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
     const [confirmCloseDialogOpen, setConfirmCloseDialogOpen] = useState(false);
 
 
-    const { localeMessages, apiBaseUrl, userRole, direction } = useAppContext();
+    const { localeMessages, apiBaseUrl, userRole, direction, aiTextEditModel, aiTextEditingModel, availableFeatures = [] } = useAppContext();
     const orgId = localStorage.getItem('activeOrganizationId');
+    const hasAiEditEnabled = Boolean(aiTextEditModel || aiTextEditingModel) && availableFeatures.includes('ai_edit');
 
     const hasUnsavedChanges =
         title !== savedSnapshot.title
@@ -411,6 +412,11 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
                 <Alert severity="warning" sx={{ py: 0 }}>
                     {localeMessages["lesson_unsaved_changes_hint"]}
                 </Alert>
+            )}
+            {hasAiEditEnabled && (userRole === 'admin' || userRole === 'editor') && (
+                <Typography variant="caption" color="text.secondary">
+                    {localeMessages["ai_edit_hint"]}
+                </Typography>
             )}
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>

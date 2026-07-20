@@ -40,7 +40,9 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    TextField
+    TextField,
+    Typography,
+    Alert
 } from '@mui/material';
 import { Code as CodeIcon } from '@mui/icons-material';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
@@ -74,6 +76,8 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
     const minHeight = 200 + (Math.max(0, extraMinLines) * 24);
     const [editorHeight, setEditorHeight] = useState(minHeight);
     const [aiEditLoading, setAiEditLoading] = useState(false);
+    const [aiSuggestion, setAiSuggestion] = useState(null);
+    const [aiEditError, setAiEditError] = useState(null);
     const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
     const [imageFormValues, setImageFormValues] = useState({ src: '', alt: '' });
 
@@ -161,6 +165,38 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
         };
     }, [editor, editorInstanceCallback]);
 
+    // Abandon a pending AI suggestion (without applying it) if the user moves
+    // their selection elsewhere before accepting or rejecting it.
+    useEffect(() => {
+        if (!editor) {
+            return;
+        }
+        const handleSelectionUpdate = ({ editor: activeEditor }) => {
+            setAiSuggestion((current) => {
+                if (!current) {
+                    return current;
+                }
+                const { from, to } = activeEditor.state.selection;
+                return from === current.from && to === current.to ? current : null;
+            });
+        };
+        editor.on('selectionUpdate', handleSelectionUpdate);
+        return () => {
+            editor.off('selectionUpdate', handleSelectionUpdate);
+        };
+    }, [editor]);
+
+    // The AI-edit bubble menu's content changes size (button vs. suggestion
+    // preview vs. error), but resizing it doesn't produce a ProseMirror
+    // transaction, so floating-ui never recomputes its position on its own.
+    // Nudge it explicitly whenever the content that's shown might have changed.
+    useEffect(() => {
+        if (!editor) {
+            return;
+        }
+        editor.view.dispatch(editor.state.tr.setMeta('ai-edit-bubble-menu', 'updatePosition'));
+    }, [editor, aiSuggestion, aiEditLoading, aiEditError]);
+
     if (!editor) {
         return null
     }
@@ -232,6 +268,67 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
         return window.localStorage.getItem('activeOrganizationId');
     };
 
+    // Top-level (direct child of doc) node types the AI is allowed to rewrite.
+    // Anything else (images, code blocks, etc.) is left alone, since a
+    // rewritten image/code block wouldn't make sense.
+    const AI_EDITABLE_TOP_LEVEL_NODE_TYPES = new Set(['paragraph', 'heading', 'bulletList', 'blockquote']);
+
+    // The top-level doc nodes that the [from, to) range overlaps at all, with
+    // each node's own outer position range (including its own tags).
+    const getOverlappingTopLevelNodes = (doc, from, to) => {
+        const nodes = [];
+        doc.forEach((node, offset) => {
+            const start = offset;
+            const end = offset + node.nodeSize;
+            if (end <= from || start >= to) {
+                return;
+            }
+            nodes.push({ node, start, end });
+        });
+        return nodes;
+    };
+
+    // Whether [from, to) exactly covers the full text of one or more
+    // contiguous top-level nodes, all of editable types. Text (rather than
+    // raw position) comparison is used at the edges so this also matches
+    // nodes like blockquote whose visible text sits one level deeper than
+    // the node's own boundary (inside its wrapped paragraph).
+    const getWholeTopLevelBlocksSelected = (doc, from, to) => {
+        const nodes = getOverlappingTopLevelNodes(doc, from, to);
+        if (nodes.length === 0) {
+            return null;
+        }
+        if (!nodes.every(({ node }) => AI_EDITABLE_TOP_LEVEL_NODE_TYPES.has(node.type.name))) {
+            return null;
+        }
+
+        const first = nodes[0];
+        const last = nodes[nodes.length - 1];
+        const firstFullText = doc.textBetween(first.start + 1, first.end - 1, '\n', '\n');
+        const firstSelectedText = doc.textBetween(
+            Math.max(from, first.start + 1),
+            Math.min(to, first.end - 1),
+            '\n',
+            '\n',
+        );
+        if (firstSelectedText !== firstFullText) {
+            return null;
+        }
+
+        const lastFullText = doc.textBetween(last.start + 1, last.end - 1, '\n', '\n');
+        const lastSelectedText = doc.textBetween(
+            Math.max(from, last.start + 1),
+            Math.min(to, last.end - 1),
+            '\n',
+            '\n',
+        );
+        if (lastSelectedText !== lastFullText) {
+            return null;
+        }
+
+        return { start: first.start, end: last.end };
+    };
+
     const getSelectedTextForAi = (activeEditor) => {
         const { selection, doc } = activeEditor.state;
         const { from, to, empty } = selection;
@@ -241,34 +338,44 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
 
         const selectedText = doc.textBetween(from, to, '\n', '\n');
         const normalizedText = selectedText.trim();
-        const hasNoNewLine = !selectedText.includes('\n') && !selectedText.includes('\r');
-        const isWithinCharLimit = normalizedText.length >= 40 && normalizedText.length <= 500;
-        const $from = doc.resolve(from);
-        const $to = doc.resolve(to);
-        const isSameParagraph = $from.sameParent($to) && $from.parent.type.name === 'paragraph';
-        const isWholeParagraphSelected = isSameParagraph
-            && from === $from.start()
-            && to === $from.end();
+        const isWithinCharLimit = normalizedText.length >= 40 && normalizedText.length <= 1000;
+        const wholeBlocksRange = getWholeTopLevelBlocksSelected(doc, from, to);
 
-        if (!hasNoNewLine || !isWithinCharLimit || !isWholeParagraphSelected) {
+        if (!isWithinCharLimit || !wholeBlocksRange) {
             return null;
         }
 
-        const selectionSlice = activeEditor.state.selection.content();
+        // Replace the full nodes (including their own tags), not just their
+        // inner content, so this works the same whether one or several
+        // blocks are selected.
+        const { start: replaceFrom, end: replaceTo } = wholeBlocksRange;
         const serializer = DOMSerializer.fromSchema(activeEditor.state.schema);
         const wrapper = document.createElement('div');
-        wrapper.appendChild(serializer.serializeFragment(selectionSlice.content));
+        wrapper.appendChild(serializer.serializeFragment(doc.slice(replaceFrom, replaceTo).content));
         const textWithMarkup = wrapper.innerHTML.trim();
 
         return {
             from,
             to,
+            replaceFrom,
+            replaceTo,
             text: normalizedText,
             textWithMarkup,
         };
     };
 
+    const isSuggestionForCurrentSelection = (activeEditor) => {
+        if (!aiSuggestion) {
+            return false;
+        }
+        const { from, to } = activeEditor.state.selection;
+        return from === aiSuggestion.from && to === aiSuggestion.to;
+    };
+
     const canShowAiEditBubbleMenu = (activeEditor) => {
+        if (isSuggestionForCurrentSelection(activeEditor)) {
+            return true;
+        }
         if (disabled || aiEditLoading) {
             return false;
         }
@@ -284,28 +391,45 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
         return Boolean(getSelectedTextForAi(activeEditor));
     };
 
-    const normalizeAiEditedMarkup = (editedText) => {
-        if (typeof editedText !== 'string') {
-            return editedText;
+    // Renders the AI suggestion as plain text (no raw HTML injection, since
+    // the AI response is untrusted), but keeps block structure visible by
+    // inserting line breaks between blocks and bullets for list items.
+    const getPlainTextPreview = (html) => {
+        if (typeof html !== 'string') {
+            return '';
         }
-
         const wrapper = document.createElement('div');
-        wrapper.innerHTML = editedText.trim();
-        if (wrapper.children.length !== 1) {
-            return editedText;
+        wrapper.innerHTML = html;
+
+        if (wrapper.children.length === 0) {
+            return wrapper.textContent || wrapper.innerText || '';
         }
 
-        const rootTag = wrapper.firstElementChild?.tagName;
-        if (!rootTag) {
-            return editedText;
-        }
+        const blockTexts = [...wrapper.children].map((child) => {
+            if (child.tagName === 'UL' || child.tagName === 'OL') {
+                return [...child.children].map((item) => `• ${item.textContent.trim()}`).join('\n');
+            }
+            return child.textContent.trim();
+        });
 
-        // Prevent duplicate block wrappers (e.g. ul-in-ul) when replacing inside an existing block context.
-        if (['UL', 'OL', 'P'].includes(rootTag)) {
-            return wrapper.firstElementChild.innerHTML;
-        }
+        return blockTexts.join('\n\n');
+    };
 
-        return editedText;
+    const acceptAiSuggestion = () => {
+        if (!aiSuggestion) {
+            return;
+        }
+        const { replaceFrom, replaceTo, editedHtml } = aiSuggestion;
+        editor
+            .chain()
+            .focus()
+            .insertContentAt({ from: replaceFrom, to: replaceTo }, editedHtml)
+            .run();
+        setAiSuggestion(null);
+    };
+
+    const rejectAiSuggestion = () => {
+        setAiSuggestion(null);
     };
 
     const editSelectionWithAi = async () => {
@@ -316,6 +440,7 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
         }
 
         setAiEditLoading(true);
+        setAiEditError(null);
         try {
             const response = await fetch(
                 `${aiBaseUrl}/organizations/${organizationId}/edit-text/`,
@@ -334,19 +459,22 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
             const data = await response.json();
             if (!response.ok || !data.edited_text) {
                 console.error('AI text editing failed:', data.error || 'Unexpected AI edit response');
+                setAiEditError(localeMessages['ai_edit_error']);
                 return;
             }
 
-            const normalizedEditedText = normalizeAiEditedMarkup(data.edited_text);
-
-            editor
-                .chain()
-                .focus()
-                .insertContentAt({ from: selection.from, to: selection.to }, normalizedEditedText)
-                .setTextSelection(selection.from + String(normalizedEditedText).length)
-                .run();
+            // Don't apply the edit yet - show it to the user for review first,
+            // and only replace the selection if they explicitly accept it.
+            setAiSuggestion({
+                from: selection.from,
+                to: selection.to,
+                replaceFrom: selection.replaceFrom,
+                replaceTo: selection.replaceTo,
+                editedHtml: data.edited_text.trim(),
+            });
         } catch (error) {
             console.error('AI text editing request failed:', error);
+            setAiEditError(localeMessages['ai_edit_error']);
         } finally {
             setAiEditLoading(false);
         }
@@ -655,12 +783,38 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                             editor={editor}
                             shouldShow={({ editor: activeEditor }) => canShowAiEditBubbleMenu(activeEditor)}
                             updateDelay={400}
+                            appendTo={() => document.body}
+                            style={{ zIndex: 1500 }}
+                            getReferencedVirtualElement={() => {
+                                if (!editor) {
+                                    return null;
+                                }
+                                const { from, to } = editor.state.selection;
+                                const top = Math.min(
+                                    editor.view.coordsAtPos(from).top,
+                                    editor.view.coordsAtPos(to).top,
+                                );
+                                return {
+                                    getBoundingClientRect: () => ({
+                                        x: 0,
+                                        y: top,
+                                        top,
+                                        bottom: top,
+                                        left: 0,
+                                        right: window.innerWidth,
+                                        width: window.innerWidth,
+                                        height: 0,
+                                    }),
+                                };
+                            }}
                             options={{
                                 duration: 0,
                                 placement: 'top',
                                 animation: false,
                                 delay: [0, 0],
                                 zIndex: 1500,
+                                strategy: 'fixed',
+                                shift: { padding: 16 },
                             }}
                         >
                             <Paper
@@ -668,23 +822,72 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                                 sx={{
                                     position: 'relative',
                                     zIndex: 1500,
-                                    display: 'flex',
-                                    gap: 1,
-                                    p: 0.75,
+                                    p: 2,
                                     border: '1px solid',
                                     borderColor: 'divider',
+                                    maxWidth: 'min(480px, calc(100vw - 32px))',
                                 }}
                             >
-                                <Button
-                                    size="small"
-                                    variant="contained"
-                                    startIcon={aiEditLoading ? <ChaoticOrbit size="20" speed="1.5"  color='white'/> : <AssistantIcon />}
-                                    onMouseDown={(event) => event.preventDefault()}
-                                    onClick={editSelectionWithAi}
-                                    disabled={aiEditLoading}
-                                >
-                                    {aiEditLoading ? localeMessages['editing'] : localeMessages['edit_with_ai']}
-                                </Button>
+                                {aiSuggestion ? (
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                                            {localeMessages['ai_suggestion_label']}
+                                        </Typography>
+                                        <Typography
+                                            variant="body2"
+                                            sx={{
+                                                display: 'block',
+                                                backgroundColor: '#f6f7f7',
+                                                padding: '10px',
+                                                borderRadius: '10px',
+                                                maxHeight: 160,
+                                                overflowY: 'auto',
+                                                whiteSpace: 'pre-wrap',
+                                            }}
+                                        >
+                                            {getPlainTextPreview(aiSuggestion.editedHtml)}
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            {localeMessages['ai_suggestion_review_note']}
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', mt: 0.5 }}>
+                                            <Button
+                                                size="small"
+                                                onMouseDown={(event) => event.preventDefault()}
+                                                onClick={rejectAiSuggestion}
+                                            >
+                                                {localeMessages['ai_edit_reject']}
+                                            </Button>
+                                            <Button
+                                                size="small"
+                                                variant="contained"
+                                                onMouseDown={(event) => event.preventDefault()}
+                                                onClick={acceptAiSuggestion}
+                                            >
+                                                {localeMessages['ai_edit_accept']}
+                                            </Button>
+                                        </Box>
+                                    </Box>
+                                ) : (
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                        <Button
+                                            size="small"
+                                            variant="contained"
+                                            startIcon={aiEditLoading ? <ChaoticOrbit size="20" speed="1.5"  color='white'/> : <AssistantIcon />}
+                                            onMouseDown={(event) => event.preventDefault()}
+                                            onClick={editSelectionWithAi}
+                                            disabled={aiEditLoading}
+                                            sx={{ alignSelf: 'flex-start' }}
+                                        >
+                                            {aiEditLoading ? localeMessages['editing'] : localeMessages['edit_with_ai']}
+                                        </Button>
+                                        {aiEditError && (
+                                            <Alert severity="error" sx={{ py: 0 }} onClose={() => setAiEditError(null)}>
+                                                {aiEditError}
+                                            </Alert>
+                                        )}
+                                    </Box>
+                                )}
                             </Paper>
                         </BubbleMenu>
                     )}
