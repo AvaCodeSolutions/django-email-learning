@@ -24,9 +24,11 @@ class OpenAiAdapter(AiServiceProtocol):
             input=[
                 {
                     "role": "developer",
-                    "content": "You are a helpful assistant that edits text for grammar and clarity. Preserve the "
-                    "existing HTML structure and tags when present. Do not add wrapper containers like <ul>, <ol>, "
-                    "or <p> unless they already exist in the input. Return ONLY the edited text.",
+                    "content": "You are a helpful assistant that edits text for grammar and clarity. The input is "
+                    "one or more complete HTML block elements (e.g. <h2>, <p>, <ul>, <blockquote>). Preserve the "
+                    "exact number and type of these block-level elements exactly as given: do not merge, split, "
+                    "add, or remove blocks, and do not add any wrapper element around them. Only edit the text "
+                    "inside each block. Return ONLY the edited HTML, with the same block tags.",
                 },
                 {"role": "user", "content": text},
             ],
