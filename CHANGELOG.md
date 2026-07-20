@@ -6,6 +6,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.5.0] — 2026-07-20
+
+### Added
+
+- **Embed dialog customization: live preview, colors, and optional fields** — The "Add to your site" dialog now shows a live preview of the widget above the code, a color picker for the button's background/text color, and switches to include/exclude the newsletter checkbox, course title, and course image (when the course has one) in the copied snippet.
+
+### Security
+
+- **Fixed XSS in the `del-enroll-form` embed widget** — The widget built its shadow DOM via string-concatenated `innerHTML` with an escaping helper that didn't escape quotes, so a crafted `course_image`, `button_bg_color`, or `button_text_color` attribute value could break out of its HTML attribute and inject a live event handler. Rebuilt the widget's DOM using `createElement`/`textContent`/`setAttribute` (making attribute breakout structurally impossible), and added URL/color format validation as defense in depth. Not exploitable through the platform's own dialog (which already escaped/validated these values), but the widget is a public embeddable contract, so any site author sourcing attribute values from elsewhere (a CMS field, a query param) was exposed.
+
 ## [2.4.1] — 2026-07-20
 
 ### Fixed
