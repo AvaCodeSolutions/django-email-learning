@@ -6,6 +6,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.4.0] — 2026-07-20
+
+### Added
+
+- **AI-edit review flow, hint, and expanded block support** — AI-edited text is no longer applied instantly: the AI-edit bubble menu now shows the suggested text for review, with Accept/Reject actions and a note that AI responses can be inaccurate and should be reviewed before accepting. The lesson editor also shows a helper hint near the Save/Back buttons pointing out that a paragraph can be selected for AI rewriting, shown only when AI edit is an allowed feature for the organization. AI-edit eligibility is expanded beyond a single whole paragraph to any selection that exactly covers one or more contiguous top-level blocks (heading, paragraph, bullet list, or blockquote) — e.g. a heading with the paragraph below it, a bullet list, or a heading+list+paragraph group. See [#743](https://github.com/AvaCodeSolutions/django-email-learning/issues/743).
+
+### Fixed
+
+- **Sidebar/navbar not refreshing after switching organizations** — Switching organizations via the dropdown persisted the new active organization to the session but never refreshed the page, so role-gated sidebar/navbar items (parsed once at initial page load) stayed stale until a manual reload even though the user's access had changed. The page now reloads after a successful organization switch. See [#741](https://github.com/AvaCodeSolutions/django-email-learning/issues/741).
+
 ## [2.3.0] — 2026-07-20
 
 ### Added
