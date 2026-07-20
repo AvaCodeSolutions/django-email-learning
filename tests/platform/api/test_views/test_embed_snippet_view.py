@@ -52,7 +52,22 @@ def test_embed_snippet_success(superadmin_client, course, settings):
     )
     assert "<del-enroll-form" in data["widget_html"]
     assert f'course_id="{course.slug}"' in data["widget_html"]
+    assert f'course_title="{course.title}"' in data["widget_html"]
+    assert "course_image" not in data["widget_html"]
     assert "news_letter_check" not in data["widget_html"]
+
+
+def test_embed_snippet_includes_course_image_when_set(superadmin_client, course, settings):
+    settings.DJANGO_EMAIL_LEARNING = {**settings.DJANGO_EMAIL_LEARNING, "EMBEDDABLE_ENROLLMENT_ENABLED": True}
+    course.image = "course_images/course-cover.jpg"
+    _make_public(course)
+
+    response = superadmin_client.get(get_url(1, course.id))
+
+    assert response.status_code == 200
+    widget_html = response.json()["widget_html"]
+    expected_image_url = f"http://testserver{course.image.url}"
+    assert f'course_image="{expected_image_url}"' in widget_html
 
 
 def test_embed_snippet_includes_newsletter_checkbox_when_linked(superadmin_client, course, settings):

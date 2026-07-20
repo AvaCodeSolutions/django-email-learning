@@ -194,6 +194,7 @@ class CourseView(BasePlatformView):
             "copy_public_course_link": _("Copy public course link"),
             "public_course_link_copied": _("Link copied!"),
             "add_to_your_site": _("Add to your site"),
+            "embed_customize_form_title": _("Customize your form"),
             "embed_code_dialog_title": _("Embed on your site"),
             "embed_code_dialog_description": _(
                 "Paste these snippets into your own website's HTML to let visitors enroll directly from your site."
@@ -205,6 +206,12 @@ class CourseView(BasePlatformView):
             "copy_embed_script": _("Copy script"),
             "copy_embed_widget": _("Copy widget tag"),
             "embed_code_copied": _("Copied!"),
+            "embed_preview_title": _("Preview"),
+            "embed_include_course_title": _("Show course title"),
+            "embed_include_course_image": _("Show course image"),
+            "embed_include_newsletter_check": _("Include newsletter subscribe checkbox"),
+            "embed_button_bg_color_label": _("Button background"),
+            "embed_button_text_color_label": _("Button text color"),
             "close": _("Close"),
             "enable_course": _("Enable COURSE_NAME"),
             "course_enable_confirmation": _("Are you sure you want to enable the course COURSE_NAME?"),
