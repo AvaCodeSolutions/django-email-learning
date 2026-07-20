@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.4.1] — 2026-07-20
+
+### Fixed
+
+- **AI edit-text input length mismatch and unclear error** — The AI-edit eligibility check allows selections covering multiple top-level blocks (up to 1000 chars of plain text), but the edit-text endpoint's input validation still capped the (markup-included) payload at 500 chars, so a legitimately-eligible multi-block selection could fail with a generic, unhelpful error. Raised the backend limit to 2000 chars to match, and the AI-edit error now shows a specific, actionable message ("try a shorter block" / "try selecting more text") when a selection is still too long or too short, instead of a generic failure message.
+
 ## [2.4.0] — 2026-07-20
 
 ### Added
