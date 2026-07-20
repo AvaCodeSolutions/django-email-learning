@@ -75,6 +75,14 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
       })
       .then((data) => {
         console.log('Session updated successfully:', data);
+        // The sidebar/navbar role flags (isPlatformAdmin, isOrganizationAdmin,
+        // isInstructor, etc.) are baked into server-rendered context and only
+        // parsed once at initial page load, so they'd otherwise stay stale
+        // after switching organizations. Reloading re-renders the current
+        // page from the server with the new organization's context; if the
+        // page is scoped to a record from the old organization, this
+        // correctly 403s rather than showing the wrong organization's data.
+        window.location.reload();
       })
       .catch((error) => {
         console.error('Error updating session:', error);
