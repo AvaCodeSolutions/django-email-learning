@@ -7,7 +7,7 @@ import { useAppContext } from "../render.jsx";
 
 
 function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefreshCallback, showOrganizationSwitcher=true}) {
-  const { direction, apiBaseUrl } = useAppContext();
+  const { direction, apiBaseUrl, platformBaseUrl } = useAppContext();
   const [activeOrganizationId, setActiveOrganizationId] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogContent, setDialogContent] = useState(null);
@@ -75,6 +75,13 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
       })
       .then((data) => {
         console.log('Session updated successfully:', data);
+        // The sidebar/navbar role flags (isPlatformAdmin, isOrganizationAdmin,
+        // isInstructor, etc.) are baked into server-rendered context and only
+        // parsed once at initial page load, so they'd otherwise stay stale
+        // after switching organizations. Navigate to a page that's safe for
+        // any role in any organization (rather than reloading in place, which
+        // 403s if the current page is scoped to a record from the old org).
+        window.location.href = platformBaseUrl + '/courses/';
       })
       .catch((error) => {
         console.error('Error updating session:', error);
