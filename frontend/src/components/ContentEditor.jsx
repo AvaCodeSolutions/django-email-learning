@@ -459,7 +459,11 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
             const data = await response.json();
             if (!response.ok || !data.edited_text) {
                 console.error('AI text editing failed:', data.error || 'Unexpected AI edit response');
-                setAiEditError(localeMessages['ai_edit_error']);
+                const knownErrorMessages = {
+                    input_too_long: localeMessages['ai_edit_error_too_long'],
+                    input_too_short: localeMessages['ai_edit_error_too_short'],
+                };
+                setAiEditError(knownErrorMessages[data.error] || localeMessages['ai_edit_error']);
                 return;
             }
 
