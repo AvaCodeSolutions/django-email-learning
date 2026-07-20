@@ -58,6 +58,8 @@ class NewsletterDetailView(BasePlatformView):
             "ai_edit_accept": _("Accept"),
             "ai_edit_reject": _("Reject"),
             "ai_edit_error": _("Couldn't edit this text with AI. Please try again."),
+            "ai_edit_error_too_long": _("This selection is too long for AI editing. Try selecting a shorter block."),
+            "ai_edit_error_too_short": _("This selection is too short for AI editing. Try selecting more text."),
             "upload": _("Upload"),
             "upload_images": _("Upload Images"),
             "no_uploaded_images": _("No uploaded images yet."),

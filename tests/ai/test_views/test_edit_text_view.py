@@ -97,8 +97,11 @@ def test_edit_text_not_accessible_for_viewer_or_anonymous(client, expected_statu
     assert response.status_code == expected_status
 
 
-@pytest.mark.parametrize("length", [39, 2001])
-def test_edit_text_validation_error(editor_client, length):
+@pytest.mark.parametrize(
+    "length,expected_error",
+    [(39, "input_too_short"), (2001, "input_too_long")],
+)
+def test_edit_text_validation_error(editor_client, length, expected_error):
     response = editor_client.post(
         get_url(1),
         data=json.dumps({"input": "x" * length}),
@@ -106,7 +109,7 @@ def test_edit_text_validation_error(editor_client, length):
     )
 
     assert response.status_code == 400
-    assert "error" in response.json()
+    assert response.json()["error"] == expected_error
 
 
 def test_edit_text_access_allowed_by_default(editor_client, monkeypatch):

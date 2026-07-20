@@ -36,4 +36,9 @@ class EditTextView(View):
             edited_text = ai_adapter.edit_text(input, model.model_name)
             return JsonResponse({"edited_text": edited_text})
         except ValidationError as e:
+            input_error_types = {err["type"] for err in e.errors() if err.get("loc") == ("input",)}
+            if "string_too_long" in input_error_types:
+                return JsonResponse({"error": "input_too_long"}, status=400)
+            if "string_too_short" in input_error_types:
+                return JsonResponse({"error": "input_too_short"}, status=400)
             return JsonResponse({"error": str(e)}, status=400)
