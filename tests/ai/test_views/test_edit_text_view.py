@@ -97,7 +97,7 @@ def test_edit_text_not_accessible_for_viewer_or_anonymous(client, expected_statu
     assert response.status_code == expected_status
 
 
-@pytest.mark.parametrize("length", [39, 501])
+@pytest.mark.parametrize("length", [39, 2001])
 def test_edit_text_validation_error(editor_client, length):
     response = editor_client.post(
         get_url(1),
