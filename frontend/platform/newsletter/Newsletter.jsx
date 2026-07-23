@@ -23,7 +23,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Alert from '@mui/material/Alert';
 import Tooltip from '@mui/material/Tooltip';
-import { Tabs, Tab } from '@mui/material';
+import { Tabs, Tab, InputAdornment, GlobalStyles } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -31,9 +31,13 @@ import ScheduleIcon from '@mui/icons-material/Schedule';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
 import ListIcon from '@mui/icons-material/List';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import CodeIcon from '@mui/icons-material/Code';
 import ContentEditor from '../../src/components/ContentEditor.jsx';
+import EmbedCodeBlock from '../../src/components/EmbedCodeBlock.jsx';
 import apiClient from '../../src/apiClient.js';
 import render, { useAppContext } from '../../src/render.jsx';
+import Coloris from '@melloware/coloris';
+import '@melloware/coloris/dist/coloris.css';
 
 const VisuallyHiddenInput = styled('input')({
     clip: 'rect(0 0 0 0)',
@@ -306,7 +310,7 @@ function SendoutDialog({ open, onClose, onSuccess, sendout, newsletterId, organi
 }
 
 function Newsletter() {
-    const { newsletterId, newsletterTitle, organizationId, localeMessages, direction, isOrganizationAdmin, apiBaseUrl, platformBaseUrl } = useAppContext();
+    const { newsletterId, newsletterTitle, organizationId, localeMessages, direction, isOrganizationAdmin, apiBaseUrl, platformBaseUrl, embeddableEnrollmentEnabled } = useAppContext();
     const [sendouts, setSendouts] = useState([]);
     const [activeTab, setActiveTab] = useState('scheduled');
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -315,6 +319,15 @@ function Newsletter() {
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [deleteError, setDeleteError] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
+    const [embedDialogOpen, setEmbedDialogOpen] = useState(false);
+    const [embedScriptHtml, setEmbedScriptHtml] = useState(null);
+    const [embedWidgetHtml, setEmbedWidgetHtml] = useState(null);
+    const [embedSnippetLoading, setEmbedSnippetLoading] = useState(false);
+    const [embedSnippetError, setEmbedSnippetError] = useState(false);
+    const [embedScriptCopied, setEmbedScriptCopied] = useState(false);
+    const [embedWidgetCopied, setEmbedWidgetCopied] = useState(false);
+    const [buttonBgColor, setButtonBgColor] = useState('#4f46e5');
+    const [buttonTextColor, setButtonTextColor] = useState('#ffffff');
     const theme = useTheme();
 
     const fetchSendouts = (status) => {
@@ -341,6 +354,106 @@ function Newsletter() {
             .then(() => { setDeleteConfirmOpen(false); setDeletingSendout(null); fetchSendouts(activeTab); })
             .catch(() => setDeleteError(localeMessages['sendout_delete_error'] || 'Failed to delete sendout.'))
             .finally(() => setIsDeleting(false));
+    };
+
+    const handleOpenEmbedDialog = () => {
+        setEmbedDialogOpen(true);
+        if (embedWidgetHtml || embedSnippetLoading) {
+            return;
+        }
+        setEmbedSnippetLoading(true);
+        setEmbedSnippetError(false);
+        apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/newsletters/${newsletterId}/embed_snippet/`)
+            .then(data => {
+                setEmbedScriptHtml(data.script_html);
+                setEmbedWidgetHtml(data.widget_html);
+            })
+            .catch(error => {
+                console.error('Failed to load embed snippet:', error);
+                setEmbedSnippetError(true);
+            })
+            .finally(() => setEmbedSnippetLoading(false));
+    };
+
+    const handleCloseEmbedDialog = () => {
+        setEmbedDialogOpen(false);
+    };
+
+    // Loads the shared del-enroll-form/del-newsletter-form custom element
+    // definitions (idempotent - the script itself no-ops if already defined)
+    // so the preview below the embed code can render the widget exactly as
+    // it'll look on the org's own site.
+    useEffect(() => {
+        if (!embedScriptHtml) {
+            return;
+        }
+        const scriptSrc = embedScriptHtml.match(/src="([^"]+)"/)?.[1];
+        if (!scriptSrc || document.querySelector(`script[src="${scriptSrc}"]`)) {
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = scriptSrc;
+        document.head.appendChild(script);
+    }, [embedScriptHtml]);
+
+    // Sets up the two color-picker inputs below. Runs once - Coloris attaches
+    // itself to any current/future element matching the selector, so it
+    // doesn't need to re-run when the dialog opens/closes.
+    useEffect(() => {
+        Coloris.init();
+        Coloris({
+            el: '.coloris-input',
+            // MUI's TextField already manages the input's surrounding DOM via
+            // React; letting Coloris also wrap the field and inject its own
+            // swatch button fights that on every re-render (breaks the
+            // picker, throws off alignment). We show our own swatch instead
+            // (see the InputAdornment below).
+            wrap: false,
+            theme: 'polaroid',
+            alpha: false,
+            format: 'hex',
+            onChange: (color, currentEl) => {
+                if (currentEl?.id === 'newsletter-embed-button-bg-color') {
+                    setButtonBgColor(color);
+                } else if (currentEl?.id === 'newsletter-embed-button-text-color') {
+                    setButtonTextColor(color);
+                }
+            },
+        });
+    }, []);
+
+    const displayedEmbedWidgetHtml = (() => {
+        if (!embedWidgetHtml) {
+            return embedWidgetHtml;
+        }
+        const escapedBg = buttonBgColor.replace(/"/g, '&quot;');
+        const escapedText = buttonTextColor.replace(/"/g, '&quot;');
+        return embedWidgetHtml.replace(
+            '<del-newsletter-form ',
+            `<del-newsletter-form button_bg_color="${escapedBg}" button_text_color="${escapedText}" `,
+        );
+    })();
+
+    const embedWidgetPreviewHtml = displayedEmbedWidgetHtml?.replace('<del-newsletter-form ', '<del-newsletter-form preview ');
+
+    const handleCopyEmbedScript = async () => {
+        try {
+            await navigator.clipboard.writeText(embedScriptHtml);
+            setEmbedScriptCopied(true);
+            setTimeout(() => setEmbedScriptCopied(false), 2000);
+        } catch (error) {
+            console.error('Failed to copy embed script:', error);
+        }
+    };
+
+    const handleCopyEmbedWidget = async () => {
+        try {
+            await navigator.clipboard.writeText(displayedEmbedWidgetHtml);
+            setEmbedWidgetCopied(true);
+            setTimeout(() => setEmbedWidgetCopied(false), 2000);
+        } catch (error) {
+            console.error('Failed to copy embed widget tag:', error);
+        }
     };
 
     const formatDate = (isoString) => {
@@ -381,6 +494,11 @@ function Newsletter() {
                             <Tab value="all" icon={<ListIcon fontSize="small" />} iconPosition="start" label={localeMessages['all']} />
                         </Tabs>
                         <Box sx={{ display: 'flex', gap: 1 }}>
+                            {embeddableEnrollmentEnabled && (
+                                <Button variant="outlined" startIcon={<CodeIcon fontSize="small" />} onClick={handleOpenEmbedDialog}>
+                                    {localeMessages['add_to_your_site']}
+                                </Button>
+                            )}
                             <Button variant="outlined" href={`${platformBaseUrl}/organizations/${organizationId}/newsletters/${newsletterId}/subscribers/`}>
                                 {localeMessages['newsletter_subscribers']}
                             </Button>
@@ -473,8 +591,137 @@ function Newsletter() {
                     <Button onClick={confirmDelete} variant="contained" color="error" disabled={isDeleting}>{localeMessages['delete'] || 'Delete'}</Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Coloris's popup defaults to a lower z-index than MUI's Dialog
+                (1300), so without this it opens invisibly behind the dialog. */}
+            <GlobalStyles styles={{ '.clr-picker': { zIndex: 1400 } }} />
+
+            <Dialog open={embedDialogOpen} onClose={handleCloseEmbedDialog} fullWidth maxWidth="sm">
+                {!embedSnippetLoading && !embedSnippetError && embedWidgetHtml && (
+                    <Box sx={{ px: 3, pt: 3 }}>
+                        <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                            {localeMessages['embed_preview_title']}
+                        </Typography>
+                        <Box
+                            sx={{
+                                p: 2,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                                pointerEvents: 'none',
+                                display: 'flex',
+                                justifyContent: 'center',
+                            }}
+                            aria-hidden="true"
+                            dangerouslySetInnerHTML={{ __html: embedWidgetPreviewHtml }}
+                        />
+                    </Box>
+                )}
+                <DialogTitle>{localeMessages['embed_customize_form_title']}</DialogTitle>
+                <DialogContent>
+                    {!embedSnippetLoading && !embedSnippetError && embedWidgetHtml && (
+                        <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
+                            <TextField
+                                id="newsletter-embed-button-bg-color"
+                                label={localeMessages['embed_button_bg_color_label']}
+                                value={buttonBgColor}
+                                onChange={(event) => setButtonBgColor(event.target.value)}
+                                size="small"
+                                sx={{ mt: '12px' }}
+                                slotProps={{
+                                    htmlInput: { className: 'coloris-input' },
+                                    input: {
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <Box
+                                                    sx={{
+                                                        width: 18,
+                                                        height: 18,
+                                                        borderRadius: '4px',
+                                                        border: '1px solid',
+                                                        borderColor: 'divider',
+                                                        backgroundColor: buttonBgColor,
+                                                    }}
+                                                />
+                                            </InputAdornment>
+                                        ),
+                                    },
+                                }}
+                            />
+                            <TextField
+                                id="newsletter-embed-button-text-color"
+                                label={localeMessages['embed_button_text_color_label']}
+                                value={buttonTextColor}
+                                onChange={(event) => setButtonTextColor(event.target.value)}
+                                size="small"
+                                slotProps={{
+                                    htmlInput: { className: 'coloris-input' },
+                                    input: {
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <Box
+                                                    sx={{
+                                                        width: 18,
+                                                        height: 18,
+                                                        borderRadius: '4px',
+                                                        border: '1px solid',
+                                                        borderColor: 'divider',
+                                                        backgroundColor: buttonTextColor,
+                                                    }}
+                                                />
+                                            </InputAdornment>
+                                        ),
+                                    },
+                                }}
+                            />
+                        </Box>
+                    )}
+                    <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+                        {localeMessages['embed_code_dialog_title']}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        {localeMessages['embed_code_dialog_description']}
+                    </Typography>
+                    {embedSnippetLoading && (
+                        <Box sx={{ py: 2 }}>
+                            <LinearProgress />
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                {localeMessages['embed_code_loading']}
+                            </Typography>
+                        </Box>
+                    )}
+                    {!embedSnippetLoading && embedSnippetError && (
+                        <Alert severity="error">{localeMessages['embed_code_error']}</Alert>
+                    )}
+                    {!embedSnippetLoading && !embedSnippetError && embedWidgetHtml && (
+                        <>
+                            <EmbedCodeBlock
+                                label={localeMessages['embed_script_step_title']}
+                                code={embedScriptHtml}
+                                copied={embedScriptCopied}
+                                onCopy={handleCopyEmbedScript}
+                                copyLabel={localeMessages['copy_embed_script']}
+                                copiedLabel={localeMessages['embed_code_copied']}
+                            />
+                            <EmbedCodeBlock
+                                label={localeMessages['embed_widget_step_title']}
+                                code={displayedEmbedWidgetHtml}
+                                copied={embedWidgetCopied}
+                                onCopy={handleCopyEmbedWidget}
+                                copyLabel={localeMessages['copy_embed_widget']}
+                                copiedLabel={localeMessages['embed_code_copied']}
+                            />
+                        </>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseEmbedDialog}>{localeMessages['close']}</Button>
+                </DialogActions>
+            </Dialog>
         </Base>
     );
 }
 
 render({ children: <Newsletter /> });
+
+export default Newsletter;

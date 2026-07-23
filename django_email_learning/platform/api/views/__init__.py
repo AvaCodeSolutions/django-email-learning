@@ -30,6 +30,7 @@ from django_email_learning.platform.api.views.misc import (
     UpdateSessionView,
 )
 from django_email_learning.platform.api.views.newsletters import (
+    NewsletterEmbedSnippetView,
     NewsletterView,
     SendoutView,
     SingleNewsletterView,
@@ -81,6 +82,7 @@ __all__ = [
     "EnrollmentView",
     "EnrollmentsStatisticsView",
     "NewsletterView",
+    "NewsletterEmbedSnippetView",
     "SingleNewsletterView",
     "SendoutView",
     "SingleSendoutView",

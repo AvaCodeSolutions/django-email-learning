@@ -2,8 +2,10 @@ import csv
 import io
 import json
 
+from django.conf import settings
 from django.db.utils import IntegrityError
 from django.http import HttpResponse, JsonResponse
+from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views import View
 from pydantic import ValidationError
@@ -15,8 +17,13 @@ from django_email_learning.models import (
     Sendout,
 )
 from django_email_learning.platform.api import serializers
+from django_email_learning.platform.api.embed_snippet import (
+    build_embed_newsletter_widget_tag,
+    build_embed_script_tag,
+)
 from django_email_learning.platform.api.newsletter_access_mixin import NewsletterAccessMixin
 from django_email_learning.platform.api.pagniated_api_mixin import PaginatedApiMixin
+from django_email_learning.public.api.views import embeddable_enrollment_enabled
 
 
 @method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
@@ -244,3 +251,25 @@ class SubscribersCsvExportView(NewsletterAccessMixin, View):
         safe_title = newsletter.title.replace('"', "")
         response["Content-Disposition"] = f'attachment; filename="{safe_title}_subscribers.csv"'
         return response
+
+
+@method_decorator(accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get")
+class NewsletterEmbedSnippetView(NewsletterAccessMixin, View):
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        if not embeddable_enrollment_enabled():
+            return JsonResponse({"error": "Embeddable enrollment is not enabled for this deployment."}, status=404)
+
+        try:
+            newsletter = Newsletter.objects.select_related("organization").get(
+                id=kwargs["newsletter_id"], organization_id=kwargs["organization_id"]
+            )
+        except Newsletter.DoesNotExist:
+            return JsonResponse({"error": "Newsletter not found"}, status=404)
+
+        token = newsletter.organization.get_or_create_embed_token()
+        script_path = reverse("django_email_learning:public:embed_script")
+        script_url = f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{script_path}"
+
+        script_html = build_embed_script_tag(script_url)
+        widget_html = build_embed_newsletter_widget_tag(token=token, newsletter_id=newsletter.id)
+        return JsonResponse({"script_html": script_html, "widget_html": widget_html}, status=200)

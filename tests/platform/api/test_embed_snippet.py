@@ -1,4 +1,5 @@
 from django_email_learning.platform.api.embed_snippet import (
+    build_embed_newsletter_widget_tag,
     build_embed_script_tag,
     build_embed_widget_tag,
 )
@@ -83,4 +84,15 @@ def test_build_embed_widget_tag_escapes_attribute_values():
     )
     assert "<script>alert(1)</script>" not in html
     assert "<script>alert(2)</script>" not in html
+    assert "&quot;" in html
+
+
+def test_build_embed_newsletter_widget_tag():
+    html = build_embed_newsletter_widget_tag(token="tok123", newsletter_id=7)
+    assert html == '<del-newsletter-form token="tok123" newsletter_id="7"></del-newsletter-form>'
+
+
+def test_build_embed_newsletter_widget_tag_escapes_token():
+    html = build_embed_newsletter_widget_tag(token='tok"><script>alert(1)</script>', newsletter_id=7)
+    assert "<script>alert(1)</script>" not in html
     assert "&quot;" in html
