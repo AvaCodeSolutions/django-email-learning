@@ -1,11 +1,11 @@
 from django.urls import path
-from django.views.generic import RedirectView
 
 from django_email_learning.platform.views import (
     Analytics,
     ApiKeys,
     Courses,
     CourseView,
+    Dashboard,
     Learners,
     NewsletterDetailView,
     NewsletterSubscribersView,
@@ -39,9 +39,5 @@ urlpatterns = [
     path("learners/", Learners.as_view(), name="learners_view"),
     path("settings/api_keys/", ApiKeys.as_view(), name="api_keys_view"),
     path("analytics/", Analytics.as_view(), name="analytics_view"),
-    path(
-        "",
-        RedirectView.as_view(pattern_name="django_email_learning:platform:courses_view"),
-        name="root",
-    ),
+    path("", Dashboard.as_view(), name="root"),
 ]

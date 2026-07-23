@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { alpha } from '@mui/material/styles'
 import { AppBar, Divider, Drawer, Box, Typography, MenuList, MenuItem, ListItemIcon, ListItemText, Tooltip, Link, Select } from '@mui/material'
 import IconButton from '@mui/material/IconButton';
+import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import SchoolOutlinedIcon from '@mui/icons-material/SchoolOutlined';
 import PeopleOutlinedIcon from '@mui/icons-material/PeopleOutlined';
 import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
@@ -198,6 +199,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     }
 
     const platformPages = []
+    platformPages.push({ name: localeMessages["dashboard"], icon: <DashboardOutlinedIcon fontSize="small" />, href: platformBaseUrl + '/' });
     platformPages.push({ name: localeMessages["course_management"], icon: <SchoolOutlinedIcon fontSize="small" />, href: platformBaseUrl + '/courses/' });
     if (isOrganizationAdmin || isPlatformAdmin || isInstructor) {
         platformPages.push({ name: localeMessages["learners"], icon: <PeopleOutlinedIcon fontSize="small" />, href: platformBaseUrl + '/learners/' });

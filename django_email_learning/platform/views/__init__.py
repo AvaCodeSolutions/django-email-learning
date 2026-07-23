@@ -1,5 +1,6 @@
 from django_email_learning.platform.views.base import BasePlatformView
 from django_email_learning.platform.views.courses import Courses, CourseView
+from django_email_learning.platform.views.dashboard import Dashboard
 from django_email_learning.platform.views.learners import Learners
 from django_email_learning.platform.views.misc import (
     Analytics,
@@ -27,4 +28,5 @@ __all__ = [
     "ApiKeys",
     "PrivateFileView",
     "Analytics",
+    "Dashboard",
 ]

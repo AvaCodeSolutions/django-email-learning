@@ -34,7 +34,7 @@ export default defineConfig({
       '@emotion/styled',
     ],
     // Force pre-bundling for MPA entry pages.
-    entries: ['./platform/courses/Courses.jsx', './platform/course/Course.jsx', './platform/organizations/Organizations.jsx', './platform/learners/Learners.jsx', './platform/settings_api_keys/SettingsApiKeys.jsx', './platform/analytics/Analytics.jsx', './public/organization/Organization.jsx', './personalised/quiz_public/Quiz.jsx', './personalised/assignment_public/Assignment.jsx', './personalised/command_result/CommandResult.jsx'],
+    entries: ['./platform/courses/Courses.jsx', './platform/course/Course.jsx', './platform/organizations/Organizations.jsx', './platform/learners/Learners.jsx', './platform/settings_api_keys/SettingsApiKeys.jsx', './platform/analytics/Analytics.jsx', './platform/dashboard/Dashboard.jsx', './public/organization/Organization.jsx', './personalised/quiz_public/Quiz.jsx', './personalised/assignment_public/Assignment.jsx', './personalised/command_result/CommandResult.jsx'],
   },
   build: {
     minify: 'terser',
@@ -55,6 +55,7 @@ export default defineConfig({
         learners: resolve(__dirname, 'platform/learners/index.html'),
         settings_api_keys: resolve(__dirname, 'platform/settings_api_keys/index.html'),
         analytics: resolve(__dirname, 'platform/analytics/index.html'),
+        dashboard: resolve(__dirname, 'platform/dashboard/index.html'),
         organization: resolve(__dirname, 'public/organization/index.html'),
         public_course: resolve(__dirname, "public/course/index.html"),
         quiz_public: resolve(__dirname, "personalised/quiz_public/index.html"),
