@@ -6,6 +6,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.6.0] — 2026-07-23
+
+### Added
+
+- **"Add to your site" embed-code button for newsletters** — The newsletter detail page now shows an "Add to your site" button (mirroring the course page's) that opens a dialog with a live preview and a ready-to-paste `<script>` tag plus a `<del-newsletter-form>` custom element tag, with color pickers for the subscribe button's background/text color. See [#749](https://github.com/AvaCodeSolutions/django-email-learning/issues/749).
+
+### Fixed
+
+- **Newsletter subscriptions were never confirmed by the subscriber** — Filling out a newsletter subscribe form (public page or embed widget) immediately marked the subscriber as subscribed with no ownership check, so anyone could subscribe an email address they didn't control. Subscribers are now sent a confirmation email and only receive sendouts once they click the confirmation link; the subscribers list and CSV export show each subscriber's confirmation status. Subscriptions created alongside course enrollment (checkbox at signup, or auto-subscribe on verify) are confirmed automatically once the enrollment itself is verified, since that already proves ownership of the email address. See [#751](https://github.com/AvaCodeSolutions/django-email-learning/issues/751).
+
 ## [2.5.0] — 2026-07-20
 
 ### Added
