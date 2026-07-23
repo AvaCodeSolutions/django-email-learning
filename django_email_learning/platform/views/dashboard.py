@@ -4,7 +4,6 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
 
-from django_email_learning.decorators import is_an_organization_member
 from django_email_learning.models import (
     Course,
     Learner,
@@ -18,7 +17,6 @@ from django_email_learning.platform.views.base import BasePlatformView
 
 
 @method_decorator(login_required, name="dispatch")
-@method_decorator(is_an_organization_member(allow_active_org_fallback=True), name="dispatch")
 class Dashboard(BasePlatformView):
     template_name = "platform/dashboard.html"
 
