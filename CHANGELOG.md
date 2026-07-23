@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.8.1] — 2026-07-24
+
+### Fixed
+
+- **Dashboard 403'd when it was the first page loaded after login** — The Dashboard was gated by a decorator that only reads the session's active organization rather than resolving it, so a session with no active organization seeded yet (the state right after login) failed the check before the view had a chance to seed it. Every other page using that decorator was only ever reached after a page without it had already seeded the session, so the bug only showed up now that Dashboard is the landing page. Dashboard no longer uses that decorator, matching the same pattern the Courses page already used.
+
 ## [2.8.0] — 2026-07-24
 
 ### Added
