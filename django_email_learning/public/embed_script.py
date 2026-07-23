@@ -12,7 +12,7 @@ from django_email_learning.public.api.views import embeddable_enrollment_enabled
 _TOKEN_PLACEHOLDER = "TOKEN_PLACEHOLDER"
 
 _EMBED_SCRIPT_TEMPLATE = r"""(function () {
-  if (customElements.get('del-enroll-form') || customElements.get('del-newsletter-form')) {
+  if (customElements.get('del-enroll-form') && customElements.get('del-newsletter-form')) {
     return;
   }
 

@@ -86,6 +86,10 @@ def _perform_enrollment(
         return JsonResponse({"error": str(e)}, status=403)
 
     if subscribe_to_newsletter and course.newsletter_id:
+        # Created unconfirmed here (no confirmation email sent) - the
+        # enrollment itself still needs verifying, and VerifyEnrollmentCommand
+        # confirms this same row once that happens, since verifying the
+        # enrollment already proves ownership of this email address.
         NewsletterSubscriber.objects.get_or_create(newsletter_id=course.newsletter_id, email=email)
 
     return JsonResponse({"status": "enrolled"}, status=200)

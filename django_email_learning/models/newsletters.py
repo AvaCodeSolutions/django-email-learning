@@ -29,7 +29,8 @@ class NewsletterSubscriber(models.Model):
     unsubscribe_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     # Null until the subscriber clicks the confirmation link sent to
     # confirm_token's URL - unconfirmed subscribers never receive sendouts.
-    confirmed_at = models.DateTimeField(null=True, blank=True)
+    # Indexed since the sendout fan-out filters on this for every sendout.
+    confirmed_at = models.DateTimeField(null=True, blank=True, db_index=True)
     confirm_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
 
     def __str__(self) -> str:
