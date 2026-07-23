@@ -18,6 +18,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import PeopleIcon from '@mui/icons-material/People';
 import EmailIcon from '@mui/icons-material/Email';
+import InfoIcon from '@mui/icons-material/Info';
 import { useState, useEffect } from "react";
 import apiClient from "../../src/apiClient.js";
 import { Button } from "@mui/material";
@@ -27,6 +28,7 @@ const UserForm = lazy(() => import("./components/UserForm.jsx"));
 const DeleteUserDialog = lazy(() => import("./components/DeleteUserDialog.jsx"));
 const NewsletterForm = lazy(() => import("./components/NewsletterForm.jsx"));
 const DeleteNewsletterDialog = lazy(() => import("./components/DeleteNewsletterDialog.jsx"));
+const OrganizationForm = lazy(() => import("../organizations/components/OrganizationForm.jsx"));
 
 function Organization() {
     const [organization, setOrganization] = useState(null);
@@ -36,8 +38,11 @@ function Organization() {
     const [activeTab, setActiveTab] = useState(initialTab);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogContent, setDialogContent] = useState(null);
+    const [generalInfoEditable, setGeneralInfoEditable] = useState(false);
+    const [generalInfoFormKey, setGeneralInfoFormKey] = useState(0);
 
-    const { localeMessages, direction, userRole, isOrganizationAdmin, apiBaseUrl, platformBaseUrl, organizationId, currentUserId, availableFeatures = [] } = useAppContext();
+    const { localeMessages, direction, userRole, isOrganizationAdmin, isPlatformAdmin, apiBaseUrl, platformBaseUrl, organizationId, currentUserId, availableFeatures = [] } = useAppContext();
+    const canEditOrganization = isPlatformAdmin || isOrganizationAdmin;
 
     const newslettersEnabled = availableFeatures.includes('newsletters');
     const createNewsletterEnabled = availableFeatures.includes('create_newsletter');
@@ -93,6 +98,12 @@ function Organization() {
                         sx={{ borderBottom: 1, borderColor: 'divider' }}
                     >
                         <Tab
+                            value="general_info"
+                            icon={<InfoIcon fontSize="small" />}
+                            iconPosition="start"
+                            label={localeMessages["general_info"]}
+                        />
+                        <Tab
                             value="members"
                             icon={<PeopleIcon fontSize="small" />}
                             iconPosition="start"
@@ -109,6 +120,50 @@ function Organization() {
                     </Tabs>
 
                     <Box sx={{ p: { xs: 1, sm: 2 } }}>
+                        {/* General info tab */}
+                        {activeTab === 'general_info' && organization && (
+                            <Box>
+                                {canEditOrganization && !generalInfoEditable && (
+                                    <Box sx={{ display: 'flex', justifyContent: direction === 'rtl' ? 'flex-start' : 'flex-end', mb: 1 }}>
+                                        <Tooltip title={localeMessages["edit"]}>
+                                            <Button
+                                                variant="outlined"
+                                                size="small"
+                                                startIcon={<EditIcon fontSize="small" sx={{ marginLeft: direction === 'rtl' ? 1 : 0 }} />}
+                                                onClick={() => setGeneralInfoEditable(true)}
+                                            >
+                                                {localeMessages["edit"]}
+                                            </Button>
+                                        </Tooltip>
+                                    </Box>
+                                )}
+                                <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
+                                    <OrganizationForm
+                                        key={generalInfoFormKey}
+                                        createMode={false}
+                                        readOnly={!canEditOrganization || !generalInfoEditable}
+                                        organizationId={organizationId}
+                                        initialName={organization.name}
+                                        initialDescription={organization.description}
+                                        initialLogoUrl={organization.logo}
+                                        initialLogoPath={organization.logo_path}
+                                        initialSocialLinks={organization.social_links}
+                                        initialIsPublic={organization.is_public}
+                                        successCallback={(data) => {
+                                            setOrganization(data);
+                                            setGeneralInfoEditable(false);
+                                            setGeneralInfoFormKey((key) => key + 1);
+                                        }}
+                                        failureCallback={(error) => console.error('Error updating organization:', error)}
+                                        cancelCallback={() => {
+                                            setGeneralInfoEditable(false);
+                                            setGeneralInfoFormKey((key) => key + 1);
+                                        }}
+                                    />
+                                </Suspense>
+                            </Box>
+                        )}
+
                         {/* Members tab */}
                         {activeTab === 'members' && (
                             <>
@@ -284,3 +339,5 @@ function Organization() {
 }
 
 render({ children: <Organization /> });
+
+export default Organization;

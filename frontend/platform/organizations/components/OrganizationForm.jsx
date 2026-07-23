@@ -20,7 +20,7 @@ const PLATFORM_OPTIONS = [
     { value: "substack", labelKey: "substack" },
 ];
 
-function OrganizationForm({ successCallback, failureCallback, cancelCallback, createMode, initialName, initialDescription, initialLogoUrl, initialLogoPath, initialSocialLinks, initialIsPublic, organizationId }) {
+function OrganizationForm({ successCallback, failureCallback, cancelCallback, createMode, initialName, initialDescription, initialLogoUrl, initialLogoPath, initialSocialLinks, initialIsPublic, organizationId, readOnly = false }) {
     const { localeMessages, apiBaseUrl, direction, defaultOrgSetting, defaultOrgSettings } = useAppContext();
     const defaultVisibility = defaultOrgSetting?.isPublic ?? defaultOrgSettings?.isPublic ?? true;
     const [name, setName] = useState(initialName || "");
@@ -165,8 +165,19 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
     return (
         <Box sx={{ p: 2 }}>
             { errorMessage && <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert> }
-            <RequiredTextField label={localeMessages["name"]} helperText={nameHelperText} fullWidth margin="normal" value={name} onChange={(e) => setName(e.target.value)} />
-            <RequiredTextField label={localeMessages["description"]} helperText={descriptionHelperText} fullWidth margin="normal" multiline rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                <ImageUpload
+                    variant="avatar"
+                    organizationId={organizationId}
+                    initialUrl={initialLogoUrl}
+                    disabled={readOnly}
+                    altText={localeMessages["organization_logo_alt"]}
+                    onUploadSuccess={(data) => setLogoServerPath(data.file_path)}
+                    onUploadError={() => setErrorMessage(localeMessages["logo_upload_failed"])}
+                />
+            </Box>
+            <RequiredTextField label={localeMessages["name"]} helperText={nameHelperText} fullWidth margin="normal" value={name} onChange={(e) => setName(e.target.value)} disabled={readOnly} />
+            <RequiredTextField label={localeMessages["description"]} helperText={descriptionHelperText} fullWidth margin="normal" multiline rows={4} value={description} onChange={(e) => setDescription(e.target.value)} disabled={readOnly} />
             <Divider sx={{ my: 2 }} />
             <Typography variant="subtitle2" sx={{ mb: 1 }}>{localeMessages["social_links"]}</Typography>
             <Stack spacing={2}>
@@ -177,7 +188,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
                         spacing={1}
                         sx={{ alignItems: 'flex-start', '& .MuiFormControl-root': { marginTop: '0 !important' } }}
                     >
-                        <FormControl sx={{ minWidth: 160 }} size="small">
+                        <FormControl sx={{ minWidth: 160 }} size="small" disabled={readOnly}>
                             <InputLabel id={`social-link-platform-label-${index}`}>{localeMessages["social_link_platform"]}</InputLabel>
                             <Select
                                 labelId={`social-link-platform-label-${index}`}
@@ -199,8 +210,9 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
                             error={Boolean(link.urlHelperText)}
                             helperText={link.urlHelperText}
                             onChange={(e) => updateSocialLinkUrl(index, e.target.value)}
+                            disabled={readOnly}
                         />
-                        <IconButton aria-label={localeMessages["remove_social_link"]} onClick={() => removeSocialLink(index)}>
+                        <IconButton aria-label={localeMessages["remove_social_link"]} onClick={() => removeSocialLink(index)} disabled={readOnly}>
                             <DeleteIcon fontSize="small" />
                         </IconButton>
                     </Stack>
@@ -209,7 +221,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
             <Button
                 startIcon={<AddIcon />}
                 onClick={addSocialLink}
-                disabled={socialLinks.length >= PLATFORM_OPTIONS.length}
+                disabled={readOnly || socialLinks.length >= PLATFORM_OPTIONS.length}
                 sx={{ mt: 1 }}
             >
                 {localeMessages["add_social_link"]}
@@ -217,7 +229,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
             <Divider sx={{ my: 2 }} />
             <Box sx={{ mt: 1 }}>
                 <FormControlLabel
-                    control={<Switch checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} dir={direction} />}
+                    control={<Switch checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} dir={direction} disabled={readOnly} />}
                     label={localeMessages["organization_is_public"]}
                     sx={{ m: 0 }}
                 />
@@ -225,18 +237,14 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
                     {localeMessages["organization_is_public_helper_text"]}
                 </Typography>
             </Box>
-            <Divider sx={{ my: 2 }} />
-            <ImageUpload organizationId={organizationId} initialUrl={initialLogoUrl} onUploadSuccess={(data) => {
-                setLogoServerPath(data.file_path);
-            }} onUploadError={(error) => {
-                setErrorMessage(localeMessages["logo_upload_failed"]);
-            }} />
-            <DialogActions>
-                <Button onClick={cancelCallback}>{localeMessages["cancel"]}</Button>
-                <Button variant='contained' type="submit" color="secondary" onClick={createMode? handleCreate() : handleUpdate() }>
-                    {createMode ? localeMessages["create"] : localeMessages["update"]}
-                </Button>
-            </DialogActions>
+            {!readOnly && (
+                <DialogActions>
+                    <Button onClick={cancelCallback}>{localeMessages["cancel"]}</Button>
+                    <Button variant='contained' type="submit" color="secondary" onClick={createMode? handleCreate() : handleUpdate() }>
+                        {createMode ? localeMessages["create"] : localeMessages["update"]}
+                    </Button>
+                </DialogActions>
+            )}
         </Box>
     );
 }

@@ -211,6 +211,28 @@ describe('OrganizationForm', () => {
     expect(body).not.toHaveProperty('logo');
   });
 
+  it('disables all fields and hides actions when readOnly', () => {
+    renderWithProviders(
+      <OrganizationForm
+        {...createProps}
+        createMode={false}
+        readOnly
+        organizationId="1"
+        initialName="Acme Corp"
+        initialDescription="A great company."
+        initialSocialLinks={[{ platform: 'website', url: 'https://acme.example.com' }]}
+      />,
+      { appContext: { localeMessages } }
+    );
+
+    expect(screen.getByLabelText(/Name/)).toBeDisabled();
+    expect(screen.getByLabelText(/Description/)).toBeDisabled();
+    expect(screen.getByLabelText('URL')).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Add link' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Update' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cancel' })).not.toBeInTheDocument();
+  });
+
   it('offers all 10 platforms and disables Add link once all are used', async () => {
     const user = userEvent.setup();
     renderWithProviders(<OrganizationForm {...createProps} />, {
