@@ -1,12 +1,18 @@
 import { useState, useEffect } from 'react';
 import { styled } from '@mui/material/styles';
+import Avatar from '@mui/material/Avatar';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import BusinessIcon from '@mui/icons-material/Business';
 import { getCookie } from '../utils.js';
 import { useAppContext } from '../render.jsx';
 
+const AVATAR_SIZE = 96;
 
-const ImageUpload = ({ onUploadSuccess, onUploadError, initialUrl, organizationId }) => {
+const ImageUpload = ({ onUploadSuccess, onUploadError, initialUrl, organizationId, disabled = false, altText, variant = 'button' }) => {
     console.log("Rendering ImageUpload component with initialUrl:", initialUrl);
     const [imageFile, setImageFile] = useState(null);
     const [imageUrl, setImageUrl] = useState(initialUrl);
@@ -86,12 +92,57 @@ const ImageUpload = ({ onUploadSuccess, onUploadError, initialUrl, organizationI
         width: 1,
     });
 
+    if (variant === 'avatar') {
+        return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ position: 'relative', width: AVATAR_SIZE, height: AVATAR_SIZE }}>
+                    <Avatar
+                        src={imageUrl || undefined}
+                        alt={altText || localeMessages["uploaded_image_alt"]}
+                        sx={{ width: AVATAR_SIZE, height: AVATAR_SIZE, bgcolor: 'action.hover', color: 'text.secondary' }}
+                    >
+                        {!imageUrl && <BusinessIcon sx={{ fontSize: AVATAR_SIZE * 0.45 }} />}
+                    </Avatar>
+                    {!disabled && (
+                        <IconButton
+                            component="label"
+                            size="small"
+                            aria-label={localeMessages["upload_button_label"]}
+                            sx={{
+                                position: 'absolute',
+                                bottom: 0,
+                                insetInlineEnd: 0,
+                                bgcolor: 'background.paper',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                '&:hover': { bgcolor: 'background.paper' },
+                            }}
+                        >
+                            <CloudUploadIcon fontSize="small" />
+                            <VisuallyHiddenInput
+                                type="file"
+                                accept="image/png,image/jpeg,image/gif,image/bmp,image/svg+xml,image/tiff,image/avif"
+                                onChange={handleFileChange}
+                            />
+                        </IconButton>
+                    )}
+                </Box>
+                {imageUrl && !disabled ? (
+                    <Button variant="text" color="primary" size="small" onClick={removeImage}>{localeMessages["remove_image"]}</Button>
+                ) : !imageUrl && (
+                    <Typography variant="caption" color="text.secondary">{altText || localeMessages["uploaded_image_alt"]}</Typography>
+                )}
+            </Box>
+        );
+    }
+
     return (<>
         { !imageUrl ? <Button
             component="label"
             role={undefined}
             variant="contained"
             tabIndex={-1}
+            disabled={disabled}
             startIcon={<CloudUploadIcon sx={{ marginLeft: direction === 'rtl' ? 1 : 0 }} />}
             sx={{ textAlign: direction === 'rtl' ? 'right' : 'left', mt: 2, mb: 2}}
             dir={direction}
@@ -101,10 +152,11 @@ const ImageUpload = ({ onUploadSuccess, onUploadError, initialUrl, organizationI
                 type="file"
                 accept="image/png,image/jpeg,image/gif,image/bmp,image/svg+xml,image/tiff,image/avif"
                 onChange={handleFileChange}
+                disabled={disabled}
             />
             </Button>
-            : (<><img src={imageUrl} alt={localeMessages["uploaded_image_alt"]} style={{ marginTop: '10px', maxHeight: '100px' }} /><br />
-                <Button variant="text" color="primary" onClick={removeImage}>{localeMessages["remove_image"]}</Button></>
+            : (<><img src={imageUrl} alt={altText || localeMessages["uploaded_image_alt"]} style={{ marginTop: '10px', maxHeight: '100px' }} /><br />
+                <Button variant="text" color="primary" onClick={removeImage} disabled={disabled}>{localeMessages["remove_image"]}</Button></>
             )}
     </>)
 }
