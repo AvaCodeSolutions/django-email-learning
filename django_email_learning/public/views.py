@@ -240,7 +240,7 @@ class OrganizationView(TemplateView):
                     "newsletters": _("Newsletters"),
                     "newsletter_subscribe_intro": _("Choose which updates you'd like to receive by email:"),
                     "newsletter_subscribe": _("Subscribe"),
-                    "newsletter_subscribe_success": _("You have been successfully subscribed."),
+                    "newsletter_subscribe_success": _("Almost there! Check your email to confirm your subscription."),
                     "newsletter_subscribe_error": _("Subscription failed. Please try again."),
                     "newsletter_select_one": _("Please select at least one newsletter."),
                     "subscribe_to_newsletter": _("Subscribe to NEWSLETTER_TITLE"),

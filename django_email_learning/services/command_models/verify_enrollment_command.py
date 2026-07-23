@@ -4,6 +4,7 @@ from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import gettext as _
 from pydantic import Field
 
@@ -55,17 +56,22 @@ class VerifyEnrollmentCommand(AbstractCommand):
         )
         metric_service.user_enrollment_activated(enrollment.course.slug, enrollment.course.organization.id)
 
-        # Auto-subscribe to linked newsletter (idempotent)
+        # Auto-subscribe to linked newsletter (idempotent). Mark it confirmed
+        # immediately - clicking this verification link already proves the
+        # learner owns this email address, so there's no need to separately
+        # confirm the newsletter subscription too (this also covers the
+        # subscribe_to_newsletter checkbox at enroll time, which creates the
+        # same row unconfirmed - get_or_create finds it here either way).
         newsletter = enrollment.course.newsletter
         newsletter_subscriber = None
         if newsletter:
-            (
-                newsletter_subscriber,
-                _created,
-            ) = NewsletterSubscriber.objects.get_or_create(
+            newsletter_subscriber, _created = NewsletterSubscriber.objects.get_or_create(
                 newsletter=newsletter,
                 email=enrollment.learner.email,
             )
+            if not newsletter_subscriber.is_confirmed:
+                newsletter_subscriber.confirmed_at = timezone.now()
+                newsletter_subscriber.save(update_fields=["confirmed_at"])
 
         # Send confirmation email
         subject = _("Enrollment Verified")

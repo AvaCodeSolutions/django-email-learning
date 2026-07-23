@@ -1,0 +1,13 @@
+{% extends "public/base.html" %}
+{% load i18n %}
+
+{% block title %}{% translate "Invalid Confirmation Link" %}{% endblock %}
+
+{% block body %}
+<div style="font-family: Helvetica, Arial, sans-serif; max-width: 520px; margin: 80px auto; padding: 0 20px; text-align: center;">
+    <h1 style="font-size: 24px; color: #1f2340; margin-bottom: 16px;">{% translate "Link not found" %}</h1>
+    <p style="font-size: 15px; color: #555; line-height: 1.7;">
+        {% translate "This confirmation link is invalid or no longer active - for example, if you've since unsubscribed. If you're trying to subscribe, please submit the subscribe form again." %}
+    </p>
+</div>
+{% endblock %}

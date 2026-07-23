@@ -3,8 +3,12 @@ import logging
 from typing import List
 
 from django.conf import settings
+from django.core.mail import EmailMultiAlternatives
 from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils.decorators import method_decorator
+from django.utils.translation import gettext as _
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from pydantic import ValidationError
@@ -26,6 +30,7 @@ from django_email_learning.services.command_models.exceptions.enrollment_already
 from django_email_learning.services.command_models.exceptions.learner_cap_exceeded_error import (
     LearnerCapExceededError,
 )
+from django_email_learning.services.email_sender_service import email_sender_service
 from django_email_learning.services.utils import mask_email
 
 logger = logging.getLogger(__name__)
@@ -81,15 +86,53 @@ def _perform_enrollment(
         return JsonResponse({"error": str(e)}, status=403)
 
     if subscribe_to_newsletter and course.newsletter_id:
+        # Created unconfirmed here (no confirmation email sent) - the
+        # enrollment itself still needs verifying, and VerifyEnrollmentCommand
+        # confirms this same row once that happens, since verifying the
+        # enrollment already proves ownership of this email address.
         NewsletterSubscriber.objects.get_or_create(newsletter_id=course.newsletter_id, email=email)
 
     return JsonResponse({"status": "enrolled"}, status=200)
 
 
+def _send_newsletter_confirmation_email(subscriber: NewsletterSubscriber) -> None:
+    """Emails a confirmation link for a newly-created, unconfirmed
+    NewsletterSubscriber. Subscribers stay unconfirmed - and are excluded
+    from sendouts - until they click through.
+    """
+    site_base_url = str(settings.DJANGO_EMAIL_LEARNING["SITE_BASE_URL"]).rstrip("/")
+    confirmation_path = reverse(
+        "django_email_learning:public:newsletter_confirm_subscription",
+        kwargs={"token": subscriber.confirm_token},
+    )
+    template_context = {
+        "newsletter_title": subscriber.newsletter.title,
+        "organization_name": subscriber.newsletter.organization.name,
+        "confirmation_link": f"{site_base_url}{confirmation_path}",
+    }
+
+    email = EmailMultiAlternatives(
+        subject=_("Confirm your newsletter subscription"),
+        body=render_to_string("emails/newsletter_confirmation.txt", template_context),
+        from_email=email_sender_service.from_email,
+        to=[subscriber.email],
+    )
+    email.attach_alternative(
+        render_to_string("emails/newsletter_confirmation.html", template_context),
+        "text/html",
+    )
+    email_sender_service.send(email)
+
+
 def _perform_newsletter_subscribe(
     *, organization_id: int, email: str, newsletter_ids: List[int], max_subscribers: int
 ) -> JsonResponse:
-    newsletters = {n.id: n for n in Newsletter.objects.filter(id__in=newsletter_ids, organization_id=organization_id)}
+    newsletters = {
+        n.id: n
+        for n in Newsletter.objects.filter(id__in=newsletter_ids, organization_id=organization_id).select_related(
+            "organization"
+        )
+    }
 
     invalid = set(newsletter_ids) - set(newsletters)
     if invalid:
@@ -103,10 +146,12 @@ def _perform_newsletter_subscribe(
                 status=400,
             )
 
-    for newsletter_id in newsletters:
-        NewsletterSubscriber.objects.get_or_create(newsletter_id=newsletter_id, email=email)
+    for newsletter in newsletters.values():
+        subscriber, created = NewsletterSubscriber.objects.get_or_create(newsletter=newsletter, email=email)
+        if created:
+            _send_newsletter_confirmation_email(subscriber)
 
-    return JsonResponse({"status": "subscribed"}, status=200)
+    return JsonResponse({"status": "confirmation_pending"}, status=200)
 
 
 class EnrollView(View):

@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Base from '../../src/components/Base.jsx';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -110,13 +111,14 @@ function NewsletterSubscribers() {
                                 <TableRow>
                                     <TableCell>{localeMessages['email']}</TableCell>
                                     <TableCell>{localeMessages['subscribed_at']}</TableCell>
+                                    <TableCell>{localeMessages['status']}</TableCell>
                                     {isOrganizationAdmin && <TableCell align="right">{localeMessages['actions']}</TableCell>}
                                 </TableRow>
                             </TableHead>
                             <TableBody>
                                 {subscribers.length === 0 && !loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={isOrganizationAdmin ? 3 : 2} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                                        <TableCell colSpan={isOrganizationAdmin ? 4 : 3} align="center" sx={{ py: 4, color: 'text.secondary' }}>
                                             {localeMessages['no_subscribers']}
                                         </TableCell>
                                     </TableRow>
@@ -125,6 +127,14 @@ function NewsletterSubscribers() {
                                         <TableRow key={sub.id} hover>
                                             <TableCell>{sub.email}</TableCell>
                                             <TableCell>{formatDate(sub.subscribed_at)}</TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    size="small"
+                                                    label={sub.is_confirmed ? localeMessages['confirmed'] : localeMessages['pending_confirmation']}
+                                                    color={sub.is_confirmed ? 'success' : 'default'}
+                                                    variant={sub.is_confirmed ? 'filled' : 'outlined'}
+                                                />
+                                            </TableCell>
                                             {isOrganizationAdmin && (
                                                 <TableCell align="right">
                                                     <IconButton size="small" color="error" onClick={() => setPendingDelete(sub)} aria-label={localeMessages['delete']}>
@@ -164,3 +174,5 @@ function NewsletterSubscribers() {
 }
 
 render({ children: <NewsletterSubscribers /> });
+
+export default NewsletterSubscribers;

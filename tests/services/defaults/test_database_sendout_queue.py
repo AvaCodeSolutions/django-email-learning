@@ -45,7 +45,9 @@ def sendout(newsletter):
 
 @pytest.fixture()
 def subscriber(newsletter):
-    return NewsletterSubscriber.objects.create(newsletter=newsletter, email="sub@example.com")
+    return NewsletterSubscriber.objects.create(
+        newsletter=newsletter, email="sub@example.com", confirmed_at=timezone.now()
+    )
 
 
 def test_fanout_allows_sendout_when_resolver_not_configured(db, sendout, subscriber):
@@ -58,6 +60,16 @@ def test_fanout_allows_sendout_when_resolver_not_configured(db, sendout, subscri
     sendout.refresh_from_db()
     assert sendout.status == Sendout.Status.SCHEDULED
     assert sendout.blocked_reason is None
+
+
+def test_fanout_excludes_unconfirmed_subscribers(db, newsletter, sendout):
+    NewsletterSubscriber.objects.create(newsletter=newsletter, email="unconfirmed@example.com")
+    queue = DatabaseSendoutQueue()
+
+    task = queue.next_task()
+
+    assert task is None
+    assert SendoutDelivery.objects.count() == 0
 
 
 def test_fanout_receives_the_sendout_instance(db, settings, sendout, subscriber):

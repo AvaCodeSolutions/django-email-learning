@@ -8,6 +8,7 @@ from django.utils.translation import gettext as _
 from django_email_learning.decorators import is_an_organization_member
 from django_email_learning.models import Newsletter
 from django_email_learning.platform.views.base import BasePlatformView
+from django_email_learning.public.api.views import embeddable_enrollment_enabled
 
 
 @method_decorator(login_required, name="dispatch")
@@ -24,6 +25,7 @@ class NewsletterDetailView(BasePlatformView):
         context["appContext"]["newsletterId"] = newsletter.id
         context["appContext"]["newsletterTitle"] = newsletter.title
         context["appContext"]["organizationId"] = newsletter.organization_id
+        context["appContext"]["embeddableEnrollmentEnabled"] = embeddable_enrollment_enabled()
         context["page_title"] = _("Newsletter: %(title)s") % {"title": newsletter.title}
         return context
 
@@ -77,6 +79,23 @@ class NewsletterDetailView(BasePlatformView):
             "newsletter_subscribers": _("Subscribers"),
             "sendout_blocked_default_message": newsletters_settings.get("SENDOUT_BLOCKED_MESSAGE")
             or _("This sendout was blocked."),
+            "add_to_your_site": _("Add to your site"),
+            "embed_customize_form_title": _("Customize your form"),
+            "embed_preview_title": _("Preview"),
+            "embed_button_bg_color_label": _("Button background"),
+            "embed_button_text_color_label": _("Button text color"),
+            "embed_code_dialog_title": _("Embed on your site"),
+            "embed_code_dialog_description": _(
+                "Paste these snippets into your own website's HTML to let visitors subscribe directly from your site."
+            ),
+            "embed_script_step_title": _("1. Add this once to your site (e.g. in your footer)"),
+            "embed_widget_step_title": _("2. Place this wherever you want the subscribe form to appear"),
+            "embed_code_loading": _("Loading embed code..."),
+            "embed_code_error": _("Couldn't load the embed code. Please try again."),
+            "copy_embed_script": _("Copy script"),
+            "copy_embed_widget": _("Copy widget tag"),
+            "embed_code_copied": _("Copied!"),
+            "close": _("Close"),
         }
 
 
@@ -109,4 +128,7 @@ class NewsletterSubscribersView(BasePlatformView):
             "cancel": _("Cancel"),
             "export_csv": _("Export CSV"),
             "actions": _("Actions"),
+            "status": _("Status"),
+            "confirmed": _("Confirmed"),
+            "pending_confirmation": _("Pending confirmation"),
         }

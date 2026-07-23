@@ -83,11 +83,16 @@ class DatabaseSendoutQueue(TaskQueueProtocol[SendoutDelivery]):
         if not due_ids:
             return iter([])
 
-        # Step 2: lazy fan-out — create a SendoutDelivery for every current subscriber
-        # that doesn't already have one (idempotent via ignore_conflicts).
+        # Step 2: lazy fan-out — create a SendoutDelivery for every current,
+        # confirmed subscriber that doesn't already have one (idempotent via
+        # ignore_conflicts). Unconfirmed subscribers are excluded entirely -
+        # if they confirm later, they'll be picked up by a future sendout's
+        # own fan-out.
         for sendout_id in due_ids:
             subscriber_ids = list(
-                NewsletterSubscriber.objects.filter(newsletter__sendouts__id=sendout_id).values_list("id", flat=True)
+                NewsletterSubscriber.objects.filter(
+                    newsletter__sendouts__id=sendout_id, confirmed_at__isnull=False
+                ).values_list("id", flat=True)
             )
             if subscriber_ids:
                 SendoutDelivery.objects.bulk_create(

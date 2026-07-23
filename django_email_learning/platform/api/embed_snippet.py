@@ -3,8 +3,10 @@ from django.utils.html import escape
 
 def build_embed_script_tag(script_url: str) -> str:
     """The one-time <script> tag that loads the shared, deployment-generic
-    del-enroll-form custom element definition (django_email_learning.public.embed_script).
-    Goes once anywhere on the page (e.g. a shared footer/header template).
+    del-enroll-form/del-newsletter-form custom element definitions
+    (django_email_learning.public.embed_script). Goes once anywhere on the
+    page (e.g. a shared footer/header template) - the same tag covers both
+    a course enrollment widget and a newsletter subscribe widget.
     """
     return f'<script src="{escape(script_url)}"></script>'
 
@@ -43,3 +45,16 @@ def build_embed_widget_tag(
         attrs.append(f'newsletter_title="{escape(newsletter_title)}"')
 
     return f"<del-enroll-form {' '.join(attrs)}></del-enroll-form>"
+
+
+def build_embed_newsletter_widget_tag(*, token: str, newsletter_id: int) -> str:
+    """Builds the <del-newsletter-form> placeholder tag that pairs with
+    build_embed_script_tag(). A standalone subscribe form (email input +
+    button only) for a single newsletter, meant to be placed wherever the
+    organization wants the subscribe form to appear.
+    """
+    attrs = [
+        f'token="{escape(token)}"',
+        f'newsletter_id="{newsletter_id}"',
+    ]
+    return f"<del-newsletter-form {' '.join(attrs)}></del-newsletter-form>"

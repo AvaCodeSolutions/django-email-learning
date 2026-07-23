@@ -23,6 +23,8 @@ def test_embed_script_served_when_enabled(anonymous_client, settings):
     assert "customElements.define('del-enroll-form'" in content
     assert "class DelEnrollForm extends HTMLElement" in content
     assert ":host { display:block; width:350px; max-width:100%;" in content
+    assert "customElements.define('del-newsletter-form'" in content
+    assert "class DelNewsletterForm extends HTMLElement" in content
 
 
 def test_embed_script_builds_dom_without_innerhtml(anonymous_client, settings):
@@ -52,6 +54,19 @@ def test_embed_script_sanitizes_image_and_color_attributes(anonymous_client, set
     assert "safeImageUrl(this.getAttribute('course_image') || '')" in content
     assert "safeCssColor(this.getAttribute('button_bg_color') || '', '#4f46e5')" in content
     assert "safeCssColor(this.getAttribute('button_text_color') || '', '#ffffff')" in content
+    # del-newsletter-form's colors run through the same sanitizer.
+    assert content.count("safeCssColor(this.getAttribute('button_bg_color') || '', '#4f46e5')") == 2
+    assert content.count("safeCssColor(this.getAttribute('button_text_color') || '', '#ffffff')") == 2
+
+
+def test_embed_script_newsletter_form_posts_to_subscribe_endpoint(anonymous_client, settings):
+    settings.DJANGO_EMAIL_LEARNING = {**settings.DJANGO_EMAIL_LEARNING, "EMBEDDABLE_ENROLLMENT_ENABLED": True}
+
+    response = anonymous_client.get(URL)
+
+    content = response.content.decode()
+    assert "fetch(API_BASE + token + '/newsletters/subscribe/'" in content
+    assert "newsletter_ids: [Number(newsletterId)]" in content
 
 
 def test_embed_script_contains_deployment_api_base(anonymous_client, settings):

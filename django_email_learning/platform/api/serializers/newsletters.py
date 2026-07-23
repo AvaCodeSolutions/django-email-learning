@@ -89,5 +89,6 @@ class NewsletterSubscriberResponse(BaseModel):
     id: int
     email: str
     subscribed_at: datetime
+    is_confirmed: bool
 
     model_config = ConfigDict(from_attributes=True)

@@ -14,6 +14,7 @@ from django_email_learning.platform.api.views import (
     ImapConnectionView,
     JobsStatus,
     LearnersView,
+    NewsletterEmbedSnippetView,
     NewsletterView,
     OauthGetGroupListView,
     OauthGroupEnrollment,
@@ -82,6 +83,11 @@ urlpatterns = [
         "organizations/<int:organization_id>/newsletters/<int:newsletter_id>/sendouts/<int:sendout_id>/",
         SingleSendoutView.as_view(),
         name="sendouts_detail",
+    ),
+    path(
+        "organizations/<int:organization_id>/newsletters/<int:newsletter_id>/embed_snippet/",
+        NewsletterEmbedSnippetView.as_view(),
+        name="newsletter_embed_snippet",
     ),
     path(
         "organizations/<int:organization_id>/newsletters/<int:newsletter_id>/subscribers/",
