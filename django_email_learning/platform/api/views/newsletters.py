@@ -243,9 +243,9 @@ class SubscribersCsvExportView(NewsletterAccessMixin, View):
 
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["id", "email", "subscribed_at"])
+        writer.writerow(["id", "email", "subscribed_at", "confirmed"])
         for sub in newsletter.subscribers.all().order_by("subscribed_at"):
-            writer.writerow([sub.id, sub.email, sub.subscribed_at.isoformat()])
+            writer.writerow([sub.id, sub.email, sub.subscribed_at.isoformat(), sub.is_confirmed])
 
         response = HttpResponse(output.getvalue(), content_type="text/csv")
         safe_title = newsletter.title.replace('"', "")

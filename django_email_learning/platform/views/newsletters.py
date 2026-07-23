@@ -128,4 +128,7 @@ class NewsletterSubscribersView(BasePlatformView):
             "cancel": _("Cancel"),
             "export_csv": _("Export CSV"),
             "actions": _("Actions"),
+            "status": _("Status"),
+            "confirmed": _("Confirmed"),
+            "pending_confirmation": _("Pending confirmation"),
         }

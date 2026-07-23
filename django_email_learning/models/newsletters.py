@@ -27,9 +27,17 @@ class NewsletterSubscriber(models.Model):
     email = models.EmailField(max_length=254)
     subscribed_at = models.DateTimeField(auto_now_add=True)
     unsubscribe_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    # Null until the subscriber clicks the confirmation link sent to
+    # confirm_token's URL - unconfirmed subscribers never receive sendouts.
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    confirm_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
 
     def __str__(self) -> str:
         return f"{self.email} → {self.newsletter.title}"
+
+    @property
+    def is_confirmed(self) -> bool:
+        return self.confirmed_at is not None
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["newsletter", "email"], name="unique_subscriber_per_newsletter")]

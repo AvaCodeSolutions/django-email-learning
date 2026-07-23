@@ -7,6 +7,8 @@ from django_email_learning.models import (
     ContentDelivery,
     DeliverySchedule,
     EnrollmentStatus,
+    Newsletter,
+    NewsletterSubscriber,
 )
 from django_email_learning.services.command_models.exceptions.invalid_enrollment_error import (
     InvalidEnrollmentError,
@@ -71,6 +73,48 @@ def test_verify_enrollment_command_execute(db, enrollment, course_lesson_content
     sent_email = mail.outbox[0]
     assert sent_email.to == [enrollment.learner.email]
     assert "Enrollment Verified" in sent_email.subject
+
+
+def test_verify_enrollment_command_auto_confirms_linked_newsletter_subscription(db, enrollment, course_lesson_content):
+    newsletter = Newsletter.objects.create(
+        title="Course Updates", language="en", organization_id=enrollment.course.organization_id
+    )
+    enrollment.course.newsletter = newsletter
+    enrollment.course.save(update_fields=["newsletter"])
+
+    command = VerifyEnrollmentCommand(
+        enrollment_id=enrollment.id,
+        verification_code=enrollment.activation_code,
+    )
+    command.execute()
+
+    subscriber = NewsletterSubscriber.objects.get(newsletter=newsletter, email=enrollment.learner.email)
+    # Verifying the enrollment already proves ownership of this email address,
+    # so the auto-subscribed newsletter row is confirmed immediately - no
+    # separate newsletter confirmation email is needed.
+    assert subscriber.is_confirmed
+    assert len(mail.outbox) == 1  # only the enrollment-verified email, no separate newsletter one
+
+
+def test_verify_enrollment_command_confirms_preexisting_unconfirmed_subscriber(db, enrollment, course_lesson_content):
+    newsletter = Newsletter.objects.create(
+        title="Course Updates", language="en", organization_id=enrollment.course.organization_id
+    )
+    enrollment.course.newsletter = newsletter
+    enrollment.course.save(update_fields=["newsletter"])
+    # Simulates the subscribe_to_newsletter checkbox at enroll time, which
+    # creates this row unconfirmed before the enrollment itself is verified.
+    subscriber = NewsletterSubscriber.objects.create(newsletter=newsletter, email=enrollment.learner.email)
+    assert not subscriber.is_confirmed
+
+    command = VerifyEnrollmentCommand(
+        enrollment_id=enrollment.id,
+        verification_code=enrollment.activation_code,
+    )
+    command.execute()
+
+    subscriber.refresh_from_db()
+    assert subscriber.is_confirmed
 
 
 def test_verify_enrollment_command_includes_course_image_in_html_email(db, enrollment, course_lesson_content):

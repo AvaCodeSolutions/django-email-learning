@@ -1,4 +1,5 @@
 import pytest
+from django.core import mail
 from django.urls import reverse
 
 from django_email_learning.models import Newsletter, NewsletterSubscriber
@@ -28,8 +29,40 @@ def test_subscribe_creates_subscriber(db, anonymous_client, newsletter):
         content_type="application/json",
     )
     assert response.status_code == 200
-    assert response.json()["status"] == "subscribed"
-    assert NewsletterSubscriber.objects.filter(newsletter=newsletter, email="user@example.com").exists()
+    assert response.json()["status"] == "confirmation_pending"
+    subscriber = NewsletterSubscriber.objects.get(newsletter=newsletter, email="user@example.com")
+    assert not subscriber.is_confirmed
+
+
+def test_subscribe_sends_confirmation_email(db, anonymous_client, newsletter):
+    response = anonymous_client.post(
+        subscribe_url(),
+        data={"email": "user@example.com", "newsletter_ids": [newsletter.id]},
+        content_type="application/json",
+    )
+    assert response.status_code == 200
+    assert len(mail.outbox) == 1
+    sent_email = mail.outbox[0]
+    assert sent_email.to == ["user@example.com"]
+    assert "Confirm your newsletter subscription" in sent_email.subject
+    subscriber = NewsletterSubscriber.objects.get(newsletter=newsletter, email="user@example.com")
+    assert str(subscriber.confirm_token) in sent_email.body
+
+
+def test_resubscribe_does_not_resend_confirmation_email(db, anonymous_client, newsletter):
+    anonymous_client.post(
+        subscribe_url(),
+        data={"email": "user@example.com", "newsletter_ids": [newsletter.id]},
+        content_type="application/json",
+    )
+    assert len(mail.outbox) == 1
+
+    anonymous_client.post(
+        subscribe_url(),
+        data={"email": "user@example.com", "newsletter_ids": [newsletter.id]},
+        content_type="application/json",
+    )
+    assert len(mail.outbox) == 1
 
 
 def test_subscribe_to_multiple_newsletters(db, anonymous_client, newsletter, newsletter_2):
@@ -43,6 +76,7 @@ def test_subscribe_to_multiple_newsletters(db, anonymous_client, newsletter, new
     )
     assert response.status_code == 200
     assert NewsletterSubscriber.objects.filter(email="user@example.com").count() == 2
+    assert len(mail.outbox) == 2
 
 
 def test_subscribe_is_idempotent(db, anonymous_client, newsletter):

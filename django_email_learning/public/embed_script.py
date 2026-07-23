@@ -242,7 +242,7 @@ _EMBED_SCRIPT_TEMPLATE = r"""(function () {
           .then(function (result) {
             message.style.display = 'block';
             if (result.ok) {
-              message.textContent = "You've been subscribed! Check your email to confirm.";
+              message.textContent = "Almost there! Check your email to confirm your subscription.";
               form.reset();
             } else {
               message.textContent = (result.data && result.data.error) || 'Something went wrong. Please try again.';

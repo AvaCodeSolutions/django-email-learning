@@ -1,0 +1,27 @@
+{% extends "emails/base.html" %}
+{% load i18n %}
+
+{% block content %}
+        <p class="email-paragraph">{% translate "Hello there," %}</p>
+
+        <p class="email-paragraph">
+            {% blocktranslate %}You (or someone using your email address) requested to subscribe to <strong>{{ newsletter_title }}</strong> from <strong>{{ organization_name }}</strong>.{% endblocktranslate %}
+        </p>
+
+        <p class="email-paragraph">
+            {% translate "Please confirm your subscription by clicking the button below:" %}
+        </p>
+
+        <div class="email-cta-wrap">
+            <a href="{{ confirmation_link }}" class="email-cta bg-brand">
+                {% translate "Confirm Subscription" %}
+            </a>
+        </div>
+
+        <div class="email-divider-note">
+            <p>{% translate "If you didn't request this, you can safely ignore this email - you will not be subscribed unless you click the link above." %}</p>
+        </div>
+
+        <p class="email-paragraph">{% translate "Best regards," %}<br>
+        {% blocktranslate %}{{ organization_name }}{% endblocktranslate %}</p>
+{% endblock %}
