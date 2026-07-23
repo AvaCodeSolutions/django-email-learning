@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.8.0] — 2026-07-24
+
+### Added
+
+- **Platform Dashboard as the new landing page** — Logging in now lands on a new Dashboard page instead of redirecting straight to Courses. It greets the user, shows a setup checklist (create a course, invite your team, complete the organization profile, set up a newsletter) that only lists incomplete steps and disappears once everything's done, and an overview of active courses, enrolled learners, newsletter subscribers, and content delivery health that only shows cards backed by real data.
+
 ## [2.7.0] — 2026-07-23
 
 ### Added
