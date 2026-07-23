@@ -6,6 +6,7 @@ from pathlib import Path
 TEMPLATES = [
     ["platform", "courses"],
     ["platform", "course"],
+    ["platform", "dashboard"],
     ["platform", "organizations"],
     ["platform", "organization"],
     ["platform", "learners"],
