@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.7.0] — 2026-07-23
+
+### Added
+
+- **General Info tab on the platform organization page** — The single organization page now has a read-only-by-default "General Info" tab showing the organization's name, description, social links, visibility, and logo, using the same form as the create/edit dialog. An edit icon toggles the form into an editable state; canceling or navigating away discards unsaved changes. The logo now shows as a circular avatar with a placeholder icon and label when none is set, instead of a plain upload button. See [#684](https://github.com/AvaCodeSolutions/django-email-learning/issues/684).
+
 ## [2.6.0] — 2026-07-23
 
 ### Added
