@@ -135,6 +135,7 @@ class BasePlatformView(TemplateView):
                 ),
                 "organizationIsPublic": Organization.objects.get(id=active_organization_id).is_public,
                 "localeMessages": {
+                    "dashboard": _("Dashboard"),
                     "organizations": _("Organizations"),
                     "course_management": _("Course Management"),
                     "learners": _("Learners"),
