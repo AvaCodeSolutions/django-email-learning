@@ -107,9 +107,9 @@ class Enrollment(models.Model):
     }
     learner = models.ForeignKey(Learner, related_name="enrollments", on_delete=models.CASCADE)
     course = models.ForeignKey(Course, related_name="enrollments", on_delete=models.CASCADE)
-    enrolled_at = models.DateTimeField(auto_now_add=True)
+    enrolled_at = models.DateTimeField(auto_now_add=True, db_index=True)
     activated_at = models.DateTimeField(null=True, blank=True)
-    final_state_at = models.DateTimeField(null=True, blank=True)
+    final_state_at = models.DateTimeField(null=True, blank=True, db_index=True)
     status = models.CharField(
         max_length=50,
         choices=[
@@ -268,6 +268,52 @@ class Enrollment(models.Model):
 
         progress = int(((delivered_content + extra_delivered) / total_content) * 100)
         return progress
+
+    @classmethod
+    def bulk_progress_percentages(cls, enrollments: "list[Enrollment]") -> dict[int, int]:
+        """
+        Same result as calling progress_percentage() on each enrollment, but in 2
+        queries total instead of 2 queries per enrollment. progress_percentage()
+        always hits the DB itself (it doesn't use prefetched querysets), so any
+        caller iterating over more than a handful of enrollments should use this
+        instead — see AverageProgressView and DownloadLearnerProgressView for the
+        intended usage.
+        """
+        from .deliveries import ContentDelivery
+
+        enrollments = list(enrollments)
+        if not enrollments:
+            return {}
+
+        course_ids = {enrollment.course_id for enrollment in enrollments}
+        total_content_by_course = dict(
+            CourseContent.objects.filter(course_id__in=course_ids, is_published=True)
+            .values("course_id")
+            .annotate(total=models.Count("id"))
+            .values_list("course_id", "total")
+        )
+
+        enrollment_ids = [enrollment.id for enrollment in enrollments]
+        delivered_by_enrollment = dict(
+            ContentDelivery.objects.filter(
+                enrollment_id__in=enrollment_ids,
+                delivery_schedules__status=DeliveryStatus.DELIVERED,
+                course_content__is_published=True,
+            )
+            .values("enrollment_id")
+            .annotate(count=models.Count("id", distinct=True))
+            .values_list("enrollment_id", "count")
+        )
+
+        result = {}
+        for enrollment in enrollments:
+            total_content = total_content_by_course.get(enrollment.course_id, 0)
+            if not total_content:
+                result[enrollment.id] = 0
+                continue
+            delivered_content = delivered_by_enrollment.get(enrollment.id, 0)
+            result[enrollment.id] = int((delivered_content / total_content) * 100)
+        return result
 
 
 class Certificate(models.Model):

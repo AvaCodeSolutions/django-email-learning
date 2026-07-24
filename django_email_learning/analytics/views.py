@@ -190,12 +190,10 @@ class AverageProgressView(View):
         organization_id = kwargs["organization_id"]
         course_ids = _course_ids(request)
 
-        enrollments = (
-            _enrollment_qs(organization_id, course_ids)
-            .filter(status=EnrollmentStatus.ACTIVE)
-            .select_related("course")
-            .prefetch_related("content_deliveries__delivery_schedules")
+        enrollments = list(
+            _enrollment_qs(organization_id, course_ids).filter(status=EnrollmentStatus.ACTIVE).select_related("course")
         )
+        progress_by_enrollment = Enrollment.bulk_progress_percentages(enrollments)
 
         course_progress: dict[int, dict] = {}
         for enrollment in enrollments:
@@ -208,7 +206,7 @@ class AverageProgressView(View):
                     "sum": 0,
                 }
             course_progress[cid]["total"] += 1
-            course_progress[cid]["sum"] += enrollment.progress_percentage()
+            course_progress[cid]["sum"] += progress_by_enrollment[enrollment.id]
 
         response = serializers.AverageProgressResponse(
             data=[
@@ -376,12 +374,12 @@ class DownloadLearnerProgressView(View):
         organization_id = kwargs["organization_id"]
         course_ids = _course_ids(request)
 
-        enrollments = (
+        enrollments = list(
             _enrollment_qs(organization_id, course_ids)
             .select_related("learner", "course")
-            .prefetch_related("content_deliveries__delivery_schedules")
             .order_by("course__title", "learner__email")
         )
+        progress_by_enrollment = Enrollment.bulk_progress_percentages(enrollments)
 
         last_delivery_map = {}
         schedules = (
@@ -402,7 +400,7 @@ class DownloadLearnerProgressView(View):
                 enrollment.learner.email,
                 enrollment.course.title,
                 enrollment.enrolled_at.date().isoformat(),
-                enrollment.progress_percentage(),
+                progress_by_enrollment[enrollment.id],
                 enrollment.status,
                 last_delivery_map[enrollment.id].isoformat()  # type: ignore[union-attr]
                 if last_delivery_map.get(enrollment.id)
