@@ -261,6 +261,7 @@ class GetOrCreateUserByEmail(View):
                         request=request,
                         use_https=request.is_secure(),
                         from_email=DJANGO_EMAIL_LEARNING_SETTINGS.get("FROM_EMAIL", settings.DEFAULT_FROM_EMAIL),
+                        subject_template_name="emails/invite_member_subject.txt",
                         email_template_name="emails/password_reset.txt",
                         html_email_template_name="emails/password_reset.html",
                         extra_email_context={"organization": Organization.objects.get(id=organization_id).name},
