@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.10.1] - 2026-07-24
+
+### Fixed
+
+- **Fix N+1 query causing slow analytics page loads** - Added extra indexes and fixed the N+1 query for progress percentage
+
 ## [2.10.0] — 2026-07-24
 
 ### Added
