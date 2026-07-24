@@ -94,3 +94,85 @@ def test_greeting_name_is_none_without_display_name(editor_client):
 
     assert response.status_code == 200
     assert response.context["appContext"]["greetingName"] is None
+
+
+def test_default_dashboard_sections_when_not_configured(org_admin_client, settings):
+    settings.DJANGO_EMAIL_LEARNING = {**settings.DJANGO_EMAIL_LEARNING, "DASHBOARD": {}}
+
+    response = org_admin_client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["dashboardSections"] == ["setup_progress", "overview", "quick_actions"]
+
+
+def test_configured_dashboard_sections_override_the_default_order(org_admin_client, settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "DASHBOARD": {"SECTIONS": ["quick_actions", "custom_component:promo", "overview"]},
+    }
+
+    response = org_admin_client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["dashboardSections"] == [
+        "quick_actions",
+        "custom_component:promo",
+        "overview",
+    ]
+
+
+def test_dashboard_custom_components_only_includes_referenced_names(org_admin_client, settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "DASHBOARD": {
+            "SECTIONS": ["custom_component:promo", "quick_actions"],
+            "CUSTOM_COMPONENTS": {
+                "promo": {"componentTag": "<promo-banner></promo-banner>"},
+                "unreferenced": {"componentTag": "<other-widget></other-widget>"},
+            },
+        },
+    }
+
+    response = org_admin_client.get(get_url())
+
+    assert response.status_code == 200
+    components = response.context["appContext"]["dashboardCustomComponents"]
+    assert list(components.keys()) == ["promo"]
+    assert components["promo"] == {"componentTag": "<promo-banner></promo-banner>"}
+
+
+def test_dashboard_custom_component_referenced_but_not_configured_is_omitted(org_admin_client, settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "DASHBOARD": {"SECTIONS": ["custom_component:missing", "quick_actions"]},
+    }
+
+    response = org_admin_client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["dashboardCustomComponents"] == {}
+
+
+def test_dashboard_custom_component_assets_are_injected_into_the_page(org_admin_client, settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "DASHBOARD": {
+            "SECTIONS": ["custom_component:promo"],
+            "CUSTOM_COMPONENTS": {
+                "promo": {
+                    "componentTag": "<promo-banner></promo-banner>",
+                    "styleUrl": "/static/promo.css",
+                    "scriptUrl": "/static/promo.js",
+                },
+            },
+        },
+    }
+
+    response = org_admin_client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["navbarComponentStyleUrls"] == ["/static/promo.css"]
+    assert response.context["navbarComponentScriptUrls"] == ["/static/promo.js"]
+    content = response.content.decode()
+    assert 'href="/static/promo.css"' in content
+    assert '<script src="/static/promo.js"></script>' in content

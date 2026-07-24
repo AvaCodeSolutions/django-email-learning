@@ -45,7 +45,13 @@ class BasePlatformView(TemplateView):
         return context
 
     def render_to_response(self, context, **response_kwargs):  # type: ignore[no-untyped-def]
-        components = context.get("appContext", {}).get("navbarCustomComponents", [])
+        app_context = context.get("appContext", {})
+        # Dashboard's custom components share the same {componentTag, scriptUrl, styleUrl}
+        # shape as navbarCustomComponents, so their assets are deduped into the same
+        # head-injected style/script URL lists rather than duplicating this logic.
+        components = list(app_context.get("navbarCustomComponents", [])) + list(
+            app_context.get("dashboardCustomComponents", {}).values()
+        )
         context["navbarComponentStyleUrls"] = _unique(component.get("styleUrl") for component in components)
         context["navbarComponentScriptUrls"] = _unique(component.get("scriptUrl") for component in components)
         return super().render_to_response(context, **response_kwargs)

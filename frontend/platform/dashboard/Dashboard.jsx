@@ -10,6 +10,9 @@ import Base from '../../src/components/Base.jsx'
 import render, { useAppContext } from '../../src/render.jsx';
 import apiClient from '../../src/apiClient.js'
 
+const DEFAULT_SECTIONS = ['setup_progress', 'overview', 'quick_actions'];
+const CUSTOM_COMPONENT_PREFIX = 'custom_component:';
+
 function SectionBox({ children, sx = {} }) {
   return (
     <Box sx={{
@@ -89,15 +92,106 @@ function ActionCard({ icon, title, description, cta, href }) {
   )
 }
 
+function SetupProgressSection({ localeMessages, setupItems, doneCount, totalCount, setupComplete }) {
+  if (setupComplete) return null;
+  return (
+    <Grid size={{ xs: 12 }}>
+      <SectionBox>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5, flexWrap: 'wrap' }}>
+          <Typography variant="h6">{localeMessages.setup_checklist_title}</Typography>
+          <Chip
+            size="small"
+            label={localeMessages.setup_progress.replace('DONE', doneCount).replace('TOTAL', totalCount)}
+          />
+        </Box>
+        <LinearProgress
+          variant="determinate"
+          value={(doneCount / totalCount) * 100}
+          sx={{ mt: 1.5, mb: 0.5, height: 6, borderRadius: 3 }}
+        />
+        {setupItems.map((item) => <SetupItem key={item.key} item={item} />)}
+      </SectionBox>
+    </Grid>
+  )
+}
+
+function OverviewSection({ localeMessages, statCards }) {
+  if (statCards.length === 0) return null;
+  return (
+    <>
+      <Grid size={{ xs: 12 }}>
+        <Typography variant="overline" color="text.disabled">{localeMessages.overview_title}</Typography>
+      </Grid>
+      {statCards.map((stat) => (
+        <Grid key={stat.key} size={{ xs: 6, sm: 6, md: 3 }}>
+          {stat.isHealth
+            ? <HealthStatCard label={stat.label} statusLabel={stat.statusLabel} health={stat.health} />
+            : <StatCard label={stat.label} value={stat.value} />}
+        </Grid>
+      ))}
+    </>
+  )
+}
+
+function QuickActionsSection({ localeMessages, platformBaseUrl, canCreateNewsletter, orgScopedUrl }) {
+  return (
+    <>
+      <Grid size={{ xs: 12 }}>
+        <Typography variant="overline" color="text.disabled">{localeMessages.quick_actions_title}</Typography>
+      </Grid>
+      <Grid size={{ xs: 12, sm: 6, md: canCreateNewsletter ? 4 : 6 }}>
+        <ActionCard
+          icon={<SchoolIcon fontSize="small" />}
+          title={localeMessages.action_add_course_title}
+          description={localeMessages.action_add_course_description}
+          cta={localeMessages.action_add_course_cta}
+          href={`${platformBaseUrl}/courses/`}
+        />
+      </Grid>
+      {canCreateNewsletter && (
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <ActionCard
+            icon={<MailOutlineIcon fontSize="small" />}
+            title={localeMessages.action_write_newsletter_title}
+            description={localeMessages.action_write_newsletter_description}
+            cta={localeMessages.action_write_newsletter_cta}
+            href={orgScopedUrl('newsletters')}
+          />
+        </Grid>
+      )}
+      <Grid size={{ xs: 12, sm: 6, md: canCreateNewsletter ? 4 : 6 }}>
+        <ActionCard
+          icon={<BarChartOutlinedIcon fontSize="small" />}
+          title={localeMessages.action_view_analytics_title}
+          description={localeMessages.action_view_analytics_description}
+          cta={localeMessages.action_view_analytics_cta}
+          href={`${platformBaseUrl}/analytics/`}
+        />
+      </Grid>
+    </>
+  )
+}
+
+function CustomComponentSection({ component }) {
+  if (!component?.componentTag) return null;
+  return (
+    <Grid size={{ xs: 12 }}>
+      <Box dangerouslySetInnerHTML={{ __html: component.componentTag }} />
+    </Grid>
+  )
+}
+
 function Dashboard() {
   const {
     localeMessages, apiBaseUrl, platformBaseUrl, greetingName, activeOrganizationName,
     dashboardSetup = {}, dashboardStats = {}, availableFeatures = [],
+    dashboardSections, dashboardCustomComponents = {},
   } = useAppContext();
   const [organizationId, setOrganizationId] = useState(null);
   const [jobHealth, setJobHealth] = useState(null);
 
   const newslettersEnabled = availableFeatures.includes('newsletters');
+  const canCreateNewsletter = newslettersEnabled && availableFeatures.includes('create_newsletter');
 
   useEffect(() => {
     apiClient.get(`${apiBaseUrl}/status/jobs/`)
@@ -134,7 +228,7 @@ function Dashboard() {
       cta: localeMessages.setup_profile_cta,
       href: orgScopedUrl('general_info'),
     },
-    ...(newslettersEnabled ? [{
+    ...(canCreateNewsletter ? [{
       key: 'newsletter',
       done: Boolean(dashboardSetup.newsletterConfigured),
       title: localeMessages.setup_newsletter_title,
@@ -167,9 +261,45 @@ function Dashboard() {
     ? localeMessages.welcome_back_name.replace('NAME', greetingName)
     : localeMessages.welcome_back;
 
+  const sections = dashboardSections?.length ? dashboardSections : DEFAULT_SECTIONS;
+
+  const renderSection = (sectionKey) => {
+    if (sectionKey.startsWith(CUSTOM_COMPONENT_PREFIX)) {
+      const name = sectionKey.slice(CUSTOM_COMPONENT_PREFIX.length);
+      return <CustomComponentSection key={sectionKey} component={dashboardCustomComponents[name]} />;
+    }
+    switch (sectionKey) {
+      case 'setup_progress':
+        return (
+          <SetupProgressSection
+            key={sectionKey}
+            localeMessages={localeMessages}
+            setupItems={setupItems}
+            doneCount={doneCount}
+            totalCount={totalCount}
+            setupComplete={setupComplete}
+          />
+        );
+      case 'overview':
+        return <OverviewSection key={sectionKey} localeMessages={localeMessages} statCards={statCards} />;
+      case 'quick_actions':
+        return (
+          <QuickActionsSection
+            key={sectionKey}
+            localeMessages={localeMessages}
+            platformBaseUrl={platformBaseUrl}
+            canCreateNewsletter={canCreateNewsletter}
+            orgScopedUrl={orgScopedUrl}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <Base breadCrumbList={[]} organizationIdRefreshCallback={setOrganizationId}>
-      <Grid size={{ xs: 12 }} sx={{ py: 2, pl: { xs: 0, sm: 2 } }}>
+      <Grid size={{ xs: 12 }} sx={{ py: 2, pl: { xs: 1.5, sm: 2 }, pr: { xs: 1.5 } }}>
         <Grid container spacing={3}>
 
           <Grid size={{ xs: 12 }}>
@@ -181,79 +311,7 @@ function Dashboard() {
             )}
           </Grid>
 
-          {!setupComplete && (
-            <Grid size={{ xs: 12 }}>
-              <SectionBox>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5, flexWrap: 'wrap' }}>
-                  <Typography variant="h6">{localeMessages.setup_checklist_title}</Typography>
-                  <Chip
-                    size="small"
-                    label={localeMessages.setup_progress.replace('DONE', doneCount).replace('TOTAL', totalCount)}
-                  />
-                </Box>
-                <LinearProgress
-                  variant="determinate"
-                  value={(doneCount / totalCount) * 100}
-                  sx={{ mt: 1.5, mb: 0.5, height: 6, borderRadius: 3 }}
-                />
-                {setupItems.map((item) => <SetupItem key={item.key} item={item} />)}
-              </SectionBox>
-            </Grid>
-          )}
-
-          {statCards.length > 0 ? (
-            <>
-              <Grid size={{ xs: 12 }}>
-                <Typography variant="overline" color="text.disabled">{localeMessages.overview_title}</Typography>
-              </Grid>
-              {statCards.map((stat) => (
-                <Grid key={stat.key} size={{ xs: 6, sm: 6, md: 3 }}>
-                  {stat.isHealth
-                    ? <HealthStatCard label={stat.label} statusLabel={stat.statusLabel} health={stat.health} />
-                    : <StatCard label={stat.label} value={stat.value} />}
-                </Grid>
-              ))}
-            </>
-          ) : (
-            <Grid size={{ xs: 12 }}>
-              <SectionBox>
-                <Typography variant="body2" color="text.secondary">{localeMessages.overview_empty}</Typography>
-              </SectionBox>
-            </Grid>
-          )}
-
-          <Grid size={{ xs: 12 }}>
-            <Typography variant="overline" color="text.disabled">{localeMessages.quick_actions_title}</Typography>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 6, md: newslettersEnabled ? 4 : 6 }}>
-            <ActionCard
-              icon={<SchoolIcon fontSize="small" />}
-              title={localeMessages.action_add_course_title}
-              description={localeMessages.action_add_course_description}
-              cta={localeMessages.action_add_course_cta}
-              href={`${platformBaseUrl}/courses/`}
-            />
-          </Grid>
-          {newslettersEnabled && (
-            <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-              <ActionCard
-                icon={<MailOutlineIcon fontSize="small" />}
-                title={localeMessages.action_write_newsletter_title}
-                description={localeMessages.action_write_newsletter_description}
-                cta={localeMessages.action_write_newsletter_cta}
-                href={orgScopedUrl('newsletters')}
-              />
-            </Grid>
-          )}
-          <Grid size={{ xs: 12, sm: 6, md: newslettersEnabled ? 4 : 6 }}>
-            <ActionCard
-              icon={<BarChartOutlinedIcon fontSize="small" />}
-              title={localeMessages.action_view_analytics_title}
-              description={localeMessages.action_view_analytics_description}
-              cta={localeMessages.action_view_analytics_cta}
-              href={`${platformBaseUrl}/analytics/`}
-            />
-          </Grid>
+          {sections.map(renderSection)}
 
         </Grid>
       </Grid>

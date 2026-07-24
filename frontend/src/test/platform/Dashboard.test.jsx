@@ -30,7 +30,6 @@ const localeMessages = {
   setup_newsletter_description: 'Send progress updates and announcements to enrolled learners.',
   setup_newsletter_cta: 'Set up',
   overview_title: 'Overview',
-  overview_empty: 'Once you have an active course or newsletter, a snapshot of your numbers will show up here.',
   stat_active_courses: 'Active courses',
   stat_enrolled_learners: 'Enrolled learners',
   stat_newsletter_subscribers: 'Newsletter subscribers',
@@ -100,11 +99,11 @@ describe('Dashboard', () => {
     expect(screen.queryByText('Set up your newsletter')).not.toBeInTheDocument();
   });
 
-  it('includes the newsletter step in the checklist when the feature is enabled', async () => {
+  it('includes the newsletter step in the checklist when the org can create a newsletter', async () => {
     renderWithProviders(<Dashboard />, {
       appContext: {
         localeMessages,
-        availableFeatures: ['newsletters'],
+        availableFeatures: ['newsletters', 'create_newsletter'],
         dashboardSetup: { hasCourse: true, hasTeam: true, profileComplete: true, newsletterConfigured: false },
       },
     });
@@ -112,11 +111,27 @@ describe('Dashboard', () => {
     expect(screen.getByText('Set up your newsletter')).toBeInTheDocument();
   });
 
-  it('hides the checklist entirely once every applicable step is done', async () => {
+  it('hides the newsletter step and quick action when newsletters are viewable but the org cannot create one', async () => {
     renderWithProviders(<Dashboard />, {
       appContext: {
         localeMessages,
         availableFeatures: ['newsletters'],
+        dashboardSetup: { hasCourse: true, hasTeam: true, profileComplete: true, newsletterConfigured: false },
+        dashboardStats: { activeCourses: 1, enrolledLearners: 1, newsletterSubscribers: 4 },
+      },
+    });
+    await waitFor(() => expect(screen.getByText('Add a course')).toBeInTheDocument());
+    expect(screen.queryByText('Set up your newsletter')).not.toBeInTheDocument();
+    expect(screen.queryByText('Write a newsletter')).not.toBeInTheDocument();
+    // Viewing existing subscriber counts is a separate concern from being able to create a newsletter.
+    expect(screen.getByText('Newsletter subscribers')).toBeInTheDocument();
+  });
+
+  it('hides the checklist entirely once every applicable step is done', async () => {
+    renderWithProviders(<Dashboard />, {
+      appContext: {
+        localeMessages,
+        availableFeatures: ['newsletters', 'create_newsletter'],
         dashboardSetup: { hasCourse: true, hasTeam: true, profileComplete: true, newsletterConfigured: true },
         dashboardStats: { activeCourses: 1, enrolledLearners: 1, newsletterSubscribers: 1 },
       },
@@ -125,7 +140,7 @@ describe('Dashboard', () => {
     expect(screen.queryByText('Finish setting up your organization')).not.toBeInTheDocument();
   });
 
-  it('shows the empty overview message when there are no active courses or subscribers', async () => {
+  it('hides the overview section entirely when there are no active courses or subscribers', async () => {
     renderWithProviders(<Dashboard />, {
       appContext: {
         localeMessages,
@@ -134,11 +149,8 @@ describe('Dashboard', () => {
         dashboardStats: { activeCourses: 0, enrolledLearners: 0, newsletterSubscribers: 0 },
       },
     });
-    await waitFor(() =>
-      expect(
-        screen.getByText('Once you have an active course or newsletter, a snapshot of your numbers will show up here.')
-      ).toBeInTheDocument()
-    );
+    await waitFor(() => expect(screen.getByText('Add a course')).toBeInTheDocument());
+    expect(screen.queryByText('Overview')).not.toBeInTheDocument();
     expect(screen.queryByText('Active courses')).not.toBeInTheDocument();
   });
 
@@ -172,11 +184,11 @@ describe('Dashboard', () => {
     expect(screen.queryByText('Newsletter subscribers')).not.toBeInTheDocument();
   });
 
-  it('shows the newsletter subscriber stat and quick action when the feature is enabled with subscribers', async () => {
+  it('shows the newsletter subscriber stat and quick action when the org can create a newsletter', async () => {
     renderWithProviders(<Dashboard />, {
       appContext: {
         localeMessages,
-        availableFeatures: ['newsletters'],
+        availableFeatures: ['newsletters', 'create_newsletter'],
         dashboardSetup: { hasCourse: true, hasTeam: true, profileComplete: true, newsletterConfigured: true },
         dashboardStats: { activeCourses: 2, enrolledLearners: 5, newsletterSubscribers: 9 },
       },
@@ -184,5 +196,81 @@ describe('Dashboard', () => {
     await waitFor(() => expect(screen.getByText('Write a newsletter')).toBeInTheDocument());
     expect(screen.getByText('Newsletter subscribers')).toBeInTheDocument();
     expect(screen.getByText('9')).toBeInTheDocument();
+  });
+
+  it('omits a section entirely when dashboardSections leaves it out', async () => {
+    renderWithProviders(<Dashboard />, {
+      appContext: {
+        localeMessages,
+        availableFeatures: [],
+        dashboardSections: ['overview', 'quick_actions'],
+        dashboardSetup: { hasCourse: false, hasTeam: false, profileComplete: false, newsletterConfigured: false },
+        dashboardStats: { activeCourses: 3, enrolledLearners: 8, newsletterSubscribers: 0 },
+      },
+    });
+    // Setup checklist would normally show (nothing is done yet), but it's not in dashboardSections.
+    await waitFor(() => expect(screen.getByText('Active courses')).toBeInTheDocument());
+    expect(screen.queryByText('Finish setting up your organization')).not.toBeInTheDocument();
+  });
+
+  it('renders sections in the order given by dashboardSections', async () => {
+    const { container } = renderWithProviders(<Dashboard />, {
+      appContext: {
+        localeMessages,
+        availableFeatures: [],
+        dashboardSections: ['quick_actions', 'overview'],
+        dashboardSetup: { hasCourse: true, hasTeam: true, profileComplete: true, newsletterConfigured: false },
+        dashboardStats: { activeCourses: 1, enrolledLearners: 2, newsletterSubscribers: 0 },
+      },
+    });
+    await waitFor(() => expect(screen.getByText('Active courses')).toBeInTheDocument());
+    const html = container.innerHTML;
+    expect(html.indexOf('Quick actions')).toBeLessThan(html.indexOf('Overview'));
+  });
+
+  it('renders a named custom component at its configured position', async () => {
+    renderWithProviders(<Dashboard />, {
+      appContext: {
+        localeMessages,
+        availableFeatures: [],
+        dashboardSections: ['setup_progress', 'custom_component:promo', 'quick_actions'],
+        dashboardCustomComponents: {
+          promo: { componentTag: '<div data-testid="promo-banner">Upgrade your plan</div>' },
+        },
+        dashboardSetup: { hasCourse: false, hasTeam: false, profileComplete: false, newsletterConfigured: false },
+      },
+    });
+    await waitFor(() => expect(screen.getByTestId('promo-banner')).toBeInTheDocument());
+    expect(screen.getByText('Upgrade your plan')).toBeInTheDocument();
+  });
+
+  it('renders multiple named custom components independently', async () => {
+    renderWithProviders(<Dashboard />, {
+      appContext: {
+        localeMessages,
+        availableFeatures: [],
+        dashboardSections: ['custom_component:top', 'quick_actions', 'custom_component:bottom'],
+        dashboardCustomComponents: {
+          top: { componentTag: '<div data-testid="top-banner">Top banner</div>' },
+          bottom: { componentTag: '<div data-testid="bottom-banner">Bottom banner</div>' },
+        },
+        dashboardSetup: { hasCourse: true, hasTeam: true, profileComplete: true, newsletterConfigured: false },
+      },
+    });
+    await waitFor(() => expect(screen.getByTestId('top-banner')).toBeInTheDocument());
+    expect(screen.getByTestId('bottom-banner')).toBeInTheDocument();
+  });
+
+  it('renders nothing for a custom component slot with no matching configuration', async () => {
+    renderWithProviders(<Dashboard />, {
+      appContext: {
+        localeMessages,
+        availableFeatures: [],
+        dashboardSections: ['custom_component:unknown', 'quick_actions'],
+        dashboardCustomComponents: {},
+        dashboardSetup: { hasCourse: true, hasTeam: true, profileComplete: true, newsletterConfigured: false },
+      },
+    });
+    await waitFor(() => expect(screen.getByText('Add a course')).toBeInTheDocument());
   });
 });
