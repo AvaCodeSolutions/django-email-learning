@@ -6,6 +6,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.9.0] — 2026-07-24
+
+### Added
+
+- **Configurable dashboard sections** — The Dashboard's sections (setup checklist, overview, quick actions) can now be reordered, dropped, or extended via `DASHBOARD.SECTIONS` in settings (or by overriding `Dashboard.get_dashboard_sections()`), defaulting to `[setup_progress, overview, quick_actions]`. Any number of named `custom_component:<name>` slots can be placed anywhere in that order, resolved against `DASHBOARD.CUSTOM_COMPONENTS` using the same `{componentTag, scriptUrl, styleUrl}` shape as `SIDEBAR.CUSTOM_COMPONENT`. The Welcome greeting always renders first and isn't configurable.
+
+### Fixed
+
+- **Dashboard newsletter checklist item and quick action showed up without newsletter-creation access** — Both were gated only on the newsletters feature being viewable, not on whether the organization can actually create a new one. They now require both flags; the newsletter subscriber count on the overview still only depends on the feature being viewable, since that's a separate concern from being able to create a new newsletter.
+- **Dashboard overview showed a placeholder message instead of just hiding** — When there are no active courses or newsletter subscribers to show, the Overview section now hides entirely instead of rendering an explanatory placeholder box.
+- **Dashboard cards were flush against the screen edges on mobile** — Added small horizontal padding to the outer container on mobile viewports.
+
 ## [2.8.1] — 2026-07-24
 
 ### Fixed
