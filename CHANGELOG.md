@@ -6,6 +6,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+
+## [2.10.2] - 2026-07-24
+
+### Fixed
+
+- **Fixed the organization-member invitation email subject** — The subject now clearly indicates that the recipient has been added to an organization, rather than implying a password reset.
+
 ## [2.10.1] - 2026-07-24
 
 ### Fixed
