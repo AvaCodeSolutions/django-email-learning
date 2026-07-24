@@ -2,9 +2,11 @@ from unittest.mock import patch
 
 import pytest
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from freezegun import freeze_time
 
-from django_email_learning.models import Enrollment
+from django_email_learning.models import ContentDelivery, DeliverySchedule, Enrollment, EnrollmentStatus, Learner
+from django_email_learning.models.enums.delivery_status import DeliveryStatus
 
 
 def immediately(func):
@@ -206,3 +208,63 @@ def test_graduate_does_not_send_certificate_when_disabled(mock_send, mock_on_com
     active_enrollment.course.save()
     active_enrollment.graduate()
     mock_send.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# bulk_progress_percentages
+# ---------------------------------------------------------------------------
+
+
+def test_bulk_progress_percentages_empty_list_returns_empty_dict(db):
+    assert Enrollment.bulk_progress_percentages([]) == {}
+
+
+def test_bulk_progress_percentages_zero_when_course_has_no_published_content(db, course):
+    learner = Learner.objects.create(email="learner@example.com", organization_id=1)
+    enrollment = Enrollment.objects.create(learner=learner, course=course, status=EnrollmentStatus.ACTIVE)
+
+    result = Enrollment.bulk_progress_percentages([enrollment])
+
+    assert result[enrollment.id] == 0
+
+
+def test_bulk_progress_percentages_matches_progress_percentage(db, course, course_lesson_content):
+    learner_with_delivery = Learner.objects.create(email="delivered@example.com", organization_id=1)
+    learner_without_delivery = Learner.objects.create(email="pending@example.com", organization_id=1)
+    enrollment_with_delivery = Enrollment.objects.create(
+        learner=learner_with_delivery, course=course, status=EnrollmentStatus.ACTIVE
+    )
+    enrollment_without_delivery = Enrollment.objects.create(
+        learner=learner_without_delivery, course=course, status=EnrollmentStatus.ACTIVE
+    )
+
+    delivery = ContentDelivery.objects.create(enrollment=enrollment_with_delivery, course_content=course_lesson_content)
+    DeliverySchedule.objects.create(delivery=delivery, status=DeliveryStatus.DELIVERED, delivered_at=timezone.now())
+
+    enrollments = [enrollment_with_delivery, enrollment_without_delivery]
+    result = Enrollment.bulk_progress_percentages(enrollments)
+
+    assert result[enrollment_with_delivery.id] == enrollment_with_delivery.progress_percentage() == 100
+    assert result[enrollment_without_delivery.id] == enrollment_without_delivery.progress_percentage() == 0
+
+
+def test_bulk_progress_percentages_query_count_is_constant(
+    db, course, course_lesson_content, django_assert_num_queries
+):
+    """
+    Regression test for the N+1 that made analytics pages slow: computing
+    progress via the per-enrollment progress_percentage() issues 2 queries per
+    enrollment, so it scaled linearly with enrollment count. bulk_progress_percentages
+    must stay at a fixed 2 queries no matter how many enrollments are passed in.
+    """
+    enrollments = [
+        Enrollment.objects.create(
+            learner=Learner.objects.create(email=f"learner{i}@example.com", organization_id=1),
+            course=course,
+            status=EnrollmentStatus.ACTIVE,
+        )
+        for i in range(5)
+    ]
+
+    with django_assert_num_queries(2):
+        Enrollment.bulk_progress_percentages(enrollments)

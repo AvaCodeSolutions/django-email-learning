@@ -37,7 +37,7 @@ class ContentDelivery(models.Model):
         default=ReminderStatus.NOT_APPLICABLE,
         db_index=True,
     )
-    opened_at = models.DateTimeField(null=True, blank=True)
+    opened_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     class Meta:
         unique_together = [["enrollment", "course_content"]]
@@ -148,7 +148,7 @@ class DeliverySchedule(models.Model):
         db_index=True,
     )
     failed_attempts = models.IntegerField(default=0)
-    delivered_at = models.DateTimeField(null=True, blank=True)
+    delivered_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     def generate_link(self) -> str:
         payload = {
