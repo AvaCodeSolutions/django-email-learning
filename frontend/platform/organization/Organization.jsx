@@ -19,6 +19,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import PeopleIcon from '@mui/icons-material/People';
 import EmailIcon from '@mui/icons-material/Email';
 import InfoIcon from '@mui/icons-material/Info';
+import PublicIcon from '@mui/icons-material/Public';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { useState, useEffect } from "react";
 import apiClient from "../../src/apiClient.js";
 import { Button } from "@mui/material";
@@ -40,6 +42,7 @@ function Organization() {
     const [dialogContent, setDialogContent] = useState(null);
     const [generalInfoEditable, setGeneralInfoEditable] = useState(false);
     const [generalInfoFormKey, setGeneralInfoFormKey] = useState(0);
+    const [publicUrlCopied, setPublicUrlCopied] = useState(false);
 
     const { localeMessages, direction, userRole, isOrganizationAdmin, isPlatformAdmin, apiBaseUrl, platformBaseUrl, organizationId, currentUserId, availableFeatures = [] } = useAppContext();
     const canEditOrganization = isPlatformAdmin || isOrganizationAdmin;
@@ -79,6 +82,16 @@ function Organization() {
 
     const closeDialog = () => setDialogOpen(false);
 
+    const handleCopyPublicUrl = async () => {
+        try {
+            await navigator.clipboard.writeText(organization.public_url);
+            setPublicUrlCopied(true);
+            setTimeout(() => setPublicUrlCopied(false), 2000);
+        } catch (error) {
+            console.error('Failed to copy organization public URL:', error);
+        }
+    };
+
     return (
         <Base
             breadCrumbList={[
@@ -88,6 +101,56 @@ function Organization() {
             showOrganizationSwitcher={false}
         >
             <Grid size={12} sx={{ py: 2, px: { xs: 0, sm: 4 } }}>
+                {organization && organization.is_public && organization.public_url && (
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mx: { xs: 2, sm: 0 }, mb: 1 }}>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                                pl: 1.5,
+                                pr: 0.5,
+                                py: 0.2,
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 2,
+                            }}
+                        >
+                            <Link
+                                href={organization.public_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                underline="none"
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 0.75,
+                                    color: 'text.primary',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 500,
+                                    '&:hover': { color: 'primary.dark' },
+                                }}
+                            >
+                                <PublicIcon fontSize="small" />
+                                {localeMessages["view_public_organization_page"]}
+                            </Link>
+                            <Tooltip title={publicUrlCopied ? localeMessages["public_organization_link_copied"] : localeMessages["copy_public_organization_link"]}>
+                                <IconButton
+                                    size="small"
+                                    onClick={handleCopyPublicUrl}
+                                    aria-label={localeMessages["copy_public_organization_link"]}
+                                    sx={{
+                                        borderRadius: '50%',
+                                        border: '1px solid transparent',
+                                        '&:hover': { borderColor: 'divider', color: 'primary.dark' },
+                                    }}
+                                >
+                                    <ContentCopyIcon fontSize="small" />
+                                </IconButton>
+                            </Tooltip>
+                        </Box>
+                    </Box>
+                )}
                 <Box sx={{ backgroundColor: 'background.box', boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.04)', borderRadius: { xs: 0, sm: 2 }, minHeight: 300 }}>
 
                     <Tabs

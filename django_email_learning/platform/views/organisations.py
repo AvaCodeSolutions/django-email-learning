@@ -166,4 +166,7 @@ class SingleOrganization(BasePlatformView):
                 "Are you sure you want to delete NEWSLETTER_TITLE?"
                 " This will also remove all its subscribers and scheduled sendouts."
             ),
+            "view_public_organization_page": _("Public page"),
+            "copy_public_organization_link": _("Copy public organization link"),
+            "public_organization_link_copied": _("Link copied!"),
         }

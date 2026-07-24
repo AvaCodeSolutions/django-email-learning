@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../test-utils';
 import Organization from '../../../platform/organization/Organization';
@@ -46,6 +46,9 @@ const localeMessages = {
   role: 'Role',
   actions: 'Actions',
   cannot_add_member: 'Adding new members is not allowed.',
+  view_public_organization_page: 'Public page',
+  copy_public_organization_link: 'Copy public organization link',
+  public_organization_link_copied: 'Link copied!',
 };
 
 const organization = {
@@ -56,6 +59,7 @@ const organization = {
   logo_path: null,
   social_links: [],
   is_public: true,
+  public_url: 'https://example.com/public/organization/1/',
 };
 
 const baseAppContext = {
@@ -170,5 +174,49 @@ describe('Organization', () => {
     await waitFor(() => expect(screen.getByLabelText(/Name/)).toHaveValue('Acme Corp Updated'));
     expect(screen.getByLabelText(/Name/)).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+  });
+
+  it('shows the public page link for a public organization', async () => {
+    renderWithProviders(<Organization />, {
+      appContext: { ...baseAppContext, isOrganizationAdmin: true },
+    });
+
+    const link = await screen.findByRole('link', { name: /Public page/i });
+    expect(link).toHaveAttribute('href', 'https://example.com/public/organization/1/');
+    expect(link).toHaveAttribute('target', '_blank');
+  });
+
+  it('hides the public page link for a private organization', async () => {
+    const privateOrganization = { ...organization, is_public: false };
+    global.fetch.mockImplementation((url) => {
+      if (url.includes('/users/')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ organization_users: [] }) });
+      }
+      if (url.endsWith('/organizations/1/')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(privateOrganization) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+
+    renderWithProviders(<Organization />, {
+      appContext: { ...baseAppContext, isOrganizationAdmin: true },
+    });
+
+    await screen.findByRole('tab', { name: /General Info/i });
+    expect(screen.queryByRole('link', { name: /Public page/i })).not.toBeInTheDocument();
+  });
+
+  it('copies the public organization link to the clipboard', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+
+    renderWithProviders(<Organization />, {
+      appContext: { ...baseAppContext, isOrganizationAdmin: true },
+    });
+
+    const copyButton = await screen.findByRole('button', { name: 'Copy public organization link' });
+    fireEvent.click(copyButton);
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith('https://example.com/public/organization/1/'));
   });
 });
