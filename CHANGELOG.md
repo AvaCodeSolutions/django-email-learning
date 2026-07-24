@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.10.0] — 2026-07-24
+
+### Added
+
+- **"Public page" button on the organization single page** — Mirrors the course page's implementation: a link to the organization's public page plus a copy-link button, shown only when the organization is public. See [#748](https://github.com/AvaCodeSolutions/django-email-learning/issues/748).
+
 ## [2.9.0] — 2026-07-24
 
 ### Added
