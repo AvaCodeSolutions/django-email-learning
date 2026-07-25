@@ -118,10 +118,6 @@ function StatusBreakdownChart({ data, localeMessages, noDataMessage }) {
                     direction: 'row',
                     position: { vertical: 'bottom', horizontal: 'middle' },
                     padding: 0,
-                    itemMarkWidth: 10,
-                    itemMarkHeight: 10,
-                    markGap: 5,
-                    itemGap: 12,
                 },
             }}
         />
@@ -290,33 +286,47 @@ function Analytics() {
             .catch(() => {})
     }, [apiBaseUrl, analyticsBaseUrl.orgId])
 
-    const fetchAll = useCallback(() => {
+    const fetchAll = useCallback(async () => {
         setLoading(true)
         setError(null)
         const q = buildParams()
         const base = analyticsBaseUrl.base
-        Promise.all([
-            apiClient.get(`${base}/enrollments/over-time/?${q}`),
-            apiClient.get(`${base}/enrollments/status-breakdown/?${q}`),
-            apiClient.get(`${base}/completion-funnel/?${q}`),
-            apiClient.get(`${base}/progress/?${q}`),
-            apiClient.get(`${base}/time-to-complete/?${q}`),
-            apiClient.get(`${base}/email-delivery/over-time/?${q}`),
-            apiClient.get(`${base}/email-delivery/status-breakdown/?${q}`),
-            apiClient.get(`${base}/email-open-rate/?${q}`),
-        ])
-            .then(([eot, sb, f, ap, ttc, dot, ds, or_]) => {
-                setEnrollmentsOverTime(eot.data)
-                setStatusBreakdown(sb.data)
-                setFunnel(f.data)
-                setAvgProgress(ap.data)
-                setTimeToComplete(ttc.data)
-                setDeliveryOverTime(dot.data)
-                setDeliveryStatus(ds.data)
-                setOpenRate(or_.data)
-            })
-            .catch(() => setError(true))
-            .finally(() => setLoading(false))
+        const requests = [
+            () => apiClient.get(`${base}/enrollments/over-time/?${q}`),
+            () => apiClient.get(`${base}/enrollments/status-breakdown/?${q}`),
+            () => apiClient.get(`${base}/completion-funnel/?${q}`),
+            () => apiClient.get(`${base}/progress/?${q}`),
+            () => apiClient.get(`${base}/time-to-complete/?${q}`),
+            () => apiClient.get(`${base}/email-delivery/over-time/?${q}`),
+            () => apiClient.get(`${base}/email-delivery/status-breakdown/?${q}`),
+            () => apiClient.get(`${base}/email-open-rate/?${q}`),
+        ]
+
+        const runInBatches = async (requestFns, batchSize) => {
+            const responses = []
+            for (let i = 0; i < requestFns.length; i += batchSize) {
+                const batch = requestFns.slice(i, i + batchSize)
+                const batchResponses = await Promise.all(batch.map(fn => fn()))
+                responses.push(...batchResponses)
+            }
+            return responses
+        }
+
+        try {
+            const [eot, sb, f, ap, ttc, dot, ds, or_] = await runInBatches(requests, 2)
+            setEnrollmentsOverTime(eot.data)
+            setStatusBreakdown(sb.data)
+            setFunnel(f.data)
+            setAvgProgress(ap.data)
+            setTimeToComplete(ttc.data)
+            setDeliveryOverTime(dot.data)
+            setDeliveryStatus(ds.data)
+            setOpenRate(or_.data)
+        } catch {
+            setError(true)
+        } finally {
+            setLoading(false)
+        }
     }, [buildParams, analyticsBaseUrl.base])
 
     useEffect(() => { fetchAll() }, [fetchAll])
@@ -349,7 +359,7 @@ function Analytics() {
                     <Grid size={{ xs: 12 }}>
                         <SectionBox>
                             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>{localeMessages.filters}</Typography>
-                            <Grid container spacing={2} alignItems="flex-end">
+                            <Grid container spacing={2} sx={{ alignItems: 'flex-end' }}>
                                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                                     <FormControl fullWidth size="small">
                                         <InputLabel>{localeMessages.course}</InputLabel>
@@ -408,7 +418,7 @@ function Analytics() {
                     <Grid size={{ xs: 12 }}>
                         <SectionBox>
                             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>{localeMessages.downloads}</Typography>
-                            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                            <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
                                 {[
                                     { key: 'downloads/learner-progress', label: localeMessages.download_learner_progress ,     hasData: hasLearnerProgressData,},
                                     { key: 'downloads/delivery-log', label: localeMessages.download_delivery_log , hasData: hasDeliveryLogData,},

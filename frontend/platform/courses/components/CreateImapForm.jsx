@@ -146,7 +146,7 @@ const CreateImapForm = ({ onSuccess, activeOrganizationId }) => {
                     {localeMessages["add"]}
                 </Button>
             </Stack>
-            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ marginTop: 1.5 }}>
+            <Stack direction="row" spacing={1} useFlexGap sx={{ marginTop: 1.5, flexWrap: 'wrap' }}>
                 {folders.map((folder) => (
                     <Chip
                         key={folder}
