@@ -7,6 +7,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
 
+## [2.10.3] - 2026-07-25
+
+## Fixed
+
+- **Enhanced Analytics page frontend** Changed the API calls to run in batches of 2 requests instead of all at once, since they can be database-heavy queries, and also fixed the version/API mismatch between MUI and X-Charts.
+
 ## [2.10.2] - 2026-07-24
 
 ### Fixed
