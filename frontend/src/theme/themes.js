@@ -1,6 +1,8 @@
 import { createTheme, darken, alpha } from '@mui/material/styles';
 import { blueGrey, indigo, teal, lightGreen, amber, red, pink, deepPurple, blue } from '@mui/material/colors';
 
+const headingFontFamily = '"Bricolage Grotesque Variable", "Inter Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif';
+
 const statusPalette = {
   healthy: {
     bg: teal[50],
@@ -103,9 +105,9 @@ const defaultOptions = {
       styleOverrides: {
         root: ({ theme }) => ({
           '.MuiTableBody-root &': {
-            backgroundColor: theme.palette.mode === 'light' ? alpha(theme.palette.background.dark, 0.5) : 'rgba(255, 255, 255, 0.03)',
+            backgroundColor: theme.palette.mode === 'light' ? alpha(theme.palette.background.dark, 0.25) : 'rgba(255, 255, 255, 0.03)',
             '&:hover': {
-              backgroundColor: theme.palette.mode === 'light' ? alpha(theme.palette.background.dark, 0.25) : 'rgba(255, 255, 255, 0.08)',
+              backgroundColor: theme.palette.mode === 'light' ? theme.palette.common.white : 'rgba(255, 255, 255, 0.08)',
             },
             '& td, & th': {
               paddingTop: 12,
@@ -206,26 +208,40 @@ const defaultOptions = {
         }),
       },
     },
+    // Only h1-h4 use the display font, per the design system's "Headings
+    // (h1-h4)" rule and its heading+subheading pairing pattern — everything
+    // else (subtitles, captions, breadcrumbs, overline) stays on the body
+    // font so the display face doesn't get overused on one screen.
     MuiTypography: {
       styleOverrides: {
+        // Display — fluid, matches the design system's type scale exactly
         h1: {
-          fontSize: '2rem',
+          fontFamily: headingFontFamily,
+          fontSize: 'clamp(2.375rem, 1.55rem + 3.4vw, 4.25rem)',
           fontWeight: 600,
-          lineHeight: 1.2,
+          lineHeight: 1.05,
+          letterSpacing: '-0.025em',
           marginBottom: '1rem',
         },
+        // Display sm
         h2: {
-          fontSize: '1.5rem',
+          fontFamily: headingFontFamily,
+          fontSize: 'clamp(1.75rem, 1.35rem + 1.7vw, 2.75rem)',
           fontWeight: 600,
-          lineHeight: 1.3,
+          lineHeight: 1.12,
+          letterSpacing: '-0.02em',
           marginBottom: '0.875rem',
         },
+        // Display xs
         h3: {
-          fontSize: '1.25rem',
+          fontFamily: headingFontFamily,
+          fontSize: 'clamp(1.375rem, 1.15rem + 0.9vw, 1.875rem)',
           fontWeight: 600,
-          lineHeight: 1.4,
+          lineHeight: 1.2,
+          letterSpacing: '-0.01em',
           marginBottom: '0.75rem',
         },
+        h4: { fontFamily: headingFontFamily },
       },
     },
     MuiTooltip: {
@@ -383,8 +399,8 @@ const lightPalette = {
       main: '#a93e6bff',
     },
     primary: {
-      main: '#4f46e5',
-      text: 'rgb(91, 103, 243)',
+      main: '#4A5EC0',
+      text: '#5F73CF',
     },
     status: statusPalette,
 };
@@ -409,8 +425,8 @@ const darkPalette = {
       main: '#ff6b9d',
     },
     primary: {
-      main: '#4f46e5',
-      text: 'rgb(184, 190, 255)',
+      main: '#7A8DD6',
+      text: '#A3B1E4',
     },
     // soft lavender-white for links — matches outlined button text, distinct from pure purple chrome
     link: {
@@ -437,8 +453,7 @@ const commonPalette = {
 
 const baseTypography = {
   fontFamily: [
-    'Inter',
-    'Roboto',
+    '"Inter Variable"',
     '-apple-system',
     'BlinkMacSystemFont',
     'Segoe UI',

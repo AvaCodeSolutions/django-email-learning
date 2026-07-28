@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Bricolage+Grotesque:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* Increase paragraph and list spacing */
+.rst-content p,
+article p {
+    line-height: 1.8;
+    margin-bottom: 1.2em;
+}
+
+article li {
+    margin-bottom: 0.4em;
+}
+
+/* Headings use the display font, everything else stays Inter */
+h1 { font-weight: 700; }
+h2, h3, h4 { font-weight: 600; }
+
+/* Project name next to the icon-only logo */
+.sidebar-brand-text {
+    font-family: var(--font-stack--headings);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+/* Accessibility: focus ring + selection color */
+:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-background-primary), 0 0 0 4px #16B392;
+    border-radius: 2px;
+}
+
+::selection {
+    background: #A6ECD7;
+    color: #232936;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* Component radius touch-ups to match the AvaCode design system scale */
+.admonition {
+    border-radius: 1rem;
+}
+
+.highlight {
+    border-radius: 0.75rem;
+}
+
+.sidebar-search {
+    border-radius: 9999px;
+}

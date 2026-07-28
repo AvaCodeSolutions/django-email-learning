@@ -1,5 +1,7 @@
 import { StrictMode, createContext, useContext } from "react";
 import { createRoot } from "react-dom/client";
+import "@fontsource-variable/inter";
+import "@fontsource-variable/bricolage-grotesque";
 import { ThemeContextProvider } from "./theme/ThemeContext";
 import { lightTheme, darkTheme } from "./theme/themes";
 
