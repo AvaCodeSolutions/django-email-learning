@@ -199,7 +199,10 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     }
 
     const platformPages = []
-    platformPages.push({ name: localeMessages["dashboard"], icon: <DashboardOutlinedIcon fontSize="small" />, href: platformBaseUrl + '/' });
+    // Dashboard's href is the platform section's root, so it's a path-prefix
+    // of every other page here — exactOnly keeps it from matching (and
+    // highlighting) on all of them.
+    platformPages.push({ name: localeMessages["dashboard"], icon: <DashboardOutlinedIcon fontSize="small" />, href: platformBaseUrl + '/', exactOnly: true });
     platformPages.push({ name: localeMessages["course_management"], icon: <SchoolOutlinedIcon fontSize="small" />, href: platformBaseUrl + '/courses/' });
     if (isOrganizationAdmin || isPlatformAdmin || isInstructor) {
         platformPages.push({ name: localeMessages["learners"], icon: <PeopleOutlinedIcon fontSize="small" />, href: platformBaseUrl + '/learners/' });
@@ -242,10 +245,10 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     return (
         <Box component="nav"sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
         <AppBar sx={(theme) => ({boxShadow: 0, borderRadius: 0, backgroundColor: 'background.nav', borderBottom: `1px solid ${alpha(theme.palette.border.main, 0.4)}` })}>
-            <Box sx={{ my: 1, ml: '4px', height: { xs: "57px", md: "30px" }, display: 'flex', justifyContent: direction === 'rtl' ? 'flex-end' : 'flex-start', alignItems: 'center' }}>
+            <Box sx={{ my: 1, ml: { xs: 1, sm: 5 }, height: { xs: "57px", md: "30px" }, display: 'flex', justifyContent: direction === 'rtl' ? 'flex-end' : 'flex-start', alignItems: 'center' }}>
                 <img src={logoHorizontalUrl} alt="Logo" style={{maxHeight: "57px", height: "100%"}} />
             </Box>
-            <Box sx={{display: { xs: 'flex'}, right: direction === 'rtl' ? 'auto' : '0', left: direction === 'rtl' ? '0' : 'auto', position: "absolute", top: '50%', transform: 'translateY(-50%)', direction: direction, alignItems: 'center'}}>
+            <Box sx={{display: { xs: 'flex'}, right: direction === 'rtl' ? 'auto' : 5, left: direction === 'rtl' ? 5 : 'auto', position: "absolute", top: '50%', transform: 'translateY(-50%)', direction: direction, alignItems: 'center'}}>
                 {navbarCustomComponents?.map((component) => (
                     <Box key={component.slot} sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }} dangerouslySetInnerHTML={{ __html: component.html }} />
                 ))}
@@ -277,7 +280,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
             </Box>
         </AppBar>
         <Drawer anchor={direction === 'rtl' ? 'right' : 'left'} variant={drawerVariant} onClose={toggleMenuDrawer(false)} open={menuOpen} sx={{ '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth, display: 'flex', flexDirection: 'column', backgroundColor: 'background.nav' } }}
-            slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(0, 0, 0, 0.15)', backdropFilter: 'blur(5px)' }}, paper: { sx: { borderRadius: 0}}}}>
+            slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(0, 0, 0, 0.15)', backdropFilter: 'blur(5px)' }}, paper: { sx: { borderRadius: 0, boxShadow: 'none'}}}}>
             <Box sx={{ my: 2, textAlign: 'center' }}>
                 <img src={logoVerticalUrl} alt="Logo" style={{ width: "50%" }} />
             </Box>
@@ -302,7 +305,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                         {localeMessages['platform_section'] || 'Platform'}
                     </Typography>
                 </Divider>
-                {platformPages.map((page) => <NavItem key={page.name} page={page} isActive={isActivePage(page.href)} isExactMatch={isCurrentPage(page.href)} />)}
+                {platformPages.map((page) => <NavItem key={page.name} page={page} isActive={page.exactOnly ? isCurrentPage(page.href) : isActivePage(page.href)} isExactMatch={isCurrentPage(page.href)} />)}
 
                 {/* ── Settings ── (platform admin only, always expanded) */}
                 {settingsPages.length > 0 && <>

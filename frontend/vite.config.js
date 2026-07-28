@@ -18,6 +18,11 @@ export default defineConfig({
   base: "/static/",
   server: {
     port: 3000,
+    // Without this, Vite's dev-injected CSS (e.g. @font-face url()s from
+    // fontsource) uses root-relative paths that resolve against the Django
+    // page's origin instead of this dev server, 404ing on any asset Vite
+    // serves out of node_modules.
+    origin: 'http://localhost:3000',
   },
   esbuild: {
     sourcemap: false,
