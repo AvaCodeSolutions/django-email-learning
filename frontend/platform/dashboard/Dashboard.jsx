@@ -1,6 +1,6 @@
 import 'vite/modulepreload-polyfill'
 import { useState, useEffect } from 'react'
-import { Box, Typography, Grid, LinearProgress, Chip, Link } from '@mui/material'
+import { Box, Typography, Grid, LinearProgress, Chip, Link, IconButton } from '@mui/material'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import SchoolIcon from '@mui/icons-material/School';
@@ -8,9 +8,11 @@ import MailOutlineIcon from '@mui/icons-material/MailOutlined';
 import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import CloseIcon from '@mui/icons-material/Close';
 import Base from '../../src/components/Base.jsx'
 import render, { useAppContext } from '../../src/render.jsx';
 import apiClient from '../../src/apiClient.js'
+import { getCookie, setCookie } from '../../src/utils.js'
 
 const DEFAULT_SECTIONS = ['setup_progress', 'overview', 'quick_actions', 'sponsor'];
 const CUSTOM_COMPONENT_PREFIX = 'custom_component:';
@@ -18,6 +20,7 @@ const GITHUB_SPONSOR_PINK = '#ea4aaa';
 const SPONSOR_URL = 'https://github.com/sponsors/AvaCodeSolutions';
 const GITHUB_REPO_URL = 'https://github.com/AvaCodeSolutions/django-email-learning';
 const DASHBOARD_SECTIONS_DOCS_URL = 'https://django-email-learning.readthedocs.io/en/latest/installation.html#dashboard-sections';
+const SPONSOR_DISMISSED_COOKIE = 'dashboard_sponsor_dismissed';
 
 function SectionBox({ children, sx = {} }) {
   return (
@@ -188,9 +191,30 @@ function CustomComponentSection({ component }) {
 }
 
 function SponsorSection({ localeMessages }) {
+  const [dismissed, setDismissed] = useState(() => getCookie(SPONSOR_DISMISSED_COOKIE) === '1');
+
+  if (dismissed) return null;
+
+  const handleDismiss = () => {
+    setCookie(SPONSOR_DISMISSED_COOKIE, '1');
+    setDismissed(true);
+  };
+
   return (
-    <Grid size={{ xs: 12 }}>
-      <SectionBox sx={{ textAlign: 'center' }}>
+    <>
+      <Grid size={{ xs: 12 }}>
+        <Typography variant="overline" color="text.disabled">{localeMessages.sponsor_section_title}</Typography>
+      </Grid>
+      <Grid size={{ xs: 12 }}>
+      <SectionBox sx={{ textAlign: 'center', position: 'relative' }}>
+        <IconButton
+          onClick={handleDismiss}
+          aria-label={localeMessages.sponsor_dismiss_label}
+          size="small"
+          sx={{ position: 'absolute', top: 8, right: 8, color: 'text.disabled' }}
+        >
+          <CloseIcon fontSize="small" />
+        </IconButton>
         <FavoriteIcon sx={{ color: GITHUB_SPONSOR_PINK, fontSize: 28, mb: 1 }} />
         <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{localeMessages.sponsor_title}</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, maxWidth: 480, mx: 'auto' }}>
@@ -202,14 +226,13 @@ function SponsorSection({ localeMessages }) {
             target="_blank"
             rel="noopener noreferrer"
             underline="none"
-            sx={{
+            sx={(theme) => ({
               display: 'inline-flex', alignItems: 'center', gap: 0.75,
-              fontSize: '0.85rem', fontWeight: 600, color: '#fff',
-              backgroundColor: GITHUB_SPONSOR_PINK, borderRadius: 2, px: 2, py: 1,
-              '&:hover': { backgroundColor: '#d13f97', color: '#fff' },
-            }}
+              fontSize: '0.85rem', fontWeight: 500,
+              border: `1px solid ${theme.palette.border.main}`, borderRadius: 2, px: 2, py: 1,
+            })}
           >
-            <FavoriteIcon sx={{ fontSize: '1rem' }} />
+            <FavoriteIcon sx={{ fontSize: '1rem', color: GITHUB_SPONSOR_PINK }} />
             {localeMessages.sponsor_cta}
           </Link>
           <Link
@@ -223,7 +246,7 @@ function SponsorSection({ localeMessages }) {
               border: `1px solid ${theme.palette.border.main}`, borderRadius: 2, px: 2, py: 1,
             })}
           >
-            <GitHubIcon sx={{ fontSize: '1rem' }} />
+            <GitHubIcon sx={{ fontSize: '1rem', color: '#000' }} />
             {localeMessages.sponsor_star_cta}
           </Link>
         </Box>
@@ -234,7 +257,8 @@ function SponsorSection({ localeMessages }) {
           </Link>
         </Typography>
       </SectionBox>
-    </Grid>
+      </Grid>
+    </>
   )
 }
 
