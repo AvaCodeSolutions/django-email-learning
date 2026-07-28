@@ -7,6 +7,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
 
+## [2.11.1] - 2026-07-28
+
+### Fixed
+
+- **Certificate page broken by the new heading styles** — The certificate is a fixed-physical-size printable document (A4 landscape), but its title and description used `h1`/`h3`, which now carry the app-wide display font and viewport-relative fluid sizing. Pinned the certificate's typography back to its original fixed font and sizes.
+
 ## [2.11.0] - 2026-07-28
 
 ### Changed
