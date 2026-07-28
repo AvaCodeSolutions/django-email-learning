@@ -7,6 +7,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
 
+## [2.12.0] - 2026-07-28
+
+### Added
+
+- **Sponsor dashboard section** — A new built-in `sponsor` section (added to the default `DASHBOARD.SECTIONS`) shows a small card on the Dashboard asking users to sponsor the project via GitHub Sponsors or star it on GitHub, with a note on how to remove it via config. Also documented `DASHBOARD.SECTIONS`/`DASHBOARD.CUSTOM_COMPONENTS`, which previously had no docs page.
+
 ## [2.11.1] - 2026-07-28
 
 ### Fixed
