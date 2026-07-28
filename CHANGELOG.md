@@ -7,6 +7,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
 
+## [2.12.1] - 2026-07-29
+
+### Added
+
+- **Dismissible Sponsor section** — The Dashboard's Sponsor card can now be closed with an X button in its top-right corner, in addition to removing it via `DASHBOARD.SECTIONS`. Dismissal is remembered in a cookie, so it stays hidden on future visits.
+
+### Changed
+
+- **Sponsor/Star button styling** — Both Dashboard buttons now share the same outlined style; the sponsor button keeps its pink accent on the heart icon only, and the GitHub icon on the star button is black.
+
 ## [2.12.0] - 2026-07-28
 
 ### Added
