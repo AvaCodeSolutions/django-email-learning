@@ -7,6 +7,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
 
+## [2.11.0] - 2026-07-28
+
+### Changed
+
+- **Applied the AvaCode design system across the docs site and admin frontend** — Both now load Inter and Bricolage Grotesque, with headings set in the display font per the design system's type scale. The admin app's primary color and table row hover/default backgrounds were retinted to match, and the navbar/sidebar logo assets were regenerated in Bricolage Grotesque.
+
+### Fixed
+
+- **Docs site custom styles were never actually applied** — `docs/source/conf.py` was missing `html_static_path`, so `custom.css` 404'd silently and none of its rules ever took effect.
+- **Dashboard nav item always showed as active** — its link is the platform section's root, so a path-prefix check incorrectly matched it against every other page under it.
+- **Vite dev server font 404s** — font files loaded via `@fontsource` 404'd under Django's static path in dev mode.
+
 ## [2.10.3] - 2026-07-25
 
 ## Fixed
