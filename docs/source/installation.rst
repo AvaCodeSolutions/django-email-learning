@@ -216,6 +216,33 @@ All values are boolean.
         },
     }
 
+.. _dashboard-sections:
+
+**DASHBOARD.SECTIONS / DASHBOARD.CUSTOM_COMPONENTS**
+
+Optional configuration for reordering, dropping, or extending the sections shown on the platform Dashboard.
+
+- ``SECTIONS``: Ordered list of section keys rendered below the always-first Welcome greeting. Built-in keys are ``setup_progress``, ``overview``, ``quick_actions``, and ``sponsor`` (a small card asking users to sponsor the project or star it on GitHub; remove it from this list if you'd rather not show it). A named custom slot is written as ``custom_component:<name>``, resolved against ``CUSTOM_COMPONENTS`` below. Defaults to ``['setup_progress', 'overview', 'quick_actions', 'sponsor']``.
+- ``CUSTOM_COMPONENTS``: Name -> ``{SCRIPT_URL, STYLE_URL, COMPONENT_TAG}`` for every custom dashboard component available to reference from ``SECTIONS``, using the same shape as ``SIDEBAR.CUSTOM_COMPONENT`` below.
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
+        'DASHBOARD': {
+            'SECTIONS': ['setup_progress', 'overview', 'quick_actions', 'custom_component:promo'],
+            'CUSTOM_COMPONENTS': {
+                'promo': {
+                    'SCRIPT_URL': 'url/path-to-your-component.js',
+                    'STYLE_URL': 'url/path-to-your-component.css',
+                    'COMPONENT_TAG': '<your-component />',
+                }
+            },
+        },
+    }
+
 **SIDEBAR.CUSTOM_COMPONENT**
 
 Optional configuration for injecting a custom component in the platform sidebar.

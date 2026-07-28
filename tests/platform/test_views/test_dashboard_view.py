@@ -102,7 +102,12 @@ def test_default_dashboard_sections_when_not_configured(org_admin_client, settin
     response = org_admin_client.get(get_url())
 
     assert response.status_code == 200
-    assert response.context["appContext"]["dashboardSections"] == ["setup_progress", "overview", "quick_actions"]
+    assert response.context["appContext"]["dashboardSections"] == [
+        "setup_progress",
+        "overview",
+        "quick_actions",
+        "sponsor",
+    ]
 
 
 def test_configured_dashboard_sections_override_the_default_order(org_admin_client, settings):

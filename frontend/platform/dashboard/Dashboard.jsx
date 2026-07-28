@@ -6,12 +6,18 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import SchoolIcon from '@mui/icons-material/School';
 import MailOutlineIcon from '@mui/icons-material/MailOutlined';
 import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import Base from '../../src/components/Base.jsx'
 import render, { useAppContext } from '../../src/render.jsx';
 import apiClient from '../../src/apiClient.js'
 
-const DEFAULT_SECTIONS = ['setup_progress', 'overview', 'quick_actions'];
+const DEFAULT_SECTIONS = ['setup_progress', 'overview', 'quick_actions', 'sponsor'];
 const CUSTOM_COMPONENT_PREFIX = 'custom_component:';
+const GITHUB_SPONSOR_PINK = '#ea4aaa';
+const SPONSOR_URL = 'https://github.com/sponsors/AvaCodeSolutions';
+const GITHUB_REPO_URL = 'https://github.com/AvaCodeSolutions/django-email-learning';
+const DASHBOARD_SECTIONS_DOCS_URL = 'https://django-email-learning.readthedocs.io/en/latest/installation.html#dashboard-sections';
 
 function SectionBox({ children, sx = {} }) {
   return (
@@ -181,6 +187,57 @@ function CustomComponentSection({ component }) {
   )
 }
 
+function SponsorSection({ localeMessages }) {
+  return (
+    <Grid size={{ xs: 12 }}>
+      <SectionBox sx={{ textAlign: 'center' }}>
+        <FavoriteIcon sx={{ color: GITHUB_SPONSOR_PINK, fontSize: 28, mb: 1 }} />
+        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{localeMessages.sponsor_title}</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, maxWidth: 480, mx: 'auto' }}>
+          {localeMessages.sponsor_description}
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'center', flexWrap: 'wrap', mt: 2 }}>
+          <Link
+            href={SPONSOR_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            underline="none"
+            sx={{
+              display: 'inline-flex', alignItems: 'center', gap: 0.75,
+              fontSize: '0.85rem', fontWeight: 600, color: '#fff',
+              backgroundColor: GITHUB_SPONSOR_PINK, borderRadius: 2, px: 2, py: 1,
+              '&:hover': { backgroundColor: '#d13f97', color: '#fff' },
+            }}
+          >
+            <FavoriteIcon sx={{ fontSize: '1rem' }} />
+            {localeMessages.sponsor_cta}
+          </Link>
+          <Link
+            href={GITHUB_REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            underline="none"
+            sx={(theme) => ({
+              display: 'inline-flex', alignItems: 'center', gap: 0.75,
+              fontSize: '0.85rem', fontWeight: 500,
+              border: `1px solid ${theme.palette.border.main}`, borderRadius: 2, px: 2, py: 1,
+            })}
+          >
+            <GitHubIcon sx={{ fontSize: '1rem' }} />
+            {localeMessages.sponsor_star_cta}
+          </Link>
+        </Box>
+        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 2 }}>
+          {localeMessages.sponsor_remove_note}{' '}
+          <Link href={DASHBOARD_SECTIONS_DOCS_URL} target="_blank" rel="noopener noreferrer">
+            {localeMessages.sponsor_docs_link_label}
+          </Link>
+        </Typography>
+      </SectionBox>
+    </Grid>
+  )
+}
+
 function Dashboard() {
   const {
     localeMessages, apiBaseUrl, platformBaseUrl, greetingName, activeOrganizationName,
@@ -292,6 +349,8 @@ function Dashboard() {
             orgScopedUrl={orgScopedUrl}
           />
         );
+      case 'sponsor':
+        return <SponsorSection key={sectionKey} localeMessages={localeMessages} />;
       default:
         return null;
     }

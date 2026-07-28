@@ -21,6 +21,7 @@ DEFAULT_DASHBOARD_SECTIONS = [
     DashboardSection.SETUP_PROGRESS,
     DashboardSection.OVERVIEW,
     DashboardSection.QUICK_ACTIONS,
+    DashboardSection.SPONSOR,
 ]
 
 CUSTOM_COMPONENT_PREFIX = f"{DashboardSection.CUSTOM_COMPONENT.value}:"
@@ -144,4 +145,13 @@ class Dashboard(BasePlatformView):
             "action_view_analytics_title": _("View analytics"),
             "action_view_analytics_description": _("See enrollment and engagement trends across your courses."),
             "action_view_analytics_cta": _("Open analytics"),
+            "sponsor_title": _("Enjoying Django Email Learning?"),
+            "sponsor_description": _(
+                "If this project is useful to you, consider sponsoring its development or leaving a star "
+                "on GitHub. Both help a lot."
+            ),
+            "sponsor_cta": _("Sponsor Django Email Learning"),
+            "sponsor_star_cta": _("Star on GitHub"),
+            "sponsor_remove_note": _("You can remove this section anytime via DASHBOARD.SECTIONS in your settings."),
+            "sponsor_docs_link_label": _("see the docs"),
         }
