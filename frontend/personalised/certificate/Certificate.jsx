@@ -123,21 +123,33 @@ const CertificateContent = () => {
                 <Typography
                     variant="h1"
                     gutterBottom
-                    sx={{
+                    sx={(theme) => ({
+                        // Fixed size/font regardless of the app's global heading
+                        // styles — this is a fixed-physical-size printable
+                        // certificate (A4 landscape), not a fluid web page, so
+                        // it can't use the viewport-relative clamp() sizing or
+                        // display font used elsewhere.
+                        fontFamily: theme.typography.fontFamily,
+                        fontSize: '2rem',
+                        fontWeight: 600,
+                        lineHeight: 1.2,
                         letterSpacing: '0.04em',
                         textTransform: 'uppercase',
-                    }}
+                    })}
                 >
                     {localeMessages['title']}
                 </Typography>
                 <Typography
                     variant="h3"
                     align="center"
-                    sx={{
+                    sx={(theme) => ({
+                        fontFamily: theme.typography.fontFamily,
+                        fontSize: '1.25rem',
+                        lineHeight: 1.4,
                         mt: 4,
                         fontWeight: 500,
                         maxWidth: '80%',
-                    }}
+                    })}
                 >
                     {(() => {
                         const description = localeMessages['description'];
