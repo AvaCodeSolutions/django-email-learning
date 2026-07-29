@@ -144,7 +144,7 @@ function Organization() {
                     </Box>
                 }
                 <Stack spacing={2} sx={{ flex: 1, minWidth: 0, pt: { xs: 1, md: 3 }, px: { xs: 0.5, md: 1 } }}>
-                    <Typography variant="h1" sx={{ mb: 0, textAlign: { xs: 'center', md: 'left' } }}>{ organization["name"] }</Typography>
+                    <Typography variant="h1" sx={{ mb: 0, fontSize: '1.75rem', textAlign: { xs: 'center', md: 'left' } }}>{ organization["name"] }</Typography>
                     <Typography variant="body1" sx={{ color: 'text.secondary' }}>{ organization["description"] }</Typography>
                     {organization.social_links && organization.social_links.length > 0 && (
                         <Stack
@@ -198,7 +198,7 @@ function Organization() {
         )}
 
         <Box sx={{ my: 4 }}>
-            <Typography variant="h2" sx={{ mb: 2, pl: { xs: 0.5, md: 1 } }}>{localeMessages['courses']}</Typography>
+            <Typography variant="h2" sx={{ mb: 2, fontSize: '1.375rem', pl: { xs: 0.5, md: 1 } }}>{localeMessages['courses']}</Typography>
             { courses.length > 0 ? (
                 <Grid container columnSpacing={2} rowSpacing={3} sx={{ alignItems: 'stretch' }}>
                 { courses.map((course) => {
@@ -244,7 +244,7 @@ function Organization() {
                             <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, flexGrow: 1, direction: course.is_rtl ? 'rtl' : 'ltr' }}>
                                 <Box>
                                     <Link href={`courses/${course["slug"]}/`} underline="none">
-                                        <Typography variant="h3" sx={{ textAlign: courseDirection === 'rtl' ? 'right' : 'left' }}>{course["title"]}</Typography>
+                                        <Typography variant="h3" sx={{ fontSize: '1.125rem', textAlign: courseDirection === 'rtl' ? 'right' : 'left' }}>{course["title"]}</Typography>
                                     </Link>
                                     {hasMultipleLanguages && (
                                         <Stack direction={courseDirection === 'rtl' ? 'rtl' : 'ltr'} spacing={0.5} sx={{ mt: 0.25, alignItems: 'center' }}>

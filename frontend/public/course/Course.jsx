@@ -149,6 +149,7 @@ function Course() {
                             display: { xs: 'none', md: 'block' },
                             color: 'common.white',
                             maxWidth: { xs: '100%', md: '70%' },
+                            fontSize: '2rem',
                             textShadow: '0 6px 24px rgba(0, 0, 0, 0.45)',
                         }}
                     >
@@ -285,7 +286,7 @@ function Course() {
         {/* Topics/Lessons Section */}
         {course.lessons && course.lessons.length > 0 && (
             <Box sx={{ my: 4 }}>
-                <Typography variant="h2" sx={{ mb: 2, direction: courseDirection }}>
+                <Typography variant="h2" sx={{ mb: 2, direction: courseDirection, fontSize: '1.25rem' }}>
                     {localeMessages['topics_covered']}
                 </Typography>
                 <Card
@@ -342,7 +343,7 @@ function Course() {
 
         {course.external_references && course.external_references.length > 0 && (
             <Box sx={{ my: 4 }}>
-                <Typography variant="h2" sx={{ direction: courseDirection }}>
+                <Typography variant="h2" sx={{ direction: courseDirection, fontSize: '1.25rem' }}>
                     {localeMessages['external_references_title']}
                 </Typography>
                 <Card
