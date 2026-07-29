@@ -6,6 +6,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.13.0] - 2026-07-30
+
+### Added
+
+- **Organization Brand Color** - A new field for the organization is added to select the brand color which will be used in the organization and course public pages.
 
 ## [2.12.2] - 2026-07-29
 
