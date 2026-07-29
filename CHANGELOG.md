@@ -7,6 +7,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
 
+## [2.12.2] - 2026-07-29
+
+### Fixed
+
+- **Oversized headings on the public organization and course pages** — The global `h1`-`h3` styles use fluid `clamp()` sizing meant for marketing pages; pinned smaller, fixed font sizes locally on these two public pages instead.
+
 ## [2.12.1] - 2026-07-29
 
 ### Added
