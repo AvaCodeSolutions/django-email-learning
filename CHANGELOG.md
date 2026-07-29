@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.13.1] - 2026-07-30
+
+### Changed
+
+- **Job execution lookup index** — Added a composite index on `JobExecution` (`job_name`, `started_at` descending) so the "latest run per job" queries behind the job status views are served straight from the index instead of scanning and sorting.
+
 ## [2.13.0] - 2026-07-30
 
 ### Added
