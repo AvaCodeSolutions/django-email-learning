@@ -36,6 +36,7 @@ import ContentEditor from '../../src/components/ContentEditor.jsx';
 import EmbedCodeBlock from '../../src/components/EmbedCodeBlock.jsx';
 import apiClient from '../../src/apiClient.js';
 import render, { useAppContext } from '../../src/render.jsx';
+import { getReadableTextColor } from '../../src/utils.js';
 import Coloris from '@melloware/coloris';
 import '@melloware/coloris/dist/coloris.css';
 
@@ -310,7 +311,8 @@ function SendoutDialog({ open, onClose, onSuccess, sendout, newsletterId, organi
 }
 
 function Newsletter() {
-    const { newsletterId, newsletterTitle, organizationId, localeMessages, direction, isOrganizationAdmin, apiBaseUrl, platformBaseUrl, embeddableEnrollmentEnabled } = useAppContext();
+    const { newsletterId, newsletterTitle, organizationId, localeMessages, direction, isOrganizationAdmin, apiBaseUrl, platformBaseUrl, embeddableEnrollmentEnabled, activeOrganizationBrandColor } = useAppContext();
+    const defaultButtonBgColor = activeOrganizationBrandColor || '#4A5EC0';
     const [sendouts, setSendouts] = useState([]);
     const [activeTab, setActiveTab] = useState('scheduled');
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -326,8 +328,8 @@ function Newsletter() {
     const [embedSnippetError, setEmbedSnippetError] = useState(false);
     const [embedScriptCopied, setEmbedScriptCopied] = useState(false);
     const [embedWidgetCopied, setEmbedWidgetCopied] = useState(false);
-    const [buttonBgColor, setButtonBgColor] = useState('#4f46e5');
-    const [buttonTextColor, setButtonTextColor] = useState('#ffffff');
+    const [buttonBgColor, setButtonBgColor] = useState(defaultButtonBgColor);
+    const [buttonTextColor, setButtonTextColor] = useState(getReadableTextColor(defaultButtonBgColor));
     const theme = useTheme();
 
     const fetchSendouts = (status) => {
@@ -594,7 +596,7 @@ function Newsletter() {
 
             {/* Coloris's popup defaults to a lower z-index than MUI's Dialog
                 (1300), so without this it opens invisibly behind the dialog. */}
-            <GlobalStyles styles={{ '.clr-picker': { zIndex: 1400 } }} />
+            <GlobalStyles styles={{ '.clr-picker': { zIndex: '1400 !important' } }} />
 
             <Dialog open={embedDialogOpen} onClose={handleCloseEmbedDialog} fullWidth maxWidth="sm">
                 {!embedSnippetLoading && !embedSnippetError && embedWidgetHtml && (

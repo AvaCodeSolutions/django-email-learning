@@ -56,6 +56,22 @@ def test_course_view_anonymous_client(db, anonymous_client, course, course_lesso
     assert json_ld["teaches"] == ["Sample Lesson"]
 
 
+def test_course_view_includes_organization_brand_color(db, anonymous_client, course):
+    course.enabled = True
+    course.save()
+    course.organization.brand_color = "#654321"
+    course.organization.save()
+
+    url = reverse(
+        "django_email_learning:public:course_view",
+        kwargs={"organization_id": 1, "course_slug": course.slug},
+    )
+    response = anonymous_client.get(url)
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["organization"]["brand_color"] == "#654321"
+
+
 def test_course_view_json_ld_escapes_script_tag_in_description(db, anonymous_client, course):
     course.enabled = True
     course.description = "Nice course</script><script>alert(document.cookie)</script>"

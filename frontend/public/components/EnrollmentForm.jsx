@@ -3,9 +3,10 @@ import { Alert, Box, Button, Checkbox, CircularProgress, FormControlLabel, Typog
 import RequiredTextField from  '../../src/components/RequiredTextField.jsx';
 import { useAppContext } from '../../src/render.jsx';
 import apiClient from '../../src/apiClient.js';
+import { getReadableTextColor } from '../../src/utils.js';
 
 
-const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, onCancle, onComplete, autoFocusEmail = false, newsletter_id = null, newsletter_title = null}) => {
+const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, onCancle, onComplete, autoFocusEmail = false, newsletter_id = null, newsletter_title = null, brandColor = null}) => {
 
     const emailRef = React.useRef('');
     const [errorMessage, setErrorMessage] = React.useState('');
@@ -112,7 +113,16 @@ const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, o
         <Button variant="outlined" sx={{ mx: 1 }} onClick={onCancle}>
             {localeMessages['cancel']}
         </Button>
-        <Button variant="contained" color="primary" type="submit" onClick={enroll}>
+        <Button
+            variant="contained"
+            type="submit"
+            onClick={enroll}
+            sx={brandColor ? {
+                backgroundColor: brandColor,
+                color: getReadableTextColor(brandColor),
+                '&:hover': { backgroundColor: brandColor, filter: 'brightness(0.9)' },
+            } : undefined}
+        >
             {localeMessages['submit']}
         </Button>
         </Box>

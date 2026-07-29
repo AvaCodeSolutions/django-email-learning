@@ -12,6 +12,14 @@ from django_email_learning.services.storage_tools import (
     move_file,
 )
 
+HEX_COLOR_REGEX = r"^#[0-9A-Fa-f]{6}$"
+
+
+def validate_hex_color(value: str) -> str:
+    if not re.match(HEX_COLOR_REGEX, value):
+        raise ValueError("Invalid hex color, e.g. #4A5EC0.")
+    return value
+
 
 class GetOrCreateUserRequest(BaseModel):
     email: str = Field(min_length=1, examples=["user@example.com"])
@@ -60,6 +68,7 @@ class OrganizationResponse(BaseModel):
     public_url: str
     social_links: list[SocialLinkResponse] = []
     is_public: bool
+    brand_color: str
     can_enroll_learner: bool
 
     model_config = ConfigDict(from_attributes=True)
@@ -80,6 +89,7 @@ class OrganizationResponse(BaseModel):
                 "public_url": abs_url_builder(url),
                 "social_links": list(organization.social_links.all()),
                 "is_public": organization.is_public,
+                "brand_color": organization.brand_color,
                 "can_enroll_learner": organization.can_enroll_learner(),
             }
         )
@@ -91,17 +101,24 @@ class CreateOrganizationRequest(BaseModel):
     logo: Optional[str] = Field(None, examples=["/path/to/logo.png"])
     social_links: list[SocialLinkRequest] = Field(default_factory=list)
     is_public: bool = Field(default=True, examples=[True])
+    brand_color: str = Field(default="#4A5EC0", examples=["#4A5EC0"])
 
     @field_validator("description")
     @classmethod
     def strip_html_markup(cls, value: Optional[str]) -> Optional[str]:
         return strip_html(value) if value else value
 
+    @field_validator("brand_color")
+    @classmethod
+    def validate_brand_color(cls, value: str) -> str:
+        return validate_hex_color(value)
+
     def to_django_model(self) -> Organization:
         organization = Organization(
             name=self.name,
             description=self.description,
             is_public=self.is_public,
+            brand_color=self.brand_color,
         )
         organization.save()
         organization.refresh_from_db()
@@ -133,11 +150,17 @@ class UpdateOrganizationRequest(BaseModel):
     logo: Optional[str] = Field(None, examples=["/path/to/logo.png"])
     remove_logo: Optional[bool] = Field(None, examples=[True])
     is_public: Optional[bool] = Field(None, examples=[True])
+    brand_color: Optional[str] = Field(None, examples=["#4A5EC0"])
 
     @field_validator("description")
     @classmethod
     def strip_html_markup(cls, value: Optional[str]) -> Optional[str]:
         return strip_html(value) if value else value
+
+    @field_validator("brand_color")
+    @classmethod
+    def validate_brand_color(cls, value: Optional[str]) -> Optional[str]:
+        return validate_hex_color(value) if value else value
 
 
 class UserRole(enum.StrEnum):

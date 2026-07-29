@@ -184,6 +184,8 @@ class SingleOrganizationView(View):
                 organization.logo = None
             if serializer.is_public is not None:
                 organization.is_public = serializer.is_public
+            if serializer.brand_color is not None:
+                organization.brand_color = serializer.brand_color
             organization.save()
             if serializer.social_links is not None:
                 organization.social_links.all().delete()

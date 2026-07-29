@@ -197,7 +197,7 @@ describe('Course', () => {
       ).toBeInTheDocument();
       expect(
         screen.getByText(
-          '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
+          '<del-enroll-form button_bg_color="#4A5EC0" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
         )
       ).toBeInTheDocument();
     });
@@ -246,7 +246,7 @@ describe('Course', () => {
 
       await user.click(screen.getByRole('button', { name: 'Add to your site' }));
       await screen.findByText(
-        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
+        '<del-enroll-form button_bg_color="#4A5EC0" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
       );
       await user.click(screen.getByRole('button', { name: 'Close' }));
 
@@ -277,7 +277,7 @@ describe('Course', () => {
 
       await user.click(screen.getByRole('button', { name: 'Add to your site' }));
       await screen.findByText(
-        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
+        '<del-enroll-form button_bg_color="#4A5EC0" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
       );
 
       expect(screen.queryByText('Include newsletter subscribe checkbox')).not.toBeInTheDocument();
@@ -308,7 +308,7 @@ describe('Course', () => {
 
       await user.click(screen.getByRole('button', { name: 'Add to your site' }));
       await screen.findByText(
-        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course" news_letter_check newsletter_title="Weekly"></del-enroll-form>'
+        '<del-enroll-form button_bg_color="#4A5EC0" button_text_color="#ffffff" token="tok" course_id="sample-course" news_letter_check newsletter_title="Weekly"></del-enroll-form>'
       );
 
       const toggle = screen.getByRole('switch', { name: 'Include newsletter subscribe checkbox' });
@@ -318,7 +318,7 @@ describe('Course', () => {
 
       expect(toggle).not.toBeChecked();
       await screen.findByText(
-        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
+        '<del-enroll-form button_bg_color="#4A5EC0" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
       );
     });
 
@@ -346,7 +346,7 @@ describe('Course', () => {
 
       await user.click(screen.getByRole('button', { name: 'Add to your site' }));
       await screen.findByText(
-        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
+        '<del-enroll-form button_bg_color="#4A5EC0" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
       );
 
       const bgColorField = screen.getByLabelText('Button background');
@@ -383,7 +383,7 @@ describe('Course', () => {
 
       await user.click(screen.getByRole('button', { name: 'Add to your site' }));
       await screen.findByText(
-        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course" course_title="Sample Course"></del-enroll-form>'
+        '<del-enroll-form button_bg_color="#4A5EC0" button_text_color="#ffffff" token="tok" course_id="sample-course" course_title="Sample Course"></del-enroll-form>'
       );
 
       const toggle = screen.getByRole('switch', { name: 'Show course title' });
@@ -393,7 +393,7 @@ describe('Course', () => {
 
       expect(toggle).not.toBeChecked();
       await screen.findByText(
-        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
+        '<del-enroll-form button_bg_color="#4A5EC0" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
       );
     });
 
@@ -421,7 +421,7 @@ describe('Course', () => {
 
       await user.click(screen.getByRole('button', { name: 'Add to your site' }));
       await screen.findByText(
-        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
+        '<del-enroll-form button_bg_color="#4A5EC0" button_text_color="#ffffff" token="tok" course_id="sample-course"></del-enroll-form>'
       );
 
       expect(screen.queryByText('Show course image')).not.toBeInTheDocument();
@@ -452,7 +452,7 @@ describe('Course', () => {
 
       await user.click(screen.getByRole('button', { name: 'Add to your site' }));
       await screen.findByText(
-        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course" course_title="Sample Course" course_image="https://example.com/course.jpg"></del-enroll-form>'
+        '<del-enroll-form button_bg_color="#4A5EC0" button_text_color="#ffffff" token="tok" course_id="sample-course" course_title="Sample Course" course_image="https://example.com/course.jpg"></del-enroll-form>'
       );
 
       const toggle = screen.getByRole('switch', { name: 'Show course image' });
@@ -462,7 +462,7 @@ describe('Course', () => {
 
       expect(toggle).not.toBeChecked();
       await screen.findByText(
-        '<del-enroll-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" course_id="sample-course" course_title="Sample Course"></del-enroll-form>'
+        '<del-enroll-form button_bg_color="#4A5EC0" button_text_color="#ffffff" token="tok" course_id="sample-course" course_title="Sample Course"></del-enroll-form>'
       );
     });
   });

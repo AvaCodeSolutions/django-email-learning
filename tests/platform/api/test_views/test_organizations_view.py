@@ -321,3 +321,55 @@ def test_can_enroll_learner_reflects_cap(org_admin_client, settings, course):
     response = org_admin_client.get(update_url(organization.id))
     assert response.status_code == 200
     assert response.json().get("can_enroll_learner") is False
+
+
+def test_create_organization_defaults_brand_color(superadmin_client):
+    response = superadmin_client.post(
+        get_url(),
+        data={"name": "Brand Color Default Org", "description": "desc"},
+        content_type="application/json",
+    )
+    assert response.status_code == 201
+    assert response.json().get("brand_color") == "#4A5EC0"
+
+
+def test_create_organization_with_custom_brand_color(superadmin_client):
+    response = superadmin_client.post(
+        get_url(),
+        data={"name": "Brand Color Custom Org", "description": "desc", "brand_color": "#112233"},
+        content_type="application/json",
+    )
+    assert response.status_code == 201
+    assert response.json().get("brand_color") == "#112233"
+
+
+def test_create_organization_rejects_invalid_brand_color(superadmin_client):
+    response = superadmin_client.post(
+        get_url(),
+        data={"name": "Bad Brand Color Org", "description": "desc", "brand_color": "not-a-color"},
+        content_type="application/json",
+    )
+    assert response.status_code == 400
+
+
+def test_update_organization_brand_color(superadmin_client):
+    organization = Organization.objects.first()
+    response = superadmin_client.post(
+        update_url(organization.id),
+        data={"brand_color": "#654321"},
+        content_type="application/json",
+    )
+    assert response.status_code == 200
+    assert response.json().get("brand_color") == "#654321"
+    organization.refresh_from_db()
+    assert organization.brand_color == "#654321"
+
+
+def test_update_organization_rejects_invalid_brand_color(superadmin_client):
+    organization = Organization.objects.first()
+    response = superadmin_client.post(
+        update_url(organization.id),
+        data={"brand_color": "nope"},
+        content_type="application/json",
+    )
+    assert response.status_code == 400

@@ -41,6 +41,11 @@ class Organizations(BasePlatformView):
             "organization_is_public_helper_text": _(
                 "Public organizations are visible on your public pages. Turn this off to keep the organization private."
             ),
+            "organization_brand_color": _("Brand Color"),
+            "organization_brand_color_label": _("Brand color"),
+            "organization_brand_color_helper_text": _(
+                "Used for buttons on your public pages and as the default color for your embed widget."
+            ),
             "requires_text_submission": _("Requires Text Submission"),
             "requires_file_submission": _("Requires File Submission"),
             "uploaded_image_alt": _("Organization Logo"),
@@ -133,6 +138,11 @@ class SingleOrganization(BasePlatformView):
             "organization_is_public": _("Public Organization"),
             "organization_is_public_helper_text": _(
                 "Public organizations are visible on your public pages. Turn this off to keep the organization private."
+            ),
+            "organization_brand_color": _("Brand Color"),
+            "organization_brand_color_label": _("Brand color"),
+            "organization_brand_color_helper_text": _(
+                "Used for buttons on your public pages and as the default color for your embed widget."
             ),
             "invalid_url_helper_text": _("Enter a valid URL starting with http:// or https://"),
             "website": _("Website"),

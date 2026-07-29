@@ -19,6 +19,7 @@ import SubmittedAssignmentsSection from './components/SubmittedAssignmentsSectio
 import CourseAnalyticsSection from './components/CourseAnalyticsSection.jsx';
 import { lazy, Suspense } from "react";
 import apiClient from '../../src/apiClient.js';
+import { getReadableTextColor } from '../../src/utils.js';
 import Coloris from '@melloware/coloris';
 import '@melloware/coloris/dist/coloris.css';
 import EmbedCodeBlock from '../../src/components/EmbedCodeBlock.jsx';
@@ -41,7 +42,8 @@ const EnableCourseSwitchPopup = lazy(() => import("../courses/components/EnableC
 
 
 function Course() {
-    const { courseTitle, courseId, courseEnabled: courseEnabledFromContext, courseHasContent, coursePublicUrl, embeddableEnrollmentEnabled, localeMessages, direction, userRole, isInstructor, apiBaseUrl, platformBaseUrl, customComponent } = useAppContext();
+    const { courseTitle, courseId, courseEnabled: courseEnabledFromContext, courseHasContent, coursePublicUrl, embeddableEnrollmentEnabled, localeMessages, direction, userRole, isInstructor, apiBaseUrl, platformBaseUrl, customComponent, activeOrganizationBrandColor } = useAppContext();
+    const defaultButtonBgColor = activeOrganizationBrandColor || '#4A5EC0';
     const [courseEnabled, setCourseEnabled] = useState(courseEnabledFromContext);
     const [publicUrlCopied, setPublicUrlCopied] = useState(false);
     const [embedDialogOpen, setEmbedDialogOpen] = useState(false);
@@ -54,8 +56,8 @@ function Course() {
     const [includeNewsletterCheck, setIncludeNewsletterCheck] = useState(true);
     const [includeCourseTitle, setIncludeCourseTitle] = useState(true);
     const [includeCourseImage, setIncludeCourseImage] = useState(true);
-    const [buttonBgColor, setButtonBgColor] = useState('#4f46e5');
-    const [buttonTextColor, setButtonTextColor] = useState('#ffffff');
+    const [buttonBgColor, setButtonBgColor] = useState(defaultButtonBgColor);
+    const [buttonTextColor, setButtonTextColor] = useState(getReadableTextColor(defaultButtonBgColor));
     const [dialogOpen, setDialogOpen] = useState(false)
     const [dialogContent, setDialogContent] = useState(null)
     const [contentLoaded, setContentLoaded] = useState(false)
@@ -706,7 +708,7 @@ function Course() {
 
             {/* Coloris's popup defaults to a lower z-index than MUI's Dialog
                 (1300), so without this it opens invisibly behind the dialog. */}
-            <GlobalStyles styles={{ '.clr-picker': { zIndex: 1400 } }} />
+            <GlobalStyles styles={{ '.clr-picker': { zIndex: '1400 !important' } }} />
 
             <Dialog open={embedDialogOpen} onClose={handleCloseEmbedDialog} fullWidth maxWidth="sm">
                 {!embedSnippetLoading && !embedSnippetError && embedWidgetHtml && (

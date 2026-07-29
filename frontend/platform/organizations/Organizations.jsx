@@ -140,6 +140,7 @@ function Organizations() {
                         initialLogoPath={org.logo_path}
                         initialSocialLinks={org.social_links}
                         initialIsPublic={org.is_public}
+                        initialBrandColor={org.brand_color}
                         organizationId={org.id}
                       /></Suspense>);
                       setDialogOpen(true);

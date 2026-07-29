@@ -177,6 +177,7 @@ class OrganizationView(TemplateView):
                     SocialLinkSerializer(platform=link.platform, url=link.url)
                     for link in organization.social_links.all()
                 ],
+                brand_color=organization.brand_color,
             )
             enroll_api_path = reverse("django_email_learning:api_public:enroll")
             subscribe_api_path = reverse(
@@ -315,6 +316,7 @@ class CourseView(TemplateView):
                 SocialLinkSerializer(platform=link.platform, url=link.url)
                 for link in course.organization.social_links.all()
             ],
+            brand_color=course.organization.brand_color,
         )
         enroll_api_path = reverse("django_email_learning:api_public:enroll")
         current_lang_code = get_language()

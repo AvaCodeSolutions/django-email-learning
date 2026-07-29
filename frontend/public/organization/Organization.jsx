@@ -17,6 +17,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import { alpha, ThemeProvider } from '@mui/material/styles';
 import { useAppContext } from '../../src/render.jsx';
 import { lightTheme } from '../../src/theme/themes';
+import { getReadableTextColor } from '../../src/utils.js';
 
 
 // No Material UI icon exists for these brands, so their marks are reproduced
@@ -103,7 +104,7 @@ function Organization() {
 
     const showModalForCourse = (course) => {
         // Logic to show modal for specific course
-        setModalContent(<EnrollmentForm course_title={course.title} course_slug={course.slug} organization_id={organization.id} endpoint={enrollApiUrl} autoFocusEmail={true} onCancle={() => {setDisplayModal(false); setModalContent(null);}} onComplete={() => completeEnrollment(course)} newsletter_id={course.newsletter_id || null} newsletter_title={course.newsletter_title || null} />);
+        setModalContent(<EnrollmentForm course_title={course.title} course_slug={course.slug} organization_id={organization.id} endpoint={enrollApiUrl} autoFocusEmail={true} onCancle={() => {setDisplayModal(false); setModalContent(null);}} onComplete={() => completeEnrollment(course)} newsletter_id={course.newsletter_id || null} newsletter_title={course.newsletter_title || null} brandColor={organization.brand_color} />);
         setDisplayModal(true);
     }
 
@@ -217,8 +218,6 @@ function Organization() {
                                 boxShadow: 'none',
                                 transition: 'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
                                 '&:hover': {
-                                    transform: 'translateY(-2px)',
-                                    borderColor: 'primary.main',
                                     boxShadow: (theme) => theme.palette.mode === 'dark'
                                         ? '0 8px 18px rgba(0,0,0,0.28)'
                                         : '0 8px 18px rgba(16,24,40,0.10)',
@@ -235,6 +234,8 @@ function Organization() {
                                     display: course["image"] ? undefined : 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
+                                    borderBottom: '1px solid',
+                                    borderColor: organization.brand_color ? alpha(organization.brand_color, 0.2) : 'border.main',
                                 }}
                             >
                                 {course["image"] ? null : (
@@ -284,11 +285,18 @@ function Organization() {
                                 <Box sx={{ mt: 'auto', pt: 1, textAlign: { xs: 'center', md: 'left' } }}>
                                     <Button
                                         variant="contained"
-                                        color="secondary"
                                         rel="noopener noreferrer"
                                         onClick={() => showModalForCourse(course)}
                                         disabled={course.enrolled}
-                                        sx={{ px: { xs: 5 } }}
+                                        sx={{
+                                            px: { xs: 5 },
+                                            backgroundColor: organization.brand_color,
+                                            color: getReadableTextColor(organization.brand_color),
+                                            '&:hover': { backgroundColor: organization.brand_color, filter: 'brightness(0.9)' },
+                                            border: '1px solid',
+                                            borderColor: alpha(getReadableTextColor(organization.brand_color), 0.2),
+
+                                        }}
                                     >
                                         {course.enrolled ? localeMessages['enrolled'] : localeMessages['enroll_now']}
                                     </Button>
@@ -321,6 +329,7 @@ function Organization() {
                 newsletters={newsletters}
                 subscribeApiUrl={newsletterSubscribeApiUrl}
                 localeMessages={localeMessages}
+                brandColor={organization.brand_color}
             />
         )}
 
