@@ -38,6 +38,9 @@ class JobExecution(models.Model):
                 name="unique_running_jobexecution_per_job",
             )
         ]
+        indexes = [
+            models.Index(fields=["job_name", "-started_at"], name="jobexecution_name_started_idx"),
+        ]
 
     @classmethod
     def start_if_not_running(cls, job_name: str, stale_after_hours: int = 2) -> "JobExecution | None":
