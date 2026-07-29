@@ -212,6 +212,7 @@ function Organization() {
                                         initialLogoPath={organization.logo_path}
                                         initialSocialLinks={organization.social_links}
                                         initialIsPublic={organization.is_public}
+                                        initialBrandColor={organization.brand_color}
                                         successCallback={(data) => {
                                             setOrganization(data);
                                             setGeneralInfoEditable(false);

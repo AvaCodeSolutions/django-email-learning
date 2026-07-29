@@ -8,6 +8,7 @@ import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import { alpha, ThemeProvider } from '@mui/material/styles';
 import { useAppContext } from '../../src/render.jsx';
 import { lightTheme } from '../../src/theme/themes';
+import { getReadableTextColor } from '../../src/utils.js';
 
 
 function Course() {
@@ -54,6 +55,7 @@ function Course() {
                 autoFocusEmail={true}
                 onCancle={() => { setDisplayModal(false); setModalContent(null); }}
                 onComplete={() => completeEnrollment()}
+                brandColor={organization.brand_color}
             />
         );
         setDisplayModal(true);
@@ -166,7 +168,6 @@ function Course() {
                         {!enrolled && (
                             <Button
                                 variant="contained"
-                                color="primary"
                                 size="large"
                                 onClick={showEnrollmentModal}
                                 sx={{
@@ -174,6 +175,9 @@ function Course() {
                                     boxShadow: '0 16px 40px rgba(0, 0, 0, 0.28)',
                                     border: 'solid 1px #ffffff30',
                                     fontWeight: 700,
+                                    backgroundColor: organization.brand_color,
+                                    color: getReadableTextColor(organization.brand_color),
+                                    '&:hover': { backgroundColor: organization.brand_color, filter: 'brightness(0.9)' },
                                 }}
                             >
                                 {localeMessages['enroll_now']}
@@ -318,7 +322,7 @@ function Course() {
                                 >
                                     <CheckCircleIcon
                                         sx={{
-                                            color: 'primary.main',
+                                            color: organization.brand_color,
                                             fontSize: '1.5rem',
                                         }}
                                     />
@@ -426,9 +430,13 @@ function Course() {
                     {!enrolled &&(
                         <Button
                             variant="contained"
-                            color="primary"
                             size="large"
                             onClick={showEnrollmentModal}
+                            sx={{
+                                backgroundColor: organization.brand_color,
+                                color: getReadableTextColor(organization.brand_color),
+                                '&:hover': { backgroundColor: organization.brand_color, filter: 'brightness(0.9)' },
+                            }}
                         >
                             {localeMessages['enroll_now']}
                         </Button>

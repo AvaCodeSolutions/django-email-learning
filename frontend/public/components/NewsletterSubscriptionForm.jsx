@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { getCookie } from '../../src/utils.js';
+import { getCookie, getReadableTextColor } from '../../src/utils.js';
 import { Alert, Box, Button, Checkbox, FormControlLabel, FormGroup, Stack, TextField, Typography } from '@mui/material';
 
-export default function NewsletterSubscriptionForm({ newsletters, subscribeApiUrl, localeMessages }) {
+export default function NewsletterSubscriptionForm({ newsletters, subscribeApiUrl, localeMessages, brandColor = null }) {
     const [email, setEmail] = useState('');
     const [checkedIds, setCheckedIds] = useState(() => Object.fromEntries(newsletters.map(n => [n.id, true])));
     const [emailError, setEmailError] = useState('');
@@ -109,6 +109,7 @@ export default function NewsletterSubscriptionForm({ newsletters, subscribeApiUr
                             key={n.id}
                             control={
                                 <Checkbox
+
                                     checked={!!checkedIds[n.id]}
                                     onChange={() => toggleNewsletter(n.id)}
                                 />
@@ -144,7 +145,14 @@ export default function NewsletterSubscriptionForm({ newsletters, subscribeApiUr
                         type="submit"
                         variant="contained"
                         disabled={submitting}
-                        sx={{ flexShrink: 0, height: '56px', borderRadius: '0 8px 8px 0' }}
+                        sx={{
+                            flexShrink: 0, height: '56px', borderRadius: '0 8px 8px 0',
+                            ...(brandColor ? {
+                                backgroundColor: brandColor,
+                                color: getReadableTextColor(brandColor),
+                                '&:hover': { backgroundColor: brandColor, filter: 'brightness(0.9)' },
+                            } : {}),
+                        }}
                     >
                         {localeMessages['newsletter_subscribe']}
                     </Button>

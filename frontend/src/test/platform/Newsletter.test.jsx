@@ -96,7 +96,7 @@ describe('Newsletter', () => {
       ).toBeInTheDocument();
       expect(
         screen.getByText(
-          '<del-newsletter-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" newsletter_id="3"></del-newsletter-form>'
+          '<del-newsletter-form button_bg_color="#4A5EC0" button_text_color="#ffffff" token="tok" newsletter_id="3"></del-newsletter-form>'
         )
       ).toBeInTheDocument();
     });
@@ -145,7 +145,7 @@ describe('Newsletter', () => {
 
       await user.click(screen.getByRole('button', { name: 'Add to your site' }));
       await screen.findByText(
-        '<del-newsletter-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" newsletter_id="3"></del-newsletter-form>'
+        '<del-newsletter-form button_bg_color="#4A5EC0" button_text_color="#ffffff" token="tok" newsletter_id="3"></del-newsletter-form>'
       );
       await user.click(screen.getByRole('button', { name: 'Close' }));
 
@@ -176,7 +176,7 @@ describe('Newsletter', () => {
 
       await user.click(screen.getByRole('button', { name: 'Add to your site' }));
       await screen.findByText(
-        '<del-newsletter-form button_bg_color="#4f46e5" button_text_color="#ffffff" token="tok" newsletter_id="3"></del-newsletter-form>'
+        '<del-newsletter-form button_bg_color="#4A5EC0" button_text_color="#ffffff" token="tok" newsletter_id="3"></del-newsletter-form>'
       );
 
       const bgColorField = screen.getByLabelText('Button background');

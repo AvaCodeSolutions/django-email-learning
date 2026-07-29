@@ -18,6 +18,14 @@ def test_organization_view_anonymous_client(db, anonymous_client):
     assert len(response.context["appContext"]["organization"]["courses"]) == 0
 
 
+def test_organization_view_includes_brand_color(db, anonymous_client):
+    Organization.objects.filter(id=1).update(brand_color="#654321")
+    url = reverse("django_email_learning:public:organization_view", kwargs={"organization_id": 1})
+    response = anonymous_client.get(url)
+    assert response.status_code == 200
+    assert response.context["appContext"]["organization"]["brand_color"] == "#654321"
+
+
 def test_organization_view_enrollment_closed_when_cap_reached(anonymous_client, settings, course):
     settings.DJANGO_EMAIL_LEARNING = {
         **settings.DJANGO_EMAIL_LEARNING,

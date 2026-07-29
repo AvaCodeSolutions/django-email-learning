@@ -59,6 +59,7 @@ class BasePlatformView(TemplateView):
     def get_shared_context(self) -> Dict[str, Any]:
         """Get shared context for all platform views"""
         active_organization_id = self.get_or_set_active_organization()
+        active_organization = Organization.objects.get(id=active_organization_id)
         if self.request.user.is_superuser:
             role = "admin"
             active_org_user = None
@@ -139,7 +140,8 @@ class BasePlatformView(TemplateView):
                         ).exists()  # type: ignore[misc]
                     )
                 ),
-                "organizationIsPublic": Organization.objects.get(id=active_organization_id).is_public,
+                "organizationIsPublic": active_organization.is_public,
+                "activeOrganizationBrandColor": active_organization.brand_color,
                 "localeMessages": {
                     "dashboard": _("Dashboard"),
                     "organizations": _("Organizations"),

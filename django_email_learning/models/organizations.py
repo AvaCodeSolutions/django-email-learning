@@ -5,6 +5,7 @@ from typing import Any
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.db import models
 from django.urls import reverse
 from django.utils.module_loading import import_string
@@ -13,12 +14,18 @@ from .enums.enrollment_status import EnrollmentStatus
 
 User = get_user_model()
 
+hex_color_validator = RegexValidator(
+    regex=r"^#[0-9A-Fa-f]{6}$",
+    message="Enter a valid hex color, e.g. #4A5EC0.",
+)
+
 
 class Organization(models.Model):
     name = models.CharField(max_length=200, unique=True)
     logo = models.ImageField(upload_to="organization_logos/", null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     is_public = models.BooleanField(default=True)
+    brand_color = models.CharField(max_length=7, default="#4A5EC0", validators=[hex_color_validator])
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
     embed_token = models.CharField(max_length=64, unique=True, null=True, blank=True, editable=False)

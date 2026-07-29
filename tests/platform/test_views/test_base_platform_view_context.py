@@ -126,6 +126,28 @@ def test_organization_is_public_false_when_active_organization_not_public(db, us
     assert response.context["appContext"]["organizationIsPublic"] is False
 
 
+def test_active_organization_brand_color_defaults(db, users):
+    client = Client()
+    client.force_login(users["organization_admin"])
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["activeOrganizationBrandColor"] == "#4A5EC0"
+
+
+def test_active_organization_brand_color_reflects_custom_value(db, users):
+    Organization.objects.filter(id=1).update(brand_color="#112233")
+
+    client = Client()
+    client.force_login(users["organization_admin"])
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["activeOrganizationBrandColor"] == "#112233"
+
+
 def test_newsletters_feature_absent_when_setting_falsy(db, users, settings):
     settings.DJANGO_EMAIL_LEARNING = {
         **settings.DJANGO_EMAIL_LEARNING,

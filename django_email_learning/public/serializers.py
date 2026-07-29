@@ -43,6 +43,7 @@ class OrganizationSerializer(BaseModel):
     courses: list[PublicCourseSerializer] = []
     public_url: str | None = None
     social_links: list[SocialLinkSerializer] = []
+    brand_color: str = "#4A5EC0"
 
     @field_serializer("description")
     def serialize_description_with_br(self, description: str | None) -> str | None:

@@ -1,11 +1,15 @@
-import { Alert, Box, Button, DialogActions, Divider, FormControl, FormControlLabel, IconButton, InputLabel, MenuItem, Select, Stack, Switch, TextField, Typography } from "@mui/material";
+import { Alert, Box, Button, DialogActions, Divider, FormControl, FormControlLabel, GlobalStyles, IconButton, InputAdornment, InputLabel, MenuItem, Select, Stack, Switch, TextField, Typography } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RequiredTextField  from "../../../src/components/RequiredTextField.jsx";
 import ImageUpload from '../../../src/components/ImageUpload.jsx';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAppContext } from '../../../src/render.jsx';
 import apiClient from '../../../src/apiClient.js';
+import Coloris from '@melloware/coloris';
+import '@melloware/coloris/dist/coloris.css';
+
+const DEFAULT_BRAND_COLOR = '#4A5EC0';
 
 const PLATFORM_OPTIONS = [
     { value: "website", labelKey: "website" },
@@ -20,7 +24,7 @@ const PLATFORM_OPTIONS = [
     { value: "substack", labelKey: "substack" },
 ];
 
-function OrganizationForm({ successCallback, failureCallback, cancelCallback, createMode, initialName, initialDescription, initialLogoUrl, initialLogoPath, initialSocialLinks, initialIsPublic, organizationId, readOnly = false }) {
+function OrganizationForm({ successCallback, failureCallback, cancelCallback, createMode, initialName, initialDescription, initialLogoUrl, initialLogoPath, initialSocialLinks, initialIsPublic, initialBrandColor, organizationId, readOnly = false }) {
     const { localeMessages, apiBaseUrl, direction, defaultOrgSetting, defaultOrgSettings } = useAppContext();
     const defaultVisibility = defaultOrgSetting?.isPublic ?? defaultOrgSettings?.isPublic ?? true;
     const [name, setName] = useState(initialName || "");
@@ -32,7 +36,32 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
     const [descriptionHelperText, setDescriptionHelperText] = useState("");
     const [logoServerPath, setLogoServerPath] = useState(initialLogoPath || null);
     const [isPublic, setIsPublic] = useState(initialIsPublic ?? defaultVisibility);
+    const [brandColor, setBrandColor] = useState(initialBrandColor || DEFAULT_BRAND_COLOR);
     const [errorMessage, setErrorMessage] = useState();
+
+    // Sets up the brand color picker input below. Runs once - Coloris attaches
+    // itself to any current/future element matching the selector, so it
+    // doesn't need to re-run when the form is remounted.
+    useEffect(() => {
+        Coloris.init();
+        Coloris({
+            el: '.coloris-input',
+            // MUI's TextField already manages the input's surrounding DOM via
+            // React; letting Coloris also wrap the field and inject its own
+            // swatch button fights that on every re-render (breaks the
+            // picker, throws off alignment). We show our own swatch instead
+            // (see the InputAdornment below).
+            wrap: false,
+            theme: 'polaroid',
+            alpha: false,
+            format: 'hex',
+            onChange: (color, currentEl) => {
+                if (currentEl?.id === 'organization-brand-color') {
+                    setBrandColor(color);
+                }
+            },
+        });
+    }, []);
 
     const usedPlatforms = socialLinks.map((link) => link.platform);
 
@@ -120,6 +149,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
             description: description.trim(),
             social_links: buildSocialLinksPayload(),
             is_public: isPublic,
+            brand_color: brandColor,
         };
 
         if (logoServerPath !== (initialLogoPath || null)) {
@@ -152,6 +182,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
                 logo: logoServerPath,
                 social_links: buildSocialLinksPayload(),
                 is_public: isPublic,
+                brand_color: brandColor,
         })
         .then(data => {
             successCallback(data);
@@ -237,6 +268,34 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
                     {localeMessages["organization_is_public_helper_text"]}
                 </Typography>
             </Box>
+            <Divider sx={{ my: 2 }} />
+            <Box sx={{ mt: 1 }}>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>{localeMessages["organization_brand_color"]}</Typography>
+                <TextField
+                    id="organization-brand-color"
+                    label={localeMessages["organization_brand_color_label"]}
+                    value={brandColor}
+                    onChange={(e) => setBrandColor(e.target.value)}
+                    size="small"
+                    disabled={readOnly}
+                    slotProps={{
+                        htmlInput: { className: 'coloris-input' },
+                        input: {
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Box sx={{ width: 18, height: 18, borderRadius: '4px', border: '1px solid', borderColor: 'divider', backgroundColor: brandColor }} />
+                                </InputAdornment>
+                            ),
+                        },
+                    }}
+                />
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    {localeMessages["organization_brand_color_helper_text"]}
+                </Typography>
+            </Box>
+            {/* Coloris's popup defaults to a lower z-index than MUI's Dialog
+                (1300), so without this it opens invisibly behind the dialog. */}
+            <GlobalStyles styles={{ '.clr-picker': { zIndex: '1400 !important' } }} />
             {!readOnly && (
                 <DialogActions>
                     <Button onClick={cancelCallback}>{localeMessages["cancel"]}</Button>
