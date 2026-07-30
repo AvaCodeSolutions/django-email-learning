@@ -20,6 +20,7 @@ import { getCookie } from '../utils.js';
 import { useTheme, useMediaQuery } from "@mui/material";
 import ThemeSwitcher from './ThemeSwitcher.jsx';
 import { useAppContext } from '../render.jsx';
+import DOMPurify from 'dompurify';
 
 
 function OrganizationsSelect({organizations, activeOrganizationId, changeOrganizationCallback}) {
@@ -121,6 +122,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     const [organizations, setOrganizations] = useState([])
     const [deliverContentsJobStatus, setDeliverContentsJobStatus] = useState(null)
     const { localeMessages, isPlatformAdmin, isOrganizationAdmin, isInstructor, direction, apiBaseUrl, platformBaseUrl, sidebarCustomComponent, navbarCustomComponents, customLogo } = useAppContext();
+    const sanitizeHtml = (html) => DOMPurify.sanitize(html ?? '');
 
     const theme = useTheme();
     const isMdUpScreen = useMediaQuery(theme.breakpoints.up('md'));
@@ -363,10 +365,10 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                         <Box
                             key={component.slot}
                             sx={{ display: { xs: 'block', md: 'none' }, py: '8px' }}
-                            dangerouslySetInnerHTML={{ __html: component.html }}
+                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(component.html) }}
                         />
                     ))}
-                    {sidebarCustomComponent && <Box dangerouslySetInnerHTML={{ __html: sidebarCustomComponent.componentTag }} />}
+                    {sidebarCustomComponent && <Box dangerouslySetInnerHTML={{ __html: sanitizeHtml(sidebarCustomComponent.componentTag) }} />}
                 </Box>
             )}
         </Drawer>
