@@ -6,6 +6,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.14.0] - 2026-07-30
+
+### Changed
+
+- **Job status is restricted to platform admins** (breaking) — `/api/platform/status/jobs/` was readable by any organization member and now requires a platform admin, returning `403` otherwise. The Dashboard's content delivery health card was gated only on having active courses, so organization members were being shown this data; both it and the sidebar indicator are now gated on the platform admin flag and skip the request entirely for everyone else. Any integration calling this endpoint with a non-platform-admin session needs to be updated.
+
+### Fixed
+
+- **Raw frontend source emitted into the build output** — `frontend/public` holds source entries rather than static assets, so Vite's default `publicDir` handling also copied it verbatim into `dist/`, producing raw `.jsx` files and unbuilt `index.html` next to the built assets. These were never packaged (only `dist/assets` ships), so this is build hygiene rather than a shipped-content change; built entries and manifest keys are unchanged.
+- **`make frontend-dev` did not exist** — the target was misspelled `fronend-dev` while the help text advertised `frontend-dev`. Renamed, along with `start-dev`'s reference to it, and `.PHONY` corrected to match the actual targets.
+
 ## [2.13.2] - 2026-07-30
 
 ### Fixed
