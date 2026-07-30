@@ -34,6 +34,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import CodeIcon from '@mui/icons-material/Code';
 import ContentEditor from '../../src/components/ContentEditor.jsx';
 import EmbedCodeBlock from '../../src/components/EmbedCodeBlock.jsx';
+import { sanitizeComponentHtml } from '../../src/sanitizeHtml.js';
 import apiClient from '../../src/apiClient.js';
 import render, { useAppContext } from '../../src/render.jsx';
 import { getReadableTextColor } from '../../src/utils.js';
@@ -615,7 +616,7 @@ function Newsletter() {
                                 justifyContent: 'center',
                             }}
                             aria-hidden="true"
-                            dangerouslySetInnerHTML={{ __html: embedWidgetPreviewHtml }}
+                            dangerouslySetInnerHTML={{ __html: sanitizeComponentHtml(embedWidgetPreviewHtml) }}
                         />
                     </Box>
                 )}

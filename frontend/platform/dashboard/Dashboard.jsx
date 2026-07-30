@@ -12,6 +12,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import Base from '../../src/components/Base.jsx'
 import render, { useAppContext } from '../../src/render.jsx';
 import apiClient from '../../src/apiClient.js'
+import { sanitizeComponentHtml } from '../../src/sanitizeHtml.js';
 import { getCookie, setCookie } from '../../src/utils.js'
 
 const DEFAULT_SECTIONS = ['setup_progress', 'overview', 'quick_actions', 'sponsor'];
@@ -185,7 +186,7 @@ function CustomComponentSection({ component }) {
   if (!component?.componentTag) return null;
   return (
     <Grid size={{ xs: 12 }}>
-      <Box dangerouslySetInnerHTML={{ __html: component.componentTag }} />
+      <Box dangerouslySetInnerHTML={{ __html: sanitizeComponentHtml(component.componentTag) }} />
     </Grid>
   )
 }

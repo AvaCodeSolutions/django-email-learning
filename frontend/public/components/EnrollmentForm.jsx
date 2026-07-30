@@ -4,6 +4,7 @@ import RequiredTextField from  '../../src/components/RequiredTextField.jsx';
 import { useAppContext } from '../../src/render.jsx';
 import apiClient from '../../src/apiClient.js';
 import { getReadableTextColor } from '../../src/utils.js';
+import { sanitizeHtml } from '../../src/sanitizeHtml.js';
 
 
 const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, onCancle, onComplete, autoFocusEmail = false, newsletter_id = null, newsletter_title = null, brandColor = null}) => {
@@ -92,7 +93,7 @@ const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, o
                     },
                 }}
             >
-                <span dangerouslySetInnerHTML={{ __html: localeMessages['terms_of_service_confirmation'].replace('TERMS_OF_SERVICE_URL', termsOfServiceUrl) }} />
+                <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(localeMessages['terms_of_service_confirmation'].replace('TERMS_OF_SERVICE_URL', termsOfServiceUrl)) }} />
             </Typography>
         )}
         <input type="hidden" name="course_slug" value={course_slug} />
