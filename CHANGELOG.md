@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.13.2] - 2026-07-30
+
+### Fixed
+
+- **Course embed widget showed a broken image instead of no image** — With "Show course image" turned off (or for a course with no image at all), the widget rendered an `<img>` pointing at the embedding page's own URL rather than omitting the image. The embed script's image sanitizer resolved its input as a relative URL, and an empty value resolves to the host page instead of being rejected.
+
 ## [2.13.1] - 2026-07-30
 
 ### Changed
