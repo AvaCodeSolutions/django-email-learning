@@ -160,6 +160,7 @@ describe('Dashboard', () => {
       appContext: {
         localeMessages,
         availableFeatures: [],
+        isPlatformAdmin: true,
         dashboardSetup: { hasCourse: true, hasTeam: true, profileComplete: true, newsletterConfigured: false },
         dashboardStats: { activeCourses: 3, enrolledLearners: 11, newsletterSubscribers: 0 },
       },
@@ -168,6 +169,23 @@ describe('Dashboard', () => {
     expect(screen.getByText('11')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText('Needs attention')).toBeInTheDocument());
     expect(screen.queryByText('Newsletter subscribers')).not.toBeInTheDocument();
+  });
+
+  it('does not request or show content delivery health for non-platform-admins', async () => {
+    setupFetch('warning');
+    renderWithProviders(<Dashboard />, {
+      appContext: {
+        localeMessages,
+        availableFeatures: [],
+        isPlatformAdmin: false,
+        dashboardSetup: { hasCourse: true, hasTeam: true, profileComplete: true, newsletterConfigured: false },
+        dashboardStats: { activeCourses: 3, enrolledLearners: 11, newsletterSubscribers: 0 },
+      },
+    });
+    await waitFor(() => expect(screen.getByText('3')).toBeInTheDocument());
+    expect(screen.queryByText('Needs attention')).not.toBeInTheDocument();
+    expect(screen.queryByText('Content delivery')).not.toBeInTheDocument();
+    expect(global.fetch.mock.calls.some(([url]) => String(url).includes('/status/jobs/'))).toBe(false);
   });
 
   it('hides the newsletter subscriber stat and quick action when the feature is disabled', async () => {
