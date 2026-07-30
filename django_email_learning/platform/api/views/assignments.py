@@ -9,6 +9,7 @@ from django.views import View
 from pydantic import ValidationError
 
 from django_email_learning.decorators import accessible_for
+from django_email_learning.error_responses import log_and_conflict_response
 from django_email_learning.models import (
     AssignmentFeedback,
     AssignmentSubmission,
@@ -138,4 +139,4 @@ class SubmissionReview(View):
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
         except IntegrityError as e:
-            return JsonResponse({"error": str(e)}, status=409)
+            return log_and_conflict_response(logger, e, "Saving assignment")

@@ -13,6 +13,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from pydantic import ValidationError
 
 from django_email_learning.decorators import accessible_for
+from django_email_learning.error_responses import log_and_conflict_response
 from django_email_learning.models import (
     Course,
     CourseContent,
@@ -64,8 +65,11 @@ class CourseView(CourseCreationMixin, View):
             return JsonResponse(response_data, status=201)
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
-        except (IntegrityError, ValueError) as e:
+        except ValueError as e:
+            # Raised by the serializers with a message written for the caller.
             return JsonResponse({"error": str(e)}, status=409)
+        except IntegrityError as e:
+            return log_and_conflict_response(logger, e, "Saving course data")
 
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         courses = Course.objects.filter(organization_id=kwargs["organization_id"])
@@ -167,8 +171,11 @@ class ReorderCourseContentView(View):
             return JsonResponse({"error": "Course not found"}, status=404)
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
-        except (IntegrityError, ValueError) as e:
+        except ValueError as e:
+            # Raised by the serializers with a message written for the caller.
             return JsonResponse({"error": str(e)}, status=409)
+        except IntegrityError as e:
+            return log_and_conflict_response(logger, e, "Saving course data")
 
 
 @method_decorator(accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get")
@@ -204,8 +211,11 @@ class SingleCourseContentView(View):
             return JsonResponse({"error": "Course content not found"}, status=404)
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
-        except (IntegrityError, ValueError) as e:
+        except ValueError as e:
+            # Raised by the serializers with a message written for the caller.
             return JsonResponse({"error": str(e)}, status=409)
+        except IntegrityError as e:
+            return log_and_conflict_response(logger, e, "Saving course data")
 
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         payload = json.loads(request.body)
@@ -224,8 +234,11 @@ class SingleCourseContentView(View):
             return JsonResponse({"error": "Course content not found"}, status=404)
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
-        except (IntegrityError, ValueError) as e:
+        except ValueError as e:
+            # Raised by the serializers with a message written for the caller.
             return JsonResponse({"error": str(e)}, status=409)
+        except IntegrityError as e:
+            return log_and_conflict_response(logger, e, "Saving course data")
 
     @transaction.atomic
     def _update_course_content_atomic(
@@ -344,8 +357,11 @@ class SingleCourseView(CourseCreationMixin, View):
             return JsonResponse({"error": "Course not found"}, status=404)
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
-        except (IntegrityError, ValueError) as e:
+        except ValueError as e:
+            # Raised by the serializers with a message written for the caller.
             return JsonResponse({"error": str(e)}, status=409)
+        except IntegrityError as e:
+            return log_and_conflict_response(logger, e, "Saving course data")
 
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         payload = json.loads(request.body)
@@ -363,8 +379,11 @@ class SingleCourseView(CourseCreationMixin, View):
             )
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
-        except (IntegrityError, ValueError) as e:
+        except ValueError as e:
+            # Raised by the serializers with a message written for the caller.
             return JsonResponse({"error": str(e)}, status=409)
+        except IntegrityError as e:
+            return log_and_conflict_response(logger, e, "Saving course data")
 
     def delete(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
         try:
@@ -382,8 +401,11 @@ class SingleCourseView(CourseCreationMixin, View):
             return JsonResponse({"error": "Course not found"}, status=404)
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
-        except (IntegrityError, ValueError) as e:
+        except ValueError as e:
+            # Raised by the serializers with a message written for the caller.
             return JsonResponse({"error": str(e)}, status=409)
+        except IntegrityError as e:
+            return log_and_conflict_response(logger, e, "Saving course data")
 
 
 @method_decorator(accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get")

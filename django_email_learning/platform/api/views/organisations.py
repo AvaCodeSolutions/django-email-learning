@@ -1,4 +1,5 @@
 import json
+import logging
 import uuid
 
 from django.conf import settings
@@ -16,12 +17,15 @@ from django_email_learning.decorators import (
     is_an_organization_member,
     is_platform_admin,
 )
+from django_email_learning.error_responses import log_and_conflict_response
 from django_email_learning.models import (
     Organization,
     OrganizationUser,
     SocialLink,
 )
 from django_email_learning.platform.api import serializers
+
+logger = logging.getLogger(__name__)
 
 DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
 
@@ -64,7 +68,7 @@ class OrganizationsView(View):
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
         except IntegrityError as e:
-            return JsonResponse({"error": str(e)}, status=409)
+            return log_and_conflict_response(logger, e, "Saving organization data")
 
 
 class OrganizationMemberCreationMixin:
@@ -107,7 +111,7 @@ class OrganizationUsersView(OrganizationMemberCreationMixin, View):
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
         except IntegrityError as e:
-            return JsonResponse({"error": str(e)}, status=409)
+            return log_and_conflict_response(logger, e, "Saving organization data")
 
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         organization_users = OrganizationUser.objects.filter(organization_id=kwargs["organization_id"])
@@ -135,7 +139,7 @@ class SingleOrganizationUserView(View):
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
         except IntegrityError as e:
-            return JsonResponse({"error": str(e)}, status=409)
+            return log_and_conflict_response(logger, e, "Saving organization data")
 
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
@@ -162,7 +166,7 @@ class SingleOrganizationUserView(View):
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
         except IntegrityError as e:
-            return JsonResponse({"error": str(e)}, status=409)
+            return log_and_conflict_response(logger, e, "Saving organization data")
 
 
 @method_decorator(accessible_for(roles={"admin"}), name="post")
@@ -205,7 +209,7 @@ class SingleOrganizationView(View):
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
         except IntegrityError as e:
-            return JsonResponse({"error": str(e)}, status=409)
+            return log_and_conflict_response(logger, e, "Saving organization data")
 
     def delete(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
         try:
@@ -217,7 +221,7 @@ class SingleOrganizationView(View):
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
         except IntegrityError as e:
-            return JsonResponse({"error": str(e)}, status=409)
+            return log_and_conflict_response(logger, e, "Saving organization data")
 
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
@@ -274,4 +278,4 @@ class GetOrCreateUserByEmail(View):
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
         except IntegrityError as e:
-            return JsonResponse({"error": str(e)}, status=409)
+            return log_and_conflict_response(logger, e, "Saving organization data")

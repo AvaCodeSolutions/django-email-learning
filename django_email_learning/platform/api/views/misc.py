@@ -1,4 +1,5 @@
 import json
+import logging
 import posixpath
 from datetime import datetime
 from enum import StrEnum
@@ -18,6 +19,7 @@ from django_email_learning.decorators import (
     is_an_organization_member,
     is_platform_admin,
 )
+from django_email_learning.error_responses import log_and_conflict_response
 from django_email_learning.models import (
     ApiKey,
     JobExecution,
@@ -25,6 +27,8 @@ from django_email_learning.models import (
     OrganizationUser,
 )
 from django_email_learning.platform.api import serializers
+
+logger = logging.getLogger(__name__)
 
 DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
 
@@ -53,7 +57,7 @@ class ApiKeyView(View):
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
         except IntegrityError as e:
-            return JsonResponse({"error": str(e)}, status=409)
+            return log_and_conflict_response(logger, e, "Creating API key")
 
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         api_keys = ApiKey.objects.all()  # type: ignore[attr-defined]
@@ -75,7 +79,7 @@ class SingleApiKeyView(View):
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
         except IntegrityError as e:
-            return JsonResponse({"error": str(e)}, status=409)
+            return log_and_conflict_response(logger, e, "Creating API key")
 
 
 # Job health is deployment-wide operational state, not organization data, so

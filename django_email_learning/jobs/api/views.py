@@ -1,3 +1,4 @@
+import logging
 from io import StringIO
 from typing import Protocol
 
@@ -8,6 +9,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 
 from django_email_learning.decorators import check_api_key
+from django_email_learning.error_responses import UNEXPECTED_ERROR_MESSAGE
 from django_email_learning.jobs.check_imap_job import CheckIMAPJob
 from django_email_learning.jobs.deactivate_inactive_enrollments_job import (
     DeactivateInactiveEnrollmentsJob,
@@ -19,6 +21,8 @@ from django_email_learning.jobs.send_reminders_job import SendRemindersJob
 from django_email_learning.models import JobExecution, JobName, JobStatus
 from django_email_learning.ports.job_executor_protocol import JobExecutorProtocol
 from django_email_learning.services.metrics_service import metric_service
+
+logger = logging.getLogger(__name__)
 
 
 def _get_job_executor() -> JobExecutorProtocol:
@@ -63,7 +67,13 @@ def _trigger_job(job: TriggerableJob, job_name: str, human_name: str) -> JsonRes
         job_execution.finished_at = timezone.now()
         job_execution.save()
         metric_service.job_execution_failed(job_name=job_name)
-        return JsonResponse({"status": f"{human_name} failed", "error": str(e)}, status=500)
+        # The detail stays on job_execution.error above, retrievable through
+        # JobExecutionStatusView, rather than being echoed back in this 500.
+        logger.exception("Triggering %s failed: %s", human_name, e.__class__.__name__)
+        return JsonResponse(
+            {"status": f"{human_name} failed", "error": UNEXPECTED_ERROR_MESSAGE},
+            status=500,
+        )
 
     return JsonResponse(
         {"status": f"{human_name} triggered", "job_execution_id": job_execution.id},
@@ -160,10 +170,11 @@ class CleanupJobExecutionsView(View):
             )
         except Exception as e:
             metric_service.job_execution_failed(job_name="cleanup_job_executions")
+            logger.exception("CleanupJobExecutions failed: %s", e.__class__.__name__)
             return JsonResponse(
                 {
                     "status": "CleanupJobExecutions failed",
-                    "error": str(e),
+                    "error": UNEXPECTED_ERROR_MESSAGE,
                 },
                 status=500,
             )
