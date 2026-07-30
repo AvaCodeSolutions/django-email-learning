@@ -266,7 +266,7 @@ function Dashboard() {
   const {
     localeMessages, apiBaseUrl, platformBaseUrl, greetingName, activeOrganizationName,
     dashboardSetup = {}, dashboardStats = {}, availableFeatures = [],
-    dashboardSections, dashboardCustomComponents = {},
+    dashboardSections, dashboardCustomComponents = {}, isPlatformAdmin,
   } = useAppContext();
   const [organizationId, setOrganizationId] = useState(null);
   const [jobHealth, setJobHealth] = useState(null);
@@ -275,10 +275,15 @@ function Dashboard() {
   const canCreateNewsletter = newslettersEnabled && availableFeatures.includes('create_newsletter');
 
   useEffect(() => {
+    // Job status is platform-admin only, so the delivery health card below is
+    // too - skip the request entirely for everyone else.
+    if (!isPlatformAdmin) {
+      return;
+    }
     apiClient.get(`${apiBaseUrl}/status/jobs/`)
       .then(data => setJobHealth(data.jobs?.deliver_contents?.job_health_status || null))
       .catch(() => {});
-  }, [apiBaseUrl]);
+  }, [apiBaseUrl, isPlatformAdmin]);
 
   const orgScopedUrl = (tab) => organizationId
     ? `${platformBaseUrl}/organizations/${organizationId}/?tab=${tab}`

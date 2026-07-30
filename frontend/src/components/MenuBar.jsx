@@ -155,21 +155,25 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     };
 
     useEffect(() => {
-        fetch(apiBaseUrl + '/status/jobs/', {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            setDeliverContentsJobStatus(data.jobs.deliver_contents);
-        })
-        .catch(error => {
-            console.error('Error fetching job status:', error);
-        });
+        // Only platform admins can read job status (and only they see the
+        // indicator below), so don't spend a request that would 403 for anyone else.
+        if (isPlatformAdmin) {
+            fetch(apiBaseUrl + '/status/jobs/', {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                setDeliverContentsJobStatus(data.jobs.deliver_contents);
+            })
+            .catch(error => {
+                console.error('Error fetching job status:', error);
+            });
+        }
 
         if (!showOrganizationSwitcher) {
             return;
