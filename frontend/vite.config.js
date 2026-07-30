@@ -16,6 +16,11 @@ export default defineConfig({
   css: { transformer: 'lightningcss' },
   appType: 'mpa',
   base: "/static/",
+  // ./public holds source entries (public/course, public/organization), not
+  // static assets. Left as Vite's default publicDir it would also be copied
+  // verbatim into dist/, emitting raw .jsx and unbuilt index.html alongside
+  // the built output.
+  publicDir: false,
   server: {
     port: 3000,
     // Without this, Vite's dev-injected CSS (e.g. @font-face url()s from
