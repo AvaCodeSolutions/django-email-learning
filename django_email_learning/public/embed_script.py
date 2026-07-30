@@ -31,8 +31,13 @@ _EMBED_SCRIPT_TEMPLATE = r"""(function () {
     '.message { font-size:14px; margin-top:8px; }';
 
   // Only allow http(s) image URLs so a malicious course_image attribute can't
-  // smuggle in a javascript:/data: URI.
+  // smuggle in a javascript:/data: URI. Empty/blank input has to bail out
+  // first: new URL('', base) resolves to the host page's own URL rather than
+  // throwing, which would render an <img> pointing at the page itself.
   function safeImageUrl(value) {
+    if (!value.trim()) {
+      return '';
+    }
     try {
       var url = new URL(value, window.location.href);
       return (url.protocol === 'http:' || url.protocol === 'https:') ? url.href : '';

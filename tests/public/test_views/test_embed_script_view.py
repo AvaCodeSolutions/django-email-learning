@@ -59,6 +59,20 @@ def test_embed_script_sanitizes_image_and_color_attributes(anonymous_client, set
     assert content.count("safeCssColor(this.getAttribute('button_text_color') || '', '#ffffff')") == 2
 
 
+def test_embed_script_image_sanitizer_rejects_blank_values(anonymous_client, settings):
+    settings.DJANGO_EMAIL_LEARNING = {**settings.DJANGO_EMAIL_LEARNING, "EMBEDDABLE_ENROLLMENT_ENABLED": True}
+
+    response = anonymous_client.get(URL)
+
+    content = response.content.decode()
+    # new URL('', base) resolves to the host page's own URL instead of throwing,
+    # so a blank course_image (the "show course image" switch turned off, or a
+    # course with no image) would otherwise render an <img> pointing at the
+    # embedding page. The behavioural cover for this lives in
+    # frontend/src/test/public/embedScript.test.js.
+    assert "if (!value.trim()) {" in content
+
+
 def test_embed_script_newsletter_form_posts_to_subscribe_endpoint(anonymous_client, settings):
     settings.DJANGO_EMAIL_LEARNING = {**settings.DJANGO_EMAIL_LEARNING, "EMBEDDABLE_ENROLLMENT_ENABLED": True}
 
