@@ -16,6 +16,7 @@ import logoHorizontalLightUrl from '../assets/logo-h-light.png'
 import logoHorizontalDarkUrl from '../assets/logo-h-dark.png'
 import logoVerticalLightUrl from '../assets/logo-v-light.png'
 import logoVerticalDarkUrl from '../assets/logo-v-dark.png'
+import { sanitizeComponentHtml } from '../sanitizeHtml.js';
 import { getCookie } from '../utils.js';
 import { useTheme, useMediaQuery } from "@mui/material";
 import ThemeSwitcher from './ThemeSwitcher.jsx';
@@ -155,21 +156,25 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     };
 
     useEffect(() => {
-        fetch(apiBaseUrl + '/status/jobs/', {
-            method: 'GET',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken'),
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            setDeliverContentsJobStatus(data.jobs.deliver_contents);
-        })
-        .catch(error => {
-            console.error('Error fetching job status:', error);
-        });
+        // Only platform admins can read job status (and only they see the
+        // indicator below), so don't spend a request that would 403 for anyone else.
+        if (isPlatformAdmin) {
+            fetch(apiBaseUrl + '/status/jobs/', {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                setDeliverContentsJobStatus(data.jobs.deliver_contents);
+            })
+            .catch(error => {
+                console.error('Error fetching job status:', error);
+            });
+        }
 
         if (!showOrganizationSwitcher) {
             return;
@@ -250,7 +255,7 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
             </Box>
             <Box sx={{display: { xs: 'flex'}, right: direction === 'rtl' ? 'auto' : 5, left: direction === 'rtl' ? 5 : 'auto', position: "absolute", top: '50%', transform: 'translateY(-50%)', direction: direction, alignItems: 'center'}}>
                 {navbarCustomComponents?.map((component) => (
-                    <Box key={component.slot} sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }} dangerouslySetInnerHTML={{ __html: component.html }} />
+                    <Box key={component.slot} sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center' }} dangerouslySetInnerHTML={{ __html: sanitizeComponentHtml(component.html) }} />
                 ))}
                 <Box sx={{ m: 1 }}>
                 <IconButton
@@ -363,10 +368,10 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
                         <Box
                             key={component.slot}
                             sx={{ display: { xs: 'block', md: 'none' }, py: '8px' }}
-                            dangerouslySetInnerHTML={{ __html: component.html }}
+                            dangerouslySetInnerHTML={{ __html: sanitizeComponentHtml(component.html) }}
                         />
                     ))}
-                    {sidebarCustomComponent && <Box dangerouslySetInnerHTML={{ __html: sidebarCustomComponent.componentTag }} />}
+                    {sidebarCustomComponent && <Box dangerouslySetInnerHTML={{ __html: sanitizeComponentHtml(sidebarCustomComponent.componentTag) }} />}
                 </Box>
             )}
         </Drawer>

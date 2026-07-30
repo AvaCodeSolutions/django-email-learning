@@ -78,7 +78,9 @@ class SingleApiKeyView(View):
             return JsonResponse({"error": str(e)}, status=409)
 
 
-@method_decorator(is_an_organization_member(allow_active_org_fallback=True), name="get")
+# Job health is deployment-wide operational state, not organization data, so
+# it's restricted to platform admins rather than any organization member.
+@method_decorator(is_platform_admin(), name="get")
 class JobsStatus(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         jobs_status = {}

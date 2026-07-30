@@ -1,4 +1,6 @@
-.PHONY: help install build clean test prebuild postbuild dev-install frontend lint format check
+.PHONY: help install dev-install prebuild postbuild-cleanup build-frontend build-backend \
+	test lint pre-commit format django-check migrate runserver frontend-dev start-dev \
+	dev-init build
 
 # Default target
 help:
@@ -88,11 +90,11 @@ runserver:
 	poetry run python manage.py runserver
 
 # Start frontend development server
-fronend-dev:
+frontend-dev:
 	 cd frontend && npm run dev
 
 # Start both frontend and backend development servers should be used with -j
-start-dev: fronend-dev runserver
+start-dev: frontend-dev runserver
 
 # Development workflow - install deps and setup
 dev-init: dev-install migrate

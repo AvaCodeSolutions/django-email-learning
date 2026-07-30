@@ -23,13 +23,14 @@ import { getReadableTextColor } from '../../src/utils.js';
 import Coloris from '@melloware/coloris';
 import '@melloware/coloris/dist/coloris.css';
 import EmbedCodeBlock from '../../src/components/EmbedCodeBlock.jsx';
+import { sanitizeComponentHtml } from '../../src/sanitizeHtml.js';
 
 const CustomComponentSlot = memo(function CustomComponentSlot({ html, display }) {
   return (
     <Box
       className="custom-component-wrapper"
       sx={{ display, marginBottom: {xs: 1, md: 2} }}
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{ __html: sanitizeComponentHtml(html) }}
     />
   );
 });
@@ -727,7 +728,7 @@ function Course() {
                                 justifyContent: 'center',
                             }}
                             aria-hidden="true"
-                            dangerouslySetInnerHTML={{ __html: embedWidgetPreviewHtml }}
+                            dangerouslySetInnerHTML={{ __html: sanitizeComponentHtml(embedWidgetPreviewHtml) }}
                         />
                     </Box>
                 )}

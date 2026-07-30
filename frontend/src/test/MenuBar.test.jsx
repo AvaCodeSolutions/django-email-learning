@@ -244,4 +244,14 @@ describe('MenuBar', () => {
     );
   });
 
+  it('does not request job status for non-platform-admins', async () => {
+    renderWithProviders(<MenuBar {...defaultProps} />, {
+      appContext: { isPlatformAdmin: false },
+    });
+
+    await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+    expect(global.fetch.mock.calls.some(([url]) => String(url).includes('/status/jobs/'))).toBe(false);
+    expect(screen.queryByText('Content delivery')).not.toBeInTheDocument();
+  });
+
 });

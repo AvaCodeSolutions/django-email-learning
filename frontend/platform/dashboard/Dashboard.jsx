@@ -12,6 +12,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import Base from '../../src/components/Base.jsx'
 import render, { useAppContext } from '../../src/render.jsx';
 import apiClient from '../../src/apiClient.js'
+import { sanitizeComponentHtml } from '../../src/sanitizeHtml.js';
 import { getCookie, setCookie } from '../../src/utils.js'
 
 const DEFAULT_SECTIONS = ['setup_progress', 'overview', 'quick_actions', 'sponsor'];
@@ -185,7 +186,7 @@ function CustomComponentSection({ component }) {
   if (!component?.componentTag) return null;
   return (
     <Grid size={{ xs: 12 }}>
-      <Box dangerouslySetInnerHTML={{ __html: component.componentTag }} />
+      <Box dangerouslySetInnerHTML={{ __html: sanitizeComponentHtml(component.componentTag) }} />
     </Grid>
   )
 }
@@ -266,7 +267,7 @@ function Dashboard() {
   const {
     localeMessages, apiBaseUrl, platformBaseUrl, greetingName, activeOrganizationName,
     dashboardSetup = {}, dashboardStats = {}, availableFeatures = [],
-    dashboardSections, dashboardCustomComponents = {},
+    dashboardSections, dashboardCustomComponents = {}, isPlatformAdmin,
   } = useAppContext();
   const [organizationId, setOrganizationId] = useState(null);
   const [jobHealth, setJobHealth] = useState(null);
@@ -275,10 +276,15 @@ function Dashboard() {
   const canCreateNewsletter = newslettersEnabled && availableFeatures.includes('create_newsletter');
 
   useEffect(() => {
+    // Job status is platform-admin only, so the delivery health card below is
+    // too - skip the request entirely for everyone else.
+    if (!isPlatformAdmin) {
+      return;
+    }
     apiClient.get(`${apiBaseUrl}/status/jobs/`)
       .then(data => setJobHealth(data.jobs?.deliver_contents?.job_health_status || null))
       .catch(() => {});
-  }, [apiBaseUrl]);
+  }, [apiBaseUrl, isPlatformAdmin]);
 
   const orgScopedUrl = (tab) => organizationId
     ? `${platformBaseUrl}/organizations/${organizationId}/?tab=${tab}`

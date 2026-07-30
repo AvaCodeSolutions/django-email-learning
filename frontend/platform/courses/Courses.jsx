@@ -24,6 +24,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import LockIcon from '@mui/icons-material/Lock';
 import render, { useAppContext } from '../../src/render.jsx';
+import { sanitizeHtml } from '../../src/sanitizeHtml.js';
 import { lazy, Suspense } from "react";
 import apiClient from '../../src/apiClient.js';
 
@@ -143,7 +144,7 @@ function Courses() {
           >{localeMessages["add_course"]}</Button>
           {!canCreateCourse && cannotCreateCourseMessage && (
             <Alert severity="info" sx={{ marginBottom: 2 }}>
-              <span dangerouslySetInnerHTML={{ __html: cannotCreateCourseMessage }} />
+              <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(cannotCreateCourseMessage) }} />
             </Alert>
           )}
         </>}
