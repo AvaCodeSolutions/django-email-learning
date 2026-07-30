@@ -1,5 +1,6 @@
 import json
 from unittest.mock import patch
+from urllib.parse import urlparse
 
 import pytest
 from django.urls import reverse
@@ -92,7 +93,9 @@ def test_create_session_returns_session_and_authorization_url(org_admin_client, 
     assert response.status_code == 201
     data = response.json()
     assert "session_id" in data
-    assert data["authorization_url"].startswith("https://accounts.google.com")
+    parsed_authorization_url = urlparse(data["authorization_url"])
+    assert parsed_authorization_url.scheme == "https"
+    assert parsed_authorization_url.hostname == "accounts.google.com"
 
     session = Session.objects.get(session_id=data["session_id"])
     assert session.jwt_token != "pending"
