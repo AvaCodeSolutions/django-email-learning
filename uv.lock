@@ -445,7 +445,7 @@ wheels = [
 
 [[package]]
 name = "django-email-learning"
-version = "2.6.0"
+version = "2.14.0"
 source = { editable = "." }
 dependencies = [
     { name = "bleach", extra = ["css"] },

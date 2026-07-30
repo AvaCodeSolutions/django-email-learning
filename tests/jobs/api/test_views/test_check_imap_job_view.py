@@ -93,7 +93,9 @@ def test_check_imap_submission_failure_triggers_job_execution_failed_metric(
     )
 
     assert response.status_code == 500
-    assert response.json() == {"status": "CheckIMAPJob failed", "error": "boom"}
+    assert response.json() == {"status": "CheckIMAPJob failed", "error": "The request could not be completed."}
+    # The exception text must not reach the client; it stays on job_execution.error.
+    assert "boom" not in response.content.decode()
     mock_submit.assert_called_once()
     mock_job_execution_failed.assert_called_once_with(job_name=JobName.CHECK_IMAP.value)
 

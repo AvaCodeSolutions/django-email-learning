@@ -178,13 +178,15 @@ class RedirectView(OAuthSessionRequestMixin, View):
                 organization=organization,
             )
         except Exception as e:  # noqa: BLE001
-            logger.error(f"Error processing OAuth redirect: {str(e)}")
+            logger.exception(f"Error processing OAuth redirect: {e.__class__.__name__}")
             session.state = SessionState.FAILED
             session.save(update_fields=["state"])
             return _command_result_response(
                 request,
                 page_title=_("Authorization Error"),
-                error_message=str(e),
+                # Provider errors can carry tokens and client identifiers, so
+                # the detail stays in the log rather than on the page.
+                error_message=_("Authorization failed. Please try again or contact your administrator."),
                 status_code=400,
                 organization=organization,
             )

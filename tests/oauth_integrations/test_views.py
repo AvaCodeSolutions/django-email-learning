@@ -212,7 +212,11 @@ def test_redirect_invalid_token_marks_failed(db, anonymous_client):
     session.refresh_from_db()
     assert response.status_code == 400
     assert session.state == SessionState.FAILED
-    assert "bad token" in response.content.decode()
+    # Provider errors can carry tokens and client identifiers, so the page
+    # shows a fixed message and the detail only goes to the log.
+    content = response.content.decode()
+    assert "bad token" not in content
+    assert "Authorization failed" in content
 
 
 # ---------------------------------------------------------------------------

@@ -81,8 +81,10 @@ def test_cleanup_job_executions_failed_triggers_job_execution_failed_metric(
     assert response.status_code == 500
     assert response.json() == {
         "status": "CleanupJobExecutions failed",
-        "error": "boom",
+        "error": "The request could not be completed.",
     }
+    # The exception text must not reach the client.
+    assert "boom" not in response.content.decode()
     mock_call_command.assert_called_once()
     mock_job_execution_failed.assert_called_once_with(job_name="cleanup_job_executions")
 
