@@ -28,6 +28,7 @@ function Course() {
     const courseImage = sanitizeImageUrl(course.image);
     const organizationLogoUrl = sanitizeImageUrl(organization.logo_url);
     const organizationPublicUrl = sanitizeUrl(organization.public_url);
+    const hasOrganizationPublicUrl = Boolean(organizationPublicUrl);
 
     const courseDirection = course.is_rtl ? 'rtl' : 'ltr';
 
@@ -259,7 +260,13 @@ function Course() {
                                     return (
                                         <>
                                             {before}
-                                            <a href={organizationPublicUrl} rel="noopener noreferrer">{organization.name}</a>
+                                            {hasOrganizationPublicUrl ? (
+                                                <Link href={organizationPublicUrl} target="_blank" rel="noopener noreferrer">
+                                                    {organization.name}
+                                                </Link>
+                                            ) : (
+                                                organization.name
+                                            )}
                                             {after}
                                         </>
                                     );
