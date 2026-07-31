@@ -6,6 +6,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.14.1] - 2026-08-01
+
+### Security
+
+- **URLs from the server-rendered app context reached the DOM unvalidated** — The frontend reads its configuration from the `#app-context` script tag, and a good deal of that is organization-editable (the organization logo and public link, course images, social links, the terms of service link, uploaded file URLs) or comes from deployment settings. Those values were being used directly as `href` and `src` attributes and as `fetch()` targets, so a stored `javascript:` or `data:text/html` URL would have run on click — on the public organization and course pages, that means against anonymous visitors. Added a shared `sanitizeUrl` module with three helpers (links, image sources, endpoint bases) and applied it to every app-context URL, to the server-response URLs reaching the same sinks (learner and instructor photos, lesson image and assignment file URLs, certificate links), and to the link and image URLs typed into the content editor, which are stored and re-rendered into lesson pages and emails. Sanitization rejects rather than rewrites, so legitimate URLs — including relative ones — are unchanged. No exploitation is known; this closes the class of defect rather than a specific report.
+
+### Changed
+
+- **Frontend linting works again and runs on commit** — `eslint .` had been failing immediately for every file: `eslint-plugin-react-hooks` 7 still ships its recommended config in the legacy eslintrc shape, which ESLint 10's flat config rejects outright. Pointed at the flat variant, excluded generated coverage reports from linting, and gave test files their Vitest and Node globals; the React Compiler diagnostics that `react-hooks` 7 newly enables are set to warnings for now, since existing components trip them widely. Added an `eslint` pre-commit hook that lints staged frontend files using the repo's own ESLint, so its version and plugins always match `package.json`; CI runs the same lint in the frontend job, which already has Node installed and only runs when `frontend/` changes. Also removed `frontend/src/render-callback.jsx`, which was unreferenced and would have thrown on load.
+
 ## [2.14.0] - 2026-07-30
 
 ### Changed

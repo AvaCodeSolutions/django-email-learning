@@ -338,7 +338,7 @@ function Analytics() {
 
     const download = useCallback((endpoint) => {
         const q = buildParams()
-        window.location.href = `${analyticsBase}/${endpoint}/?${q}`
+        window.location.href = `${sanitizeEndpointUrl(analyticsBase)}/${endpoint}/?${q}`
     }, [buildParams, analyticsBase])
 
     const noData = localeMessages.no_data
