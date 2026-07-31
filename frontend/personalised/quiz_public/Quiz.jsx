@@ -1,5 +1,5 @@
 import render, { useAppContext } from '../../src/render.jsx';
-import { use, useEffect, useState } from 'react';
+import { useState } from 'react';
 import Layout from '../../public/components/Layout.jsx';
 import { Alert, Box, Button, Checkbox, Chip, FormControlLabel, Typography, Dialog } from '@mui/material';
 import CelebrationIcon from '@mui/icons-material/Celebration';
@@ -7,10 +7,12 @@ import SentimentVeryDissatisfiedIcon from '@mui/icons-material/SentimentVeryDiss
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import { sanitizeEndpointUrl } from '../../src/sanitizeUrl.js';
 
 
 const Quiz = () => {
-    const { localeMessages, token, csrfToken, apiEndpoint, errorMessage, quiz, ref, direction } = useAppContext();
+    const { localeMessages, token, csrfToken, apiEndpoint: rawApiEndpoint, errorMessage, quiz, ref, direction } = useAppContext();
+    const apiEndpoint = sanitizeEndpointUrl(rawApiEndpoint);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedAnswers, setSelectedAnswers] = useState(quiz? quiz.questions.map(q => ({"id": q.id, "answers": []})) : []);
     const [warning, setWarning] = useState("");

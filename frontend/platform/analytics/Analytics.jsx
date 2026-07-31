@@ -9,6 +9,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import Base from '../../src/components/Base.jsx'
 import render, { useAppContext } from '../../src/render.jsx';
 import apiClient from '../../src/apiClient.js'
+import { sanitizeEndpointUrl } from '../../src/sanitizeUrl.js'
 import { BarChart, LineChart, PieChart } from '@mui/x-charts'
 import { useTheme } from '@mui/material/styles'
 
@@ -124,7 +125,7 @@ function StatusBreakdownChart({ data, localeMessages, noDataMessage }) {
     )
 }
 
-function FunnelGroup({ items, learnersReachedLabel, color }) {
+function FunnelGroup({ items, color }) {
     const max = Math.max(...items.map(r => r.learners_reached), 1)
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
@@ -249,7 +250,11 @@ function OpenRateChart({ data, openRateLabel, noDataMessage, color }) {
 // ─── main component ─────────────────────────────────────────────────────────
 
 function Analytics() {
-    const { apiBaseUrl, analyticsBaseUrl, localeMessages } = useAppContext()
+    const { apiBaseUrl: rawApiBaseUrl, analyticsBaseUrl, localeMessages } = useAppContext()
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl)
+    // `analyticsBaseUrl.base` is concatenated into apiClient calls and, for
+    // CSV export, assigned to window.location - sanitize it once here.
+    const analyticsBase = sanitizeEndpointUrl(analyticsBaseUrl.base)
     const theme = useTheme()
     const color = theme.palette.secondary.main
 
@@ -290,7 +295,7 @@ function Analytics() {
         setLoading(true)
         setError(null)
         const q = buildParams()
-        const base = analyticsBaseUrl.base
+        const base = analyticsBase
         const requests = [
             () => apiClient.get(`${base}/enrollments/over-time/?${q}`),
             () => apiClient.get(`${base}/enrollments/status-breakdown/?${q}`),
@@ -327,14 +332,14 @@ function Analytics() {
         } finally {
             setLoading(false)
         }
-    }, [buildParams, analyticsBaseUrl.base])
+    }, [buildParams, analyticsBase])
 
     useEffect(() => { fetchAll() }, [fetchAll])
 
     const download = useCallback((endpoint) => {
         const q = buildParams()
-        window.location.href = `${analyticsBaseUrl.base}/${endpoint}/?${q}`
-    }, [buildParams, analyticsBaseUrl.base])
+        window.location.href = `${analyticsBase}/${endpoint}/?${q}`
+    }, [buildParams, analyticsBase])
 
     const noData = localeMessages.no_data
 

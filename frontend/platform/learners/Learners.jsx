@@ -21,16 +21,18 @@ import BackspaceIcon from '@mui/icons-material/Backspace';
 import render, { useAppContext } from '../../src/render.jsx';
 import { lazy, Suspense } from "react";
 import apiClient from '../../src/apiClient.js';
+import { sanitizeEndpointUrl, sanitizeImageUrl } from '../../src/sanitizeUrl.js';
 
 const EnrollentList = lazy(() => import("./components/EnrollmentList.jsx"));
 
 
 const ENROLLMENT_STATUSES = ['active', 'completed', 'deactivated', 'canceled', 'inactive'];
 
-function Learners(initialQs="") {
+function Learners() {
 
   const [organizationId, setOrganizationId] = useState(null);
-  const { localeMessages, direction, apiBaseUrl } = useAppContext();
+  const { localeMessages, direction, apiBaseUrl: rawApiBaseUrl } = useAppContext();
+  const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
   const [learners, setLearners] = useState([]);
   const searcchInputRef = useRef(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -81,7 +83,7 @@ function Learners(initialQs="") {
       setDialogContent(
         <Box>
           <Box sx={{ px: 3, pt: 3, pb: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar src={data.learner.photo || undefined} sx={(theme) => ({ width: 44, height: 44, fontSize: '1.1rem', fontWeight: 700, color: '#fff', background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.deepPurple?.[400] ?? theme.palette.secondary.main} 100%)` })}>
+            <Avatar src={sanitizeImageUrl(data.learner.photo)} sx={(theme) => ({ width: 44, height: 44, fontSize: '1.1rem', fontWeight: 700, color: '#fff', background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.deepPurple?.[400] ?? theme.palette.secondary.main} 100%)` })}>
               {(data.learner.email?.[0] || '?').toUpperCase()}
             </Avatar>
             <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -220,7 +222,7 @@ function Learners(initialQs="") {
       setDialogContent(
         <Box>
           <Box sx={{ px: 3, pt: 3, pb: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar src={learner.photo || undefined} sx={(theme) => ({ width: 44, height: 44, fontSize: '1.1rem', fontWeight: 700, color: '#fff', background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.deepPurple?.[400] ?? theme.palette.secondary.main} 100%)` })}>
+            <Avatar src={sanitizeImageUrl(learner.photo)} sx={(theme) => ({ width: 44, height: 44, fontSize: '1.1rem', fontWeight: 700, color: '#fff', background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.deepPurple?.[400] ?? theme.palette.secondary.main} 100%)` })}>
               {(learner.email?.[0] || '?').toUpperCase()}
             </Avatar>
             <Typography variant="subtitle1" sx={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{learner.email}</Typography>
@@ -365,7 +367,7 @@ function Learners(initialQs="") {
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
                         <Avatar
-                          src={learner.photo || undefined}
+                          src={sanitizeImageUrl(learner.photo)}
                           sx={(theme) => ({
                             width: 30,
                             height: 30,

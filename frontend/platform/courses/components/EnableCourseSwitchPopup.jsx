@@ -2,11 +2,13 @@ import { useState } from 'react';
 import { Alert, Button, DialogActions, DialogContent, DialogContentText, DialogTitle } from "@mui/material";
 import { useAppContext } from '../../../src/render.jsx';
 import apiClient from '../../../src/apiClient.js';
+import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 
 
 const EnableCourseSwitchPopup = ({ courseId, action, courseTitle, handleClose, handleSuccess}) => {
     const activeOrganizationId = localStorage.getItem('activeOrganizationId');
-    const { localeMessages, apiBaseUrl } = useAppContext();
+    const { localeMessages, apiBaseUrl: rawApiBaseUrl } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
 

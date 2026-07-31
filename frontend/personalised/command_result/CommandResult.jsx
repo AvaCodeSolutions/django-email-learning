@@ -4,17 +4,23 @@ import render, { useAppContext } from '../../src/render.jsx';
 import Layout from '../../public/components/Layout.jsx';
 import logoVerticalLightUrl from '../../src/assets/logo-v-light.png';
 import logoVerticalDarkUrl from '../../src/assets/logo-v-dark.png';
+import { sanitizeImageUrl, sanitizeUrl } from '../../src/sanitizeUrl.js';
 
 const GOLDEN_RATIO = 1.618;
 const GOLDEN_RATIO_SQUARED = GOLDEN_RATIO * GOLDEN_RATIO;
 
 const CommandResult = () => {
-    const { successMessage, confirmationMessage, confirmUrl, errorMessage, ref, localeMessages, customLogo } = useAppContext();
+    const { successMessage, confirmationMessage, confirmUrl: rawConfirmUrl, errorMessage, ref, localeMessages, customLogo } = useAppContext();
+    const confirmUrl = sanitizeUrl(rawConfirmUrl);
     const theme = useTheme();
 
     let logoUrl;
     if (customLogo) {
-        logoUrl = theme.palette.mode === 'light' ? (customLogo.verticalLight ? customLogo.verticalLight : customLogo.verticalDark) : (customLogo.verticalDark ? customLogo.verticalDark : customLogo.verticalLight);
+        // Sanitized before the fallback check so an unusable custom logo
+        // falls through to the bundled default rather than a broken image.
+        const verticalLight = sanitizeImageUrl(customLogo.verticalLight);
+        const verticalDark = sanitizeImageUrl(customLogo.verticalDark);
+        logoUrl = theme.palette.mode === 'light' ? (verticalLight ? verticalLight : verticalDark) : (verticalDark ? verticalDark : verticalLight);
     }
     if (!logoUrl) {
         logoUrl = theme.palette.mode === 'light' ? logoVerticalLightUrl : logoVerticalDarkUrl;

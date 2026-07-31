@@ -51,6 +51,7 @@ import ImageIcon from '@mui/icons-material/Image';
 import VerticalAlignCenterIcon from '@mui/icons-material/VerticalAlignCenter';
 import { useAppContext } from '../render'
 import { getCookie } from '../utils.js';
+import { sanitizeEndpointUrl, sanitizeImageUrl, sanitizeUrl } from '../sanitizeUrl.js';
 import { ChaoticOrbit } from 'ldrs/react'
 import 'ldrs/react/ChaoticOrbit.css'
 
@@ -58,13 +59,14 @@ import 'ldrs/react/ChaoticOrbit.css'
 function ContentEditor({ initialContent, contentUpdateCallback, disabled = false, extraMinLines = 0, editorInstanceCallback, defaultDirection }) {
     const {
         direction: appDirection,
-        apiBaseUrl,
+        apiBaseUrl: rawApiBaseUrl,
         localeMessages,
         userRole,
         aiTextEditModel,
         aiTextEditingModel,
         availableFeatures = [],
     } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const direction = defaultDirection || appDirection;
     const configuredAiModel = aiTextEditModel || aiTextEditingModel;
     const hasAiPermission = userRole === 'admin' || userRole === 'editor';
@@ -242,7 +244,7 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
     };
 
     const saveImageAttributes = () => {
-        const normalizedSrc = imageFormValues.src.trim();
+        const normalizedSrc = sanitizeImageUrl(imageFormValues.src, '');
         const normalizedAlt = imageFormValues.alt.trim();
 
         if (!normalizedSrc) {
@@ -593,7 +595,7 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                     <Tooltip title="Insert Image" placement="top">
                     <IconButton
                         onClick={() => {
-                            const url = window.prompt('Enter image URL');
+                            const url = sanitizeImageUrl(window.prompt('Enter image URL'));
                             if (url) {
                                 editor.chain().focus().setImage({ src: url }).run();
                             }
@@ -609,7 +611,10 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                         onClick={() => {
                             if (editor.isActive('link')) {
                                 const currentHref = editor.getAttributes('link').href || '';
-                                const url = window.prompt('Update URL (leave empty to remove)', currentHref);
+                                // Editor content is stored and later rendered into
+                                // lesson pages and emails, so the typed URL is
+                                // sanitized before it becomes a link href.
+                                const url = sanitizeUrl(window.prompt('Update URL (leave empty to remove)', currentHref));
                                 if (!url) {
                                     editor.chain().focus().unsetLink().run();
                                     return;
@@ -617,7 +622,7 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                                 editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
                                 return;
                             }
-                            const url = window.prompt('Enter URL');
+                            const url = sanitizeUrl(window.prompt('Enter URL'));
                             if (url) {
                                 editor.chain().focus().toggleLink({ href: url }).run();
                             }

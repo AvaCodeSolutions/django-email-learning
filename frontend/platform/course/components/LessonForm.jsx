@@ -1,4 +1,4 @@
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import { Alert, Box, Button, Typography, Select, MenuItem, Tooltip, Link, IconButton, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -7,6 +7,7 @@ import RequiredTextField from '../../../src/components/RequiredTextField.jsx';
 import ContentEditor from '../../../src/components/ContentEditor.jsx';
 import { useAppContext } from '../../../src/render.jsx';
 import apiClient from '../../../src/apiClient.js';
+import { sanitizeEndpointUrl, sanitizeImageUrl, sanitizeUrl } from '../../../src/sanitizeUrl.js';
 
 function LessonForm({ header, initialTitle, initialContent, cancelCallback, successCallback, courseId, lessonId, initialWaitingPeriod, contentId }) {
     const initialWaitingPeriodValue = initialWaitingPeriod ? initialWaitingPeriod.period : 1;
@@ -36,7 +37,8 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
     const [confirmCloseDialogOpen, setConfirmCloseDialogOpen] = useState(false);
 
 
-    const { localeMessages, apiBaseUrl, userRole, direction, aiTextEditModel, aiTextEditingModel, availableFeatures = [] } = useAppContext();
+    const { localeMessages, apiBaseUrl: rawApiBaseUrl, userRole, direction, aiTextEditModel, aiTextEditingModel, availableFeatures = [] } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const orgId = localStorage.getItem('activeOrganizationId');
     const hasAiEditEnabled = Boolean(aiTextEditModel || aiTextEditingModel) && availableFeatures.includes('ai_edit');
 
@@ -346,7 +348,7 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flex: 1 }}>
                                 <Box
                                     component="img"
-                                    src={image.file_url}
+                                    src={sanitizeImageUrl(image.file_url)}
                                     alt={localeMessages["uploaded_image_preview"]}
                                     sx={{
                                         width: 47,
@@ -358,7 +360,7 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
                                         flexShrink: 0,
                                     }}
                                 />
-                                <Link href={image.file_url} target="_blank" rel="noopener noreferrer" sx={{ wordBreak: 'break-all', minWidth: 0 }}>
+                                <Link href={sanitizeUrl(image.file_url)} target="_blank" rel="noopener noreferrer" sx={{ wordBreak: 'break-all', minWidth: 0 }}>
                                     {image.file_url}
                                 </Link>
                             </Box>

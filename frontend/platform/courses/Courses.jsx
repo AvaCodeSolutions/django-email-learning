@@ -27,6 +27,7 @@ import render, { useAppContext } from '../../src/render.jsx';
 import { sanitizeHtml } from '../../src/sanitizeHtml.js';
 import { lazy, Suspense } from "react";
 import apiClient from '../../src/apiClient.js';
+import { sanitizeEndpointUrl, sanitizeUrl } from '../../src/sanitizeUrl.js';
 
 const CourseForm = lazy(() => import("./components/CourseForm.jsx"));
 const EnableCourseSwitchPopup = lazy(() => import("./components/EnableCourseSwitchPopup.jsx"));
@@ -40,7 +41,9 @@ function Courses() {
   const [courses, setCourses] = useState([])
   const [organizationId, setOrganizationId] = useState(null);
   const [queryParameters, setQueryParameters] = useState("");
-  const { direction, localeMessages, apiBaseUrl, platformBaseUrl, userRole, languageOptions = [], availableFeatures = [], cannotCreateCourseMessage } = useAppContext();
+  const { direction, localeMessages, apiBaseUrl: rawApiBaseUrl, platformBaseUrl: rawPlatformBaseUrl, userRole, languageOptions = [], availableFeatures = [], cannotCreateCourseMessage } = useAppContext();
+  const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
+  const platformBaseUrl = sanitizeUrl(rawPlatformBaseUrl);
   const [coursesAreLoaded, setCoursesAreLoaded] = useState(false);
   const [canCreateCourse, setCanCreateCourse] = useState(availableFeatures.includes('create_course'));
 

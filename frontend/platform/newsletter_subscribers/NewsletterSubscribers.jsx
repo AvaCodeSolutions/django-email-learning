@@ -24,11 +24,14 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import apiClient from '../../src/apiClient.js';
 import render, { useAppContext } from '../../src/render.jsx';
+import { sanitizeEndpointUrl, sanitizeUrl } from '../../src/sanitizeUrl.js';
 
 const PAGE_SIZE = 30;
 
 function NewsletterSubscribers() {
-    const { newsletterId, newsletterTitle, organizationId, localeMessages, direction, isOrganizationAdmin, apiBaseUrl, platformBaseUrl } = useAppContext();
+    const { newsletterId, newsletterTitle, organizationId, localeMessages, isOrganizationAdmin, apiBaseUrl: rawApiBaseUrl, platformBaseUrl: rawPlatformBaseUrl } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
+    const platformBaseUrl = sanitizeUrl(rawPlatformBaseUrl);
 
     const [subscribers, setSubscribers] = useState([]);
     const [count, setCount] = useState(0);

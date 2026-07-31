@@ -38,6 +38,7 @@ import { sanitizeComponentHtml } from '../../src/sanitizeHtml.js';
 import apiClient from '../../src/apiClient.js';
 import render, { useAppContext } from '../../src/render.jsx';
 import { getReadableTextColor } from '../../src/utils.js';
+import { sanitizeEndpointUrl, sanitizeImageUrl, sanitizeUrl } from '../../src/sanitizeUrl.js';
 import Coloris from '@melloware/coloris';
 import '@melloware/coloris/dist/coloris.css';
 
@@ -269,11 +270,11 @@ function SendoutDialog({ open, onClose, onSuccess, sendout, newsletterId, organi
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flex: 1 }}>
                                             <Box
                                                 component="img"
-                                                src={image.file_url}
+                                                src={sanitizeImageUrl(image.file_url)}
                                                 alt={localeMessages['uploaded_image_preview']}
                                                 sx={{ width: 47, height: 47, borderRadius: 0.5, objectFit: 'contain', border: '1px solid', borderColor: 'border.main', flexShrink: 0 }}
                                             />
-                                            <Link href={image.file_url} target="_blank" rel="noopener noreferrer" sx={{ wordBreak: 'break-all', minWidth: 0 }}>
+                                            <Link href={sanitizeUrl(image.file_url)} target="_blank" rel="noopener noreferrer" sx={{ wordBreak: 'break-all', minWidth: 0 }}>
                                                 {image.file_url}
                                             </Link>
                                         </Box>
@@ -312,7 +313,9 @@ function SendoutDialog({ open, onClose, onSuccess, sendout, newsletterId, organi
 }
 
 function Newsletter() {
-    const { newsletterId, newsletterTitle, organizationId, localeMessages, direction, isOrganizationAdmin, apiBaseUrl, platformBaseUrl, embeddableEnrollmentEnabled, activeOrganizationBrandColor } = useAppContext();
+    const { newsletterId, newsletterTitle, organizationId, localeMessages, direction, isOrganizationAdmin, apiBaseUrl: rawApiBaseUrl, platformBaseUrl: rawPlatformBaseUrl, embeddableEnrollmentEnabled, activeOrganizationBrandColor } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
+    const platformBaseUrl = sanitizeUrl(rawPlatformBaseUrl);
     const defaultButtonBgColor = activeOrganizationBrandColor || '#4A5EC0';
     const [sendouts, setSendouts] = useState([]);
     const [activeTab, setActiveTab] = useState('scheduled');

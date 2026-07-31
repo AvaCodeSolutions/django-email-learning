@@ -9,6 +9,7 @@ import ImageUpload from '../../../src/components/ImageUpload.jsx';
 import { useEffect, useState } from 'react';
 import apiClient from '../../../src/apiClient.js';
 import { slugify } from '../../../src/utils.js';
+import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 
 const MAX_EXTERNAL_REFERENCES = 10;
 
@@ -33,7 +34,8 @@ const externalReferencesChanged = (originalReferences, currentReferences) => {
 };
 
 function CourseForm({successCallback, failureCallback, cancelCallback, activeOrganizationId, createMode, courseId}) {
-    const { localeMessages, apiBaseUrl, direction, languageOptions = [], availableFeatures = [], organizationIsPublic } = useAppContext();
+    const { localeMessages, apiBaseUrl: rawApiBaseUrl, direction, languageOptions = [], availableFeatures = [], organizationIsPublic } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const theme = useTheme();
     const isMobileView = useMediaQuery(theme.breakpoints.down('md'));
     const newslettersEnabled = availableFeatures.includes('newsletters');

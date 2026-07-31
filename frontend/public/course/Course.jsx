@@ -9,6 +9,7 @@ import { alpha, ThemeProvider } from '@mui/material/styles';
 import { useAppContext } from '../../src/render.jsx';
 import { lightTheme } from '../../src/theme/themes';
 import { getReadableTextColor } from '../../src/utils.js';
+import { sanitizeEndpointUrl, sanitizeImageUrl, sanitizeUrl } from '../../src/sanitizeUrl.js';
 
 
 function Course() {
@@ -20,7 +21,13 @@ function Course() {
     const [showFixedEnrollBar, setShowFixedEnrollBar] = useState(false);
     const topEnrollButtonRef = useRef(null);
 
-    const { course, organization, enrollApiUrl, localeMessages } = useAppContext();
+    const { course, organization, enrollApiUrl: rawEnrollApiUrl, localeMessages } = useAppContext();
+    const enrollApiUrl = sanitizeEndpointUrl(rawEnrollApiUrl);
+    // The course image, the organization logo and the organization's public
+    // link are all organization-editable and reach anonymous visitors.
+    const courseImage = sanitizeImageUrl(course.image);
+    const organizationLogoUrl = sanitizeImageUrl(organization.logo_url);
+    const organizationPublicUrl = sanitizeUrl(organization.public_url);
 
     const courseDirection = course.is_rtl ? 'rtl' : 'ltr';
 
@@ -95,10 +102,10 @@ function Course() {
         >
 
 
-            {course.image ? (
+            {courseImage ? (
                 <Box
                     component="img"
-                    src={course.image}
+                    src={courseImage}
                     alt={course.title}
                     sx={{
                         width: '100%',
@@ -229,12 +236,12 @@ function Course() {
                     }}
                 >
                     <Grid container spacing={2}>
-                    {organization.logo_url && (
+                    {organizationLogoUrl && (
                         <Grid size={{ xs: 12, md: 3 }} sx={{ mx: 'auto', textAlign: 'center' }}>
-                            <Link href={organization.public_url} target="_blank" rel="noopener noreferrer">
+                            <Link href={organizationPublicUrl} target="_blank" rel="noopener noreferrer">
                                 <Box
                                     component="img"
-                                    src={organization.logo_url}
+                                    src={organizationLogoUrl}
                                     alt={`${organization.name} Logo`}
                                     sx={{
                                         maxWidth: 120,
@@ -244,7 +251,7 @@ function Course() {
                             /></Link>
                         </Grid>
                     )}
-                        <Grid size={{ xs: 12, md: organization.logo_url ? 9 : 12 }} sx={{ mx: 'auto', mt: 2 }}>
+                        <Grid size={{ xs: 12, md: organizationLogoUrl ? 9 : 12 }} sx={{ mx: 'auto', mt: 2 }}>
 
                             <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>
                                 {(() => {
@@ -252,7 +259,7 @@ function Course() {
                                     return (
                                         <>
                                             {before}
-                                            <a href={organization.public_url} rel="noopener noreferrer">{organization.name}</a>
+                                            <a href={organizationPublicUrl} rel="noopener noreferrer">{organization.name}</a>
                                             {after}
                                         </>
                                     );
@@ -370,7 +377,7 @@ function Course() {
                             >
                                 <ListItemText
                                     primary={
-                                        <Link href={reference.url} target="_blank" rel="noopener noreferrer" underline="hover">
+                                        <Link href={sanitizeUrl(reference.url)} target="_blank" rel="noopener noreferrer" underline="hover">
                                             {reference.name}
                                         </Link>
                                     }

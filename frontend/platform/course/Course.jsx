@@ -24,6 +24,7 @@ import Coloris from '@melloware/coloris';
 import '@melloware/coloris/dist/coloris.css';
 import EmbedCodeBlock from '../../src/components/EmbedCodeBlock.jsx';
 import { sanitizeComponentHtml } from '../../src/sanitizeHtml.js';
+import { sanitizeEndpointUrl, sanitizeUrl } from '../../src/sanitizeUrl.js';
 
 const CustomComponentSlot = memo(function CustomComponentSlot({ html, display }) {
   return (
@@ -43,7 +44,10 @@ const EnableCourseSwitchPopup = lazy(() => import("../courses/components/EnableC
 
 
 function Course() {
-    const { courseTitle, courseId, courseEnabled: courseEnabledFromContext, courseHasContent, coursePublicUrl, embeddableEnrollmentEnabled, localeMessages, direction, userRole, isInstructor, apiBaseUrl, platformBaseUrl, customComponent, activeOrganizationBrandColor } = useAppContext();
+    const { courseTitle, courseId, courseEnabled: courseEnabledFromContext, courseHasContent, coursePublicUrl: rawCoursePublicUrl, embeddableEnrollmentEnabled, localeMessages, userRole, isInstructor, apiBaseUrl: rawApiBaseUrl, platformBaseUrl: rawPlatformBaseUrl, customComponent, activeOrganizationBrandColor } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
+    const platformBaseUrl = sanitizeUrl(rawPlatformBaseUrl);
+    const coursePublicUrl = sanitizeUrl(rawCoursePublicUrl);
     const defaultButtonBgColor = activeOrganizationBrandColor || '#4A5EC0';
     const [courseEnabled, setCourseEnabled] = useState(courseEnabledFromContext);
     const [publicUrlCopied, setPublicUrlCopied] = useState(false);

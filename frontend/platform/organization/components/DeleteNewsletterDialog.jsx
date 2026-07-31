@@ -1,9 +1,11 @@
 import { Container, Typography, Button, Box } from '@mui/material';
 import { useAppContext } from '../../../src/render.jsx';
 import apiClient from '../../../src/apiClient.js';
+import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 
 const DeleteNewsletterDialog = ({ newsletter, onClose, onSuccess }) => {
-    const { localeMessages, apiBaseUrl } = useAppContext();
+    const { localeMessages, apiBaseUrl: rawApiBaseUrl } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
 
     const handleDelete = () => {
         apiClient.del(`${apiBaseUrl}/organizations/${newsletter.organization_id}/newsletters/${newsletter.id}/`)

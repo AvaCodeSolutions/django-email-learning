@@ -22,15 +22,18 @@ import PublicIcon from '@mui/icons-material/Public';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import LockIcon from '@mui/icons-material/Lock';
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import render, { useAppContext } from "../../src/render";
 import apiClient from "../../src/apiClient.js";
+import { sanitizeEndpointUrl, sanitizeUrl } from '../../src/sanitizeUrl.js';
 import { lazy, Suspense } from "react";
 
 const OrganizationForm = lazy(() => import("./components/OrganizationForm.jsx"));
 
 function Organizations() {
-  const { localeMessages, direction, apiBaseUrl, platformBaseUrl, isPlatformAdmin, isOrganizationAdmin } = useAppContext();
+  const { localeMessages, direction, apiBaseUrl: rawApiBaseUrl, platformBaseUrl: rawPlatformBaseUrl, isPlatformAdmin, isOrganizationAdmin } = useAppContext();
+  const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
+  const platformBaseUrl = sanitizeUrl(rawPlatformBaseUrl);
   const canEditOrganization = isPlatformAdmin || isOrganizationAdmin;
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogContent, setDialogContent] = useState(null);

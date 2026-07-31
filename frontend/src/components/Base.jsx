@@ -4,10 +4,12 @@ import { useState, useEffect } from "react";
 import { Box, Dialog, GlobalStyles, Grid, Breadcrumbs, Typography, Link } from "@mui/material";
 import { getCookie } from "../utils.js";
 import { useAppContext } from "../render.jsx";
+import { sanitizeEndpointUrl } from '../sanitizeUrl.js';
 
 
 function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefreshCallback, showOrganizationSwitcher=true}) {
-  const { direction, apiBaseUrl } = useAppContext();
+  const { direction, apiBaseUrl: rawApiBaseUrl } = useAppContext();
+  const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
   const [activeOrganizationId, setActiveOrganizationId] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogContent, setDialogContent] = useState(null);

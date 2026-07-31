@@ -4,6 +4,7 @@ import RequiredTextField from '../../../src/components/RequiredTextField';
 import ImageUpload from '../../../src/components/ImageUpload.jsx';
 import { useAppContext } from '../../../src/render.jsx';
 import apiClient from '../../../src/apiClient.js';
+import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 
 
 const CreateInstructorForm = ({ onSuccess, activeOrganizationId }) => {
@@ -14,7 +15,8 @@ const CreateInstructorForm = ({ onSuccess, activeOrganizationId }) => {
     const [photoPath, setPhotoPath] = useState(null);
     const [photoUrl, setPhotoUrl] = useState(null);
     const [errorMessage, setErrorMessage] = useState('');
-    const { localeMessages, apiBaseUrl } = useAppContext();
+    const { localeMessages, apiBaseUrl: rawApiBaseUrl } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
 
     const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 

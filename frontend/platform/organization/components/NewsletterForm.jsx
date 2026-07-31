@@ -9,9 +9,11 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import { useAppContext } from '../../../src/render.jsx';
 import apiClient from '../../../src/apiClient.js';
+import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 
 const NewsletterForm = ({ onClose, organizationId, refreshNewsletters }) => {
-    const { localeMessages, apiBaseUrl, languageOptions = [] } = useAppContext();
+    const { localeMessages, apiBaseUrl: rawApiBaseUrl, languageOptions = [] } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const [title, setTitle] = useState('');
     const [language, setLanguage] = useState('en');
     const [titleError, setTitleError] = useState('');

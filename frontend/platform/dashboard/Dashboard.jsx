@@ -14,6 +14,7 @@ import render, { useAppContext } from '../../src/render.jsx';
 import apiClient from '../../src/apiClient.js'
 import { sanitizeComponentHtml } from '../../src/sanitizeHtml.js';
 import { getCookie, setCookie } from '../../src/utils.js'
+import { sanitizeEndpointUrl, sanitizeUrl } from '../../src/sanitizeUrl.js';
 
 const DEFAULT_SECTIONS = ['setup_progress', 'overview', 'quick_actions', 'sponsor'];
 const CUSTOM_COMPONENT_PREFIX = 'custom_component:';
@@ -265,10 +266,12 @@ function SponsorSection({ localeMessages }) {
 
 function Dashboard() {
   const {
-    localeMessages, apiBaseUrl, platformBaseUrl, greetingName, activeOrganizationName,
+    localeMessages, apiBaseUrl: rawApiBaseUrl, platformBaseUrl: rawPlatformBaseUrl, greetingName, activeOrganizationName,
     dashboardSetup = {}, dashboardStats = {}, availableFeatures = [],
     dashboardSections, dashboardCustomComponents = {}, isPlatformAdmin,
   } = useAppContext();
+  const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
+  const platformBaseUrl = sanitizeUrl(rawPlatformBaseUrl);
   const [organizationId, setOrganizationId] = useState(null);
   const [jobHealth, setJobHealth] = useState(null);
 

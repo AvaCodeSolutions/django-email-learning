@@ -5,10 +5,12 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import GoogleIcon from '@mui/icons-material/Google';
 import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Menu, MenuItem, Alert, Typography, FormGroup, FormControlLabel, Checkbox } from '@mui/material';
 import apiClient from '../../../src/apiClient.js';
+import { sanitizeEndpointUrl, sanitizeUrl } from '../../../src/sanitizeUrl.js';
 
 
 const EnrollMenu = ({successCallback, courseEnabled: courseEnabledProp}) => {
-    const {courseId, courseEnabled: courseEnabledFromContext, localeMessages, direction, apiBaseUrl, userRole, availableFeatures = [] } = useAppContext();
+    const {courseId, courseEnabled: courseEnabledFromContext, localeMessages, direction, apiBaseUrl: rawApiBaseUrl, userRole, availableFeatures = [] } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const courseEnabled = courseEnabledProp !== undefined ? courseEnabledProp : courseEnabledFromContext;
     const [enrollMenuAnchorEl, setEnrollMenuAnchorEl] = useState(null);
     const [manualEnrollOpen, setManualEnrollOpen] = useState(false);
@@ -401,7 +403,7 @@ const EnrollMenu = ({successCallback, courseEnabled: courseEnabledProp}) => {
                         startIcon={<GoogleIcon />}
                         target="_blank"
                         rel="noopener noreferrer"
-                        href={googleAuthorizationUrl || undefined}
+                        href={sanitizeUrl(googleAuthorizationUrl, undefined)}
                         onClick={authorizeWithGoogle}
                         disabled={googleAuthSubmitting || !googleAuthorizationUrl || !googleAuthSessionId}
                     >

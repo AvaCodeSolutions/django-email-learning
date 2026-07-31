@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Alert, Box, Button, Checkbox, CircularProgress, FormControlLabel, Typography, Dialog } from '@mui/material';
 import RequiredTextField from  '../../src/components/RequiredTextField.jsx';
 import { useAppContext } from '../../src/render.jsx';
 import apiClient from '../../src/apiClient.js';
 import { getReadableTextColor } from '../../src/utils.js';
 import { sanitizeHtml } from '../../src/sanitizeHtml.js';
+import { sanitizeUrl } from '../../src/sanitizeUrl.js';
 
 
 const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, onCancle, onComplete, autoFocusEmail = false, newsletter_id = null, newsletter_title = null, brandColor = null}) => {
@@ -14,7 +15,10 @@ const EnrollmentForm = ({course_title, course_slug, organization_id, endpoint, o
     const [isProcessing, setIsProcessing] = React.useState(false);
     const [showReloadDialog, setShowReloadDialog] = React.useState(false);
     const [subscribeToNewsletter, setSubscribeToNewsletter] = React.useState(true);
-    const { localeMessages, termsOfServiceUrl } = useAppContext();
+    const { localeMessages, termsOfServiceUrl: rawTermsOfServiceUrl } = useAppContext();
+    // Interpolated into the translated confirmation message below and then
+    // rendered as markup, so a bad value would end up inside an href.
+    const termsOfServiceUrl = sanitizeUrl(rawTermsOfServiceUrl);
 
     React.useEffect(() => {
         if (!autoFocusEmail) {

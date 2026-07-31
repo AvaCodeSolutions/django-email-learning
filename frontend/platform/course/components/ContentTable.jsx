@@ -14,6 +14,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 import { useAppContext } from '../../../src/render.jsx';
+import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 
 
 const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
@@ -32,7 +33,8 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
         draggedContentIdRef.current = contentId;
     }
 
-    const { apiBaseUrl, userRole, localeMessages, direction } = useAppContext();
+    const { apiBaseUrl: rawApiBaseUrl, userRole, localeMessages, direction } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const organizationId = localStorage.getItem('activeOrganizationId');
     const canSendLesson = userRole === 'admin' || userRole === 'editor';
     const showQuizTwoAttemptNote = contentList.some((content) => content.type === 'quiz' && content.is_blocking !== false && content.limited_attempts == true);

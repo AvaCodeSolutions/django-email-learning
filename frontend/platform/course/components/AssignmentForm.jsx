@@ -20,6 +20,7 @@ import {
 import RequiredTextField from '../../../src/components/RequiredTextField';
 import { useAppContext } from '../../../src/render';
 import apiClient from '../../../src/apiClient.js';
+import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 
 const AssignmentForm = ({
     cancelCallback,
@@ -37,7 +38,8 @@ const AssignmentForm = ({
     initialWaitingPeriod,
     header,
 }) => {
-    const { localeMessages, apiBaseUrl } = useAppContext();
+    const { localeMessages, apiBaseUrl: rawApiBaseUrl } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const organizationId = localStorage.getItem('activeOrganizationId');
 
     const initialWaitingPeriodValue = initialWaitingPeriod ? initialWaitingPeriod.period : 1;

@@ -10,12 +10,14 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import render, {useAppContext} from "../../src/render";
 import { useState, useEffect } from "react";
 import apiClient from "../../src/apiClient.js";
+import { sanitizeEndpointUrl } from '../../src/sanitizeUrl.js';
 
 
 
 const DeleteConfirmationDialog = ({apiKey, onCancel, onSuccess}) => {
 
-    const { localeMessages, apiBaseUrl } = useAppContext();
+    const { localeMessages, apiBaseUrl: rawApiBaseUrl } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
 
     return (
         <Box sx={{ p: 2 }}>
@@ -52,7 +54,8 @@ const ApiKeys = () => {
     const [apiKeyList, setApiKeyList] = useState([]);
     const [loaded, setLoaded] = useState(false);
 
-    const { localeMessages, apiBaseUrl, direction } = useAppContext();
+    const { localeMessages, apiBaseUrl: rawApiBaseUrl, direction } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
 
     useEffect(() => {
         // Fetch API keys from the backend

@@ -7,6 +7,7 @@ import { useAppContext } from '../../../src/render.jsx';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PlusIcon from '@mui/icons-material/Add';
 import apiClient from '../../../src/apiClient.js';
+import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 
 function AddNewsletterForm({ onChangeCallback, activeOrganizationId, initialNewsletterIdId = null, showCreate = true }) {
     const [newsletters, setNewsletters] = useState([]);
@@ -16,7 +17,8 @@ function AddNewsletterForm({ onChangeCallback, activeOrganizationId, initialNews
     const [newLanguage, setNewLanguage] = useState('en');
     const [creating, setCreating] = useState(false);
     const [createError, setCreateError] = useState('');
-    const { localeMessages, apiBaseUrl, languageOptions = [] } = useAppContext();
+    const { localeMessages, apiBaseUrl: rawApiBaseUrl, languageOptions = [] } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
 
     const hasNewsletters = newsletters.length > 0;
 
