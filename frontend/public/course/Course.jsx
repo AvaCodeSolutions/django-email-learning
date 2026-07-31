@@ -259,7 +259,7 @@ function Course() {
                                     return (
                                         <>
                                             {before}
-                                            <a href={sanitizeEndpointUrl(organizationPublicUrl)} rel="noopener noreferrer">{organization.name}</a>
+                                            <a href={organizationPublicUrl} rel="noopener noreferrer">{organization.name}</a>
                                             {after}
                                         </>
                                     );
