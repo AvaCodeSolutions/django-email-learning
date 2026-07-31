@@ -5,13 +5,15 @@ import { useAppContext } from '../../../src/render.jsx';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import PlusIcon from '@mui/icons-material/Add';
 import CreateImapForm from './CreateImapForm';
+import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 
 
 function AddImapConnectionForm({onChangeCallback, activeOrganizationId, initialImapConnectionId = null}) {
   const [imapConnections, setImapConnections] = useState([]);
   const [expanded, setExpanded] = useState(false);
   const [imapConnectionId, setImapConnectionId] = useState(initialImapConnectionId);
-  const { localeMessages, apiBaseUrl } = useAppContext();
+  const { localeMessages, apiBaseUrl: rawApiBaseUrl } = useAppContext();
+  const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
 
 
   const switchExpanded = () => {

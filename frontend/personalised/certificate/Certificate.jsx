@@ -7,6 +7,7 @@ import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import Grid from "@mui/material/Grid";
 import { alpha } from "@mui/material/styles";
 import { Alert } from "@mui/material";
+import { sanitizeImageUrl } from "../../src/sanitizeUrl.js";
 
 
 const Certificate = () => {
@@ -17,7 +18,9 @@ const Certificate = () => {
 }
 
 const CertificateContent = () => {
-    const { localeMessages, name, issueDate, certificateNumber, qrcodeUrl, logoUrl } = useAppContext();
+    const { localeMessages, name, issueDate, certificateNumber, qrcodeUrl: rawQrcodeUrl, logoUrl: rawLogoUrl } = useAppContext();
+    const qrcodeUrl = sanitizeImageUrl(rawQrcodeUrl);
+    const logoUrl = sanitizeImageUrl(rawLogoUrl);
 
     return (
         <Box

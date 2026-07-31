@@ -17,6 +17,7 @@ import logoHorizontalDarkUrl from '../assets/logo-h-dark.png'
 import logoVerticalLightUrl from '../assets/logo-v-light.png'
 import logoVerticalDarkUrl from '../assets/logo-v-dark.png'
 import { sanitizeComponentHtml } from '../sanitizeHtml.js';
+import { sanitizeEndpointUrl, sanitizeImageUrl, sanitizeUrl } from '../sanitizeUrl.js';
 import { getCookie } from '../utils.js';
 import { useTheme, useMediaQuery } from "@mui/material";
 import ThemeSwitcher from './ThemeSwitcher.jsx';
@@ -121,7 +122,9 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     const [menuOpen, setMenuOpen] = useState(false)
     const [organizations, setOrganizations] = useState([])
     const [deliverContentsJobStatus, setDeliverContentsJobStatus] = useState(null)
-    const { localeMessages, isPlatformAdmin, isOrganizationAdmin, isInstructor, direction, apiBaseUrl, platformBaseUrl, sidebarCustomComponent, navbarCustomComponents, customLogo } = useAppContext();
+    const { localeMessages, isPlatformAdmin, isOrganizationAdmin, isInstructor, direction, apiBaseUrl: rawApiBaseUrl, platformBaseUrl: rawPlatformBaseUrl, sidebarCustomComponent, navbarCustomComponents, customLogo } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
+    const platformBaseUrl = sanitizeUrl(rawPlatformBaseUrl);
 
     const theme = useTheme();
     const isMdUpScreen = useMediaQuery(theme.breakpoints.up('md'));
@@ -130,8 +133,15 @@ function MenuBar({activeOrganizationId, changeOrganizationCallback, showOrganiza
     const currentPath = typeof window !== 'undefined' ? window.location.pathname.replace(/\/+$/, '') || '/' : '/';
     let logoHorizontalUrl, logoVerticalUrl;
     if (customLogo) {
-        logoHorizontalUrl = theme.palette.mode === 'light' ? (customLogo.horizontalLight ? customLogo.horizontalLight : customLogo.horizontalDark) : (customLogo.horizontalDark ? customLogo.horizontalDark : customLogo.horizontalLight);
-        logoVerticalUrl = theme.palette.mode === 'light' ? (customLogo.verticalLight ? customLogo.verticalLight : customLogo.verticalDark) : (customLogo.verticalDark ? customLogo.verticalDark : customLogo.verticalLight);
+        // Sanitized here rather than at the <img> below so that an unusable
+        // custom logo falls through to the bundled default instead of
+        // rendering a broken image.
+        const horizontalLight = sanitizeImageUrl(customLogo.horizontalLight);
+        const horizontalDark = sanitizeImageUrl(customLogo.horizontalDark);
+        const verticalLight = sanitizeImageUrl(customLogo.verticalLight);
+        const verticalDark = sanitizeImageUrl(customLogo.verticalDark);
+        logoHorizontalUrl = theme.palette.mode === 'light' ? (horizontalLight ? horizontalLight : horizontalDark) : (horizontalDark ? horizontalDark : horizontalLight);
+        logoVerticalUrl = theme.palette.mode === 'light' ? (verticalLight ? verticalLight : verticalDark) : (verticalDark ? verticalDark : verticalLight);
     }
     if (!logoHorizontalUrl) {
         logoHorizontalUrl = theme.palette.mode === 'light' ? logoHorizontalLightUrl : logoHorizontalDarkUrl;

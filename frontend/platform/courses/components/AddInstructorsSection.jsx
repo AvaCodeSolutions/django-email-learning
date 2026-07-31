@@ -18,13 +18,15 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import apiClient from '../../../src/apiClient.js';
 import PlusIcon from '@mui/icons-material/Add';
 import CreateInstructorForm from './CreateInstructorForm';
+import { sanitizeEndpointUrl, sanitizeImageUrl } from '../../../src/sanitizeUrl.js';
 
 
 function AddInstructorsSection({ onChangeCallback, activeOrganizationId, initialInstructorIds = [] }) {
     const [orgInstructors, setOrgInstructors] = useState([]);
     const [selectedIds, setSelectedIds] = useState(initialInstructorIds);
     const [expanded, setExpanded] = useState(false);
-    const { localeMessages, apiBaseUrl } = useAppContext();
+    const { localeMessages, apiBaseUrl: rawApiBaseUrl } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
 
     const hasInstructors = useMemo(() => orgInstructors.length > 0, [orgInstructors]);
 
@@ -82,7 +84,7 @@ function AddInstructorsSection({ onChangeCallback, activeOrganizationId, initial
                                             size="small"
                                             avatar={
                                                 instructor.photo
-                                                    ? <Avatar src={instructor.photo_url} />
+                                                    ? <Avatar src={sanitizeImageUrl(instructor.photo_url)} />
                                                     : <Avatar>{(instructor.display_name || instructor.email)[0].toUpperCase()}</Avatar>
                                             }
                                             onDelete={(e) => {
@@ -102,7 +104,7 @@ function AddInstructorsSection({ onChangeCallback, activeOrganizationId, initial
                             <MenuItem key={instructor.id} value={instructor.id}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                     {instructor.photo
-                                        ? <Avatar src={instructor.photo_url} sx={{ width: 28, height: 28 }} />
+                                        ? <Avatar src={sanitizeImageUrl(instructor.photo_url)} sx={{ width: 28, height: 28 }} />
                                         : <Avatar sx={{ width: 28, height: 28, fontSize: 13 }}>{(instructor.display_name || instructor.email)[0].toUpperCase()}</Avatar>
                                     }
                                     <Box>

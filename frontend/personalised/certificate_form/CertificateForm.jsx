@@ -9,12 +9,14 @@ import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { useAppContext } from "../../src/render.jsx";
+import { sanitizeEndpointUrl, sanitizeUrl } from "../../src/sanitizeUrl.js";
 
 const CertificateForm = () => {
     const [fullName, setFullName] = useState("");
     const [error, setError] = useState("");
     const [nameSubmitted, setNameSubmitted] = useState(false);
-    const { localeMessages, apiEndpoint, token, csrfToken } = useAppContext();
+    const { localeMessages, apiEndpoint: rawApiEndpoint, token, csrfToken } = useAppContext();
+    const apiEndpoint = sanitizeEndpointUrl(rawApiEndpoint);
     const [ certificateUrl, setCertificateUrl ] = useState("");
 
     const handleSubmit = (event) => {
@@ -92,7 +94,7 @@ const CertificateForm = () => {
                 <Button
                     variant="contained"
                     color="secondary"
-                    href={certificateUrl}
+                    href={sanitizeUrl(certificateUrl)}
                     target="_blank"
                     rel="noopener noreferrer"
                     sx={{ px: 4, fontSize: '1.1rem' }}

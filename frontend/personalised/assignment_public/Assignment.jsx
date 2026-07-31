@@ -2,6 +2,7 @@ import render, { useAppContext } from '../../src/render.jsx';
 import { useState } from 'react';
 import Layout from '../../public/components/Layout.jsx';
 import FileUpload from '../../src/components/FileUpload.jsx';
+import { sanitizeEndpointUrl } from '../../src/sanitizeUrl.js';
 import {
 	Alert,
 	Box,
@@ -16,13 +17,16 @@ const Assignment = () => {
 		localeMessages,
 		token,
 		csrfToken,
-		apiEndpoint,
-		fileUploadApiEndpoint,
+		apiEndpoint: rawApiEndpoint,
+		fileUploadApiEndpoint: rawFileUploadApiEndpoint,
 		errorMessage,
 		assignment,
 		ref,
 		direction,
 	} = useAppContext();
+
+	const apiEndpoint = sanitizeEndpointUrl(rawApiEndpoint);
+	const fileUploadApiEndpoint = sanitizeEndpointUrl(rawFileUploadApiEndpoint);
 
 	const [textSubmission, setTextSubmission] = useState('');
 	const [filePath, setFilePath] = useState('');

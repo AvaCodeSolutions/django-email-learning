@@ -5,6 +5,7 @@ import RequiredTextField from '../../../src/components/RequiredTextField';
 import QuestionForm from './QuestionForm';
 import { useAppContext } from '../../../src/render';
 import apiClient from '../../../src/apiClient.js';
+import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 
 const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod, initialStrategy, initialDeadlineDays, initialLimitedAttempts, initialIsBlocking, initialReminderIntervalDays }) => {
     const questionIdRef = useRef(0);
@@ -22,7 +23,8 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     const [errorMessage, setErrorMessage] = useState("");
     const [title, setTitle] = useState(initialTitle || "");
     const [selectionStrategy, setSelectionStrategy] = useState(initialStrategy || "random");
-    const { localeMessages, userRole, apiBaseUrl, quizDefaults = {} } = useAppContext();
+    const { localeMessages, userRole, apiBaseUrl: rawApiBaseUrl, quizDefaults = {} } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const initialIsBlockingValue = initialIsBlocking ?? quizDefaults.isBlocking ?? true;
     const [isBlocking, setIsBlocking] = useState(initialIsBlockingValue);
     const initialRequiredScoreValue = initialIsBlockingValue ? (initialRequiredScore ?? 70) : 0;

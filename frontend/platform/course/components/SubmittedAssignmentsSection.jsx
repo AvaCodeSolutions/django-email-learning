@@ -38,9 +38,11 @@ import AttachFileOutlinedIcon from '@mui/icons-material/AttachFileOutlined';
 import OpenInNewOutlinedIcon from '@mui/icons-material/OpenInNewOutlined';
 import { useAppContext } from '../../../src/render.jsx';
 import apiClient from '../../../src/apiClient.js';
+import { sanitizeEndpointUrl, sanitizeImageUrl, sanitizeUrl } from '../../../src/sanitizeUrl.js';
 
 function SubmittedAssignmentsSection({ onPendingCountChange }) {
-    const { apiBaseUrl, courseId, localeMessages } = useAppContext();
+    const { apiBaseUrl: rawApiBaseUrl, courseId, localeMessages } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const organizationId = localStorage.getItem('activeOrganizationId');
 
     const pageSize = 20;
@@ -430,7 +432,7 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
                                                 <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
                                                     {submissionDetail.reviewed_by?.photo ? (
                                                         <Avatar
-                                                            src={submissionDetail.reviewed_by.photo}
+                                                            src={sanitizeImageUrl(submissionDetail.reviewed_by.photo)}
                                                             alt={submissionDetail.reviewed_by.display_name || 'Reviewer'}
                                                             sx={{ width: 26, height: 26 }}
                                                         />
@@ -467,7 +469,7 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
                                             <Stack spacing={1.25}>
                                                 <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexWrap: 'nowrap' }}>
                                                     <Avatar
-                                                        src={submissionDetail.learner.photo || undefined}
+                                                        src={sanitizeImageUrl(submissionDetail.learner.photo)}
                                                         alt={submissionDetail.learner.email || 'Learner'}
                                                         sx={{ width: 36, height: 36 }}
                                                     >
@@ -564,7 +566,7 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
                                                     </Stack>
                                                     <Typography
                                                         component="a"
-                                                        href={submissionDetail.file_submission}
+                                                        href={sanitizeUrl(submissionDetail.file_submission)}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         variant="body2"
@@ -614,7 +616,7 @@ function SubmittedAssignmentsSection({ onPendingCountChange }) {
                                         <Stack direction="row" spacing={1.25} sx={{ mt: 1, alignItems: 'center' }}>
                                             {feedback.provided_by?.photo ? (
                                                 <Avatar
-                                                    src={feedback.provided_by.photo}
+                                                    src={sanitizeImageUrl(feedback.provided_by.photo)}
                                                     alt={feedback.provided_by.display_name || 'Provider'}
                                                     sx={{ width: 24, height: 24 }}
                                                 />

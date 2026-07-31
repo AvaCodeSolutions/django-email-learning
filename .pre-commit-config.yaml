@@ -45,6 +45,18 @@ repos:
         pass_filenames: false
         files: \.py$
 
+      # Uses the repo's own eslint rather than a mirror hook so the version and
+      # plugins always match frontend/package.json. Only the staged files are
+      # linted; ESLint resolves frontend/eslint.config.js by walking up from
+      # each file, so running from the repo root is fine.
+      - id: eslint
+        name: eslint
+        entry: frontend/node_modules/.bin/eslint
+        language: system
+        files: ^frontend/.*\.(js|jsx)$
+        exclude: ^frontend/(dist|htmlcov|coverage|node_modules)/
+        pass_filenames: true
+
       - id: pytest-with-coverage
         name: Tests with Coverage
         entry: pytest

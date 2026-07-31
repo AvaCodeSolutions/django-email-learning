@@ -3,6 +3,7 @@ import { Alert, Box, Button, Chip, Stack, TextField, Tooltip } from "@mui/materi
 import { useState } from "react"
 import { useAppContext } from '../../../src/render.jsx';
 import apiClient from '../../../src/apiClient.js';
+import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 
 
 const CreateImapForm = ({ onSuccess, activeOrganizationId }) => {
@@ -19,7 +20,8 @@ const CreateImapForm = ({ onSuccess, activeOrganizationId }) => {
     const [password, setPassword] = useState("");
     const [passwordHelperText, setPasswordHelperText] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
-    const { localeMessages, apiBaseUrl } = useAppContext();
+    const { localeMessages, apiBaseUrl: rawApiBaseUrl } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
 
     const handleCreateImap = () => {
         const isValid = validateForm();

@@ -25,6 +25,7 @@ import { useState, useEffect } from "react";
 import apiClient from "../../src/apiClient.js";
 import { Button } from "@mui/material";
 import render, { useAppContext } from "../../src/render";
+import { sanitizeEndpointUrl, sanitizeImageUrl, sanitizeUrl } from '../../src/sanitizeUrl.js';
 
 const UserForm = lazy(() => import("./components/UserForm.jsx"));
 const DeleteUserDialog = lazy(() => import("./components/DeleteUserDialog.jsx"));
@@ -44,7 +45,9 @@ function Organization() {
     const [generalInfoFormKey, setGeneralInfoFormKey] = useState(0);
     const [publicUrlCopied, setPublicUrlCopied] = useState(false);
 
-    const { localeMessages, direction, userRole, isOrganizationAdmin, isPlatformAdmin, apiBaseUrl, platformBaseUrl, organizationId, currentUserId, availableFeatures = [] } = useAppContext();
+    const { localeMessages, direction, userRole, isOrganizationAdmin, isPlatformAdmin, apiBaseUrl: rawApiBaseUrl, platformBaseUrl: rawPlatformBaseUrl, organizationId, currentUserId, availableFeatures = [] } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
+    const platformBaseUrl = sanitizeUrl(rawPlatformBaseUrl);
     const canEditOrganization = isPlatformAdmin || isOrganizationAdmin;
 
     const newslettersEnabled = availableFeatures.includes('newsletters');
@@ -117,7 +120,7 @@ function Organization() {
                             }}
                         >
                             <Link
-                                href={organization.public_url}
+                                href={sanitizeUrl(organization.public_url)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 underline="none"
@@ -273,7 +276,7 @@ function Organization() {
                                                             <TableCell>
                                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
                                                                     <Avatar
-                                                                        src={user.photo_url || undefined}
+                                                                        src={sanitizeImageUrl(user.photo_url)}
                                                                         sx={(theme) => ({
                                                                             width: 30,
                                                                             height: 30,

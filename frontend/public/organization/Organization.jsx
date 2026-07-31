@@ -18,6 +18,7 @@ import { alpha, ThemeProvider } from '@mui/material/styles';
 import { useAppContext } from '../../src/render.jsx';
 import { lightTheme } from '../../src/theme/themes';
 import { getReadableTextColor } from '../../src/utils.js';
+import { sanitizeEndpointUrl, sanitizeImageUrl, sanitizeUrl } from '../../src/sanitizeUrl.js';
 
 
 // No Material UI icon exists for these brands, so their marks are reproduced
@@ -93,7 +94,12 @@ function Organization() {
     const [courses, setCourses] = useState([]);
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
-    const { organization, enrollApiUrl, newsletterSubscribeApiUrl, newsletters = [], localeMessages } = useAppContext();
+    const { organization, enrollApiUrl: rawEnrollApiUrl, newsletterSubscribeApiUrl: rawNewsletterSubscribeApiUrl, newsletters = [], localeMessages } = useAppContext();
+    const enrollApiUrl = sanitizeEndpointUrl(rawEnrollApiUrl);
+    const newsletterSubscribeApiUrl = sanitizeEndpointUrl(rawNewsletterSubscribeApiUrl);
+    // The logo, the course images and the social links are all
+    // organization-editable and reach anonymous visitors.
+    const organizationLogoUrl = sanitizeImageUrl(organization["logo_url"]);
 
     const hasMultipleLanguages = new Set(courses.map((course) => course.language)).size > 1;
 
@@ -139,9 +145,9 @@ function Organization() {
                 spacing={{ xs: 2, md: 3 }}
                 sx={{ alignItems: { xs: 'stretch', md: 'flex-start' } }}
             >
-                { organization["logo_url"] &&
+                { organizationLogoUrl &&
                     <Box sx={{ flexShrink: 0, textAlign: { xs: 'center', md: 'left' } }}>
-                        <Box component="img" src={ organization["logo_url"] } alt={`${organization["name"]} Logo`} sx={{ maxWidth: 220, width: '100%', height: 'auto' }} />
+                        <Box component="img" src={ organizationLogoUrl } alt={`${organization["name"]} Logo`} sx={{ maxWidth: 220, width: '100%', height: 'auto' }} />
                     </Box>
                 }
                 <Stack spacing={2} sx={{ flex: 1, minWidth: 0, pt: { xs: 1, md: 3 }, px: { xs: 0.5, md: 1 } }}>
@@ -163,7 +169,7 @@ function Organization() {
                                     <Tooltip key={link.platform} title={label}>
                                         <IconButton
                                             component="a"
-                                            href={link.url}
+                                            href={sanitizeUrl(link.url)}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             aria-label={label}
@@ -226,7 +232,7 @@ function Organization() {
                         >
                             <CardMedia
                                 component={course["image"] ? "img" : "div"}
-                                image={course["image"]}
+                                image={sanitizeImageUrl(course["image"])}
                                 sx={{
                                     aspectRatio: '16 / 9',
                                     backgroundColor: 'background.dark',

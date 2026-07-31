@@ -1,6 +1,7 @@
 import { Box, IconButton, LinearProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Tooltip, Typography } from '@mui/material';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import { useAppContext } from '../../../src/render.jsx';
+import { sanitizeUrl } from '../../../src/sanitizeUrl.js';
 
 function LinearProgressWithLabel({ value, direction }) {
   const normalized = Math.min(100, Math.max(0, value || 0));
@@ -63,7 +64,7 @@ function EnrollentList({enrollments, selectHandler}) {
                   <Tooltip title={localeMessages["certificate"] || 'Certificate'}>
                     <IconButton
                       component="a"
-                      href={enrollment.certificate_url}
+                      href={sanitizeUrl(enrollment.certificate_url)}
                       rel="noopener noreferrer"
                       size="small"
                       onClick={(event) => event.stopPropagation()}

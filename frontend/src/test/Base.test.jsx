@@ -132,7 +132,6 @@ describe('Base', () => {
       </Base>
     );
     act(() => window.DialogAPI.show(<p>Hello from DialogAPI</p>));
-    // eslint-disable-next-line testing-library/no-node-access
     act(() => document.querySelector('.MuiBackdrop-root').click());
     expect(screen.getByText('Hello from DialogAPI')).toBeInTheDocument();
   });
@@ -146,7 +145,6 @@ describe('Base', () => {
     act(() => window.DialogAPI.setCloseOnBackdropClick(true));
     expect(window.DialogAPI.getDialogBackdropClickSetting()).toBe(true);
     act(() => window.DialogAPI.show(<p>Hello from DialogAPI</p>));
-    // eslint-disable-next-line testing-library/no-node-access
     act(() => document.querySelector('.MuiBackdrop-root').click());
     await waitFor(() => expect(screen.queryByText('Hello from DialogAPI')).not.toBeInTheDocument());
   });

@@ -8,6 +8,7 @@ import { useAppContext } from '../../../src/render.jsx';
 import apiClient from '../../../src/apiClient.js';
 import Coloris from '@melloware/coloris';
 import '@melloware/coloris/dist/coloris.css';
+import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 
 const DEFAULT_BRAND_COLOR = '#4A5EC0';
 
@@ -25,7 +26,8 @@ const PLATFORM_OPTIONS = [
 ];
 
 function OrganizationForm({ successCallback, failureCallback, cancelCallback, createMode, initialName, initialDescription, initialLogoUrl, initialLogoPath, initialSocialLinks, initialIsPublic, initialBrandColor, organizationId, readOnly = false }) {
-    const { localeMessages, apiBaseUrl, direction, defaultOrgSetting, defaultOrgSettings } = useAppContext();
+    const { localeMessages, apiBaseUrl: rawApiBaseUrl, direction, defaultOrgSetting, defaultOrgSettings } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const defaultVisibility = defaultOrgSetting?.isPublic ?? defaultOrgSettings?.isPublic ?? true;
     const [name, setName] = useState(initialName || "");
     const [description, setDescription] = useState(initialDescription || "");

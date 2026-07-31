@@ -10,10 +10,12 @@ import Button from '@mui/material/Button';
 import ImageUpload from '../../../src/components/ImageUpload.jsx';
 import { useAppContext } from '../../../src/render.jsx';
 import apiClient from '../../../src/apiClient.js';
+import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 
 
 const UserForm = ({ onClose, organizationId, refreshUsers, user = null, disableRoleField = false, onCreateSuccess = () => {} }) => {
-    const { localeMessages, apiBaseUrl } = useAppContext();
+    const { localeMessages, apiBaseUrl: rawApiBaseUrl } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const [email, setEmail] = useState(user ? user.email : '');
     const [role, setRole] = useState(user ? user.role : 'viewer');
     const [displayName, setDisplayName] = useState(user ? (user.display_name || '') : '');

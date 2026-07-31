@@ -9,6 +9,7 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import BusinessIcon from '@mui/icons-material/Business';
 import { getCookie } from '../utils.js';
 import { useAppContext } from '../render.jsx';
+import { sanitizeEndpointUrl, sanitizeImageUrl } from '../sanitizeUrl.js';
 
 const AVATAR_SIZE = 96;
 
@@ -16,7 +17,9 @@ const ImageUpload = ({ onUploadSuccess, onUploadError, initialUrl, organizationI
     console.log("Rendering ImageUpload component with initialUrl:", initialUrl);
     const [imageFile, setImageFile] = useState(null);
     const [imageUrl, setImageUrl] = useState(initialUrl);
-    const { localeMessages, direction, apiBaseUrl } = useAppContext();
+    const { localeMessages, direction, apiBaseUrl: rawApiBaseUrl } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
+    const safeImageUrl = sanitizeImageUrl(imageUrl);
 
 
     useEffect(() => {
@@ -97,11 +100,11 @@ const ImageUpload = ({ onUploadSuccess, onUploadError, initialUrl, organizationI
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                 <Box sx={{ position: 'relative', width: AVATAR_SIZE, height: AVATAR_SIZE }}>
                     <Avatar
-                        src={imageUrl || undefined}
+                        src={safeImageUrl}
                         alt={altText || localeMessages["uploaded_image_alt"]}
                         sx={{ width: AVATAR_SIZE, height: AVATAR_SIZE, bgcolor: 'action.hover', color: 'text.secondary' }}
                     >
-                        {!imageUrl && <BusinessIcon sx={{ fontSize: AVATAR_SIZE * 0.45 }} />}
+                        {!safeImageUrl && <BusinessIcon sx={{ fontSize: AVATAR_SIZE * 0.45 }} />}
                     </Avatar>
                     {!disabled && (
                         <IconButton
@@ -127,9 +130,9 @@ const ImageUpload = ({ onUploadSuccess, onUploadError, initialUrl, organizationI
                         </IconButton>
                     )}
                 </Box>
-                {imageUrl && !disabled ? (
+                {safeImageUrl && !disabled ? (
                     <Button variant="text" color="primary" size="small" onClick={removeImage}>{localeMessages["remove_image"]}</Button>
-                ) : !imageUrl && (
+                ) : !safeImageUrl && (
                     <Typography variant="caption" color="text.secondary">{altText || localeMessages["uploaded_image_alt"]}</Typography>
                 )}
             </Box>
@@ -137,7 +140,7 @@ const ImageUpload = ({ onUploadSuccess, onUploadError, initialUrl, organizationI
     }
 
     return (<>
-        { !imageUrl ? <Button
+        { !safeImageUrl ? <Button
             component="label"
             role={undefined}
             variant="contained"
@@ -155,7 +158,7 @@ const ImageUpload = ({ onUploadSuccess, onUploadError, initialUrl, organizationI
                 disabled={disabled}
             />
             </Button>
-            : (<><img src={imageUrl} alt={altText || localeMessages["uploaded_image_alt"]} style={{ marginTop: '10px', maxHeight: '100px' }} /><br />
+            : (<><img src={safeImageUrl} alt={altText || localeMessages["uploaded_image_alt"]} style={{ marginTop: '10px', maxHeight: '100px' }} /><br />
                 <Button variant="text" color="primary" onClick={removeImage} disabled={disabled}>{localeMessages["remove_image"]}</Button></>
             )}
     </>)

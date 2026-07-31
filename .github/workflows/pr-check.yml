@@ -56,10 +56,15 @@ jobs:
       - name: Install dependencies
         run: make dev-install
       - name: Run pre-commit
+        # The eslint hook needs frontend/node_modules, which this job has no
+        # reason to install - it runs as `npm run lint` in the frontend job,
+        # which already has Node set up and only runs when frontend/ changes.
+        env:
+          SKIP: eslint
         run: make pre-commit
 
   frontend-test:
-    name: Frontend Tests (Node 20)
+    name: Frontend Checks (Node 24)
     needs: changes
     if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
@@ -79,6 +84,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies
         run: npm ci
+      - name: Lint
+        run: npm run lint
       - name: Run frontend tests
         run: npm test
 

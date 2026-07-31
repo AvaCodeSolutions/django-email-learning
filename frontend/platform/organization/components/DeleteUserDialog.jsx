@@ -3,11 +3,13 @@ import { useState } from "react"
 import { useAppContext } from '../../../src/render.jsx';
 import WarningIcon from '@mui/icons-material/Warning';
 import apiClient from '../../../src/apiClient.js';
+import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 
 
 const DeleteUserDialog = ({ user, handleClose, handleSuccess}) => {
 
-    const { localeMessages, apiBaseUrl } = useAppContext();
+    const { localeMessages, apiBaseUrl: rawApiBaseUrl } = useAppContext();
+    const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const [errorMessage, setErrorMessage] = useState("");
 
     const deleteUser = () => {
