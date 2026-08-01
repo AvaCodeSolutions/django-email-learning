@@ -56,20 +56,17 @@ class VerifyEnrollmentCommand(AbstractCommand):
         )
         metric_service.user_enrollment_activated(enrollment.course.slug, enrollment.course.organization.id)
 
-        # Auto-subscribe to linked newsletter (idempotent). Mark it confirmed
-        # immediately - clicking this verification link already proves the
-        # learner owns this email address, so there's no need to separately
-        # confirm the newsletter subscription too (this also covers the
-        # subscribe_to_newsletter checkbox at enroll time, which creates the
-        # same row unconfirmed - get_or_create finds it here either way).
+        # Confirm a pre-existing linked-newsletter subscription (if any). We
+        # intentionally do not auto-create one here: opt-in is decided at
+        # enrollment time via subscribe_to_newsletter.
         newsletter = enrollment.course.newsletter
         newsletter_subscriber = None
         if newsletter:
-            newsletter_subscriber, _created = NewsletterSubscriber.objects.get_or_create(
+            newsletter_subscriber = NewsletterSubscriber.objects.filter(
                 newsletter=newsletter,
                 email=enrollment.learner.email,
-            )
-            if not newsletter_subscriber.is_confirmed:
+            ).first()
+            if newsletter_subscriber and not newsletter_subscriber.is_confirmed:
                 newsletter_subscriber.confirmed_at = timezone.now()
                 newsletter_subscriber.save(update_fields=["confirmed_at"])
 
