@@ -165,7 +165,7 @@ class SendNewslettersJob:
             )
             conf: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
             base_url: str = conf.get("SITE_BASE_URL", "")
-            full_unsubscribe_url = f"{base_url.rstrip('/')}{unsubscribe_url}"
+            full_unsubscribe_url = f"{base_url.rstrip('/')}{unsubscribe_url}" if base_url else ""
         except Exception:
             full_unsubscribe_url = ""
 
@@ -182,12 +182,21 @@ class SendNewslettersJob:
             "unsubscribe_url": full_unsubscribe_url,
             "social_links": sendout.newsletter.organization.social_links.all(),
         }
+        headers = (
+            {
+                "List-Unsubscribe": f"<{full_unsubscribe_url}>",
+                "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            }
+            if full_unsubscribe_url
+            else None
+        )
 
         msg = EmailMultiAlternatives(
             subject=sendout.subject,
             body=plain_body,
             from_email=_get_newsletter_from_email(sendout.newsletter.organization),
             to=[email],
+            headers=headers,
         )
         msg.attach_alternative(render_to_string("emails/newsletter_sendout.html", context), "text/html")
         email_sender_service.send(msg)

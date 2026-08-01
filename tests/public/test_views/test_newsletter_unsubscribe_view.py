@@ -26,18 +26,27 @@ def unsubscribe_url(token):
     )
 
 
-def test_valid_token_unsubscribes_and_returns_200(db, anonymous_client, subscriber):
+def test_valid_token_get_does_not_unsubscribe_and_returns_200(db, anonymous_client, subscriber):
     token = subscriber.unsubscribe_token
     response = anonymous_client.get(unsubscribe_url(token))
 
     assert response.status_code == 200
-    assert not NewsletterSubscriber.objects.filter(unsubscribe_token=token).exists()
+    assert NewsletterSubscriber.objects.filter(unsubscribe_token=token).exists()
+    assert "Confirm unsubscribe" in response.content.decode()
 
 
-def test_valid_token_shows_newsletter_title(db, anonymous_client, subscriber):
+def test_valid_token_get_shows_newsletter_title(db, anonymous_client, subscriber):
     response = anonymous_client.get(unsubscribe_url(subscriber.unsubscribe_token))
 
     assert "Weekly Digest" in response.content.decode()
+
+
+def test_valid_token_post_unsubscribes_and_returns_200(db, anonymous_client, subscriber):
+    token = subscriber.unsubscribe_token
+    response = anonymous_client.post(unsubscribe_url(token))
+
+    assert response.status_code == 200
+    assert not NewsletterSubscriber.objects.filter(unsubscribe_token=token).exists()
 
 
 def test_invalid_token_returns_410(db, anonymous_client):
@@ -46,13 +55,18 @@ def test_invalid_token_returns_410(db, anonymous_client):
     assert response.status_code == 410
 
 
-def test_already_used_token_returns_410(db, anonymous_client, subscriber):
-    token = subscriber.unsubscribe_token
-    anonymous_client.get(unsubscribe_url(token))
+def test_invalid_token_post_returns_200(db, anonymous_client):
+    response = anonymous_client.post(unsubscribe_url(uuid.uuid4()))
 
-    # Second request with same token — subscriber is already gone
-    response = anonymous_client.get(unsubscribe_url(token))
-    assert response.status_code == 410
+    assert response.status_code == 200
+
+
+def test_already_used_token_post_returns_200(db, anonymous_client, subscriber):
+    token = subscriber.unsubscribe_token
+    anonymous_client.post(unsubscribe_url(token))
+
+    response = anonymous_client.post(unsubscribe_url(token))
+    assert response.status_code == 200
 
 
 def test_unsubscribe_does_not_affect_other_subscribers(db, anonymous_client, newsletter, subscriber):
@@ -60,6 +74,6 @@ def test_unsubscribe_does_not_affect_other_subscribers(db, anonymous_client, new
         newsletter=newsletter,
         email="other@example.com",
     )
-    anonymous_client.get(unsubscribe_url(subscriber.unsubscribe_token))
+    anonymous_client.post(unsubscribe_url(subscriber.unsubscribe_token))
 
     assert NewsletterSubscriber.objects.filter(pk=other.pk).exists()

@@ -3,11 +3,14 @@ import uuid
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 
 from django_email_learning.models import NewsletterSubscriber
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class NewsletterUnsubscribeView(View):
     def get(self, request: HttpRequest, token: uuid.UUID) -> HttpResponse:
         try:
@@ -17,6 +20,21 @@ class NewsletterUnsubscribeView(View):
                 request,
                 "newsletters/unsubscribe_invalid.html",
                 status=410,
+            )
+
+        return render(
+            request,
+            "newsletters/unsubscribe_confirm.html",
+            {"newsletter_title": subscriber.newsletter.title},
+        )
+
+    def post(self, request: HttpRequest, token: uuid.UUID) -> HttpResponse:
+        try:
+            subscriber = NewsletterSubscriber.objects.select_related("newsletter").get(unsubscribe_token=token)
+        except NewsletterSubscriber.DoesNotExist:
+            return render(
+                request,
+                "newsletters/unsubscribe_invalid.html",
             )
 
         newsletter_title = subscriber.newsletter.title
