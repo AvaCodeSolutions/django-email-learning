@@ -130,7 +130,7 @@ class JobExecutionStatusView(View):
                 "status": job_execution.status,
                 "started_at": job_execution.started_at.isoformat(),
                 "finished_at": job_execution.finished_at.isoformat() if job_execution.finished_at else None,
-                "error": job_execution.error,
+                "error": UNEXPECTED_ERROR_MESSAGE if job_execution.error else None,
             },
             status=200,
         )
