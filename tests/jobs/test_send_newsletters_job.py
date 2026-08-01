@@ -144,6 +144,31 @@ def test_process_delivery_omits_social_links_section_when_none_exist(db, deliver
     assert 'class="email-social-links"' not in html_body
 
 
+def test_process_delivery_sets_list_unsubscribe_headers_when_url_available(db, delivery):
+    with patch("django_email_learning.jobs.send_newsletters_job.email_sender_service.send") as send_mock:
+        SendNewslettersJob().process_delivery(delivery)
+
+    sent_message = send_mock.call_args[0][0]
+    assert sent_message.extra_headers["List-Unsubscribe-Post"] == "List-Unsubscribe=One-Click"
+    assert sent_message.extra_headers["List-Unsubscribe"].startswith("<")
+    assert sent_message.extra_headers["List-Unsubscribe"].endswith(">")
+    unsubscribe_url = sent_message.extra_headers["List-Unsubscribe"][1:-1]
+    assert f"To unsubscribe, visit: {unsubscribe_url}" in sent_message.body
+
+
+def test_process_delivery_omits_list_unsubscribe_headers_when_base_url_is_empty(db, delivery, settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "SITE_BASE_URL": "",
+    }
+    with patch("django_email_learning.jobs.send_newsletters_job.email_sender_service.send") as send_mock:
+        SendNewslettersJob().process_delivery(delivery)
+
+    sent_message = send_mock.call_args[0][0]
+    assert "List-Unsubscribe" not in sent_message.extra_headers
+    assert "List-Unsubscribe-Post" not in sent_message.extra_headers
+
+
 def test_process_delivery_sendout_stays_scheduled_while_others_pending(db, sendout, newsletter):
     sub1 = NewsletterSubscriber.objects.create(newsletter=newsletter, email="a@x.com")
     sub2 = NewsletterSubscriber.objects.create(newsletter=newsletter, email="b@x.com")
