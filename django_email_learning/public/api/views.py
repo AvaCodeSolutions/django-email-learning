@@ -1,5 +1,6 @@
 import json
 import logging
+import uuid
 from typing import List
 
 from django.conf import settings
@@ -79,11 +80,17 @@ def _perform_enrollment(
         logger.info(f"Enrollment already exists: {e}")
         return JsonResponse({"status": "already_enrolled"}, status=200)
     except BlockedEmailError as e:
-        logger.error(f"Blocked email error: {e}")
-        return JsonResponse({"error": str(e)}, status=403)
+        error_reference = uuid.uuid4()
+        logger.warning(f"Blocked email error: {e} (error_id: {error_reference})")
+        return JsonResponse({"error": "Email is blocked", "error_id": str(error_reference)}, status=403)
     except LearnerCapExceededError as e:
-        logger.info(f"Learner cap exceeded: {e}")
-        return JsonResponse({"error": str(e)}, status=403)
+        error_reference = uuid.uuid4()
+        logger.warning(f"Learner cap exceeded: {e} (error_id: {error_reference})")
+        return JsonResponse({"error": "Not enough slots available", "error_id": str(error_reference)}, status=403)
+    except Exception as e:
+        error_reference = uuid.uuid4()
+        logger.error(f"Unexpected error: {e} (error_id: {error_reference})")
+        return JsonResponse({"error": "An unexpected error occurred", "error_id": str(error_reference)}, status=500)
 
     if subscribe_to_newsletter and course.newsletter_id:
         # Created unconfirmed here (no confirmation email sent) - the

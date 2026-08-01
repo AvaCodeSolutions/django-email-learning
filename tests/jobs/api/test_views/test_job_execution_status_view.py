@@ -1,5 +1,6 @@
 from django.urls import reverse
 
+from django_email_learning.error_responses import UNEXPECTED_ERROR_MESSAGE
 from django_email_learning.models import JobExecution, JobName, JobStatus
 from django_email_learning.services.jwt_service import generate_jwt
 
@@ -57,7 +58,7 @@ def test_job_execution_status_returns_failed_execution_with_error(superadmin_cli
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == JobStatus.FAILED.value
-    assert body["error"] == "boom"
+    assert body["error"] == UNEXPECTED_ERROR_MESSAGE
 
 
 def test_job_execution_status_not_found(superadmin_client):
