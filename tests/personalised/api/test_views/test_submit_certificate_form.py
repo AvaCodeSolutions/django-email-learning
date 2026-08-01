@@ -63,7 +63,7 @@ def test_submit_certificate_form_view_invalid_token(anonymous_client):
         content_type="application/json",
     )
     assert response.status_code == 400
-    assert "The signature is invalid" in response.json().get("error", "")
+    assert "Invalid token" in response.json().get("error", "")
 
 
 def test_submite_certificate_token_signed_by_different_secret(enrollment, anonymous_client):
@@ -81,7 +81,7 @@ def test_submite_certificate_token_signed_by_different_secret(enrollment, anonym
         content_type="application/json",
     )
     assert response.status_code == 400
-    assert "The signature is invalid" in response.json().get("error", "")
+    assert "Invalid token" in response.json().get("error", "")
 
 
 def test_submit_certificate_for_enrollment_in_an_invalid_state(enrollment, anonymous_client):

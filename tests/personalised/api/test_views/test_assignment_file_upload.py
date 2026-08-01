@@ -51,4 +51,4 @@ def test_file_upload_invalid_token(anonymous_client):
     )
 
     assert response.status_code == 400
-    assert "The signature is invalid" in response.json()["error"]
+    assert "Invalid token" in response.json()["error"]

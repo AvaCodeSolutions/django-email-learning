@@ -89,7 +89,7 @@ def test_quiz_public_view_invalid_token(content_delivery, anonymous_client):
         content_type="application/json",
     )
     assert response.status_code == 400
-    assert "The signature is invalid" in response.json()["error"]
+    assert "Invalid token" in response.json()["error"]
 
 
 def test_calculate_score_and_passed_static_method(quiz_with_questions):
@@ -154,7 +154,7 @@ def test_amp_quiz_submission_invalid_token_returns_400_with_amp_headers(
     )
 
     assert response.status_code == 400
-    assert "The signature is invalid" in response.json()["error"]
+    assert "Invalid token" in response.json()["error"]
     assert response["Access-Control-Allow-Origin"] == REQUEST_ORIGIN
     assert response["AMP-Access-Control-Allow-Source-Origin"] == SOURCE_ORIGIN
     assert response["Access-Control-Allow-Credentials"] == "true"
@@ -178,7 +178,7 @@ def test_amp_quiz_submission_expired_token_returns_410_with_amp_headers(content_
     )
 
     assert response.status_code == 410
-    assert "The token is not valid anymore" in response.json()["error"]
+    assert "Token is expired" in response.json()["error"]
     assert response["Access-Control-Allow-Origin"] == REQUEST_ORIGIN
     assert response["AMP-Access-Control-Allow-Source-Origin"] == SOURCE_ORIGIN
     assert response["Access-Control-Allow-Credentials"] == "true"

@@ -1,6 +1,7 @@
 import json
 import logging
 import urllib.parse
+import uuid
 
 from django.conf import settings
 from django.http import JsonResponse
@@ -48,9 +49,13 @@ class FileUploadView(View):
         try:
             decoded = jwt_service.decode_jwt(token=token)
         except jwt_service.InvalidTokenException as jde:
-            return JsonResponse({"error": str(jde)}, status=400)
+            error_reference = uuid.uuid4()
+            logger.warning(f"Invalid token error: {str(jde)} (error_id: {error_reference})")
+            return JsonResponse({"error": "Invalid token", "error_id": str(error_reference)}, status=400)
         except jwt_service.ExpiredTokenException as ete:
-            return JsonResponse({"error": str(ete)}, status=410)
+            error_reference = uuid.uuid4()
+            logger.warning(f"Expired token error: {str(ete)} (error_id: {error_reference})")
+            return JsonResponse({"error": "Token is expired", "error_id": str(error_reference)}, status=410)
 
         try:
             delivery = ContentDelivery.objects.get(
@@ -100,9 +105,13 @@ class AssignmentSubmissionView(View):
         try:
             decoded = jwt_service.decode_jwt(token=token)
         except jwt_service.InvalidTokenException as jde:
-            return JsonResponse({"error": str(jde)}, status=400)
+            error_reference = uuid.uuid4()
+            logger.warning(f"Invalid token error: {str(jde)} (error_id: {error_reference})")
+            return JsonResponse({"error": "Invalid token", "error_id": str(error_reference)}, status=400)
         except jwt_service.ExpiredTokenException as ete:
-            return JsonResponse({"error": str(ete)}, status=410)
+            error_reference = uuid.uuid4()
+            logger.warning(f"Expired token error: {str(ete)} (error_id: {error_reference})")
+            return JsonResponse({"error": "Token is expired", "error_id": str(error_reference)}, status=410)
 
         delivery_id = decoded["delivery_id"]
         try:
@@ -219,9 +228,13 @@ class QuizSubmissionView(View):
         try:
             decoded = jwt_service.decode_jwt(token=token)
         except jwt_service.InvalidTokenException as jde:
-            return None, JsonResponse({"error": str(jde)}, status=400)
+            error_reference = uuid.uuid4()
+            logger.warning(f"Invalid token error: {str(jde)} (error_id: {error_reference})")
+            return None, JsonResponse({"error": "Invalid token", "error_id": str(error_reference)}, status=400)
         except jwt_service.ExpiredTokenException as ete:
-            return None, JsonResponse({"error": str(ete)}, status=410)
+            error_reference = uuid.uuid4()
+            logger.warning(f"Expired token error: {str(ete)} (error_id: {error_reference})")
+            return None, JsonResponse({"error": "Token is expired", "error_id": str(error_reference)}, status=410)
 
         delivery_id = decoded["delivery_id"]
 
@@ -537,9 +550,13 @@ class SubmitCertificateFormView(View):
         try:
             decoded = jwt_service.decode_jwt(token=token)
         except jwt_service.InvalidTokenException as jde:
-            return JsonResponse({"error": str(jde)}, status=400)
+            error_reference = uuid.uuid4()
+            logger.warning(f"Invalid token error: {str(jde)} (error_id: {error_reference})")
+            return JsonResponse({"error": "Invalid token", "error_id": str(error_reference)}, status=400)
         except jwt_service.ExpiredTokenException as ete:
-            return JsonResponse({"error": str(ete)}, status=410)
+            error_reference = uuid.uuid4()
+            logger.warning(f"Expired token error: {str(ete)} (error_id: {error_reference})")
+            return JsonResponse({"error": "Token is expired", "error_id": str(error_reference)}, status=410)
 
         enrollment_id = decoded["enrollment_id"]
 

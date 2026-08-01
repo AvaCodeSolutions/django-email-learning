@@ -1,5 +1,6 @@
 import json
 import logging
+import uuid
 from datetime import timedelta
 from typing import Any
 
@@ -153,11 +154,16 @@ class EnrollmentsView(PaginatedApiMixin, View):
             try:
                 command.execute()
             except BlockedEmailError as e:
-                return JsonResponse({"error": str(e)}, status=403)
+                error_reference = uuid.uuid4()
+                logger.warning(f"{str(e)} (error_id: {error_reference})")
+                return JsonResponse({"error": "Access denied", "error_id": str(error_reference)}, status=403)
             except LearnerCapExceededError as e:
-                return JsonResponse({"error": str(e)}, status=403)
+                error_reference = uuid.uuid4()
+                logger.warning(f"{str(e)} (error_id: {error_reference})")
+                return JsonResponse({"error": "Access denied", "error_id": str(error_reference)}, status=403)
             except EnrollmentAlreadyExistsError as e:
-                return JsonResponse({"error": str(e)}, status=409)
+                logger.warning(f"Enrollment already exists for {serializer.learner_email}: {str(e)}")
+                return JsonResponse({"error": "Enrollment already exists"}, status=409)
 
             enrollment = Enrollment.objects.get(learner__email=serializer.learner_email, course_id=kwargs["course_id"])
             verify_command = VerifyEnrollmentCommand(
