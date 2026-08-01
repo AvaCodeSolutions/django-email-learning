@@ -196,7 +196,7 @@ class SendNewslettersJob:
             body=plain_body,
             from_email=_get_newsletter_from_email(sendout.newsletter.organization),
             to=[email],
-            **({"headers": headers} if headers else {}),
+            headers=headers,
         )
         msg.attach_alternative(render_to_string("emails/newsletter_sendout.html", context), "text/html")
         email_sender_service.send(msg)
