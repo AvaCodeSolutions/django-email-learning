@@ -75,7 +75,7 @@ def test_verify_enrollment_command_execute(db, enrollment, course_lesson_content
     assert "Enrollment Verified" in sent_email.subject
 
 
-def test_verify_enrollment_command_auto_confirms_linked_newsletter_subscription(db, enrollment, course_lesson_content):
+def test_verify_enrollment_command_does_not_auto_subscribe_linked_newsletter(db, enrollment, course_lesson_content):
     newsletter = Newsletter.objects.create(
         title="Course Updates", language="en", organization_id=enrollment.course.organization_id
     )
@@ -88,12 +88,8 @@ def test_verify_enrollment_command_auto_confirms_linked_newsletter_subscription(
     )
     command.execute()
 
-    subscriber = NewsletterSubscriber.objects.get(newsletter=newsletter, email=enrollment.learner.email)
-    # Verifying the enrollment already proves ownership of this email address,
-    # so the auto-subscribed newsletter row is confirmed immediately - no
-    # separate newsletter confirmation email is needed.
-    assert subscriber.is_confirmed
-    assert len(mail.outbox) == 1  # only the enrollment-verified email, no separate newsletter one
+    assert not NewsletterSubscriber.objects.filter(newsletter=newsletter, email=enrollment.learner.email).exists()
+    assert len(mail.outbox) == 1
 
 
 def test_verify_enrollment_command_confirms_preexisting_unconfirmed_subscriber(db, enrollment, course_lesson_content):
