@@ -25,6 +25,21 @@ def test_unsubscribe_command(db, enrollment):
     assert enrollment.final_state_at is not None
 
 
+def test_unsubscribe_command_is_idempotent(db, enrollment):
+    command = UnsubscribeCommand(
+        command_name="unsubscribe",
+        email=enrollment.learner.email,
+        course_slug=enrollment.course.slug,
+        organization_id=enrollment.course.organization.id,
+    )
+    command.execute()
+    command.execute()
+
+    enrollment.refresh_from_db()
+    assert enrollment.status == EnrollmentStatus.DEACTIVATED
+    assert enrollment.deactivation_reason == "canceled"
+
+
 def test_unsubscribe_nonexistent_course(db, learner):
     command = UnsubscribeCommand(
         command_name="unsubscribe",

@@ -92,9 +92,10 @@ class BaseTemplateView(View, TemplateResponseMixin):
             status=status_code,
         )
 
-    def get_decoded_token(self, request) -> dict | HttpResponse:  # type: ignore[no-untyped-def]
+    def get_decoded_token(self, request, token_source: str = "GET") -> dict | HttpResponse:  # type: ignore[no-untyped-def]
+        token_data = request.GET if token_source == "GET" else request.POST
         try:
-            token = request.GET["token"]
+            token = token_data["token"]
         except KeyError as e:
             return self.error_response(
                 message=_("The link is not valid."),
@@ -424,18 +425,24 @@ class UnsubscribeView(BaseTemplateView):
         if isinstance(decoded_token, HttpResponse):
             return decoded_token  # Return error response if token is invalid
         organization = Organization.objects.filter(id=decoded_token["organization_id"]).first()
-        if request.GET.get("confirm") != "true":
-            return self.render_to_response(
-                context={
-                    "page_title": _("Confirm Unsubscription"),
-                    "appContext": {
-                        "confirmationMessage": _("Are you sure you want to unsubscribe from our mailing list?"),
-                        "confirmUrl": f"{request.path}?token={request.GET.get('token')}&confirm=true",
-                        "localeMessages": {"Confirm": _("Confirm")},
-                    }
-                    | self.get_app_context(organization),
+        return self.render_to_response(
+            context={
+                "page_title": _("Confirm Unsubscription"),
+                "appContext": {
+                    "confirmationMessage": _("Are you sure you want to unsubscribe from our mailing list?"),
+                    "confirmUrl": request.path,
+                    "confirmToken": request.GET.get("token"),
+                    "localeMessages": {"Confirm": _("Confirm")},
                 }
-            )
+                | self.get_app_context(organization),
+            }
+        )
+
+    def post(self, request, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
+        decoded_token = self.get_decoded_token(request, token_source="POST")
+        if isinstance(decoded_token, HttpResponse):
+            return decoded_token  # Return error response if token is invalid
+        organization = Organization.objects.filter(id=decoded_token["organization_id"]).first()
         command = UnsubscribeCommand(
             email=decoded_token["email"],
             course_slug=decoded_token["course_slug"],

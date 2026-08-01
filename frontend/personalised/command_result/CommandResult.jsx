@@ -5,13 +5,15 @@ import Layout from '../../public/components/Layout.jsx';
 import logoVerticalLightUrl from '../../src/assets/logo-v-light.png';
 import logoVerticalDarkUrl from '../../src/assets/logo-v-dark.png';
 import { sanitizeImageUrl, sanitizeUrl } from '../../src/sanitizeUrl.js';
+import { getCookie } from '../../src/utils.js';
 
 const GOLDEN_RATIO = 1.618;
 const GOLDEN_RATIO_SQUARED = GOLDEN_RATIO * GOLDEN_RATIO;
 
 const CommandResult = () => {
-    const { successMessage, confirmationMessage, confirmUrl: rawConfirmUrl, errorMessage, ref, localeMessages, customLogo } = useAppContext();
+    const { successMessage, confirmationMessage, confirmUrl: rawConfirmUrl, confirmToken, errorMessage, ref, localeMessages, customLogo } = useAppContext();
     const confirmUrl = sanitizeUrl(rawConfirmUrl);
+    const csrfToken = getCookie('csrftoken');
     const theme = useTheme();
 
     let logoUrl;
@@ -36,7 +38,11 @@ const CommandResult = () => {
            {successMessage}
         </Alert> : confirmationMessage ? <Box><Typography variant='h6' align='center' sx={{ color: 'text.primary' }}>
            {confirmationMessage}
-        </Typography> <Box sx={{ mt: 4 }}><Button href={confirmUrl} variant='contained' sx={{ px: 3, fontSize: '1rem' }}>{localeMessages["Confirm"]}</Button></Box></Box>: <Alert severity="error" sx={{ maxWidth: 800, margin: '0 auto', textAlign: showCloseWindowMessage ? 'center' : 'left' }}>
+        </Typography> <Box component='form' method='post' action={confirmUrl} sx={{ mt: 4 }}>
+            <input type='hidden' name='token' value={confirmToken || ''} />
+            <input type='hidden' name='csrfmiddlewaretoken' value={csrfToken || ''} />
+            <Button type='submit' variant='contained' sx={{ px: 3, fontSize: '1rem' }}>{localeMessages["Confirm"]}</Button>
+        </Box></Box>: <Alert severity="error" sx={{ maxWidth: 800, margin: '0 auto', textAlign: showCloseWindowMessage ? 'center' : 'left' }}>
            {errorMessage} (ref: {ref})
         </Alert>}
         { showCloseWindowMessage && <Typography variant='body2' align='center' sx={{ mt: 3, color: 'text.secondary' }}>

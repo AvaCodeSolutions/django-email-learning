@@ -17,7 +17,7 @@ def test_unsubscribe_valid_token(command, enrollment, anonymous_client):
         }
     )
 
-    response = anonymous_client.get(f"{URL}?token={token}&confirm=true")
+    response = anonymous_client.post(URL, data={"token": token})
 
     assert command.return_value.execute.called
     assert response.status_code == 200
@@ -50,7 +50,25 @@ def test_unsubscribe_valid_token_confirmation(command, enrollment, anonymous_cli
         == "Are you sure you want to unsubscribe from our mailing list?"
     )
     assert "confirmUrl" in response.context["appContext"]
-    assert response.context["appContext"]["confirmUrl"] == f"{URL}?token={token}&confirm=true"
+    assert response.context["appContext"]["confirmUrl"] == URL
+    assert response.context["appContext"]["confirmToken"] == token
+
+
+@patch("django_email_learning.personalised.views.UnsubscribeCommand")
+def test_unsubscribe_get_with_confirm_param_does_not_unsubscribe(command, enrollment, anonymous_client):
+    token = jwt_service.generate_jwt(
+        {
+            "email": enrollment.learner.email,
+            "course_slug": enrollment.course.slug,
+            "organization_id": enrollment.course.organization.id,
+        }
+    )
+
+    response = anonymous_client.get(f"{URL}?token={token}&confirm=true")
+
+    assert not command.return_value.execute.called
+    assert response.status_code == 200
+    assert response.context["page_title"] == "Confirm Unsubscription"
 
 
 def test_unsubscribe_invalid_token(anonymous_client):
