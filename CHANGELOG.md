@@ -6,6 +6,27 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.16.0] - 2026-08-03
+
+### Security
+
+- **Unsubscribe links unsubscribed on GET** (breaking) — Both unsubscribe flows performed their mutation from a `GET`, so anything that fetches a URL on the recipient's behalf — mail client link prefetching, corporate link scanners, chat previews — could silently unsubscribe them. The course unsubscribe page already showed a confirmation step, but confirming was a plain link to `?confirm=true`, which is still a `GET`; the mutation now lives in a CSRF-protected `POST` submitted by a form on that page, with the token moved from the query string into a form field. Newsletter unsubscribe had no confirmation at all and now serves a confirmation page on `GET`, deleting the subscriber only on `POST`. Newsletter sendouts additionally carry `List-Unsubscribe` and `List-Unsubscribe-Post: List-Unsubscribe=One-Click` headers so that mail clients honoring [RFC 8058](https://www.rfc-editor.org/rfc/rfc8058) unsubscribe via a one-click `POST` rather than following the link; the headers are only set when `SITE_BASE_URL` is configured. Anything linking to these URLs and expecting a `GET` to unsubscribe needs to issue a `POST` instead.
+- **API error responses echoed exception detail** — Several endpoints returned `str(exception)` straight to the client: JWT decode failures on the personalised file-upload, assignment, quiz and certificate-form endpoints; blocked-email and learner-cap errors on enrollment; and the job execution status view, which returned the stored job error verbatim. Each now returns a fixed, generic message plus an `error_id`, with the real detail logged against that same id, so operators can still correlate a report to the underlying failure without exposing internals. Enrollment also gained a catch-all returning `500` with the same shape instead of propagating. Clients matching on error *strings* rather than status codes will need updating.
+- **Updated `pyasn1` for CVE-2026-59884** — Bumped 0.6.2 to 0.6.4 in `poetry.lock`.
+
+### Added
+
+- **Public-profile notice on the dashboard** — The dashboard's "Complete your organization profile" setup item now shows an inline notice when the organization's profile page is public, with a link that opens the public page in a new tab. Previously nothing on the dashboard indicated whether that page was visible to the world.
+
+### Changed
+
+- **Frontend dependency updates** — `@testing-library/jest-dom` to v7, the TipTap monorepo to 3.29.2, `eslint` to 10.8.0, and `globals` to 17.8.0.
+- **Removed `uv.lock`** — The project's lockfile is `poetry.lock`; `uv.lock` was a stray second lockfile that could drift from it. Deleted and added to `.gitignore`.
+
+### Fixed
+
+- **Enrollment verification subscribed learners who had not opted in** (breaking) — Verifying an enrollment auto-created a subscription to the course's linked newsletter for every learner, regardless of whether they ticked the newsletter checkbox at signup. Opt-in is decided at enrollment time via `subscribe_to_newsletter`, and verification now only *confirms* a subscription that already exists, rather than creating one. Learners auto-subscribed by the previous behavior are unaffected and remain subscribed; going forward, only those who opted in are added.
+
 ## [2.15.0] - 2026-08-01
 
 ### Security
