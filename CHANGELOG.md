@@ -6,6 +6,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [2.17.0] - 2026-08-03
+
+### Added
+
+- **1000-character limit on course and organization descriptions** — The `description` field on both models now enforces a maximum of 1000 characters, matching the API request/response schemas. The course and organization forms show a live "X/1000 characters used" counter and cap input at the limit; existing descriptions already over 1000 characters are unaffected until the record is next saved.
+
+### Changed
+
+- **`Course` and `Organization` now run full validation on save** (breaking) — Both models call `full_clean()` from `save()`, so invalid data now raises `ValidationError` at save time instead of either succeeding silently or surfacing later as a raw `IntegrityError` (a duplicate `embed_token`, for example, used to raise `IntegrityError` and now raises `ValidationError`). Code that creates these models directly through the ORM, rather than through the API, must supply all required fields, including `Course.slug`.
+- **Dependency updates** — `ruff` to 0.16.x, `django` to 6.0.7, `django-stubs` to 6.0.7, `pre-commit` to 4.6.1, and `pillow` to 12.3.0.
+
 ## [2.16.0] - 2026-08-03
 
 ### Security
