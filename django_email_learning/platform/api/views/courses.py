@@ -65,7 +65,7 @@ class CourseView(CourseCreationMixin, View):
             return JsonResponse(response_data, status=201)
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
-        except ValueError as e:
+        except (ValueError, DjangoValidationError) as e:
             # Raised by the serializers with a message written for the caller.
             return JsonResponse({"error": str(e)}, status=409)
         except IntegrityError as e:

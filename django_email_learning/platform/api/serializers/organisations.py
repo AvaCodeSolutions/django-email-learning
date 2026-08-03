@@ -64,7 +64,7 @@ class OrganizationResponse(BaseModel):
     name: str
     logo: Optional[str] = None
     logo_path: Optional[str] = None
-    description: Optional[str] = None
+    description: Optional[str] = Field(None, max_length=1000)
     public_url: str
     social_links: list[SocialLinkResponse] = []
     is_public: bool
@@ -97,7 +97,7 @@ class OrganizationResponse(BaseModel):
 
 class CreateOrganizationRequest(BaseModel):
     name: str = Field(min_length=1, examples=["AvaCode"])
-    description: Optional[str] = Field(None, examples=["A description of the organization."])
+    description: Optional[str] = Field(None, max_length=1000, examples=["A description of the organization."])
     logo: Optional[str] = Field(None, examples=["/path/to/logo.png"])
     social_links: list[SocialLinkRequest] = Field(default_factory=list)
     is_public: bool = Field(default=True, examples=[True])
@@ -145,7 +145,7 @@ class CreateOrganizationRequest(BaseModel):
 class UpdateOrganizationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: Optional[str] = Field(None, min_length=1, examples=["AvaCode"])
-    description: Optional[str] = Field(None, examples=["A description of the organization."])
+    description: Optional[str] = Field(None, max_length=1000, examples=["A description of the organization."])
     social_links: Optional[list[SocialLinkRequest]] = None
     logo: Optional[str] = Field(None, examples=["/path/to/logo.png"])
     remove_logo: Optional[bool] = Field(None, examples=[True])

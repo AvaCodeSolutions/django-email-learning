@@ -16,6 +16,8 @@ const localeMessages = {
   update: 'Update',
   name_required: 'Name is required.',
   description_required: 'Description is required.',
+  description_max_length_helper_text: 'Description must be 1000 characters or fewer.',
+  description_char_limit_helper_text: 'COUNT/1000 characters used.',
   error_try_again: 'An error occurred. Please try again.',
   logo_upload_failed: 'Logo upload failed.',
   upload_button_label: 'Upload',
@@ -86,6 +88,20 @@ describe('OrganizationForm', () => {
       expect(screen.getByText('Name is required.')).toBeInTheDocument();
       expect(screen.getByText('Description is required.')).toBeInTheDocument();
     });
+  });
+
+  it('shows a live character counter and caps input at 1000 characters', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<OrganizationForm {...createProps} />, {
+      appContext: { localeMessages },
+    });
+
+    const descriptionField = screen.getByLabelText(/Description/);
+    expect(descriptionField).toHaveAttribute('maxlength', '1000');
+    expect(screen.getByText('0/1000 characters used.')).toBeInTheDocument();
+
+    await user.type(descriptionField, 'Hello world');
+    expect(screen.getByText('11/1000 characters used.')).toBeInTheDocument();
   });
 
   it('shows URL validation error for invalid social link URL', async () => {

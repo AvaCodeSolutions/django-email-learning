@@ -5,7 +5,7 @@ from typing import Any
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator
+from django.core.validators import MaxLengthValidator, RegexValidator
 from django.db import models
 from django.urls import reverse
 from django.utils.module_loading import import_string
@@ -23,7 +23,7 @@ hex_color_validator = RegexValidator(
 class Organization(models.Model):
     name = models.CharField(max_length=200, unique=True)
     logo = models.ImageField(upload_to="organization_logos/", null=True, blank=True)
-    description = models.TextField(null=True, blank=True)
+    description = models.TextField(null=True, blank=True, validators=[MaxLengthValidator(1000)])
     is_public = models.BooleanField(default=True)
     brand_color = models.CharField(max_length=7, default="#4A5EC0", validators=[hex_color_validator])
     created_at = models.DateTimeField(auto_now_add=True, null=True)
@@ -32,6 +32,10 @@ class Organization(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    def save(self, *args: Any, **kwargs: Any) -> None:  # type: ignore[no-untyped-def]
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     @staticmethod
     def generate_embed_token() -> str:

@@ -11,6 +11,7 @@ import '@melloware/coloris/dist/coloris.css';
 import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 
 const DEFAULT_BRAND_COLOR = '#4A5EC0';
+const DESCRIPTION_MAX_LENGTH = 1000;
 
 const PLATFORM_OPTIONS = [
     { value: "website", labelKey: "website" },
@@ -120,6 +121,9 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
         if (!description.trim()) {
             setDescriptionHelperText(localeMessages["description_required"]);
             valid = false;
+        } else if (description.length > DESCRIPTION_MAX_LENGTH) {
+            setDescriptionHelperText(localeMessages["description_max_length_helper_text"]);
+            valid = false;
         } else {
             setDescriptionHelperText("");
         }
@@ -210,7 +214,25 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
                 />
             </Box>
             <RequiredTextField label={localeMessages["name"]} helperText={nameHelperText} fullWidth margin="normal" value={name} onChange={(e) => setName(e.target.value)} disabled={readOnly} />
-            <RequiredTextField label={localeMessages["description"]} helperText={descriptionHelperText} fullWidth margin="normal" multiline rows={4} value={description} onChange={(e) => setDescription(e.target.value)} disabled={readOnly} />
+            <RequiredTextField
+                label={localeMessages["description"]}
+                helperText={descriptionHelperText || (description.length > DESCRIPTION_MAX_LENGTH
+                    ? localeMessages["description_max_length_helper_text"]
+                    : localeMessages["description_char_limit_helper_text"].replace("COUNT", String(description.length)))}
+                fullWidth
+                margin="normal"
+                multiline
+                rows={4}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                disabled={readOnly}
+                slotProps={{
+                    htmlInput: { maxLength: DESCRIPTION_MAX_LENGTH },
+                    ...(!descriptionHelperText && description.length <= DESCRIPTION_MAX_LENGTH
+                        ? { formHelperText: { sx: { color: 'text.secondary' } } }
+                        : {}),
+                }}
+            />
             <Divider sx={{ my: 2 }} />
             <Typography variant="subtitle2" sx={{ mb: 1 }}>{localeMessages["social_links"]}</Typography>
             <Stack spacing={2}>

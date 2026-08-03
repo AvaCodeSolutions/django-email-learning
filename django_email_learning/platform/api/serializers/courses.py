@@ -78,7 +78,7 @@ class CreateCourseRequest(BaseModel):
         description="A short label for the course, used in URLs or email interactive actions. "
         "You can not edit it later.",
     )
-    description: Optional[str] = Field(None, examples=["A beginner's course on Python programming."])
+    description: Optional[str] = Field(None, max_length=1000, examples=["A beginner's course on Python programming."])
     imap_connection_id: Optional[int] = Field(None, examples=[1])
     newsletter_id: Optional[int] = Field(None, examples=[1])
     image: Optional[str] = Field(None, examples=["/path/to/course_image.png"])
@@ -165,7 +165,7 @@ class CreateCourseRequest(BaseModel):
 class UpdateCourseRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: Optional[str] = Field(None, min_length=1, examples=["Introduction to Python"])
-    description: Optional[str] = Field(None, examples=["A beginner's course on Python programming."])
+    description: Optional[str] = Field(None, max_length=1000, examples=["A beginner's course on Python programming."])
     imap_connection_id: Optional[int] = Field(None, examples=[1])
     newsletter_id: Optional[int] = Field(None, examples=[1])
     enabled: Optional[bool] = Field(None, examples=[True])
@@ -264,7 +264,7 @@ class CourseResponse(BaseModel):
     id: int
     title: str
     slug: str
-    description: Optional[str]
+    description: Optional[str] = Field(None, max_length=1000)
     organization_id: int
     imap_connection_id: Optional[int]
     newsletter_id: Optional[int] = None

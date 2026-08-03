@@ -4,6 +4,7 @@ from django.conf import settings
 from django.conf.global_settings import LANGUAGES
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
+from django.core.validators import MaxLengthValidator
 from django.db import models
 from django.urls import reverse
 from PIL import Image
@@ -22,7 +23,7 @@ class Course(models.Model):
         max_length=50,
         help_text="A short label for the course, used in URLs or email interactive actions. You can not edit it later.",
     )
-    description = models.TextField(null=True, blank=True)
+    description = models.TextField(null=True, blank=True, validators=[MaxLengthValidator(1000)])
     enabled = models.BooleanField(default=False)
     imap_connection = models.ForeignKey(ImapConnection, on_delete=models.SET_NULL, null=True, blank=True)
     newsletter = models.ForeignKey(
@@ -48,6 +49,10 @@ class Course(models.Model):
 
     class Meta:
         unique_together = [["slug", "organization"], ["title", "organization"]]
+
+    def save(self, *args: Any, **kwargs: Any) -> None:  # type: ignore[no-untyped-def]
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     def delete(self, using: Any | None = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
         if self.enabled:

@@ -65,10 +65,10 @@ def test_learners_view_course_filter(superadmin_client, learners_factory, course
     learners_factory(10)
     # Create a specific learner enrolled in a different course
     specific_learner = Learner.objects.create(email="specific_learner@example.com", organization_id=1)
-    course = Course.objects.create(title="Another Course", organization_id=1, enabled=True)
+    course = Course.objects.create(title="Another Course", slug="another_course", organization_id=1, enabled=True)
     Enrollment.objects.create(learner=specific_learner, course_id=course.id)
 
-    response = superadmin_client.get(f"{URL}?course_id=2")
+    response = superadmin_client.get(f"{URL}?course_id={course.id}")
     assert response.status_code == 200
     data = response.json()
     assert data["count"] == 1

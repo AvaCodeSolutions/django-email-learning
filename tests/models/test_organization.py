@@ -1,5 +1,6 @@
 import pytest
-from django.db import IntegrityError, transaction
+from django.core.exceptions import ValidationError
+from django.db import transaction
 
 from django_email_learning.models import Course, Enrollment, EnrollmentStatus, Learner, Organization
 
@@ -139,7 +140,7 @@ def test_embed_token_must_be_unique(db):
     organization_b = Organization.objects.create(name="Org B")
     organization_b.embed_token = "shared-token"
 
-    with pytest.raises(IntegrityError), transaction.atomic():
+    with pytest.raises(ValidationError), transaction.atomic():
         organization_b.save(update_fields=["embed_token"])
 
 

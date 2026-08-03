@@ -19,6 +19,7 @@ import { useAppContext } from '../../src/render.jsx';
 import { lightTheme } from '../../src/theme/themes';
 import { getReadableTextColor } from '../../src/utils.js';
 import { sanitizeEndpointUrl, sanitizeImageUrl, sanitizeUrl } from '../../src/sanitizeUrl.js';
+import { sanitizeHtml } from '../../src/sanitizeHtml.js';
 
 
 // No Material UI icon exists for these brands, so their marks are reproduced
@@ -152,7 +153,7 @@ function Organization() {
                 }
                 <Stack spacing={2} sx={{ flex: 1, minWidth: 0, pt: { xs: 1, md: 3 }, px: { xs: 0.5, md: 1 } }}>
                     <Typography variant="h1" sx={{ mb: 0, fontSize: '1.75rem', textAlign: { xs: 'center', md: 'left' } }}>{ organization["name"] }</Typography>
-                    <Typography variant="body1" sx={{ color: 'text.secondary' }}>{ organization["description"] }</Typography>
+                    <Typography variant="body1" sx={{ color: 'text.secondary' }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(organization["description"]) }} />
                     {organization.social_links && organization.social_links.length > 0 && (
                         <Stack
                             direction="row"
@@ -285,9 +286,8 @@ function Organization() {
                                         WebkitLineClamp: 4,
                                         WebkitBoxOrient: 'vertical',
                                     }}
-                                >
-                                    {course.description}
-                                </Typography>
+                                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(course.description) }}
+                                />
                                 <Box sx={{ mt: 'auto', pt: 1, textAlign: { xs: 'center', md: 'left' } }}>
                                     <Button
                                         variant="contained"
