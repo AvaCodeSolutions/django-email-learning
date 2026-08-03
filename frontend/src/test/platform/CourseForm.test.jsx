@@ -12,6 +12,8 @@ const localeMessages = {
   slug_tooltip: 'The course slug is used in URLs. You can not edit it later.',
   slug_no_space: 'Slug cannot contain spaces. Use hyphens instead.',
   imap_connection_tooltip: 'Connect an inbox so learners can interact with this course by email.',
+  description_char_limit_helper_text: 'COUNT/1000 characters used.',
+  description_max_length_helper_text: 'The course description must be 1000 characters or fewer.',
 };
 
 const createProps = {
@@ -138,5 +140,21 @@ describe('CourseForm slug auto-population', () => {
 
     await user.click(document.body);
     await waitFor(() => expect(screen.queryByText(localeMessages.imap_connection_tooltip)).not.toBeInTheDocument());
+  });
+});
+
+describe('CourseForm description character limit', () => {
+  it('shows a live character counter and caps input at 1000 characters', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CourseForm {...createProps} />, {
+      appContext: { localeMessages: { ...localeMessages, course_description: 'Course Description' } },
+    });
+
+    const descriptionField = screen.getByLabelText(/Course Description/);
+    expect(descriptionField).toHaveAttribute('maxlength', '1000');
+    expect(screen.getByText('0/1000 characters used.')).toBeInTheDocument();
+
+    await user.type(descriptionField, 'Hello world');
+    expect(screen.getByText('11/1000 characters used.')).toBeInTheDocument();
   });
 });

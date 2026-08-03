@@ -19,6 +19,8 @@ const localeMessages = {
   update: 'Update',
   name_required: 'Name is required.',
   description_required: 'Description is required.',
+  description_max_length_helper_text: 'Description must be 1000 characters or fewer.',
+  description_char_limit_helper_text: 'COUNT/1000 characters used.',
   error_try_again: 'An error occurred. Please try again.',
   logo_upload_failed: 'Logo upload failed.',
   upload_button_label: 'Upload',

@@ -108,6 +108,8 @@ class Courses(BasePlatformView):
             "course_delete_confirmation": _("Are you sure you want to delete the course COURSE_NAME?"),
             "title_required_helper_text": _("The course title is required."),
             "description_required_helper_text": _("The course description is required."),
+            "description_max_length_helper_text": _("The course description must be 1000 characters or fewer."),
+            "description_char_limit_helper_text": _("COUNT/1000 characters used."),
             "reference_name_required_helper_text": _("A reference name is required when a reference link is provided."),
             "reference_url_required_helper_text": _(
                 "A valid reference URL is required when a reference name is provided."

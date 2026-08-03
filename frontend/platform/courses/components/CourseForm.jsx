@@ -12,6 +12,7 @@ import { slugify } from '../../../src/utils.js';
 import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 
 const MAX_EXTERNAL_REFERENCES = 10;
+const DESCRIPTION_MAX_LENGTH = 1000;
 
 const createEmptyExternalReference = () => ({ name: '', url: '' });
 
@@ -205,6 +206,9 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
         }
         if (!courseDescription) {
             setDescriptionHelperText(localeMessages["description_required_helper_text"]);
+            isValid = false;
+        } else if (courseDescription.length > DESCRIPTION_MAX_LENGTH) {
+            setDescriptionHelperText(localeMessages["description_max_length_helper_text"]);
             isValid = false;
         } else {
             setDescriptionHelperText("");
@@ -454,7 +458,24 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                                         </MenuItem>
                                 ))}
                             </RequiredTextField>
-              <RequiredTextField label={localeMessages["course_description"]} helperText={descriptionHelperText} fullWidth margin="normal" multiline rows={4} value={courseDescription} onChange={(e) => setCourseDescription(e.target.value)} />
+              <RequiredTextField
+                label={localeMessages["course_description"]}
+                helperText={descriptionHelperText || (courseDescription.length > DESCRIPTION_MAX_LENGTH
+                    ? localeMessages["description_max_length_helper_text"]
+                    : localeMessages["description_char_limit_helper_text"].replace("COUNT", String(courseDescription.length)))}
+                fullWidth
+                margin="normal"
+                multiline
+                rows={4}
+                value={courseDescription}
+                onChange={(e) => setCourseDescription(e.target.value)}
+                slotProps={{
+                    htmlInput: { maxLength: DESCRIPTION_MAX_LENGTH },
+                    ...(!descriptionHelperText && courseDescription.length <= DESCRIPTION_MAX_LENGTH
+                        ? { formHelperText: { sx: { color: 'text.secondary' } } }
+                        : {}),
+                }}
+              />
               <TextField
                 label={localeMessages["target_audience"]}
                 fullWidth

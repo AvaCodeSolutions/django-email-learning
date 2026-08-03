@@ -10,6 +10,7 @@ import { useAppContext } from '../../src/render.jsx';
 import { lightTheme } from '../../src/theme/themes';
 import { getReadableTextColor } from '../../src/utils.js';
 import { sanitizeEndpointUrl, sanitizeImageUrl, sanitizeUrl } from '../../src/sanitizeUrl.js';
+import { sanitizeHtml } from '../../src/sanitizeHtml.js';
 
 
 function Course() {
@@ -223,9 +224,8 @@ function Course() {
                     <Typography
                         variant="body1"
                         sx={{ color: 'text.secondary' }}
-                    >
-                        {course.description}
-                    </Typography>
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(course.description) }}
+                    />
                 )}
 
                 {/* Organization Info */}
@@ -276,9 +276,8 @@ function Course() {
                                 <Typography
                                     variant="body2"
                                     sx={{ color: 'text.secondary', fontSize: '0.875rem' }}
-                                >
-                                    {organization.description}
-                                </Typography>
+                                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(organization.description) }}
+                                />
                             )}
                         </Grid>
                     </Grid>
