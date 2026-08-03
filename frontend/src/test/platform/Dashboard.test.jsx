@@ -26,6 +26,8 @@ const localeMessages = {
   setup_profile_title: 'Complete your organization profile',
   setup_profile_description: 'Add a logo and social links so learners recognize you.',
   setup_profile_cta: 'Edit profile',
+  organization_profile_public_notice: 'Your organization profile page is public.',
+  organization_profile_public_link_label: 'View public page',
   setup_newsletter_title: 'Set up your newsletter',
   setup_newsletter_description: 'Send progress updates and announcements to enrolled learners.',
   setup_newsletter_cta: 'Set up',
@@ -125,6 +127,21 @@ describe('Dashboard', () => {
     expect(screen.queryByText('Write a newsletter')).not.toBeInTheDocument();
     // Viewing existing subscriber counts is a separate concern from being able to create a newsletter.
     expect(screen.getByText('Newsletter subscribers')).toBeInTheDocument();
+  });
+
+  it('shows a public profile notice with a link when the organization is public', async () => {
+    renderWithProviders(<Dashboard />, {
+      appContext: {
+        localeMessages,
+        availableFeatures: [],
+        dashboardSetup: { hasCourse: true, hasTeam: true, profileComplete: false, newsletterConfigured: false },
+        organizationIsPublic: true,
+        organizationPublicUrl: 'https://example.com/public/organization/1/',
+      },
+    });
+    await waitFor(() => expect(screen.getByText('Your organization profile page is public.')).toBeInTheDocument());
+    const link = screen.getByRole('link', { name: /view public page/i });
+    expect(link).toHaveAttribute('href', 'https://example.com/public/organization/1/');
   });
 
   it('hides the checklist entirely once every applicable step is done', async () => {

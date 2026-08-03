@@ -9,6 +9,8 @@ import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import CloseIcon from '@mui/icons-material/Close';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import Base from '../../src/components/Base.jsx'
 import render, { useAppContext } from '../../src/render.jsx';
 import apiClient from '../../src/apiClient.js'
@@ -52,6 +54,45 @@ function SetupItem({ item }) {
           {item.title}
         </Typography>
         <Typography variant="body2" color="text.secondary">{item.description}</Typography>
+        {item.notice && (
+          <Chip
+            icon={<InfoOutlinedIcon sx={{ fontSize: '1rem' }} />}
+            label={
+              <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.35, color: '#000' }}>
+                {item.notice.text}{' '}
+                <Link
+                  href={sanitizeUrl(item.notice.href)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  underline="hover"
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.35,
+                    color: 'primary.main',
+                    '&:hover': {
+                      color: 'primary.main',
+                    },
+                  }}
+                >
+                  {item.notice.linkLabel}
+                  <OpenInNewIcon fontSize="inherit" />
+                </Link>
+              </Box>
+            }
+            sx={{
+              mt: 0.9,
+              borderRadius: 999,
+              bgcolor: 'grey.50',
+              color: 'text.secondary',
+              height: 'auto',
+              py: 0.35,
+              px: 0.25,
+              '& .MuiChip-label': { whiteSpace: 'normal', px: 1, py: 0.25 },
+              '& .MuiChip-icon': { color: 'text.secondary' },
+            }}
+          />
+        )}
       </Box>
       {!item.done && (
         <Link href={item.href} underline="none" sx={(theme) => ({
@@ -268,7 +309,7 @@ function Dashboard() {
   const {
     localeMessages, apiBaseUrl: rawApiBaseUrl, platformBaseUrl: rawPlatformBaseUrl, greetingName, activeOrganizationName,
     dashboardSetup = {}, dashboardStats = {}, availableFeatures = [],
-    dashboardSections, dashboardCustomComponents = {}, isPlatformAdmin,
+    dashboardSections, dashboardCustomComponents = {}, isPlatformAdmin, organizationIsPublic, organizationPublicUrl,
   } = useAppContext();
   const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
   const platformBaseUrl = sanitizeUrl(rawPlatformBaseUrl);
@@ -292,6 +333,12 @@ function Dashboard() {
   const orgScopedUrl = (tab) => organizationId
     ? `${platformBaseUrl}/organizations/${organizationId}/?tab=${tab}`
     : `${platformBaseUrl}/organizations/`;
+
+  const publicProfileNotice = organizationIsPublic && organizationPublicUrl ? {
+    text: localeMessages.organization_profile_public_notice,
+    href: organizationPublicUrl,
+    linkLabel: localeMessages.organization_profile_public_link_label,
+  } : null;
 
   const setupItems = [
     {
@@ -317,6 +364,7 @@ function Dashboard() {
       description: localeMessages.setup_profile_description,
       cta: localeMessages.setup_profile_cta,
       href: orgScopedUrl('general_info'),
+      notice: publicProfileNotice,
     },
     ...(canCreateNewsletter ? [{
       key: 'newsletter',

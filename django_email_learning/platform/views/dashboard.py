@@ -91,6 +91,8 @@ class Dashboard(BasePlatformView):
 
         context["appContext"]["activeOrganizationName"] = organization.name
         context["appContext"]["greetingName"] = active_org_user.display_name if active_org_user else None
+        context["appContext"]["organizationIsPublic"] = organization.is_public
+        context["appContext"]["organizationPublicUrl"] = organization.public_url
         context["appContext"]["dashboardSetup"] = {
             "hasCourse": Course.objects.filter(organization_id=organization_id).exists(),
             "hasTeam": OrganizationUser.objects.filter(organization_id=organization_id).count() > 1,
@@ -124,6 +126,8 @@ class Dashboard(BasePlatformView):
             "setup_profile_title": _("Complete your organization profile"),
             "setup_profile_description": _("Add a logo and social links so learners recognize you."),
             "setup_profile_cta": _("Edit profile"),
+            "organization_profile_public_notice": _("Your organization profile page is public."),
+            "organization_profile_public_link_label": _("View public page"),
             "setup_newsletter_title": _("Set up your newsletter"),
             "setup_newsletter_description": _("Send progress updates and announcements to enrolled learners."),
             "setup_newsletter_cta": _("Set up"),
