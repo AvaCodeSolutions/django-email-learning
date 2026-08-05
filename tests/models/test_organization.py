@@ -126,6 +126,20 @@ def test_get_learners_cap_resolver_receives_the_organization(db, settings):
     assert other_org.get_learners_cap() == 0
 
 
+def test_name_does_not_have_to_be_unique(db):
+    first = Organization.objects.create(name="Acme Consulting")
+    second = Organization.objects.create(name="Acme Consulting")
+
+    assert first.id != second.id
+    assert Organization.objects.filter(name="Acme Consulting").count() == 2
+
+
+def test_str_includes_the_id_to_disambiguate_same_named_organizations(db):
+    organization = Organization.objects.create(name="Acme Consulting")
+
+    assert str(organization) == f"Acme Consulting (#{organization.id})"
+
+
 def test_generate_embed_token_returns_distinct_values(db):
     assert Organization.generate_embed_token() != Organization.generate_embed_token()
 
