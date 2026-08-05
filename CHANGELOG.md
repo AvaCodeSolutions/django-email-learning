@@ -6,6 +6,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [Unreleased]
+
+### Changed
+
+- **`Organization.name` is no longer unique** (breaking) — Global uniqueness on the organization name meant one tenant's choice of name blocked an unrelated tenant from using theirs, which is a real collision for organizations that genuinely share a name. Nothing in the library resolved an organization by name — URLs, permission checks and the active-organization session value are all keyed on `id` — so the constraint provided no isolation, only friction. Creating a second organization with an existing name now succeeds instead of returning `409`. Downstream code calling `Organization.objects.get(name=...)` should move to `id`, as it will raise `MultipleObjectsReturned` once duplicates exist. If you need a unique, human-readable handle for URLs, add a dedicated unique `slug` field rather than relying on `name`.
+- **`Organization.__str__` now includes the id** (breaking) — Returns `"Acme (#3)"` rather than `"Acme"`, so same-named organizations stay distinguishable wherever a human picks one, such as admin foreign key dropdowns. Email templates and public pages are unaffected: they render `organization.name` directly rather than the model.
+
 ## [2.17.0] - 2026-08-03
 
 ### Added

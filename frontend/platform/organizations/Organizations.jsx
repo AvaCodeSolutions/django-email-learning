@@ -108,7 +108,7 @@ function Organizations() {
           setDialogOpen(true);
         }}>{localeMessages["add_organization"]}</Button>}
 
-        <TableContainer component={Paper} sx={{ maxHeight: 440 }}>
+        <TableContainer component={Paper}>
           <Table>
             <TableHead>
               <TableRow>

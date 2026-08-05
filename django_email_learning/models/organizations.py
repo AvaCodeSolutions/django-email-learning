@@ -21,7 +21,7 @@ hex_color_validator = RegexValidator(
 
 
 class Organization(models.Model):
-    name = models.CharField(max_length=200, unique=True)
+    name = models.CharField(max_length=200)
     logo = models.ImageField(upload_to="organization_logos/", null=True, blank=True)
     description = models.TextField(null=True, blank=True, validators=[MaxLengthValidator(1000)])
     is_public = models.BooleanField(default=True)
@@ -31,7 +31,9 @@ class Organization(models.Model):
     embed_token = models.CharField(max_length=64, unique=True, null=True, blank=True, editable=False)
 
     def __str__(self) -> str:
-        return self.name
+        # Names are not unique, so the id disambiguates same-named organizations
+        # wherever a human has to pick one (e.g. admin foreign key dropdowns).
+        return f"{self.name} (#{self.pk})"
 
     def save(self, *args: Any, **kwargs: Any) -> None:  # type: ignore[no-untyped-def]
         self.full_clean()

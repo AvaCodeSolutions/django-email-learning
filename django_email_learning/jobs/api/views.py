@@ -37,8 +37,7 @@ executor: JobExecutorProtocol = _get_job_executor()
 
 
 class TriggerableJob(Protocol):
-    def start(self) -> JobExecution | None:
-        ...
+    def start(self) -> JobExecution | None: ...
 
 
 def _last_running_execution(job_name: str) -> JobExecution | None:
