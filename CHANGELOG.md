@@ -6,7 +6,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
-## [Unreleased]
+## [3.0.0] - 2026-08-05
+
+> **A deliberately small major.** Nothing here requires a migration on the scale of 2.0.0 — for most projects the upgrade is a no-op. The major bump reflects that two changes alter behavior existing callers can observe, not that the release is large. Read the two entries below if you query organizations by name or render the `Organization` model directly.
 
 ### Changed
 
