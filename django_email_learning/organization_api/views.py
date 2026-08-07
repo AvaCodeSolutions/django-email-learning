@@ -29,6 +29,17 @@ from django_email_learning.models import (
     NewsletterSubscriber,
 )
 from django_email_learning.organization_api import serializers
+from django_email_learning.organization_api.openapi import (
+    OperationSpec,
+    ResponseSpec,
+    build_openapi_schema,
+)
+from django_email_learning.organization_api.serializers import (
+    AlreadyEnrolledResponse,
+    EnrollmentCreatedResponse,
+    ErrorResponse,
+    ErrorWithReferenceResponse,
+)
 from django_email_learning.public.api.rate_limiting import is_rate_limited
 from django_email_learning.services.command_models.enroll_command import EnrollCommand
 from django_email_learning.services.command_models.exceptions.blocked_email_error import (
@@ -83,6 +94,39 @@ class RateLimitedApiView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 @method_decorator(require_organization_api_key(scopes=[ApiKeyScope.ENROLLMENTS_CREATE]), name="post")
 class EnrollmentsView(RateLimitedApiView):
+    openapi_operations = {
+        "post": OperationSpec(
+            operation_id="createEnrollment",
+            summary="Enrol an email address in a course",
+            description=(
+                "Creates an unverified enrollment and emails the learner a verification link; "
+                "the enrollment becomes active once they confirm. The course is resolved against "
+                "the organization the API key was issued for, so a slug belonging to another "
+                "organization is reported as not found. The course must be enabled, but — unlike "
+                "the embeddable public endpoint — it does not need to be public."
+            ),
+            request=serializers.EnrollmentCreateRequest,
+            responses={
+                201: ResponseSpec("Enrollment created, pending the learner's verification.", EnrollmentCreatedResponse),
+                200: ResponseSpec(
+                    "A non-deactivated enrollment already exists for this learner and course; "
+                    "nothing was created and no email was sent.",
+                    AlreadyEnrolledResponse,
+                ),
+                400: ResponseSpec("The request body is malformed or fails validation.", ErrorResponse),
+                401: ResponseSpec("The API key is missing, malformed, unknown, revoked or expired.", ErrorResponse),
+                403: ResponseSpec(
+                    "The key lacks the required scope or is not an organization key; "
+                    "or the email is blocked, or the organization is at its learner cap.",
+                    ErrorWithReferenceResponse,
+                ),
+                404: ResponseSpec("No enabled course with that slug in this organization.", ErrorResponse),
+                429: ResponseSpec("The key's request budget for the current window is exhausted.", ErrorResponse),
+                500: ResponseSpec("The enrollment could not be completed.", ErrorWithReferenceResponse),
+            },
+        )
+    }
+
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         rate_limited = self.check_rate_limit(request)
         if rate_limited:
@@ -114,7 +158,7 @@ class EnrollmentsView(RateLimitedApiView):
         try:
             command.execute()
         except EnrollmentAlreadyExistsError:
-            return JsonResponse({"status": "already_enrolled"}, status=200)
+            return JsonResponse(serializers.AlreadyEnrolledResponse().model_dump(mode="json"), status=200)
         except InvalidCourseSlugError:
             return JsonResponse({"error": "Course not found"}, status=404)
         except BlockedEmailError as e:
@@ -153,14 +197,33 @@ class EnrollmentsView(RateLimitedApiView):
             payload.course_slug,
             organization_id,
         )
-        if enrollment is None:
-            # Shouldn't happen - execute() succeeded - but returning a body
-            # that claims an id we couldn't read would be worse than saying so.
-            return JsonResponse({"status": "enrolled"}, status=201)
-        return JsonResponse(
-            {
-                "status": "enrolled",
-                "enrollment": serializers.EnrollmentResponse.from_django_model(enrollment).model_dump(mode="json"),
-            },
-            status=201,
+        # `enrollment` is None only if execute() succeeded but the row couldn't
+        # be read back, which shouldn't happen. Omitting the key beats returning
+        # one that claims an id we don't have.
+        response = serializers.EnrollmentCreatedResponse(
+            enrollment=serializers.EnrollmentResponse.from_django_model(enrollment) if enrollment else None
         )
+        return JsonResponse(response.model_dump(mode="json", exclude_none=True), status=201)
+
+
+def organization_api_docs_enabled() -> bool:
+    return bool(getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("ORGANIZATION_API_DOCS_ENABLED", True))
+
+
+class OpenApiSchemaView(View):
+    """Serves the v1 OpenAPI document.
+
+    Unauthenticated: it describes the shape of the API and carries no
+    organization data, so it's the same information as the published reference.
+    Deployments that would rather not advertise the surface can set
+    ``DJANGO_EMAIL_LEARNING["ORGANIZATION_API_DOCS_ENABLED"] = False``.
+    """
+
+    # The document describes the API; listing itself in it adds nothing. This
+    # is the only way to be routed without a spec — see test_openapi.py.
+    openapi_exclude = True
+
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        if not organization_api_docs_enabled():
+            return JsonResponse({"error": "Not found"}, status=404)
+        return JsonResponse(build_openapi_schema(), json_dumps_params={"indent": 2})

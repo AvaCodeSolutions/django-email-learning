@@ -202,6 +202,10 @@ def require_organization_api_key(scopes: typing.Iterable[str] = ()) -> typing.Ca
             request.organization = api_key.organization
             return view_func(request, *view_args, **view_kwargs)
 
+        # Published so the OpenAPI generator can read the scopes off the view
+        # rather than being told them a second time. The documented security
+        # requirement is then the enforced one by construction, and can't drift.
+        _wrapped_view.required_api_key_scopes = frozenset(required_scopes)  # type: ignore[attr-defined]
         return _wrapped_view
 
     return decorator

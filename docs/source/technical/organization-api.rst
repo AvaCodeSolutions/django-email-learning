@@ -137,6 +137,32 @@ Responses:
 Creating an enrollment is the only endpoint in v1. Read endpoints for
 enrollments and courses will follow, each behind its own scope.
 
+OpenAPI Schema
+--------------
+
+.. code-block:: http
+
+   GET /api/v1/openapi.json
+
+Returns an OpenAPI 3.1 document for this API, suitable for feeding to Swagger
+UI, Redoc, or a client generator. It needs no API key: it describes the shape
+of the API and carries no organization data.
+
+The document is generated from the code that serves the API rather than
+maintained alongside it — paths come from the URLconf, request and response
+schemas from the Pydantic models the views validate with, and the security
+requirements from the scopes the authentication decorator enforces. A test
+fails the build if a routed endpoint has no documentation, so the two cannot
+drift apart.
+
+To stop serving it:
+
+.. code-block:: python
+
+   DJANGO_EMAIL_LEARNING = {
+       "ORGANIZATION_API_DOCS_ENABLED": False,
+   }
+
 Rate Limiting
 -------------
 
