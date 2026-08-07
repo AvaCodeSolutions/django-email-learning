@@ -9,7 +9,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.files.storage import default_storage
 from django.db.utils import IntegrityError
-from django.http import JsonResponse
+from django.http import HttpRequest, JsonResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
@@ -26,6 +26,7 @@ from django_email_learning.models import (
     ApiKeyType,
     JobExecution,
     JobName,
+    Organization,
     OrganizationUser,
 )
 from django_email_learning.platform.api import serializers
@@ -114,9 +115,31 @@ class SingleApiKeyView(View):
         return JsonResponse({"message": "API Key revoked successfully"}, status=200)
 
 
+class OrganizationApiKeyPermissionMixin:
+    """Provides the hooks gating organization API key management.
+
+    Override either in a subclass to add custom logic (plan limits, feature
+    flags, a stricter role rule). Returning False rejects the request with a
+    403 before any database work happens. Both receive the resolved
+    `Organization` rather than its id, so a check can read the organization's
+    own state without a second query.
+    """
+
+    def can_create_organization_api_key(self, request: HttpRequest, organization: Organization) -> bool:
+        return True
+
+    def can_delete_organization_api_key(self, request: HttpRequest, organization: Organization) -> bool:
+        return True
+
+    def get_target_organization(self, organization_id: int) -> Organization | None:
+        # Membership has already been checked by the decorator, but a superuser
+        # bypasses that and could name an organization that doesn't exist.
+        return Organization.objects.filter(id=organization_id).first()
+
+
 @method_decorator(is_an_organization_member(only_admin=True), name="post")
 @method_decorator(is_an_organization_member(only_admin=True), name="get")
-class OrganizationApiKeyView(View):
+class OrganizationApiKeyView(OrganizationApiKeyPermissionMixin, View):
     """Keys an organization's own admins issue for the public API.
 
     Admin-only within the organization: a key is a bearer credential that acts
@@ -125,6 +148,12 @@ class OrganizationApiKeyView(View):
     """
 
     def post(self, request, organization_id: int, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        organization = self.get_target_organization(organization_id)
+        if organization is None:
+            return JsonResponse({"error": "Organization not found"}, status=404)
+        if not self.can_create_organization_api_key(request, organization):
+            return JsonResponse({"error": "API key creation not allowed."}, status=403)
+
         try:
             payload = serializers.CreateOrganizationApiKeyRequest.model_validate(_parse_json_body(request))
         except json.JSONDecodeError:
@@ -173,8 +202,16 @@ class OrganizationApiKeyView(View):
 
 
 @method_decorator(is_an_organization_member(only_admin=True), name="delete")
-class SingleOrganizationApiKeyView(View):
+class SingleOrganizationApiKeyView(OrganizationApiKeyPermissionMixin, View):
     def delete(self, request, organization_id: int, api_key_id: int, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        organization = self.get_target_organization(organization_id)
+        if organization is None:
+            return JsonResponse({"error": "Organization not found"}, status=404)
+        # Checked before the key is looked up, so a caller who may not revoke
+        # can't use the 404/200 difference to probe which key ids exist.
+        if not self.can_delete_organization_api_key(request, organization):
+            return JsonResponse({"error": "API key deletion not allowed."}, status=403)
+
         # Filtering on organization_id as well as the key id keeps one
         # organization's admin from revoking another's key by guessing an id.
         try:

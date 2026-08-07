@@ -12,6 +12,10 @@ from django_email_learning.models import (
     Organization,
     OrganizationUser,
 )
+from django_email_learning.platform.api.views import (
+    OrganizationApiKeyView,
+    SingleOrganizationApiKeyView,
+)
 
 
 def _list_url(organization_id: int = 1) -> str:
@@ -194,3 +198,85 @@ def test_non_admin_members_cannot_list_keys(client):
 def test_anonymous_cannot_create_a_key(anonymous_client, db):
     response = anonymous_client.post(_list_url(), data=json.dumps(_create_payload()), content_type="application/json")
     assert response.status_code == 401
+
+
+class TestPermissionHooks:
+    """`can_create_organization_api_key` / `can_delete_organization_api_key` are
+    the extension point for plan limits and custom rules. They default to True
+    and are patched here the way a subclass would override them.
+    """
+
+    def test_create_is_allowed_by_default(self, org_admin_client):
+        response = org_admin_client.post(
+            _list_url(), data=json.dumps(_create_payload()), content_type="application/json"
+        )
+        assert response.status_code == 201
+
+    def test_create_hook_can_refuse(self, org_admin_client, monkeypatch):
+        monkeypatch.setattr(
+            OrganizationApiKeyView, "can_create_organization_api_key", lambda self, request, organization: False
+        )
+        response = org_admin_client.post(
+            _list_url(), data=json.dumps(_create_payload()), content_type="application/json"
+        )
+        assert response.status_code == 403
+        # Rejected before any database work happens.
+        assert not ApiKey.objects.exists()
+
+    def test_create_hook_receives_request_and_organization(self, org_admin_client, monkeypatch):
+        seen = {}
+
+        def hook(self, request, organization):
+            seen["user"] = request.user.username
+            seen["organization"] = organization
+            return True
+
+        monkeypatch.setattr(OrganizationApiKeyView, "can_create_organization_api_key", hook)
+        org_admin_client.post(_list_url(), data=json.dumps(_create_payload()), content_type="application/json")
+
+        assert seen["user"] == "orgadmin"
+        assert isinstance(seen["organization"], Organization)
+        assert seen["organization"].id == 1
+
+    def test_delete_hook_can_refuse(self, org_admin_client, monkeypatch):
+        api_key_id = org_admin_client.post(
+            _list_url(), data=json.dumps(_create_payload()), content_type="application/json"
+        ).json()["id"]
+
+        monkeypatch.setattr(
+            SingleOrganizationApiKeyView, "can_delete_organization_api_key", lambda self, request, organization: False
+        )
+        response = org_admin_client.delete(_detail_url(api_key_id))
+
+        assert response.status_code == 403
+        assert ApiKey.objects.get(id=api_key_id).revoked_at is None
+
+    def test_delete_hook_receives_request_and_organization(self, org_admin_client, monkeypatch):
+        api_key_id = org_admin_client.post(
+            _list_url(), data=json.dumps(_create_payload()), content_type="application/json"
+        ).json()["id"]
+        seen = {}
+
+        def hook(self, request, organization):
+            seen["user"] = request.user.username
+            seen["organization"] = organization
+            return True
+
+        monkeypatch.setattr(SingleOrganizationApiKeyView, "can_delete_organization_api_key", hook)
+        org_admin_client.delete(_detail_url(api_key_id))
+
+        assert seen["user"] == "orgadmin"
+        assert seen["organization"].id == 1
+
+    def test_refusing_deletion_does_not_reveal_whether_the_key_exists(self, org_admin_client, monkeypatch):
+        """The hook is checked before the key lookup, so a caller who may not
+        delete gets the same answer for a real id as for a made-up one."""
+        api_key_id = org_admin_client.post(
+            _list_url(), data=json.dumps(_create_payload()), content_type="application/json"
+        ).json()["id"]
+
+        monkeypatch.setattr(
+            SingleOrganizationApiKeyView, "can_delete_organization_api_key", lambda self, request, organization: False
+        )
+        assert org_admin_client.delete(_detail_url(api_key_id)).status_code == 403
+        assert org_admin_client.delete(_detail_url(9999)).status_code == 403

@@ -71,6 +71,7 @@ const baseAppContext = {
   organizationId: '1',
   localeMessages,
   isOrganizationAdmin: true,
+  availableFeatures: ['organization_api'],
   apiKeyScopes: [{ value: 'enrollments:create', label: 'Create enrollments' }],
 };
 
@@ -117,11 +118,35 @@ describe('Organization API keys tab', () => {
     expect(screen.queryByRole('tab', { name: /API Keys/i })).not.toBeInTheDocument();
   });
 
-  it('shows the empty state when there are no keys', async () => {
+  it('hides the tab when the organization_api feature is not available', async () => {
+    renderWithProviders(<Organization />, {
+      appContext: { ...baseAppContext, availableFeatures: [] },
+    });
+    await screen.findByRole('tab', { name: /Members/i });
+    expect(screen.queryByRole('tab', { name: /API Keys/i })).not.toBeInTheDocument();
+  });
+
+  it('does not fetch keys when the feature is unavailable', async () => {
+    renderWithProviders(<Organization />, {
+      appContext: { ...baseAppContext, availableFeatures: [] },
+    });
+    await screen.findByRole('tab', { name: /Members/i });
+
+    const requestedUrls = global.fetch.mock.calls.map(([url]) => url);
+    expect(requestedUrls.some(url => url.includes('/api-keys/'))).toBe(false);
+  });
+
+  it('shows the shared empty-table state when there are no keys', async () => {
     const user = userEvent.setup();
     renderWithProviders(<Organization />, { appContext: baseAppContext });
     await openApiKeysTab(user);
+
     expect(await screen.findByText('No API keys yet.')).toBeInTheDocument();
+    // EmptyTableState renders inside the table, so the headers stay visible
+    // and the message carries the shared inbox icon — this is what
+    // distinguishes it from a bare <Typography> fallback.
+    expect(screen.getByTestId('InboxIcon')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'Key ID' })).toBeInTheDocument();
   });
 
   it('lists a key with its scopes and metadata', async () => {

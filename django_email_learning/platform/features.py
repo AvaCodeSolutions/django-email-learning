@@ -8,3 +8,4 @@ class PlatformFeature(enum.StrEnum):
     GOOGLE_WORKSPACE_ENROLL = "google_workspace_enroll"
     NEWSLETTERS = "newsletters"
     CREATE_NEWSLETTER = "create_newsletter"
+    ORGANIZATION_API = "organization_api"

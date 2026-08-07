@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import Base from "../../src/components/Base";
+import EmptyTableState from "../../src/components/EmptyTableState.jsx";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
@@ -63,6 +64,8 @@ function Organization() {
 
     const newslettersEnabled = availableFeatures.includes('newsletters');
     const createNewsletterEnabled = availableFeatures.includes('create_newsletter');
+    const organizationApiEnabled = availableFeatures.includes('organization_api');
+    const canManageApiKeys = canEditOrganization && organizationApiEnabled;
     const [canAddMember, setCanAddMember] = useState(availableFeatures.includes('can_add_member'));
 
     const refreshUsers = () => {
@@ -94,7 +97,7 @@ function Organization() {
             refreshNewsletters();
         }
 
-        if (canEditOrganization) {
+        if (canManageApiKeys) {
             refreshApiKeys();
         }
     }, []);
@@ -204,7 +207,7 @@ function Organization() {
                                 label={localeMessages["newsletters"]}
                             />
                         )}
-                        {canEditOrganization && (
+                        {canManageApiKeys && (
                             <Tab
                                 value="api_keys"
                                 icon={<VpnKeyOutlinedIcon fontSize="small" />}
@@ -425,7 +428,7 @@ function Organization() {
                         )}
 
                         {/* API keys tab */}
-                        {canEditOrganization && activeTab === 'api_keys' && (
+                        {canManageApiKeys && activeTab === 'api_keys' && (
                             <>
                                 <Typography variant="body2" sx={{ mb: 2 }}>{localeMessages["api_keys_intro"]}</Typography>
                                 <Button
@@ -451,80 +454,82 @@ function Organization() {
                                     {localeMessages["create_api_key"]}
                                 </Button>
                                 <Box sx={{ mt: 2, width: '100%' }}>
-                                    {apiKeys.length > 0 ? (
-                                        <TableContainer>
-                                            <Table>
-                                                <TableHead>
-                                                    <TableRow>
-                                                        <TableCell>{localeMessages["api_key_name"]}</TableCell>
-                                                        <TableCell>{localeMessages["key_id"]}</TableCell>
-                                                        <TableCell>{localeMessages["api_key_scopes"]}</TableCell>
-                                                        <TableCell>{localeMessages["status"]}</TableCell>
-                                                        <TableCell>{localeMessages["created_by"]}</TableCell>
-                                                        <TableCell>{localeMessages["created_at"]}</TableCell>
-                                                        <TableCell>{localeMessages["last_used"]}</TableCell>
-                                                        <TableCell align={direction === 'rtl' ? 'left' : 'right'}>{localeMessages["actions"]}</TableCell>
-                                                    </TableRow>
-                                                </TableHead>
-                                                <TableBody>
-                                                    {apiKeys.map((apiKey) => {
-                                                        const status = apiKeyStatusOf(apiKey);
-                                                        return (
-                                                            <TableRow key={apiKey.id}>
-                                                                <TableCell>{apiKey.name}</TableCell>
-                                                                <TableCell>
-                                                                    {/* The public half of the token. The secret is
-                                                                        hashed and is never returned by the listing. */}
-                                                                    <Typography component="span" sx={{ fontFamily: 'monospace', overflowWrap: 'anywhere' }}>
-                                                                        {apiKey.key_id}
-                                                                    </Typography>
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                                                        {apiKey.scopes.map(scope => (
-                                                                            <Chip key={scope} size="small" variant="outlined" label={scope} />
-                                                                        ))}
-                                                                    </Box>
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    <Chip
-                                                                        size="small"
-                                                                        label={localeMessages[status]}
-                                                                        color={status === 'active' ? 'success' : 'default'}
-                                                                        variant={status === 'active' ? 'filled' : 'outlined'}
-                                                                    />
-                                                                </TableCell>
-                                                                <TableCell>{apiKey.created_by}</TableCell>
-                                                                <TableCell>{apiKey.created_at}</TableCell>
-                                                                <TableCell>{apiKey.last_used_at || localeMessages["never_used"]}</TableCell>
-                                                                <TableCell align={direction === 'rtl' ? 'left' : 'right'}>
-                                                                    {status !== 'revoked' && (
-                                                                        <IconButton
-                                                                            aria-label={`Revoke ${apiKey.name}`}
-                                                                            onClick={() => showDialog(
-                                                                                <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
-                                                                                    <RevokeApiKeyDialog
-                                                                                        apiKey={apiKey}
-                                                                                        organizationId={organizationId}
-                                                                                        onClose={closeDialog}
-                                                                                        onSuccess={refreshApiKeys}
-                                                                                    />
-                                                                                </Suspense>
-                                                                            )}
-                                                                        >
-                                                                            <DeleteIcon fontSize="small" />
-                                                                        </IconButton>
-                                                                    )}
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        );
-                                                    })}
-                                                </TableBody>
-                                            </Table>
-                                        </TableContainer>
-                                    ) : (
-                                        <Typography variant="body1">{localeMessages["no_api_keys"]}</Typography>
-                                    )}
+                                    <TableContainer>
+                                        <Table>
+                                            <TableHead>
+                                                <TableRow>
+                                                    <TableCell>{localeMessages["api_key_name"]}</TableCell>
+                                                    <TableCell>{localeMessages["key_id"]}</TableCell>
+                                                    <TableCell>{localeMessages["api_key_scopes"]}</TableCell>
+                                                    <TableCell>{localeMessages["status"]}</TableCell>
+                                                    <TableCell>{localeMessages["created_by"]}</TableCell>
+                                                    <TableCell>{localeMessages["created_at"]}</TableCell>
+                                                    <TableCell>{localeMessages["last_used"]}</TableCell>
+                                                    <TableCell align={direction === 'rtl' ? 'left' : 'right'}>{localeMessages["actions"]}</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {apiKeys.length === 0 && (
+                                                    <EmptyTableState
+                                                        colSpan={8}
+                                                        message={localeMessages["no_api_keys"]}
+                                                    />
+                                                )}
+                                                {apiKeys.map((apiKey) => {
+                                                    const status = apiKeyStatusOf(apiKey);
+                                                    return (
+                                                        <TableRow key={apiKey.id}>
+                                                            <TableCell>{apiKey.name}</TableCell>
+                                                            <TableCell>
+                                                                {/* The public half of the token. The secret is
+                                                                    hashed and is never returned by the listing. */}
+                                                                <Typography component="span" sx={{ fontFamily: 'monospace', overflowWrap: 'anywhere' }}>
+                                                                    {apiKey.key_id}
+                                                                </Typography>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                                    {apiKey.scopes.map(scope => (
+                                                                        <Chip key={scope} size="small" variant="outlined" label={scope} />
+                                                                    ))}
+                                                                </Box>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Chip
+                                                                    size="small"
+                                                                    label={localeMessages[status]}
+                                                                    color={status === 'active' ? 'success' : 'default'}
+                                                                    variant={status === 'active' ? 'filled' : 'outlined'}
+                                                                />
+                                                            </TableCell>
+                                                            <TableCell>{apiKey.created_by}</TableCell>
+                                                            <TableCell>{apiKey.created_at}</TableCell>
+                                                            <TableCell>{apiKey.last_used_at || localeMessages["never_used"]}</TableCell>
+                                                            <TableCell align={direction === 'rtl' ? 'left' : 'right'}>
+                                                                {status !== 'revoked' && (
+                                                                    <IconButton
+                                                                        aria-label={`Revoke ${apiKey.name}`}
+                                                                        onClick={() => showDialog(
+                                                                            <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
+                                                                                <RevokeApiKeyDialog
+                                                                                    apiKey={apiKey}
+                                                                                    organizationId={organizationId}
+                                                                                    onClose={closeDialog}
+                                                                                    onSuccess={refreshApiKeys}
+                                                                                />
+                                                                            </Suspense>
+                                                                        )}
+                                                                    >
+                                                                        <DeleteIcon fontSize="small" />
+                                                                    </IconButton>
+                                                                )}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
                                 </Box>
                             </>
                         )}

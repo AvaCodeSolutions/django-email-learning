@@ -31,6 +31,46 @@ key is shown once, in a dialog, immediately after it is created; the table
 afterwards lists each key's id, scopes, status and last use, but never the key
 itself.
 
+The tab is shown when the ``organization_api`` platform feature is available,
+which it is by default. To hide it, drop
+``PlatformFeature.ORGANIZATION_API`` from ``get_available_features()`` on your
+platform view:
+
+.. code-block:: python
+
+   class MyOrganizationView(SingleOrganization):
+       def get_available_features(self):
+           return super().get_available_features() - {PlatformFeature.ORGANIZATION_API}
+
+.. note::
+
+   The flag decides what the UI offers; the permission hooks below decide what
+   the API allows. Removing the flag hides the tab, and overriding the hooks
+   refuses the operations — set both if you want the feature fully off.
+
+Restricting who may issue keys
+------------------------------
+
+``OrganizationApiKeyView`` and ``SingleOrganizationApiKeyView`` each expose a
+hook, both defaulting to ``True``. Return ``False`` to reject the request with
+a ``403`` before any database work happens — useful for plan limits, a key
+quota, or a stricter rule than "organization admin".
+
+.. code-block:: python
+
+   from django_email_learning.platform.api.views import OrganizationApiKeyView
+
+
+   class LimitedApiKeyView(OrganizationApiKeyView):
+       def can_create_organization_api_key(self, request, organization):
+           return organization.api_keys.filter(revoked_at__isnull=True).count() < 5
+
+The matching hook for revocation is
+``can_delete_organization_api_key(request, organization)`` on
+``SingleOrganizationApiKeyView``. Both receive the resolved ``Organization``
+rather than its id, so a check can read the organization's own state without a
+second query. Route your subclass in place of the shipped view to apply it.
+
 The same thing over HTTP:
 
 .. code-block:: http
