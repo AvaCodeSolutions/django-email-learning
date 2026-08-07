@@ -5,7 +5,7 @@ from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
 
 from django_email_learning.decorators import is_an_organization_member
-from django_email_learning.models import Organization
+from django_email_learning.models import ApiKeyScope, Organization
 from django_email_learning.platform.views.base import BasePlatformView
 
 
@@ -88,6 +88,11 @@ class SingleOrganization(BasePlatformView):
         context["organization"] = organization
         context["page_title"] = _("Organization: %(name)s") % {"name": organization.name}
         context["appContext"]["organizationId"] = organization.id
+        # Sourced from the enum the API validates against, so the choices the
+        # form offers can't drift from the scopes a key may actually carry.
+        context["appContext"]["apiKeyScopes"] = [
+            {"value": value, "label": str(label)} for value, label in ApiKeyScope.choices
+        ]
         return context
 
     def get_locale_messages(self) -> Dict[str, str]:
@@ -183,4 +188,40 @@ class SingleOrganization(BasePlatformView):
             "view_public_organization_page": _("Public page"),
             "copy_public_organization_link": _("Copy public organization link"),
             "public_organization_link_copied": _("Link copied!"),
+            "api_keys": _("API Keys"),
+            "no_api_keys": _("No API keys yet."),
+            "create_api_key": _("Create API Key"),
+            "api_key_name": _("Name"),
+            "api_key_name_required": _("Name is required."),
+            "api_key_scopes": _("Scopes"),
+            "api_key_scopes_required": _("Select at least one scope."),
+            "api_key_expires_at": _("Expires on"),
+            "api_key_expires_at_helper_text": _("Optional. The key never expires if left blank."),
+            "api_key_create_error": _("Failed to create the API key. Please try again."),
+            "key_id": _("Key ID"),
+            "status": _("Status"),
+            "active": _("Active"),
+            "revoked": _("Revoked"),
+            "expired": _("Expired"),
+            "last_used": _("Last Used"),
+            "never_used": _("Never used"),
+            "created_by": _("Created By"),
+            "created_at": _("Created At"),
+            "revoke": _("Revoke"),
+            "confirm_revocation": _("Confirm Revocation"),
+            "are_you_sure_revoke_key": _(
+                "Are you sure you want to revoke API_KEY_NAME? Anything using this key will stop working immediately."
+            ),
+            "copy": _("Copy"),
+            "copied": _("Copied"),
+            "done": _("Done"),
+            "new_api_key_created": _("New API key created"),
+            "copy_key_now_warning": _(
+                "Copy this key now. For security it is stored hashed, so this is the only time it can be shown."
+            ),
+            "api_keys_intro": _(
+                "API keys let your own systems act on this organization's data — enrolling a learner from"
+                " your signup flow, for example. Each key carries only the scopes you grant it and acts"
+                " solely on this organization."
+            ),
         }

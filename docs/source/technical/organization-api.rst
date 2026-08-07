@@ -26,10 +26,12 @@ Organization **admins** can create keys for their own organization. Editors,
 instructors and viewers cannot: a key acts with whatever scopes it carries, so
 issuing one would let a non-admin hand out access it does not itself have.
 
-.. note::
+In the platform UI, open the organization and choose the **API Keys** tab. The
+key is shown once, in a dialog, immediately after it is created; the table
+afterwards lists each key's id, scopes, status and last use, but never the key
+itself.
 
-   Key management is API-only for now — there is no organization-facing
-   settings screen for these keys yet.
+The same thing over HTTP:
 
 .. code-block:: http
 
