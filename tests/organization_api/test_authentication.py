@@ -147,7 +147,7 @@ def test_successful_request_records_last_used(api_client, enabled_course, db):
 
 
 def test_legacy_jwt_credentials_still_authenticate(api_client, db):
-    """Keys issued before 3.1.0 were handed out as a JWT wrapping the raw key.
+    """Keys issued before 4.0.0 were handed out as a JWT wrapping the raw key.
     The backfill hashed that same value, so the old token resolves through the
     new lookup and existing deployments don't break on upgrade.
     """

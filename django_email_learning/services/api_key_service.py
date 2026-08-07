@@ -2,7 +2,7 @@
 
 Verification is a single indexed lookup on the token's public `key_id` half
 followed by a constant-time comparison of the hashed secret half. Credentials
-issued before 3.1.0 are JWTs carrying the raw key, and are resolved through the
+issued before 4.0.0 are JWTs carrying the raw key, and are resolved through the
 same hash so both formats converge on one code path.
 """
 
@@ -49,7 +49,7 @@ def extract_bearer_token(request: typing.Any) -> str:
 
 
 def _authenticate_legacy_jwt(token: str) -> ApiKey:
-    """Resolves a pre-3.1.0 JWT credential.
+    """Resolves a pre-4.0.0 JWT credential.
 
     The JWT never added anything a bearer token doesn't already have — it was
     signed with a fixed `exp` of `datetime.max` and its only real payload was

@@ -5,7 +5,7 @@ Django Email Learning encrypts sensitive data at rest — specifically **IMAP pa
 
 .. note::
 
-   API keys were encrypted this way before 3.1.0. They are now stored as a
+   API keys were encrypted this way before 4.0.0. They are now stored as a
    SHA-256 hash instead, which cannot be reversed and therefore needs no
    rotation. Rotating ``ENCRYPTION_SECRET_KEY`` no longer affects them.
 
