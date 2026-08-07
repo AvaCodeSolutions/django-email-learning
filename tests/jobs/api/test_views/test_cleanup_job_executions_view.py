@@ -51,7 +51,7 @@ def test_cleanup_job_executions_with_valid_api_key(mock_call_command, superadmin
     create_key_response = superadmin_client.post(reverse("django_email_learning:api_platform:api_keys_list"))
     response = superadmin_client.get(
         URL,
-        HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['key']}",
+        HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['token']}",
     )
 
     assert response.status_code == 202
@@ -75,7 +75,7 @@ def test_cleanup_job_executions_failed_triggers_job_execution_failed_metric(
     create_key_response = superadmin_client.post(reverse("django_email_learning:api_platform:api_keys_list"))
     response = superadmin_client.get(
         URL,
-        HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['key']}",
+        HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['token']}",
     )
 
     assert response.status_code == 500
@@ -93,7 +93,7 @@ def test_cleanup_job_executions_returns_400_for_invalid_days(superadmin_client):
     create_key_response = superadmin_client.post(reverse("django_email_learning:api_platform:api_keys_list"))
     response = superadmin_client.get(
         f"{URL}?days=invalid",
-        HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['key']}",
+        HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['token']}",
     )
 
     assert response.status_code == 400

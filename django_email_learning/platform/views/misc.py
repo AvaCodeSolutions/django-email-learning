@@ -32,16 +32,31 @@ class ApiKeys(BasePlatformView):
             "settings": _("Settings"),
             "api_keys": _("API Keys"),
             "add_api_key": _("Add API Key"),
-            "display_key": _("Display Key"),
-            "hide_key": _("Hide Key"),
             "actions": _("Actions"),
-            "key": _("Key"),
+            "key_id": _("Key ID"),
+            "name": _("Name"),
+            "status": _("Status"),
+            "active": _("Active"),
+            "revoked": _("Revoked"),
+            "expired": _("Expired"),
+            "last_used": _("Last Used"),
+            "never_used": _("Never used"),
             "created_at": _("Created At"),
-            "delete": _("Delete"),
-            "are_you_sure_delete_key": _("Are you sure you want to delete this API key?"),
+            "revoke": _("Revoke"),
+            "are_you_sure_revoke_key": _(
+                "Are you sure you want to revoke this API key? Anything using it will stop working immediately."
+            ),
             "created_by": _("Created By"),
             "cancel": _("Cancel"),
-            "confirm_deletion": _("Confirm Deletion"),
+            "copy": _("Copy"),
+            "copied": _("Copied"),
+            "confirm_revocation": _("Confirm Revocation"),
+            "done": _("Done"),
+            "new_api_key_created": _("New API key created"),
+            "copy_key_now_warning": _(
+                "Copy this key now. For security it is stored hashed, so this is the only time it can be shown."
+            ),
+            "no_api_keys_found": _("No API keys yet."),
             "api_key_intro": _(
                 "API keys allow external applications to interact with the platform and execute jobs."
                 " This is ideal for using cloud scheduling or third-party integrations instead of managing"

@@ -35,19 +35,44 @@ function setupFetch(apiKeys = []) {
   });
 }
 
+const activeKey = {
+  id: '1',
+  key_id: 'a1b2c3d4e5f6',
+  name: 'CI runner',
+  key_type: 'platform',
+  scopes: [],
+  created_by: 'admin',
+  created_at: '2024-01-01',
+  expires_at: null,
+  revoked_at: null,
+  last_used_at: null,
+};
+
 const localeMessages = {
   api_keys: 'API Keys',
   api_key_intro: 'Use API keys to access the API.',
   add_api_key: 'Add API Key',
-  key: 'Key',
+  key_id: 'Key ID',
+  name: 'Name',
+  status: 'Status',
+  active: 'Active',
+  revoked: 'Revoked',
+  expired: 'Expired',
+  last_used: 'Last Used',
+  never_used: 'Never used',
   created_by: 'Created By',
   created_at: 'Created At',
   actions: 'Actions',
   copy: 'Copy',
-  confirm_deletion: 'Confirm Deletion',
-  are_you_sure_delete_key: 'Are you sure you want to delete this API key?',
+  copied: 'Copied',
+  done: 'Done',
+  new_api_key_created: 'New API key created',
+  copy_key_now_warning: 'Copy this key now. It cannot be shown again.',
+  confirm_revocation: 'Confirm Revocation',
+  are_you_sure_revoke_key: 'Are you sure you want to revoke this API key?',
   cancel: 'Cancel',
-  delete: 'Delete',
+  revoke: 'Revoke',
+  no_api_keys_found: 'No API keys yet.',
   organizations: 'Organizations',
   course_management: 'Courses',
   learners: 'Learners',
@@ -83,26 +108,44 @@ describe('ApiKeys', () => {
     );
   });
 
-  it('shows the key table after loading keys', async () => {
-    setupFetch([
-      { id: '1', key: 'abc123', created_by: 'admin', created_at: '2024-01-01', visible: false },
-    ]);
+  it('shows the key id and metadata after loading keys', async () => {
+    setupFetch([activeKey]);
     renderWithProviders(<ApiKeys />, {
       appContext: { localeMessages, isPlatformAdmin: true },
     });
     await waitFor(() => expect(screen.getByText('admin')).toBeInTheDocument());
+    expect(screen.getByText('a1b2c3d4e5f6')).toBeInTheDocument();
     expect(screen.getByText('2024-01-01')).toBeInTheDocument();
+    expect(screen.getByText('Never used')).toBeInTheDocument();
+    expect(screen.getByText('Active')).toBeInTheDocument();
   });
 
-  it('adds a new API key when Add API Key is clicked', async () => {
+  it('marks a revoked key as revoked and offers no revoke action', async () => {
+    setupFetch([{ ...activeKey, revoked_at: '2024-02-01' }]);
+    renderWithProviders(<ApiKeys />, {
+      appContext: { localeMessages, isPlatformAdmin: true },
+    });
+    await waitFor(() => expect(screen.getByText('Revoked')).toBeInTheDocument());
+    expect(
+      screen.queryAllByRole('button').find((btn) => btn.querySelector('[data-testid="DeleteIcon"]'))
+    ).toBeUndefined();
+  });
+
+  it('marks a key past its expiry as expired', async () => {
+    setupFetch([{ ...activeKey, expires_at: '2020-01-01T00:00:00Z' }]);
+    renderWithProviders(<ApiKeys />, {
+      appContext: { localeMessages, isPlatformAdmin: true },
+    });
+    await waitFor(() => expect(screen.getByText('Expired')).toBeInTheDocument());
+  });
+
+  it('shows the token once after creating a key', async () => {
     const user = userEvent.setup();
     global.fetch.mockImplementation((url, options) => {
       if (url.includes('/api_keys/') && options?.method === 'POST') {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({
-            id: '2', key: 'new-key-xyz', created_by: 'admin', created_at: '2024-06-01', visible: false,
-          }),
+          json: () => Promise.resolve({ ...activeKey, id: '2', token: 'elk_abc123_supersecret' }),
         });
       }
       if (url.includes('/api_keys/')) {
@@ -123,25 +166,34 @@ describe('ApiKeys', () => {
       expect(screen.getByRole('button', { name: /Add API Key/ })).toBeInTheDocument()
     );
     await user.click(screen.getByRole('button', { name: /Add API Key/ }));
-    await waitFor(() => expect(screen.getByText('2024-06-01')).toBeInTheDocument());
+
+    await waitFor(() => expect(screen.getByText('New API key created')).toBeInTheDocument());
+    expect(screen.getByTestId('new-api-key-token')).toHaveTextContent('elk_abc123_supersecret');
+    expect(screen.getByText('Copy this key now. It cannot be shown again.')).toBeInTheDocument();
   });
 
-  it('shows delete confirmation dialog when delete icon is clicked', async () => {
-    setupFetch([
-      { id: '1', key: 'abc123', created_by: 'admin', created_at: '2024-01-01', visible: false },
-    ]);
+  it('never renders a token for keys returned by the listing', async () => {
+    setupFetch([activeKey]);
+    renderWithProviders(<ApiKeys />, {
+      appContext: { localeMessages, isPlatformAdmin: true },
+    });
+    await waitFor(() => expect(screen.getByText('admin')).toBeInTheDocument());
+    expect(screen.queryByTestId('new-api-key-token')).not.toBeInTheDocument();
+  });
+
+  it('shows revoke confirmation dialog when the revoke icon is clicked', async () => {
+    setupFetch([activeKey]);
     const user = userEvent.setup();
     renderWithProviders(<ApiKeys />, {
       appContext: { localeMessages, isPlatformAdmin: true },
     });
     await waitFor(() => expect(screen.getByText('admin')).toBeInTheDocument());
-    // Find the button containing the DeleteIcon svg
-    const deleteButton = screen.getAllByRole('button').find(
+    const revokeButton = screen.getAllByRole('button').find(
       (btn) => btn.querySelector('[data-testid="DeleteIcon"]')
     );
-    await user.click(deleteButton);
+    await user.click(revokeButton);
     await waitFor(() =>
-      expect(screen.getByText('Confirm Deletion')).toBeInTheDocument()
+      expect(screen.getByText('Confirm Revocation')).toBeInTheDocument()
     );
   });
 });

@@ -47,7 +47,12 @@ from django_email_learning.platform.api.serializers.lessons import (
     LessonResponse,
     LessonUpdate,
 )
-from django_email_learning.platform.api.serializers.misc import ApiKeyResponse
+from django_email_learning.platform.api.serializers.misc import (
+    ApiKeyCreatedResponse,
+    ApiKeyResponse,
+    CreateOrganizationApiKeyRequest,
+    CreatePlatformApiKeyRequest,
+)
 from django_email_learning.platform.api.serializers.newsletters import (
     CreateNewsletterRequest,
     CreateSendoutRequest,
@@ -160,4 +165,8 @@ __all__ = [
     "UpdateSendoutRequest",
     "SendoutDetailResponse",
     "NewsletterSubscriberResponse",
+    "ApiKeyResponse",
+    "ApiKeyCreatedResponse",
+    "CreatePlatformApiKeyRequest",
+    "CreateOrganizationApiKeyRequest",
 ]

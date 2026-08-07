@@ -4,7 +4,7 @@ from typing import Any
 from django.core.management.base import BaseCommand, CommandParser, OutputWrapper
 from django.db import transaction
 
-from django_email_learning.models import ApiKey, ImapConnection
+from django_email_learning.models import ImapConnection
 from django_email_learning.models.mixin_models import EncryptionMixin
 
 logger = logging.getLogger(__name__)
@@ -96,10 +96,11 @@ class Command(BaseCommand):
         if dry_run:
             self.stdout.write(self.style.WARNING("Running in DRY-RUN mode — no changes will be written."))
 
-        # Models and their encrypted field
+        # Models and their encrypted field. ApiKey used to appear here; it now
+        # stores only a hash of its secret, which by definition cannot be
+        # re-encrypted under a new key and needs no rotation.
         targets: list[tuple[type[EncryptionMixin], str]] = [
             (ImapConnection, "password"),
-            (ApiKey, "key"),
         ]
 
         total = 0

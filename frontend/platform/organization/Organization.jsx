@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import Base from "../../src/components/Base";
+import EmptyTableState from "../../src/components/EmptyTableState.jsx";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
@@ -13,7 +14,7 @@ import TableCell from "@mui/material/TableCell";
 import Typography from "@mui/material/Typography";
 import LinearProgress from "@mui/material/LinearProgress";
 import Dialog from "@mui/material/Dialog";
-import { Tabs, Tab, Link, Tooltip } from "@mui/material";
+import { Tabs, Tab, Link, Tooltip, Chip } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import PeopleIcon from '@mui/icons-material/People';
@@ -21,6 +22,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import InfoIcon from '@mui/icons-material/Info';
 import PublicIcon from '@mui/icons-material/Public';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import VpnKeyOutlinedIcon from '@mui/icons-material/VpnKeyOutlined';
 import { useState, useEffect } from "react";
 import apiClient from "../../src/apiClient.js";
 import { Button } from "@mui/material";
@@ -32,11 +34,21 @@ const DeleteUserDialog = lazy(() => import("./components/DeleteUserDialog.jsx"))
 const NewsletterForm = lazy(() => import("./components/NewsletterForm.jsx"));
 const DeleteNewsletterDialog = lazy(() => import("./components/DeleteNewsletterDialog.jsx"));
 const OrganizationForm = lazy(() => import("../organizations/components/OrganizationForm.jsx"));
+const ApiKeyForm = lazy(() => import("./components/ApiKeyForm.jsx"));
+const NewApiKeyDialog = lazy(() => import("./components/NewApiKeyDialog.jsx"));
+const RevokeApiKeyDialog = lazy(() => import("./components/RevokeApiKeyDialog.jsx"));
+
+const apiKeyStatusOf = (apiKey) => {
+    if (apiKey.revoked_at) return 'revoked';
+    if (apiKey.expires_at && new Date(apiKey.expires_at) <= new Date()) return 'expired';
+    return 'active';
+};
 
 function Organization() {
     const [organization, setOrganization] = useState(null);
     const [organizationUsers, setOrganizationUsers] = useState([]);
     const [newsletters, setNewsletters] = useState([]);
+    const [apiKeys, setApiKeys] = useState([]);
     const initialTab = new URLSearchParams(window.location.search).get('tab') || 'members';
     const [activeTab, setActiveTab] = useState(initialTab);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -52,6 +64,8 @@ function Organization() {
 
     const newslettersEnabled = availableFeatures.includes('newsletters');
     const createNewsletterEnabled = availableFeatures.includes('create_newsletter');
+    const organizationApiEnabled = availableFeatures.includes('organization_api');
+    const canManageApiKeys = canEditOrganization && organizationApiEnabled;
     const [canAddMember, setCanAddMember] = useState(availableFeatures.includes('can_add_member'));
 
     const refreshUsers = () => {
@@ -66,6 +80,12 @@ function Organization() {
             .catch(error => console.error('Error fetching newsletters:', error));
     };
 
+    const refreshApiKeys = () => {
+        apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/api-keys/`)
+            .then(data => setApiKeys(data.api_keys))
+            .catch(error => console.error('Error fetching API keys:', error));
+    };
+
     useEffect(() => {
         apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/`)
             .then(data => setOrganization(data))
@@ -75,6 +95,10 @@ function Organization() {
 
         if (newslettersEnabled) {
             refreshNewsletters();
+        }
+
+        if (canManageApiKeys) {
+            refreshApiKeys();
         }
     }, []);
 
@@ -181,6 +205,14 @@ function Organization() {
                                 icon={<EmailIcon fontSize="small" />}
                                 iconPosition="start"
                                 label={localeMessages["newsletters"]}
+                            />
+                        )}
+                        {canManageApiKeys && (
+                            <Tab
+                                value="api_keys"
+                                icon={<VpnKeyOutlinedIcon fontSize="small" />}
+                                iconPosition="start"
+                                label={localeMessages["api_keys"]}
                             />
                         )}
                     </Tabs>
@@ -391,6 +423,113 @@ function Organization() {
                                     ) : (
                                         <Typography variant="body1">{localeMessages["no_newsletters"]}</Typography>
                                     )}
+                                </Box>
+                            </>
+                        )}
+
+                        {/* API keys tab */}
+                        {canManageApiKeys && activeTab === 'api_keys' && (
+                            <>
+                                <Typography variant="body2" sx={{ mb: 2 }}>{localeMessages["api_keys_intro"]}</Typography>
+                                <Button
+                                    variant="contained"
+                                    color="secondary"
+                                    onClick={() => showDialog(
+                                        <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
+                                            <ApiKeyForm
+                                                organizationId={organizationId}
+                                                onClose={closeDialog}
+                                                onCreated={(created) => showDialog(
+                                                    <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
+                                                        <NewApiKeyDialog
+                                                            token={created.token}
+                                                            onClose={() => { refreshApiKeys(); closeDialog(); }}
+                                                        />
+                                                    </Suspense>
+                                                )}
+                                            />
+                                        </Suspense>
+                                    )}
+                                >
+                                    {localeMessages["create_api_key"]}
+                                </Button>
+                                <Box sx={{ mt: 2, width: '100%' }}>
+                                    <TableContainer>
+                                        <Table>
+                                            <TableHead>
+                                                <TableRow>
+                                                    <TableCell>{localeMessages["api_key_name"]}</TableCell>
+                                                    <TableCell>{localeMessages["key_id"]}</TableCell>
+                                                    <TableCell>{localeMessages["api_key_scopes"]}</TableCell>
+                                                    <TableCell>{localeMessages["status"]}</TableCell>
+                                                    <TableCell>{localeMessages["created_by"]}</TableCell>
+                                                    <TableCell>{localeMessages["created_at"]}</TableCell>
+                                                    <TableCell>{localeMessages["last_used"]}</TableCell>
+                                                    <TableCell align={direction === 'rtl' ? 'left' : 'right'}>{localeMessages["actions"]}</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {apiKeys.length === 0 && (
+                                                    <EmptyTableState
+                                                        colSpan={8}
+                                                        message={localeMessages["no_api_keys"]}
+                                                    />
+                                                )}
+                                                {apiKeys.map((apiKey) => {
+                                                    const status = apiKeyStatusOf(apiKey);
+                                                    return (
+                                                        <TableRow key={apiKey.id}>
+                                                            <TableCell>{apiKey.name}</TableCell>
+                                                            <TableCell>
+                                                                {/* The public half of the token. The secret is
+                                                                    hashed and is never returned by the listing. */}
+                                                                <Typography component="span" sx={{ fontFamily: 'monospace', overflowWrap: 'anywhere' }}>
+                                                                    {apiKey.key_id}
+                                                                </Typography>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                                    {apiKey.scopes.map(scope => (
+                                                                        <Chip key={scope} size="small" variant="outlined" label={scope} />
+                                                                    ))}
+                                                                </Box>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Chip
+                                                                    size="small"
+                                                                    label={localeMessages[status]}
+                                                                    color={status === 'active' ? 'success' : 'default'}
+                                                                    variant={status === 'active' ? 'filled' : 'outlined'}
+                                                                />
+                                                            </TableCell>
+                                                            <TableCell>{apiKey.created_by}</TableCell>
+                                                            <TableCell>{apiKey.created_at}</TableCell>
+                                                            <TableCell>{apiKey.last_used_at || localeMessages["never_used"]}</TableCell>
+                                                            <TableCell align={direction === 'rtl' ? 'left' : 'right'}>
+                                                                {status !== 'revoked' && (
+                                                                    <IconButton
+                                                                        aria-label={`Revoke ${apiKey.name}`}
+                                                                        onClick={() => showDialog(
+                                                                            <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
+                                                                                <RevokeApiKeyDialog
+                                                                                    apiKey={apiKey}
+                                                                                    organizationId={organizationId}
+                                                                                    onClose={closeDialog}
+                                                                                    onSuccess={refreshApiKeys}
+                                                                                />
+                                                                            </Suspense>
+                                                                        )}
+                                                                    >
+                                                                        <DeleteIcon fontSize="small" />
+                                                                    </IconButton>
+                                                                )}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    );
+                                                })}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
                                 </Box>
                             </>
                         )}

@@ -1,5 +1,5 @@
 # ruff: noqa: F401
-from .api_keys import ApiKey
+from .api_keys import ApiKey, ApiKeyScope, ApiKeyType
 from .course_contents import (
     Answer,
     Assignment,
