@@ -54,7 +54,7 @@ def test_organization_key_requires_an_organization(db):
         ApiKey.create(
             key_type=ApiKeyType.ORGANIZATION,
             name="Bad key",
-            scopes=[ApiKeyScope.COURSES_READ],
+            scopes=[ApiKeyScope.ENROLLMENTS_CREATE],
         )
 
 
@@ -65,7 +65,7 @@ def test_database_constraint_rejects_mismatched_key_type(db):
         key_type=ApiKeyType.ORGANIZATION,
         name="Org key",
         organization_id=1,
-        scopes=[ApiKeyScope.COURSES_READ],
+        scopes=[ApiKeyScope.ENROLLMENTS_CREATE],
     )
     with pytest.raises(IntegrityError), transaction.atomic():
         ApiKey.objects.filter(pk=api_key.pk).update(key_type=ApiKeyType.PLATFORM)
@@ -76,7 +76,7 @@ def test_platform_key_rejects_scopes(db):
         ApiKey.create(
             key_type=ApiKeyType.PLATFORM,
             name="Scoped platform key",
-            scopes=[ApiKeyScope.COURSES_READ],
+            scopes=[ApiKeyScope.ENROLLMENTS_CREATE],
         )
 
 
@@ -149,7 +149,24 @@ def test_has_scope(db):
         key_type=ApiKeyType.ORGANIZATION,
         name="Org key",
         organization_id=1,
-        scopes=[ApiKeyScope.ENROLLMENTS_WRITE],
+        scopes=[ApiKeyScope.ENROLLMENTS_CREATE],
     )
-    assert api_key.has_scope(ApiKeyScope.ENROLLMENTS_WRITE)
-    assert not api_key.has_scope(ApiKeyScope.COURSES_READ)
+    assert api_key.has_scope(ApiKeyScope.ENROLLMENTS_CREATE)
+    assert not api_key.has_scope("something:else")
+
+
+def test_organization_key_requires_at_least_one_scope(db):
+    """A scopeless organization key would authenticate and then be refused by
+    every endpoint, so it's rejected at creation rather than issued."""
+    with pytest.raises(ValidationError):
+        ApiKey.create(key_type=ApiKeyType.ORGANIZATION, name="Scopeless key", organization_id=1)
+
+    with pytest.raises(ValidationError):
+        ApiKey.create(key_type=ApiKeyType.ORGANIZATION, name="Scopeless key", organization_id=1, scopes=[])
+
+
+def test_platform_key_needs_no_scopes(db):
+    """The rule is specific to organization keys - platform keys are
+    all-or-nothing and must stay scopeless."""
+    api_key, _ = ApiKey.create(key_type=ApiKeyType.PLATFORM, name="Ops key")
+    assert api_key.scopes == []

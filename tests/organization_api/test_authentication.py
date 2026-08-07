@@ -1,10 +1,12 @@
 """Authentication and authorization for the v1 organization API.
 
-Exercised through the courses endpoint, which is the cheapest authenticated
-view; the decorator under test is shared by every endpoint in this API.
+Exercised through the enrollments endpoint; the decorator under test is shared
+by every endpoint in this API. Rejections happen in the decorator, before the
+view body runs, so most of these need no valid request payload.
 """
 
 import datetime
+import json
 
 import pytest
 from django.urls import reverse
@@ -15,24 +17,33 @@ from django_email_learning.services.jwt_service import generate_jwt
 
 from .conftest import make_key
 
-URL = reverse("django_email_learning:api_v1:courses")
+URL = reverse("django_email_learning:api_v1:enrollments")
+
+
+def _post(api_client, course_slug="sample-course", **headers):
+    return api_client.post(
+        URL,
+        data=json.dumps({"email": "learner@example.com", "course_slug": course_slug}),
+        content_type="application/json",
+        **headers,
+    )
 
 
 def test_request_without_a_key_is_rejected(api_client, db):
-    response = api_client.get(URL)
+    response = _post(api_client)
     assert response.status_code == 401
     assert response.json() == {"error": "Authorization header missing"}
 
 
 @pytest.mark.parametrize("header", ["Basic sometoken", "no-space", "Bearer a b"])
 def test_malformed_authorization_header_is_rejected(api_client, db, header):
-    response = api_client.get(URL, HTTP_AUTHORIZATION=header)
+    response = _post(api_client, HTTP_AUTHORIZATION=header)
     assert response.status_code == 401
     assert response.json() == {"error": "Invalid Authorization header format. Expected: Bearer <API_KEY>"}
 
 
 def test_unknown_key_id_is_rejected(api_client, db):
-    response = api_client.get(URL, HTTP_AUTHORIZATION="Bearer elk_deadbeef_notarealsecret")
+    response = _post(api_client, HTTP_AUTHORIZATION="Bearer elk_deadbeef_notarealsecret")
     assert response.status_code == 401
     assert response.json() == {"error": "Invalid API key"}
 
@@ -42,31 +53,32 @@ def test_wrong_secret_for_a_real_key_id_is_rejected(api_client, db):
         key_type=ApiKeyType.ORGANIZATION,
         name="Test key",
         organization_id=1,
-        scopes=[ApiKeyScope.COURSES_READ],
+        scopes=[ApiKeyScope.ENROLLMENTS_CREATE],
     )
-    response = api_client.get(URL, HTTP_AUTHORIZATION=f"Bearer elk_{api_key.key_id}_wrongsecret")
+    response = _post(api_client, HTTP_AUTHORIZATION=f"Bearer elk_{api_key.key_id}_wrongsecret")
     assert response.status_code == 401
     # Identical to the unknown-key-id message, so a caller can't confirm which
     # key ids exist by comparing responses.
     assert response.json() == {"error": "Invalid API key"}
 
 
-def test_valid_key_is_accepted(api_client, db):
-    token = make_key([ApiKeyScope.COURSES_READ])
-    assert api_client.get(URL, HTTP_AUTHORIZATION=f"Bearer {token}").status_code == 200
+def test_valid_key_is_accepted(api_client, enabled_course, db):
+    token = make_key()
+    response = _post(api_client, course_slug=enabled_course.slug, HTTP_AUTHORIZATION=f"Bearer {token}")
+    assert response.status_code == 201
 
 
 def test_platform_key_cannot_use_the_organization_api(api_client, db):
     """A platform key carries deployment-wide authority and no organization,
     so it must not fall through to an organization-scoped endpoint."""
     _, token = ApiKey.create(key_type=ApiKeyType.PLATFORM, name="Ops key")
-    response = api_client.get(URL, HTTP_AUTHORIZATION=f"Bearer {token}")
+    response = _post(api_client, HTTP_AUTHORIZATION=f"Bearer {token}")
     assert response.status_code == 403
 
 
 def test_organization_key_cannot_use_the_jobs_api(api_client, db):
     """The mirror image: an organization key must not reach platform endpoints."""
-    token = make_key([ApiKeyScope.COURSES_READ])
+    token = make_key()
     response = api_client.get(
         reverse("django_email_learning:api_jobs:check_imap_connections"),
         HTTP_AUTHORIZATION=f"Bearer {token}",
@@ -74,11 +86,22 @@ def test_organization_key_cannot_use_the_jobs_api(api_client, db):
     assert response.status_code == 403
 
 
-def test_missing_scope_is_rejected(api_client, db):
-    token = make_key([ApiKeyScope.ENROLLMENTS_WRITE])
-    response = api_client.get(URL, HTTP_AUTHORIZATION=f"Bearer {token}")
+def test_key_without_the_required_scope_is_rejected(api_client, enabled_course, db):
+    """A key can't be *created* without scopes, but one can outlive the scope an
+    endpoint needs — if a scope is later renamed or removed from a key. The
+    decorator has to reject that rather than fall through.
+    """
+    api_key, token = ApiKey.create(
+        key_type=ApiKeyType.ORGANIZATION,
+        name="Test key",
+        organization_id=1,
+        scopes=[ApiKeyScope.ENROLLMENTS_CREATE],
+    )
+    ApiKey.objects.filter(pk=api_key.pk).update(scopes=["something:else"])
+
+    response = _post(api_client, course_slug=enabled_course.slug, HTTP_AUTHORIZATION=f"Bearer {token}")
     assert response.status_code == 403
-    assert "courses:read" in response.json()["error"]
+    assert "enrollments:create" in response.json()["error"]
 
 
 def test_revoked_key_is_rejected(api_client, db):
@@ -86,11 +109,11 @@ def test_revoked_key_is_rejected(api_client, db):
         key_type=ApiKeyType.ORGANIZATION,
         name="Test key",
         organization_id=1,
-        scopes=[ApiKeyScope.COURSES_READ],
+        scopes=[ApiKeyScope.ENROLLMENTS_CREATE],
     )
     api_key.revoke()
 
-    response = api_client.get(URL, HTTP_AUTHORIZATION=f"Bearer {token}")
+    response = _post(api_client, HTTP_AUTHORIZATION=f"Bearer {token}")
     assert response.status_code == 401
     assert response.json() == {"error": "API key has been revoked"}
 
@@ -100,24 +123,24 @@ def test_expired_key_is_rejected(api_client, db):
         key_type=ApiKeyType.ORGANIZATION,
         name="Test key",
         organization_id=1,
-        scopes=[ApiKeyScope.COURSES_READ],
+        scopes=[ApiKeyScope.ENROLLMENTS_CREATE],
         expires_at=timezone.now() - datetime.timedelta(seconds=1),
     )
-    response = api_client.get(URL, HTTP_AUTHORIZATION=f"Bearer {token}")
+    response = _post(api_client, HTTP_AUTHORIZATION=f"Bearer {token}")
     assert response.status_code == 401
     assert response.json() == {"error": "API key has expired"}
 
 
-def test_successful_request_records_last_used(api_client, db):
+def test_successful_request_records_last_used(api_client, enabled_course, db):
     api_key, token = ApiKey.create(
         key_type=ApiKeyType.ORGANIZATION,
         name="Test key",
         organization_id=1,
-        scopes=[ApiKeyScope.COURSES_READ],
+        scopes=[ApiKeyScope.ENROLLMENTS_CREATE],
     )
     assert api_key.last_used_at is None
 
-    api_client.get(URL, HTTP_AUTHORIZATION=f"Bearer {token}")
+    _post(api_client, course_slug=enabled_course.slug, HTTP_AUTHORIZATION=f"Bearer {token}")
 
     api_key.refresh_from_db()
     assert api_key.last_used_at is not None

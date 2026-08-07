@@ -29,7 +29,7 @@ def _detail_url(api_key_id: int, organization_id: int = 1) -> str:
 
 
 def _create_payload(**overrides) -> dict:
-    return {"name": "Partner integration", "scopes": [ApiKeyScope.ENROLLMENTS_WRITE.value], **overrides}
+    return {"name": "Partner integration", "scopes": [ApiKeyScope.ENROLLMENTS_CREATE.value], **overrides}
 
 
 @pytest.fixture()
@@ -56,7 +56,7 @@ def other_org_admin_client(db, users, other_organization) -> Client:
 def test_org_admin_can_create_a_scoped_key(org_admin_client):
     response = org_admin_client.post(
         _list_url(),
-        data=json.dumps(_create_payload(scopes=[ApiKeyScope.ENROLLMENTS_WRITE.value, ApiKeyScope.COURSES_READ.value])),
+        data=json.dumps(_create_payload()),
         content_type="application/json",
     )
     assert response.status_code == 201
@@ -65,8 +65,31 @@ def test_org_admin_can_create_a_scoped_key(org_admin_client):
     assert data["token"].startswith(f"elk_{data['key_id']}_")
     assert data["key_type"] == ApiKeyType.ORGANIZATION
     assert data["organization_id"] == 1
-    assert data["scopes"] == [ApiKeyScope.COURSES_READ.value, ApiKeyScope.ENROLLMENTS_WRITE.value]
+    assert data["scopes"] == [ApiKeyScope.ENROLLMENTS_CREATE.value]
     assert data["created_by"] == "orgadmin"
+
+
+def test_repeated_scopes_are_deduplicated(org_admin_client):
+    """The stored list should match what the caller sees back, so a repeated
+    scope collapses rather than being persisted twice."""
+    response = org_admin_client.post(
+        _list_url(),
+        data=json.dumps(
+            _create_payload(scopes=[ApiKeyScope.ENROLLMENTS_CREATE.value, ApiKeyScope.ENROLLMENTS_CREATE.value])
+        ),
+        content_type="application/json",
+    )
+    assert response.status_code == 201
+    assert response.json()["scopes"] == [ApiKeyScope.ENROLLMENTS_CREATE.value]
+
+
+def test_empty_scopes_are_rejected(org_admin_client):
+    response = org_admin_client.post(
+        _list_url(),
+        data=json.dumps(_create_payload(scopes=[])),
+        content_type="application/json",
+    )
+    assert response.status_code == 400
 
 
 def test_created_key_is_scoped_to_the_url_organization(org_admin_client):
@@ -89,7 +112,7 @@ def test_listing_only_returns_this_organizations_keys(org_admin_client, other_or
         key_type=ApiKeyType.ORGANIZATION,
         name="Someone else's key",
         organization_id=other_organization.id,
-        scopes=[ApiKeyScope.COURSES_READ],
+        scopes=[ApiKeyScope.ENROLLMENTS_CREATE],
     )
     org_admin_client.post(_list_url(), data=json.dumps(_create_payload()), content_type="application/json")
 

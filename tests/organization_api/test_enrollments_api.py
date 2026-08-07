@@ -1,16 +1,10 @@
 import json
+from unittest import mock
 
 from django.core import mail
 from django.urls import reverse
 
-from django_email_learning.models import (
-    ApiKeyScope,
-    Enrollment,
-    EnrollmentStatus,
-    Learner,
-)
-
-from .conftest import make_key
+from django_email_learning.models import Enrollment, EnrollmentStatus, Learner
 
 URL = reverse("django_email_learning:api_v1:enrollments")
 
@@ -109,73 +103,30 @@ def test_malformed_json_is_rejected(api_client, auth, enabled_course):
     assert response.status_code == 400
 
 
-def test_write_scope_is_required_to_enroll(api_client, enabled_course, db):
-    token = make_key([ApiKeyScope.ENROLLMENTS_READ])
-    response = api_client.post(
-        URL,
-        data=json.dumps({"email": "learner@example.com", "course_slug": enabled_course.slug}),
-        content_type="application/json",
-        HTTP_AUTHORIZATION=f"Bearer {token}",
-    )
-    assert response.status_code == 403
-    assert not Enrollment.objects.exists()
+def test_rate_limit_returns_429(api_client, auth, enabled_course):
+    with mock.patch(
+        "django_email_learning.organization_api.views.get_rate_limit_settings",
+        return_value={"PER_KEY_LIMIT": 2, "PER_KEY_WINDOW_SECONDS": 60},
+    ):
+        assert _post(api_client, auth, email="a@example.com", course_slug=enabled_course.slug).status_code == 201
+        assert _post(api_client, auth, email="b@example.com", course_slug=enabled_course.slug).status_code == 201
+        response = _post(api_client, auth, email="c@example.com", course_slug=enabled_course.slug)
+
+    assert response.status_code == 429
+    assert response.json()["error"] == "Too many requests. Please try again later."
 
 
-def test_listing_enrollments(api_client, auth, enabled_course):
-    _post(api_client, auth, email="a@example.com", course_slug=enabled_course.slug)
-    _post(api_client, auth, email="b@example.com", course_slug=enabled_course.slug)
+def test_rate_limit_is_per_key(api_client, auth, enabled_course, db):
+    """Budgets are keyed on key_id, so one caller exhausting its allowance
+    can't lock out another key on the same organization."""
+    from .conftest import make_key
 
-    response = api_client.get(URL, **auth)
-    assert response.status_code == 200
-    body = response.json()
-    assert body["total"] == 2
-    assert {e["email"] for e in body["enrollments"]} == {"a@example.com", "b@example.com"}
+    other_auth = {"HTTP_AUTHORIZATION": f"Bearer {make_key()}"}
 
-
-def test_listing_filters_by_email_and_course(api_client, auth, enabled_course):
-    _post(api_client, auth, email="a@example.com", course_slug=enabled_course.slug)
-    _post(api_client, auth, email="b@example.com", course_slug=enabled_course.slug)
-
-    body = api_client.get(URL, {"email": "a@example.com"}, **auth).json()
-    assert body["total"] == 1
-    assert body["enrollments"][0]["email"] == "a@example.com"
-
-    body = api_client.get(URL, {"course_slug": "no-such-course"}, **auth).json()
-    assert body["total"] == 0
-
-
-def test_listing_rejects_an_unknown_status(api_client, auth, enabled_course):
-    assert api_client.get(URL, {"status": "banished"}, **auth).status_code == 400
-
-
-def test_listing_caps_the_page_size(api_client, auth, enabled_course):
-    assert api_client.get(URL, {"limit": "5000"}, **auth).status_code == 400
-
-
-def test_listing_paginates(api_client, auth, enabled_course):
-    for i in range(3):
-        _post(api_client, auth, email=f"learner{i}@example.com", course_slug=enabled_course.slug)
-
-    body = api_client.get(URL, {"limit": 2, "offset": 0}, **auth).json()
-    assert body["total"] == 3
-    assert len(body["enrollments"]) == 2
-
-    body = api_client.get(URL, {"limit": 2, "offset": 2}, **auth).json()
-    assert len(body["enrollments"]) == 1
-
-
-def test_listing_excludes_other_organizations_enrollments(api_client, auth, enabled_course, other_organization_course):
-    other_learner = Learner(email="elsewhere@example.com", organization=other_organization_course.organization)
-    other_learner.save()
-    Enrollment.objects.create(learner=other_learner, course=other_organization_course)
-    _post(api_client, auth, email="ours@example.com", course_slug=enabled_course.slug)
-
-    body = api_client.get(URL, **auth).json()
-    assert body["total"] == 1
-    assert body["enrollments"][0]["email"] == "ours@example.com"
-
-
-def test_read_scope_is_required_to_list(api_client, enabled_course, db):
-    token = make_key([ApiKeyScope.ENROLLMENTS_WRITE])
-    response = api_client.get(URL, HTTP_AUTHORIZATION=f"Bearer {token}")
-    assert response.status_code == 403
+    with mock.patch(
+        "django_email_learning.organization_api.views.get_rate_limit_settings",
+        return_value={"PER_KEY_LIMIT": 1, "PER_KEY_WINDOW_SECONDS": 60},
+    ):
+        assert _post(api_client, auth, email="a@example.com", course_slug=enabled_course.slug).status_code == 201
+        assert _post(api_client, auth, email="b@example.com", course_slug=enabled_course.slug).status_code == 429
+        assert _post(api_client, other_auth, email="c@example.com", course_slug=enabled_course.slug).status_code == 201

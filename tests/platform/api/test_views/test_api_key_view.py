@@ -55,7 +55,7 @@ def test_listing_excludes_organization_keys(superadmin_client, db):
         key_type=ApiKeyType.ORGANIZATION,
         name="Org key",
         organization_id=1,
-        scopes=[ApiKeyScope.COURSES_READ],
+        scopes=[ApiKeyScope.ENROLLMENTS_CREATE],
     )
     superadmin_client.post(URL)
 
@@ -85,7 +85,7 @@ def test_platform_delete_cannot_reach_an_organization_key(superadmin_client, db)
         key_type=ApiKeyType.ORGANIZATION,
         name="Org key",
         organization_id=1,
-        scopes=[ApiKeyScope.COURSES_READ],
+        scopes=[ApiKeyScope.ENROLLMENTS_CREATE],
     )
     assert superadmin_client.delete(_detail_url(org_key.id)).status_code == 404
 

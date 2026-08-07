@@ -38,7 +38,7 @@ issuing one would let a non-admin hand out access it does not itself have.
 
    {
      "name": "Partner signup integration",
-     "scopes": ["enrollments:write"],
+     "scopes": ["enrollments:create"],
      "expires_at": "2027-01-01T00:00:00Z"
    }
 
@@ -55,7 +55,7 @@ The response is the **only** time the token is readable:
      "name": "Partner signup integration",
      "key_type": "organization",
      "organization_id": 3,
-     "scopes": ["enrollments:write"],
+     "scopes": ["enrollments:create"],
      "created_at": "2026-08-07T10:00:00Z",
      "created_by": "orgadmin",
      "expires_at": "2027-01-01T00:00:00Z",
@@ -81,16 +81,12 @@ Scopes
 
    * - Scope
      - Grants
-   * - ``courses:read``
-     - List the organization's courses
-   * - ``enrollments:read``
-     - List the organization's enrollments
-   * - ``enrollments:write``
+   * - ``enrollments:create``
      - Create enrollments
 
-A scope names a resource and an access level rather than an endpoint, so
-adding an endpoint to an existing resource does not strand callers on a key
-that predates it.
+A scope names a resource and an action rather than an endpoint, so adding an
+endpoint to an existing resource does not strand callers on a key that predates
+it. More scopes will be added as the API grows; a key must carry at least one.
 
 Authentication
 --------------
@@ -111,7 +107,7 @@ Endpoints
 Create an enrollment
 ^^^^^^^^^^^^^^^^^^^^
 
-Requires ``enrollments:write``.
+Requires ``enrollments:create``.
 
 .. code-block:: http
 
@@ -138,31 +134,8 @@ Responses:
 * ``403`` — the email is blocked, or the organization is at its learner cap
 * ``404`` — no such enabled course in this organization
 
-List enrollments
-^^^^^^^^^^^^^^^^
-
-Requires ``enrollments:read``.
-
-.. code-block:: http
-
-   GET /api/v1/enrollments/?course_slug=intro-to-widgets&status=active&limit=50&offset=0
-
-Optional filters: ``course_slug``, ``email``, ``status`` (one of
-``unverified``, ``active``, ``completed``, ``deactivated``). ``limit`` defaults
-to 50 and is capped at 200. The response carries ``enrollments``, ``total``,
-``limit`` and ``offset``.
-
-List courses
-^^^^^^^^^^^^
-
-Requires ``courses:read``.
-
-.. code-block:: http
-
-   GET /api/v1/courses/
-
-Returns every course in the organization, including disabled ones — a caller
-needs to see a disabled course to understand why enrolling into it failed.
+Creating an enrollment is the only endpoint in v1. Read endpoints for
+enrollments and courses will follow, each behind its own scope.
 
 Rate Limiting
 -------------

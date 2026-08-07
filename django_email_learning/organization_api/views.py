@@ -26,7 +26,6 @@ from django_email_learning.models import (
     ApiKeyScope,
     Course,
     Enrollment,
-    EnrollmentStatus,
     NewsletterSubscriber,
 )
 from django_email_learning.organization_api import serializers
@@ -82,8 +81,7 @@ class RateLimitedApiView(View):
 
 
 @method_decorator(csrf_exempt, name="dispatch")
-@method_decorator(require_organization_api_key(scopes=[ApiKeyScope.ENROLLMENTS_WRITE]), name="post")
-@method_decorator(require_organization_api_key(scopes=[ApiKeyScope.ENROLLMENTS_READ]), name="get")
+@method_decorator(require_organization_api_key(scopes=[ApiKeyScope.ENROLLMENTS_CREATE]), name="post")
 class EnrollmentsView(RateLimitedApiView):
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         rate_limited = self.check_rate_limit(request)
@@ -165,54 +163,4 @@ class EnrollmentsView(RateLimitedApiView):
                 "enrollment": serializers.EnrollmentResponse.from_django_model(enrollment).model_dump(mode="json"),
             },
             status=201,
-        )
-
-    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
-        rate_limited = self.check_rate_limit(request)
-        if rate_limited:
-            return rate_limited
-
-        try:
-            query = serializers.EnrollmentListQuery.model_validate(request.GET.dict())
-        except ValidationError as e:
-            return JsonResponse({"error": e.json()}, status=400)
-
-        if query.status is not None and query.status not in {status.value for status in EnrollmentStatus}:
-            return JsonResponse({"error": f"Unknown status '{query.status}'"}, status=400)
-
-        enrollments = Enrollment.objects.filter(course__organization_id=request.organization.id).select_related(
-            "learner", "course"
-        )
-        if query.course_slug:
-            enrollments = enrollments.filter(course__slug=query.course_slug)
-        if query.email:
-            enrollments = enrollments.filter(learner__email=query.email)
-        if query.status:
-            enrollments = enrollments.filter(status=query.status)
-
-        total = enrollments.count()
-        page = enrollments.order_by("-enrolled_at")[query.offset : query.offset + query.limit]
-
-        return JsonResponse(
-            serializers.PaginatedEnrollmentsResponse(
-                enrollments=[serializers.EnrollmentResponse.from_django_model(e) for e in page],
-                total=total,
-                limit=query.limit,
-                offset=query.offset,
-            ).model_dump(mode="json"),
-            status=200,
-        )
-
-
-@method_decorator(require_organization_api_key(scopes=[ApiKeyScope.COURSES_READ]), name="get")
-class CoursesView(RateLimitedApiView):
-    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
-        rate_limited = self.check_rate_limit(request)
-        if rate_limited:
-            return rate_limited
-
-        courses = Course.objects.filter(organization_id=request.organization.id).order_by("title")
-        return JsonResponse(
-            {"courses": [serializers.CourseResponse.from_django_model(c).model_dump(mode="json") for c in courses]},
-            status=200,
         )

@@ -31,14 +31,12 @@ class ApiKeyType(models.TextChoices):
 class ApiKeyScope(models.TextChoices):
     """Permissions an organization key can carry.
 
-    Deliberately coarse: a scope names a resource and an access level, not an
+    Deliberately coarse: a scope names a resource and an action, not an
     endpoint, so adding an endpoint to an existing resource doesn't strand
     callers on a key that predates it.
     """
 
-    COURSES_READ = "courses:read", "Read courses"
-    ENROLLMENTS_READ = "enrollments:read", "Read enrollments"
-    ENROLLMENTS_WRITE = "enrollments:write", "Create enrollments"
+    ENROLLMENTS_CREATE = "enrollments:create", "Create enrollments"
 
 
 def hash_secret(secret: str) -> str:
@@ -172,6 +170,11 @@ class ApiKey(models.Model):
         # nothing for a scope to narrow them to.
         if self.key_type == ApiKeyType.PLATFORM and self.scopes:
             raise ValidationError({"scopes": "Platform keys do not take scopes."})
+        # Every organization endpoint requires a scope, so a scopeless key is a
+        # credential that authenticates and can then do nothing. Rejecting it at
+        # creation beats handing someone a key that 403s on every call.
+        if self.key_type == ApiKeyType.ORGANIZATION and not self.scopes:
+            raise ValidationError({"scopes": "Organization keys must carry at least one scope."})
         invalid_scopes = set(self.scopes) - set(ApiKeyScope.values)
         if invalid_scopes:
             raise ValidationError({"scopes": f"Unknown scopes: {', '.join(sorted(invalid_scopes))}."})

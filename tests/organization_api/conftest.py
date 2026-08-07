@@ -10,11 +10,7 @@ from django_email_learning.models import (
     Organization,
 )
 
-ALL_SCOPES = [
-    ApiKeyScope.ENROLLMENTS_WRITE,
-    ApiKeyScope.ENROLLMENTS_READ,
-    ApiKeyScope.COURSES_READ,
-]
+ALL_SCOPES = [ApiKeyScope.ENROLLMENTS_CREATE]
 
 
 @pytest.fixture(autouse=True)
@@ -60,7 +56,7 @@ def other_organization_course(db, other_organization) -> Course:
     return course
 
 
-def make_key(scopes, organization_id: int = 1) -> str:
+def make_key(scopes=ALL_SCOPES, organization_id: int = 1) -> str:
     _, token = ApiKey.create(
         key_type=ApiKeyType.ORGANIZATION,
         name="Test key",
@@ -72,7 +68,7 @@ def make_key(scopes, organization_id: int = 1) -> str:
 
 @pytest.fixture()
 def api_token(db) -> str:
-    return make_key(ALL_SCOPES)
+    return make_key()
 
 
 @pytest.fixture()
