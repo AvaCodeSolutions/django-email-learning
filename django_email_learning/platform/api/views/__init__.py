@@ -25,8 +25,10 @@ from django_email_learning.platform.api.views.misc import (
     FileView,
     JobHealthStatus,
     JobsStatus,
+    OrganizationApiKeyView,
     RootView,
     SingleApiKeyView,
+    SingleOrganizationApiKeyView,
     UpdateSessionView,
 )
 from django_email_learning.platform.api.views.newsletters import (
@@ -92,6 +94,8 @@ __all__ = [
     "JobHealthStatus",
     "ApiKeyView",
     "SingleApiKeyView",
+    "OrganizationApiKeyView",
+    "SingleOrganizationApiKeyView",
     "JobsStatus",
     "RootView",
     "FileView",

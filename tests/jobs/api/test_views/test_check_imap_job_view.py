@@ -50,7 +50,7 @@ def test_check_imap_with_valid_api_key(mock_submit, superadmin_client):
     create_key_response = superadmin_client.post(reverse("django_email_learning:api_platform:api_keys_list"))
     response = superadmin_client.get(
         URL,
-        HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['key']}",
+        HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['token']}",
     )
     assert response.status_code == 202
     body = response.json()
@@ -72,7 +72,7 @@ def test_check_imap_already_running_returns_409(superadmin_client):
     create_key_response = superadmin_client.post(reverse("django_email_learning:api_platform:api_keys_list"))
     response = superadmin_client.get(
         URL,
-        HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['key']}",
+        HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['token']}",
     )
     assert response.status_code == 409
     assert response.json() == {
@@ -89,7 +89,7 @@ def test_check_imap_submission_failure_triggers_job_execution_failed_metric(
     create_key_response = superadmin_client.post(reverse("django_email_learning:api_platform:api_keys_list"))
     response = superadmin_client.get(
         URL,
-        HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['key']}",
+        HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['token']}",
     )
 
     assert response.status_code == 500

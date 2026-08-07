@@ -5,11 +5,11 @@ from django.core.exceptions import ImproperlyConfigured
 from django.http import JsonResponse
 
 from django_email_learning.apps import PLATFORM_ADMIN_GROUP_NAME
-from django_email_learning.models import ApiKey, OrganizationUser
-from django_email_learning.services.jwt_service import (
-    ExpiredTokenException,
-    InvalidTokenException,
-    decode_jwt,
+from django_email_learning.models import ApiKeyType, OrganizationUser
+from django_email_learning.services.api_key_service import (
+    ApiKeyAuthenticationError,
+    authenticate_token,
+    extract_bearer_token,
 )
 
 
@@ -139,37 +139,67 @@ def is_an_organization_member(
 
 
 def check_api_key() -> typing.Callable:
+    """Authenticates a *platform* API key.
+
+    The key type is asserted positively rather than inferred from the key
+    having no organization: these endpoints act deployment-wide, so an
+    organization key must never reach them by default.
+    """
+
     def decorator(view_func: typing.Callable) -> typing.Callable:
         @wraps(view_func)
         def _wrapped_view(request, *view_args, **view_kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
-            authorization_header = request.headers.get("Authorization")
-            if not authorization_header:
-                return JsonResponse({"error": "Authorization header missing"}, status=401)
-            authorization_header_parts = authorization_header.split(" ")
-            if len(authorization_header_parts) != 2 or authorization_header_parts[0] != "Bearer":
-                return JsonResponse(
-                    {"error": "Invalid Authorization header format. Expected: Bearer <API_KEY>"},
-                    status=401,
-                )
-            api_key = authorization_header_parts[1]
             try:
-                key_data = decode_jwt(api_key)
-                possible_keys = ApiKey.objects.filter(salt=key_data["salt"])
-                key_matched = False
-                for possible_key in possible_keys:
-                    key_value = possible_key.decrypt_password(possible_key.key)
-                    if key_value == key_data["key"]:
-                        key_matched = True
-                        break
-                if not key_matched:
-                    return JsonResponse({"error": "Invalid API key"}, status=401)
-            except ExpiredTokenException:
-                return JsonResponse({"error": "Expired Json Web Token"}, status=401)
-            except InvalidTokenException:
-                return JsonResponse({"error": "Invalid Json Web Token"}, status=401)
-            except KeyError:
-                return JsonResponse({"error": "Json Web Token missing required fields"}, status=401)
+                api_key = authenticate_token(extract_bearer_token(request))
+            except ApiKeyAuthenticationError as e:
+                return JsonResponse({"error": e.message}, status=e.status)
 
+            if api_key.key_type != ApiKeyType.PLATFORM:
+                return JsonResponse({"error": "Forbidden"}, status=403)
+
+            request.api_key = api_key
+            return view_func(request, *view_args, **view_kwargs)
+
+        return _wrapped_view
+
+    return decorator
+
+
+def require_organization_api_key(scopes: typing.Iterable[str] = ()) -> typing.Callable:
+    """Authenticates an *organization* API key carrying all of `scopes`.
+
+    Binds `request.api_key` and `request.organization`. The organization is
+    taken from the key itself; a view must read it from there rather than from
+    the URL, or a caller could act on an organization its key doesn't cover.
+    Where a URL does name an organization it has to agree with the key.
+    """
+    required_scopes = set(scopes)
+
+    def decorator(view_func: typing.Callable) -> typing.Callable:
+        @wraps(view_func)
+        def _wrapped_view(request, *view_args, **view_kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+            try:
+                api_key = authenticate_token(extract_bearer_token(request))
+            except ApiKeyAuthenticationError as e:
+                return JsonResponse({"error": e.message}, status=e.status)
+
+            if api_key.key_type != ApiKeyType.ORGANIZATION:
+                return JsonResponse({"error": "Forbidden"}, status=403)
+
+            missing_scopes = required_scopes - set(api_key.scopes)
+            if missing_scopes:
+                return JsonResponse(
+                    {"error": f"API key is missing required scope(s): {', '.join(sorted(missing_scopes))}"},
+                    status=403,
+                )
+
+            # 404 rather than 403 for a mismatch: a key holder shouldn't be able
+            # to probe which other organization ids exist.
+            if "organization_id" in view_kwargs and view_kwargs["organization_id"] != api_key.organization_id:
+                return JsonResponse({"error": "Not found"}, status=404)
+
+            request.api_key = api_key
+            request.organization = api_key.organization
             return view_func(request, *view_args, **view_kwargs)
 
         return _wrapped_view

@@ -1,11 +1,9 @@
 
 import Base from "../../src/components/Base";
 import EmptyTableState from "../../src/components/EmptyTableState.jsx";
-import { Box, Button, IconButton, Grid, Dialog, Typography, TableContainer, Table, TableHead, TableRow,TableBody, TableCell } from "@mui/material";
+import { Box, Button, IconButton, Grid, Dialog, Typography, TableContainer, Table, TableHead, TableRow,TableBody, TableCell, Chip, Alert } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import render, {useAppContext} from "../../src/render";
 import { useState, useEffect } from "react";
@@ -13,8 +11,7 @@ import apiClient from "../../src/apiClient.js";
 import { sanitizeEndpointUrl } from '../../src/sanitizeUrl.js';
 
 
-
-const DeleteConfirmationDialog = ({apiKey, onCancel, onSuccess}) => {
+const RevokeConfirmationDialog = ({apiKey, onCancel, onSuccess}) => {
 
     const { localeMessages, apiBaseUrl: rawApiBaseUrl } = useAppContext();
     const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
@@ -22,10 +19,10 @@ const DeleteConfirmationDialog = ({apiKey, onCancel, onSuccess}) => {
     return (
         <Box sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom>
-                {localeMessages["confirm_deletion"]}
+                {localeMessages["confirm_revocation"]}
             </Typography>
             <Typography>
-                {localeMessages["are_you_sure_delete_key"]}
+                {localeMessages["are_you_sure_revoke_key"]}
             </Typography>
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
                 <Button onClick={onCancel} sx={{ mr: 1 }} variant="outlined">
@@ -41,11 +38,65 @@ const DeleteConfirmationDialog = ({apiKey, onCancel, onSuccess}) => {
                         });
                     }}
                 >
-                    {localeMessages["delete"]}
+                    {localeMessages["revoke"]}
                 </Button>
             </Box>
         </Box>
     );
+}
+
+/**
+ * Shown once, immediately after creation. The server stores only a hash, so
+ * this dialog is the only opportunity the user has to copy the token - hence
+ * the warning and the deliberate lack of any "show key" affordance elsewhere.
+ */
+const NewApiKeyDialog = ({token, onClose}) => {
+    const { localeMessages } = useAppContext();
+    const [copied, setCopied] = useState(false);
+
+    const copyToken = async () => {
+        try {
+            await navigator.clipboard.writeText(token);
+            setCopied(true);
+        } catch (error) {
+            console.error('Failed to copy API key:', error);
+        }
+    };
+
+    return (
+        <Box sx={{ p: 2 }}>
+            <Typography variant="h6" gutterBottom>
+                {localeMessages["new_api_key_created"]}
+            </Typography>
+            <Alert severity="warning" sx={{ mb: 2 }}>
+                {localeMessages["copy_key_now_warning"]}
+            </Alert>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+                <Typography
+                    component="span"
+                    data-testid="new-api-key-token"
+                    sx={{ fontFamily: 'monospace', overflowWrap: 'anywhere', flex: 1 }}
+                >
+                    {token}
+                </Typography>
+                <IconButton size="small" onClick={copyToken} aria-label={localeMessages['copy'] || 'Copy'}>
+                    <ContentCopyIcon fontSize="small" />
+                </IconButton>
+            </Box>
+            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1 }}>
+                {copied && <Typography variant="body2" color="success.main">{localeMessages["copied"]}</Typography>}
+                <Button variant="contained" onClick={onClose}>
+                    {localeMessages["done"]}
+                </Button>
+            </Box>
+        </Box>
+    );
+}
+
+const statusOf = (key) => {
+    if (key.revoked_at) return 'revoked';
+    if (key.expires_at && new Date(key.expires_at) <= new Date()) return 'expired';
+    return 'active';
 }
 
 const ApiKeys = () => {
@@ -58,39 +109,29 @@ const ApiKeys = () => {
     const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
 
     useEffect(() => {
-        // Fetch API keys from the backend
         if (!loaded) {
-        apiClient.get(`${apiBaseUrl}/api_keys/`)
-        .then(data => {
-            setApiKeyList(data.api_keys.map((key) => ({
-                id: key.id,
-                key: key.key,
-                created_by: key.created_by,
-                created_at: key.created_at,
-                visible: false,
-            })));
-        })
-        .finally(() => {
-            setLoaded(true);
-        });
-    }
+            apiClient.get(`${apiBaseUrl}/api_keys/`)
+            .then(data => {
+                setApiKeyList(data.api_keys);
+            })
+            .finally(() => {
+                setLoaded(true);
+            });
+        }
     }, [loaded]);
 
     const addApiKey = () => {
         apiClient.post(`${apiBaseUrl}/api_keys/`)
         .then(data => {
-            data.visible = false;
-            setApiKeyList([...apiKeyList, data]);
+            setDialogContent(<NewApiKeyDialog token={data.token} onClose={() => {
+                setDialogOpen(false);
+                setLoaded(false);
+            }} />);
+            setDialogOpen(true);
         });
     }
 
-    const copyApiKey = async (apiKeyValue) => {
-        try {
-            await navigator.clipboard.writeText(apiKeyValue);
-        } catch (error) {
-            console.error('Failed to copy API key:', error);
-        }
-    }
+    const cellSx = { textAlign: direction === 'rtl' ? 'right' : 'left' };
 
     return (<Base breadCrumbList={[{label: localeMessages["api_keys"], href: '#'}]} showOrganizationSwitcher={false}>
         <Grid size={12} sx={{ py: 2, pl: { xs: 0, sm: 2 } }}>
@@ -111,71 +152,56 @@ const ApiKeys = () => {
                     <Table sx={{ tableLayout: 'fixed', width: '100%' }}>
             <TableHead>
               <TableRow>
-                                <TableCell dir={direction} sx={{ width: '50%', textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["key"]}</TableCell>
-                                <TableCell dir={direction} sx={{ width: '20%', textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["created_by"]}</TableCell>
-                                <TableCell dir={direction} sx={{ width: '20%', textAlign: direction === 'rtl' ? 'right' : 'left' }}>{localeMessages["created_at"]}</TableCell>
+                                <TableCell dir={direction} sx={{ width: '28%', ...cellSx }}>{localeMessages["key_id"]}</TableCell>
+                                <TableCell dir={direction} sx={{ width: '14%', ...cellSx }}>{localeMessages["status"]}</TableCell>
+                                <TableCell dir={direction} sx={{ width: '16%', ...cellSx }}>{localeMessages["created_by"]}</TableCell>
+                                <TableCell dir={direction} sx={{ width: '16%', ...cellSx }}>{localeMessages["created_at"]}</TableCell>
+                                <TableCell dir={direction} sx={{ width: '16%', ...cellSx }}>{localeMessages["last_used"]}</TableCell>
                                 <TableCell sx={{ width: '10%' }}>{localeMessages["actions"]}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {apiKeyList.length === 0 && (
                 <EmptyTableState
-                  colSpan={4}
+                  colSpan={6}
                   message={localeMessages['no_api_keys_found'] || 'No API keys yet.'}
                 />
               )}
-              { apiKeyList.map((key) => (
+              { apiKeyList.map((key) => {
+                const status = statusOf(key);
+                return (
                 <TableRow key={key.id}>
-                                    <TableCell dir={direction} sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-                                                <Typography
-                                                        component="span"
-                                                        sx={{
-                                                                fontFamily: 'monospace',
-                                                                overflowWrap: 'anywhere',
-                                                                whiteSpace: 'normal',
-                                                                flex: 1,
-                                                        }}
-                                                >
-                                                        { key.visible ? key.key : '••••••••••••••••' }
-                                                </Typography>
-                                                <IconButton
-                                                        size="small"
-                                                        onClick={() => copyApiKey(key.key)}
-                                                        aria-label={localeMessages['copy'] || 'Copy'}
-                                                >
-                                                        <ContentCopyIcon fontSize="small" />
-                                                </IconButton>
-                                        </Box>
+                                    <TableCell dir={direction} sx={cellSx}>
+                                        <Typography
+                                                component="span"
+                                                sx={{ fontFamily: 'monospace', overflowWrap: 'anywhere' }}
+                                        >
+                                                { key.key_id }
+                                        </Typography>
                                     </TableCell>
-                  <TableCell dir={direction} sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{key.created_by}</TableCell>
-                  <TableCell dir={direction} sx={{ textAlign: direction === 'rtl' ? 'right' : 'left' }}>{key.created_at}</TableCell>
+                  <TableCell dir={direction} sx={cellSx}>
+                    <Chip
+                      size="small"
+                      label={localeMessages[status]}
+                      color={status === 'active' ? 'success' : 'default'}
+                      variant={status === 'active' ? 'filled' : 'outlined'}
+                    />
+                  </TableCell>
+                  <TableCell dir={direction} sx={cellSx}>{key.created_by}</TableCell>
+                  <TableCell dir={direction} sx={cellSx}>{key.created_at}</TableCell>
+                  <TableCell dir={direction} sx={cellSx}>{key.last_used_at || localeMessages["never_used"]}</TableCell>
                   <TableCell>
-                    <IconButton onClick={() => {setDialogContent(<DeleteConfirmationDialog apiKey={key} onCancel={() => setDialogOpen(false)} onSuccess={() => {
+                    {status !== 'revoked' &&
+                    <IconButton
+                      aria-label={localeMessages['revoke'] || 'Revoke'}
+                      onClick={() => {setDialogContent(<RevokeConfirmationDialog apiKey={key} onCancel={() => setDialogOpen(false)} onSuccess={() => {
                         setLoaded(false);
                         setDialogOpen(false);
                     }} />); setDialogOpen(true);}}><DeleteIcon fontSize="small" /></IconButton>
-                    {key.visible ?
-                    <IconButton onClick={() => {
-                        setApiKeyList(apiKeyList.map((k) => {
-                            if (k.id === key.id) {
-                                return {...k, visible: false};
-                            }
-                            return k;
-                        }));
-                    }}><VisibilityIcon fontSize="small" /></IconButton> :
-                    <IconButton onClick={() => {
-                        setApiKeyList(apiKeyList.map((k) => {
-                            if (k.id === key.id) {
-                                return {...k, visible: true};
-                            }
-                            return k;
-                        }));
-                    }}><VisibilityOffIcon fontSize="small" /></IconButton>
                     }
                   </TableCell>
                 </TableRow>
-              ))}
+              )})}
             </TableBody>
           </Table>
           </TableContainer>

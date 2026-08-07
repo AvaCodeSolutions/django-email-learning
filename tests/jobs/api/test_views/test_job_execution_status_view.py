@@ -33,7 +33,7 @@ def test_job_execution_status_returns_running_execution(superadmin_client):
     create_key_response = superadmin_client.post(reverse("django_email_learning:api_platform:api_keys_list"))
     response = superadmin_client.get(
         _status_url(job_execution.id),
-        HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['key']}",
+        HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['token']}",
     )
     assert response.status_code == 200
     body = response.json()
@@ -53,7 +53,7 @@ def test_job_execution_status_returns_failed_execution_with_error(superadmin_cli
     create_key_response = superadmin_client.post(reverse("django_email_learning:api_platform:api_keys_list"))
     response = superadmin_client.get(
         _status_url(job_execution.id),
-        HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['key']}",
+        HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['token']}",
     )
     assert response.status_code == 200
     body = response.json()
@@ -65,7 +65,7 @@ def test_job_execution_status_not_found(superadmin_client):
     create_key_response = superadmin_client.post(reverse("django_email_learning:api_platform:api_keys_list"))
     response = superadmin_client.get(
         _status_url(999999),
-        HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['key']}",
+        HTTP_AUTHORIZATION=f"Bearer {create_key_response.json()['token']}",
     )
     assert response.status_code == 404
     assert response.json() == {"error": "Job execution not found"}
