@@ -55,6 +55,10 @@ class AlreadyEnrolledResponse(BaseModel):
     status: Literal["already_enrolled"] = "already_enrolled"
 
 
+class PingResponse(BaseModel):
+    status: Literal["ok"] = "ok"
+
+
 class ErrorResponse(BaseModel):
     error: str
 

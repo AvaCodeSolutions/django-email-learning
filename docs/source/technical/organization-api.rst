@@ -146,6 +146,28 @@ returns ``403``. A revoked or expired key returns ``401``.
 Endpoints
 ---------
 
+Check a key
+^^^^^^^^^^^
+
+Requires no scope — any organization key passes, whichever scopes it carries.
+
+.. code-block:: http
+
+   GET /api/v1/ping/
+
+.. code-block:: json
+
+   {
+     "status": "ok"
+   }
+
+Reads and changes nothing, so it is safe to call as a credential or
+connectivity check: a ``200`` means the key authenticates against this
+deployment, and a ``401`` or ``403`` means it does not. It is still
+authenticated — an unauthenticated probe would say nothing about the key,
+which is the thing a caller is checking. It counts against the same per-key
+rate limit as everything else.
+
 Create an enrollment
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -176,8 +198,8 @@ Responses:
 * ``403`` — the email is blocked, or the organization is at its learner cap
 * ``404`` — no such enabled course in this organization
 
-Creating an enrollment is the only endpoint in v1. Read endpoints for
-enrollments and courses will follow, each behind its own scope.
+Creating an enrollment is the only endpoint in v1 that acts on data. Read
+endpoints for enrollments and courses will follow, each behind its own scope.
 
 OpenAPI Schema
 --------------

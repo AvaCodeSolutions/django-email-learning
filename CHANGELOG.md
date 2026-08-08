@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [Unreleased]
+
+### Added
+
+- **`GET /api/v1/ping/` for checking an organization API key** — Returns `200` with `{"status": "ok"}` for any valid, non-revoked, unexpired organization key, and the usual `401`/`403` otherwise. It requires no scope, so an integrator can confirm its credential reaches the right deployment without holding a permission for an unrelated resource, and it reads and writes nothing. Rate limited per key like every other v1 endpoint.
+
 ## [4.0.0] - 2026-08-07
 
 > **Upgrading.** Run the migrations and you're done — existing API keys keep authenticating, because the backfill derives the new hash from the stored ciphertext and credentials issued before this release are still accepted. Two things to know before you upgrade. Keys can no longer be *read back*: the API Keys page now shows each key's id and status instead of the key itself, so anyone who has lost their key must issue a replacement. And if your own code imports `ApiKey` from `django_email_learning.models`, note that `key`, `salt`, `generate_key()` and the inherited `decrypt_password()` are gone — use `ApiKey.create()`, which returns the model and the one-time token together.

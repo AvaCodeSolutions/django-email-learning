@@ -19,6 +19,7 @@ build rather than silently shipping an incomplete document.
 import re
 import typing
 
+from django.conf import settings
 from django.urls import reverse
 from pydantic import BaseModel
 
@@ -137,6 +138,10 @@ def build_openapi_schema() -> dict:
     components: dict = {}
     paths: dict = {}
 
+    DJANGO_EMAIL_LEARNING_CONFIG = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
+    OPENAPI_CONFIG = DJANGO_EMAIL_LEARNING_CONFIG.get("OPENAPI", {})
+    OPENAPI_TITLE = OPENAPI_CONFIG.get("TITLE", "Django Email Learning — Organization API")
+
     for route, path, method, handler, spec in _routed_operations():
         if spec is None:
             continue
@@ -178,7 +183,7 @@ def build_openapi_schema() -> dict:
     return {
         "openapi": OPENAPI_VERSION,
         "info": {
-            "title": "Django Email Learning — Organization API",
+            "title": OPENAPI_TITLE,
             "version": API_VERSION,
             "description": (
                 "Organization-scoped API authenticated with an organization API key. "

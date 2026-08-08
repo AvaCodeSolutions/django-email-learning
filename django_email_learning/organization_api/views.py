@@ -39,6 +39,7 @@ from django_email_learning.organization_api.serializers import (
     EnrollmentCreatedResponse,
     ErrorResponse,
     ErrorWithReferenceResponse,
+    PingResponse,
 )
 from django_email_learning.public.api.rate_limiting import is_rate_limited
 from django_email_learning.services.command_models.enroll_command import EnrollCommand
@@ -89,6 +90,43 @@ class RateLimitedApiView(View):
         ):
             return JsonResponse({"error": TOO_MANY_REQUESTS_MESSAGE}, status=429)
         return None
+
+
+@method_decorator(require_organization_api_key(), name="get")
+class PingView(RateLimitedApiView):
+    """Confirms a key authenticates, without acting on anything.
+
+    Deliberately requires no scope: an integrator checking that its credential
+    reaches us shouldn't need to hold a permission for an unrelated resource,
+    so any organization key passes whatever it carries. It is still
+    authenticated — an unauthenticated liveness probe would say nothing about
+    the credential, which is the thing a caller is trying to verify.
+    """
+
+    openapi_operations = {
+        "get": OperationSpec(
+            operation_id="ping",
+            summary="Check that an API key authenticates",
+            description=(
+                "Returns 200 for any valid, non-revoked, unexpired organization API key, whichever "
+                "scopes it carries. Reads and changes nothing, so it is safe to call as a "
+                "credential or connectivity check. It is rate limited like every other endpoint."
+            ),
+            responses={
+                200: ResponseSpec("The API key is valid.", PingResponse),
+                401: ResponseSpec("The API key is missing, malformed, unknown, revoked or expired.", ErrorResponse),
+                403: ResponseSpec("The key is not an organization key.", ErrorResponse),
+                429: ResponseSpec("The key's request budget for the current window is exhausted.", ErrorResponse),
+            },
+        )
+    }
+
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        rate_limited = self.check_rate_limit(request)
+        if rate_limited:
+            return rate_limited
+
+        return JsonResponse(PingResponse().model_dump(mode="json"), status=200)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
