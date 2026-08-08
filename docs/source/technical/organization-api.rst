@@ -219,6 +219,17 @@ requirements from the scopes the authentication decorator enforces. A test
 fails the build if a routed endpoint has no documentation, so the two cannot
 drift apart.
 
+The document's title defaults to ``Django Email Learning — Organization API``.
+A deployment serving the API under its own product name can replace it:
+
+.. code-block:: python
+
+   DJANGO_EMAIL_LEARNING = {
+       "OPENAPI": {
+           "TITLE": "Acme Learning API",
+       },
+   }
+
 To stop serving it:
 
 .. code-block:: python

@@ -6,11 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
-## [Unreleased]
+## [4.1.0] - 2026-08-08
 
 ### Added
 
 - **`GET /api/v1/ping/` for checking an organization API key** — Returns `200` with `{"status": "ok"}` for any valid, non-revoked, unexpired organization key, and the usual `401`/`403` otherwise. It requires no scope, so an integrator can confirm its credential reaches the right deployment without holding a permission for an unrelated resource, and it reads and writes nothing. Rate limited per key like every other v1 endpoint.
+- **The OpenAPI document's title is configurable** — Set `DJANGO_EMAIL_LEARNING["OPENAPI"]["TITLE"]` to replace the default `"Django Email Learning — Organization API"` in `GET /api/v1/openapi.json`, so a deployment serving the API under its own product name doesn't hand integrators a document titled after the library.
 
 ## [4.0.0] - 2026-08-07
 
