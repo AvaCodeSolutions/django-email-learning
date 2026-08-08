@@ -9,7 +9,9 @@ from django_email_learning.public.api.serializers import EmailValidatedRequest
 
 class EnrollmentCreateRequest(EmailValidatedRequest):
     course_slug: str = Field(min_length=1)
-    subscribe_to_newsletter: bool = False
+    subscribe_to_newsletter: bool = Field(
+        default=False, description="Whether the learner should be subscribed to the newsletter."
+    )
 
     @field_validator("email")
     def normalize_email(cls, value: str) -> str:
@@ -19,12 +21,14 @@ class EnrollmentCreateRequest(EmailValidatedRequest):
 
 
 class EnrollmentResponse(BaseModel):
-    id: int
-    email: str
-    course_slug: str
-    status: str
-    enrolled_at: datetime
-    activated_at: Optional[datetime] = None
+    id: int = Field(ge=1, description="The unique identifier of the enrollment.")
+    email: str = Field(description="The email address of the learner to be enrolled.")
+    course_slug: str = Field(description="The slug of the course the learner is enrolled in.")
+    status: str = Field(description="The status of the enrollment.")
+    enrolled_at: datetime = Field(description="The timestamp when the learner was enrolled.")
+    activated_at: Optional[datetime] = Field(
+        default=None, description="The timestamp when the enrollment was activated."
+    )
 
     @staticmethod
     def from_django_model(enrollment: Enrollment) -> "EnrollmentResponse":
