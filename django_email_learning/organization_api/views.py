@@ -15,6 +15,7 @@ import logging
 import uuid
 
 from django.conf import settings
+from django.db import transaction
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views import View
@@ -54,6 +55,9 @@ from django_email_learning.services.command_models.exceptions.invalid_course_slu
 )
 from django_email_learning.services.command_models.exceptions.learner_cap_exceeded_error import (
     LearnerCapExceededError,
+)
+from django_email_learning.services.command_models.verify_enrollment_command import (
+    VerifyEnrollmentCommand,
 )
 from django_email_learning.services.utils import mask_email
 
@@ -137,15 +141,23 @@ class EnrollmentsView(RateLimitedApiView):
             operation_id="createEnrollment",
             summary="Enrol an email address in a course",
             description=(
-                "Creates an unverified enrollment and emails the learner a verification link; "
-                "the enrollment becomes active once they confirm. The course is resolved against "
-                "the organization the API key was issued for, so a slug belonging to another "
-                "organization is reported as not found. The course must be enabled, but — unlike "
-                "the embeddable public endpoint — it does not need to be public."
+                "Creates an enrollment. By default it is created already verified: it starts "
+                "active, no verification email is sent, and the first content is scheduled "
+                "immediately — the caller is trusted to have established that the address is the "
+                "learner's. Send `verified: false` to instead email the learner a verification "
+                "link and start the enrollment as unverified, becoming active once they confirm. "
+                "The course is resolved against the organization the API key was issued for, so a "
+                "slug belonging to another organization is reported as not found. The course must "
+                "be enabled, but — unlike the embeddable public endpoint — it does not need to be "
+                "public. A verified enrollment additionally requires the course to have at least "
+                "one published content, since there would otherwise be nothing to schedule."
             ),
             request=serializers.EnrollmentCreateRequest,
             responses={
-                201: ResponseSpec("Enrollment created, pending the learner's verification.", EnrollmentCreatedResponse),
+                201: ResponseSpec(
+                    "Enrollment created — active, or pending the learner's verification if `verified` was false.",
+                    EnrollmentCreatedResponse,
+                ),
                 200: ResponseSpec(
                     "A non-deactivated enrollment already exists for this learner and course; "
                     "nothing was created and no email was sent.",
@@ -160,7 +172,10 @@ class EnrollmentsView(RateLimitedApiView):
                 ),
                 404: ResponseSpec("No enabled course with that slug in this organization.", ErrorResponse),
                 429: ResponseSpec("The key's request budget for the current window is exhausted.", ErrorResponse),
-                500: ResponseSpec("The enrollment could not be completed.", ErrorWithReferenceResponse),
+                500: ResponseSpec(
+                    "The enrollment could not be completed and nothing was created; safe to retry.",
+                    ErrorWithReferenceResponse,
+                ),
             },
         )
     }
@@ -192,9 +207,41 @@ class EnrollmentsView(RateLimitedApiView):
             email=payload.email,
             course_slug=payload.course_slug,
             organization_id=organization_id,
+            # A verification email only makes sense when the learner is the one
+            # who has to confirm; a verified enrollment is activated below instead.
+            no_verification=payload.verified,
         )
         try:
-            command.execute()
+            # A verified enrollment takes two writes - create, then activate - and
+            # a caller that sees an error should be able to retry rather than be
+            # left with a half-activated row that reads back as already_enrolled.
+            with transaction.atomic():
+                command.execute()
+
+                enrollment = (
+                    Enrollment.objects.filter(
+                        learner__email=payload.email,
+                        learner__organization_id=organization_id,
+                        course=course,
+                    )
+                    .select_related("learner", "course")
+                    .order_by("-enrolled_at")
+                    .first()
+                )
+
+                if payload.subscribe_to_newsletter and course.newsletter_id:
+                    # Created unconfirmed, and without its own confirmation email:
+                    # confirming is VerifyEnrollmentCommand's job, whether the
+                    # learner triggers it or the activation below does — which is
+                    # why the subscriber has to exist before that runs.
+                    NewsletterSubscriber.objects.get_or_create(newsletter_id=course.newsletter_id, email=payload.email)
+
+                if payload.verified and enrollment:
+                    VerifyEnrollmentCommand(
+                        enrollment_id=enrollment.id,
+                        verification_code=enrollment.activation_code,  # type: ignore[arg-type]
+                    ).execute()
+                    enrollment.refresh_from_db()
         except EnrollmentAlreadyExistsError:
             return JsonResponse(serializers.AlreadyEnrolledResponse().model_dump(mode="json"), status=200)
         except InvalidCourseSlugError:
@@ -212,22 +259,6 @@ class EnrollmentsView(RateLimitedApiView):
             logger.error(f"Unexpected error: {e} (error_id: {error_reference})")
             return JsonResponse({"error": "An unexpected error occurred", "error_id": str(error_reference)}, status=500)
 
-        if payload.subscribe_to_newsletter and course.newsletter_id:
-            # Created unconfirmed and without its own confirmation email: the
-            # enrollment still has to be verified, and doing so proves ownership
-            # of this address, which VerifyEnrollmentCommand then applies here.
-            NewsletterSubscriber.objects.get_or_create(newsletter_id=course.newsletter_id, email=payload.email)
-
-        enrollment = (
-            Enrollment.objects.filter(
-                learner__email=payload.email,
-                learner__organization_id=organization_id,
-                course=course,
-            )
-            .select_related("learner", "course")
-            .order_by("-enrolled_at")
-            .first()
-        )
         logger.info(
             "API key %s enrolled %s in course '%s' (organization %s)",
             request.api_key.key_id,

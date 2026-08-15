@@ -31,7 +31,18 @@ def api_client() -> Client:
 
 
 @pytest.fixture()
-def enabled_course(db, course) -> Course:
+def enabled_course(db, course, course_lesson_content) -> Course:
+    """Enabled, and with one published content: a verified enrollment schedules
+    its first delivery on creation, which a course with nothing published
+    cannot do."""
+    course.enabled = True
+    course.save()
+    return course
+
+
+@pytest.fixture()
+def empty_enabled_course(db, course) -> Course:
+    """Enabled but with nothing published to deliver."""
     course.enabled = True
     course.save()
     return course

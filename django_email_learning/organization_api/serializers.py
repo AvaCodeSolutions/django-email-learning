@@ -12,6 +12,15 @@ class EnrollmentCreateRequest(EmailValidatedRequest):
     subscribe_to_newsletter: bool = Field(
         default=False, description="Whether the learner should be subscribed to the newsletter."
     )
+    verified: bool = Field(
+        default=True,
+        description=(
+            "Whether the enrollment is created already verified. A verified enrollment starts "
+            "active and its first content is scheduled straight away, with no verification email. "
+            "Set to false to have the learner confirm their address first: the enrollment then "
+            "starts unverified and becomes active once they follow the emailed link."
+        ),
+    )
 
     @field_validator("email")
     def normalize_email(cls, value: str) -> str:

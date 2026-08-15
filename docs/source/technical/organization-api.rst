@@ -181,22 +181,55 @@ Requires ``enrollments:create``.
    {
      "email": "learner@example.com",
      "course_slug": "intro-to-widgets",
-     "subscribe_to_newsletter": false
+     "subscribe_to_newsletter": false,
+     "verified": true
    }
 
 The course is resolved against the key's organization, so a slug belonging to
 another organization reads as ``404``. Unlike the embeddable public endpoint,
 a course does not need to be public — but it must be enabled.
 
-The learner receives a verification email and the enrollment starts as
-``unverified``; it becomes ``active`` once they confirm.
+``verified`` decides who establishes that the address is the learner's:
+
+.. list-table::
+   :header-rows: 1
+
+   * - ``verified``
+     - What happens
+   * - ``true`` (default)
+     - The enrollment is created **active**, its first content is scheduled
+       immediately, and the learner receives the "enrollment verified" email
+       that opens the course. No verification link is sent.
+   * - ``false``
+     - The enrollment is created **unverified** and the learner is emailed a
+       verification link. It becomes active — and the course starts — only
+       once they follow it.
+
+Leave it at the default when your own signup flow has already confirmed the
+address, which is the usual case for a key-authenticated integration: the
+caller is trusted to have done the confirming. Send ``false`` when the address
+came from somewhere you don't vouch for, and you want the learner's own click
+to prove it.
+
+A verified enrollment needs the course to have at least one published content,
+since activation is what schedules the first delivery. Enrolling into a course
+with nothing published returns ``500`` and creates nothing, so the call can be
+retried once the course has content.
 
 Responses:
 
-* ``201`` — enrolled, with the created enrollment in the body
+* ``201`` — enrolled, with the created enrollment in the body; its ``status``
+  is ``active``, or ``unverified`` when ``verified`` was ``false``
 * ``200`` ``{"status": "already_enrolled"}`` — a non-deactivated enrollment already exists
 * ``403`` — the email is blocked, or the organization is at its learner cap
 * ``404`` — no such enabled course in this organization
+* ``500`` — the enrollment could not be completed; nothing was created, so the
+  request is safe to retry
+
+``subscribe_to_newsletter`` opts the learner into the course's linked
+newsletter, if it has one. The subscription is confirmed along with the
+enrollment: immediately for a verified one, and when the learner follows the
+verification link otherwise.
 
 Creating an enrollment is the only endpoint in v1 that acts on data. Read
 endpoints for enrollments and courses will follow, each behind its own scope.

@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [Unreleased]
+
+### Changed
+
+- **`POST /api/v1/enrollments/` creates a verified enrollment by default** (breaking) — The endpoint used to always create an `unverified` enrollment and email the learner a verification link, so nothing was delivered until they clicked it. It now creates the enrollment **active** by default: the first content is scheduled straight away and the learner gets the "enrollment verified" email that opens the course, with no verification link. This matches what a key-authenticated integration usually wants — the caller has already established the address in its own signup flow, and asking the learner to confirm a second time was a step nobody needed. A new `verified` field in the request body restores the old behaviour: send `"verified": false` to create the enrollment unverified and email the verification link, exactly as before. **Anything relying on the previous default needs to start sending `"verified": false`**, including code that reads `enrollment.status` from the `201` response — it is now `active` rather than `unverified`. One new failure mode comes with it: a verified enrollment can only be created for a course with at least one published content, since activation is what schedules the first delivery; enrolling into a course with nothing published returns `500` and creates nothing, so the call can be retried once the course has content. `subscribe_to_newsletter` still opts the learner in, and the subscription is now confirmed in the same request when the enrollment is created verified.
+
 ## [4.1.0] - 2026-08-08
 
 ### Added
