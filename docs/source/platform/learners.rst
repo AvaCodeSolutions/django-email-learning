@@ -35,6 +35,21 @@ Clicking on any learner's email address opens a detailed view providing comprehe
    :align: center
 
 
+Sending the Next Content Immediately
+------------------------------------
+
+Under the course title, the enrollment view shows the learner's next scheduled content delivery — when it is due and which content it is. Organization admins also get a **send now** link next to it.
+
+**send now** delivers that one content straight away, exactly as the delivery job would have when its time arrived: the email is sent, the delivery is recorded against the enrollment, and the course moves on — the next content is scheduled, or the enrollment is completed if that was the last one. Simply editing the schedule's time would not have the same effect, since the delivery job runs on a schedule of its own and the content would still wait for its next run.
+
+A few things worth knowing:
+
+- Only deliveries that are still **scheduled** can be sent this way. A delivery that has already gone out, was canceled, or is blocked shows no link.
+- If the delivery job happens to pick up the same delivery at that moment, only one of the two sends it — the other reports that the delivery is no longer scheduled.
+- If sending fails, the delivery is retried or blocked by the same rules that apply during a job run, and the dialog reports that the content could not be sent.
+- The action is restricted to organization admins. Other roles see the scheduled delivery but no link.
+
+
 Learner Capacity
 -----------------
 

@@ -18,6 +18,7 @@ from django_email_learning.decorators import accessible_for
 from django_email_learning.models import (
     Certificate,
     Course,
+    DeliverySchedule,
     Enrollment,
     EnrollmentStatus,
     Learner,
@@ -36,6 +37,10 @@ from django_email_learning.services.command_models.exceptions.learner_cap_exceed
 )
 from django_email_learning.services.command_models.verify_enrollment_command import (
     VerifyEnrollmentCommand,
+)
+from django_email_learning.services.manual_delivery_service import (
+    ManualDeliveryOutcome,
+    send_delivery_schedule_now,
 )
 
 logger = logging.getLogger(__name__)
@@ -195,6 +200,55 @@ class EnrollmentView(View):
             return JsonResponse({"error": "Enrollment not found"}, status=404)
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
+
+
+@method_decorator(accessible_for(roles={"admin"}), name="post")
+class SendDeliveryScheduleNowView(View):
+    """Sends one scheduled content delivery immediately.
+
+    Admin-only: it puts an email in a learner's inbox and advances their
+    enrollment, which is a heavier action than the read access the rest of the
+    enrollment views grant. Changing the schedule's time would not do the same
+    job - the delivery job runs on a cron, so the content would still go out
+    whenever that next fires.
+    """
+
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            enrollment = Enrollment.objects.get(
+                id=kwargs["enrollment_id"], course__organization_id=kwargs["organization_id"]
+            )
+        except Enrollment.DoesNotExist:
+            return JsonResponse({"error": "Enrollment not found"}, status=404)
+
+        try:
+            delivery_schedule = DeliverySchedule.objects.get(
+                id=kwargs["delivery_schedule_id"],
+                delivery__enrollment=enrollment,
+            )
+        except DeliverySchedule.DoesNotExist:
+            return JsonResponse({"error": "Delivery schedule not found"}, status=404)
+
+        result = send_delivery_schedule_now(delivery_schedule)
+
+        if result.outcome == ManualDeliveryOutcome.NOT_SCHEDULED:
+            return JsonResponse(
+                {"error": "Delivery is no longer scheduled", "delivery_status": result.delivery_status},
+                status=409,
+            )
+        if result.outcome == ManualDeliveryOutcome.FAILED:
+            logger.error(
+                f"Manual send of DeliverySchedule {delivery_schedule.id} failed with status {result.delivery_status}."
+            )
+            return JsonResponse(
+                {"error": "Delivery failed", "delivery_status": result.delivery_status},
+                status=500,
+            )
+
+        return JsonResponse(
+            {"status": result.delivery_status, "delivery_schedule_id": delivery_schedule.id},
+            status=200,
+        )
 
 
 @method_decorator(accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get")

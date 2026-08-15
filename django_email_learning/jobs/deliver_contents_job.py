@@ -40,8 +40,13 @@ def _get_delivery_workers() -> int:
 
 
 class DeliverContentsJob:
-    def __init__(self) -> None:
-        self.delivery_queue: TaskQueueProtocol[DeliverySchedule] = self.get_delivery_queue()
+    def __init__(self, delivery_queue: TaskQueueProtocol[DeliverySchedule] | None = None) -> None:
+        # A caller that only needs `process_delivery` for a schedule it has
+        # already claimed can pass its own queue, so constructing the job does
+        # not claim a batch of work the running job should be handling.
+        self.delivery_queue: TaskQueueProtocol[DeliverySchedule] = (
+            delivery_queue if delivery_queue is not None else self.get_delivery_queue()
+        )
 
     def start(self) -> JobExecution | None:
         job_execution = JobExecution.start_if_not_running(job_name=JobName.DELIVER_CONTENTS.value)
@@ -80,7 +85,7 @@ class DeliverContentsJob:
             try:
                 self.process_delivery(delivery_schedule)
             except Exception as e:
-                self._block_delivery(delivery_schedule, e)
+                self.block_delivery(delivery_schedule, e)
 
     # ── threaded (workers > 1) ───────────────────────────────────────────────
 
@@ -106,7 +111,7 @@ class DeliverContentsJob:
                     try:
                         future.result()
                     except Exception as e:
-                        self._block_delivery(delivery_schedule, e)
+                        self.block_delivery(delivery_schedule, e)
 
                 # Avoid a tight spin-wait when all workers are busy
                 if not done and futures:
@@ -123,10 +128,10 @@ class DeliverContentsJob:
         try:
             self.process_delivery(delivery_schedule)
         except Exception as e:
-            self._block_delivery(delivery_schedule, e)
+            self.block_delivery(delivery_schedule, e)
             raise
 
-    def _block_delivery(self, delivery_schedule: DeliverySchedule, exc: Exception) -> None:
+    def block_delivery(self, delivery_schedule: DeliverySchedule, exc: Exception) -> None:
         """Mark a delivery as BLOCKED and emit a metric."""
         delivery_schedule.status = DeliveryStatus.BLOCKED
         delivery_schedule.save()

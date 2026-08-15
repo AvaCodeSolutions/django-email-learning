@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [Unreleased]
+
+### Added
+
+- **Send a learner's next content immediately from the Learners page** — The enrollment dialog now shows, under the course title, when the learner's next content is scheduled to arrive and which content it is, with a **send now** link beside it for organization admins. Sending runs the delivery there and then: the email goes out, the schedule is marked delivered, and the follow-up work happens exactly as it would during a job run — the next content is scheduled, or the enrollment graduates if that was the last one. Bringing the schedule's time forward was never equivalent, because the delivery job runs on a cron and the content would still wait for its next tick. Behind it is a new admin-only endpoint, `POST /api/platform/organizations/<id>/enrollments/<id>/delivery-schedules/<id>/send/`, and a `next_delivery` field on the enrollment detail response (`null` when nothing is scheduled). The schedule is claimed with the same `SCHEDULED → PROCESSING` compare-and-set the delivery queue uses, so a job run happening at the same moment cannot send the same content twice; a delivery that is no longer scheduled returns `409` and is left untouched, and one that fails to send is retried or blocked by the job's own retry logic.
+
 ## [5.0.0] - 2026-08-15
 
 > **Upgrading.** No migrations. One thing to check before you upgrade: if you call `POST /api/v1/enrollments/` and rely on the learner receiving a verification link, add `"verified": false` to the request body — that is now opt-in, and the default creates the enrollment active instead. Callers that read `status` from the `201` response get `active` rather than `unverified`. Nothing else in the API changed.

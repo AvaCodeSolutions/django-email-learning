@@ -23,6 +23,7 @@ from django_email_learning.platform.api.views import (
     OrganizationsView,
     OrganizationUsersView,
     ReorderCourseContentView,
+    SendDeliveryScheduleNowView,
     SendLessonToPlatformUser,
     SendoutView,
     SingleApiKeyView,
@@ -145,6 +146,12 @@ urlpatterns = [
         "organizations/<int:organization_id>/enrollments/<int:enrollment_id>/",
         EnrollmentView.as_view(),
         name="enrollments_detail",
+    ),
+    path(
+        "organizations/<int:organization_id>/enrollments/<int:enrollment_id>/"
+        "delivery-schedules/<int:delivery_schedule_id>/send/",
+        SendDeliveryScheduleNowView.as_view(),
+        name="delivery_schedule_send_now",
     ),
     path(
         "organizations/<int:organization_id>/courses/<int:course_id>/enrollments/",

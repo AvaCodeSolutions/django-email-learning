@@ -65,4 +65,10 @@ class Learners(BasePlatformView):
             "reset_filters": _("Reset Filters"),
             "progress": _("Progress"),
             "no_learners_found": _("No learners found."),
+            "next_delivery": _("Next delivery"),
+            "send_now": _("send now"),
+            "sending": _("Sending..."),
+            "content_sent_successfully": _("Content sent."),
+            "content_send_failed": _("The content could not be sent."),
+            "delivery_no_longer_scheduled": _("This delivery is no longer scheduled."),
         }

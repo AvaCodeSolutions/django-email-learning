@@ -18,6 +18,7 @@ from django_email_learning.platform.api.views.learners import (
     EnrollmentsView,
     EnrollmentView,
     LearnersView,
+    SendDeliveryScheduleNowView,
     SingleLearnerView,
 )
 from django_email_learning.platform.api.views.misc import (
@@ -84,6 +85,7 @@ __all__ = [
     "EnrollmentsView",
     "EnrollmentView",
     "EnrollmentsStatisticsView",
+    "SendDeliveryScheduleNowView",
     "NewsletterView",
     "NewsletterEmbedSnippetView",
     "SingleNewsletterView",
