@@ -39,6 +39,7 @@ from django_email_learning.platform.api.serializers.learners import (
     Event,
     EventType,
     LearnerDetailResponse,
+    NextDeliveryResponse,
     QuizSubmitedEvent,
     ReminderSentEvent,
 )
@@ -143,6 +144,7 @@ __all__ = [
     "EmailOpenedEvent",
     "Event",
     "EnrollmentResponse",
+    "NextDeliveryResponse",
     "LearnerDetailResponse",
     "GetOrCreateUserRequest",
     "UserResponse",

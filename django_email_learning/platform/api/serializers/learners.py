@@ -8,6 +8,7 @@ from django_email_learning.models import (
     AssignmentSubmission,
     ContentDelivery,
     CourseContentType,
+    DeliverySchedule,
     DeliveryStatus,
     Enrollment,
     EnrollmentStatus,
@@ -101,12 +102,51 @@ class Event(BaseModel):
     ) = Field(discriminator="type")  # REGISTERED, VERIFIED, COURSE_COMPLETED have no additional data
 
 
+class NextDeliveryResponse(BaseModel):
+    """The next content the learner is scheduled to receive on this enrollment."""
+
+    delivery_schedule_id: int
+    course_content_id: int
+    course_content_title: str
+    course_content_type: str
+    scheduled_at: datetime
+
+
+def _next_delivery(enrollment: Enrollment) -> NextDeliveryResponse | None:
+    """The earliest still-scheduled delivery for `enrollment`, if any.
+
+    Ordered by time, then id, matching the order the delivery job would reach
+    them in, so this names the delivery a "send now" acts on.
+    """
+    schedule = (
+        DeliverySchedule.objects.filter(
+            delivery__enrollment=enrollment,
+            status=DeliveryStatus.SCHEDULED,
+        )
+        .select_related("delivery__course_content")
+        .order_by("time", "id")
+        .first()
+    )
+    if schedule is None:
+        return None
+
+    course_content = schedule.delivery.course_content
+    return NextDeliveryResponse(
+        delivery_schedule_id=schedule.id,
+        course_content_id=course_content.id,
+        course_content_title=course_content.title,
+        course_content_type=course_content.type,
+        scheduled_at=schedule.time,
+    )
+
+
 class EnrollmentResponse(BaseModel):
     id: int
     learner: LearnerResponse
     course: CourseSummaryResponse
     status: EnrollmentStatus
     events: list[Event]
+    next_delivery: NextDeliveryResponse | None = None
 
     @staticmethod
     def from_django_model(enrollment: Enrollment) -> "EnrollmentResponse":
@@ -267,6 +307,7 @@ class EnrollmentResponse(BaseModel):
                 "course": enrollment.course,
                 "status": enrollment.status,
                 "events": events,
+                "next_delivery": _next_delivery(enrollment),
             }
         )
 

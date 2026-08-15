@@ -1,6 +1,18 @@
-from django.urls import reverse
+from datetime import timedelta
 
-from django_email_learning.models import Course, Enrollment, EnrollmentStatus, Learner, Organization
+from django.urls import reverse
+from django.utils import timezone
+
+from django_email_learning.models import (
+    ContentDelivery,
+    Course,
+    DeliverySchedule,
+    DeliveryStatus,
+    Enrollment,
+    EnrollmentStatus,
+    Learner,
+    Organization,
+)
 
 
 def get_url(enrollment_id):
@@ -59,9 +71,53 @@ def test_enrollment_api_cross_organization_returns_404(viewer_client):
     assert response.status_code == 404
 
 
-def test_enrollment_api_email_opened_event(viewer_client, content_delivery):
-    from django.utils import timezone
+def test_enrollment_api_returns_the_next_scheduled_delivery(viewer_client, content_delivery, course_lesson_content):
+    delivery = ContentDelivery.objects.create(
+        enrollment=content_delivery.enrollment,
+        course_content=course_lesson_content,
+    )
+    schedule = DeliverySchedule.objects.create(delivery=delivery, time=timezone.now() + timedelta(days=1))
 
+    response = viewer_client.get(get_url(enrollment_id=content_delivery.enrollment.id))
+
+    assert response.status_code == 200
+    next_delivery = response.json()["next_delivery"]
+    assert next_delivery["delivery_schedule_id"] == schedule.id
+    assert next_delivery["course_content_id"] == course_lesson_content.id
+    assert next_delivery["course_content_title"] == course_lesson_content.title
+    assert next_delivery["course_content_type"] == course_lesson_content.type
+    assert next_delivery["scheduled_at"] is not None
+
+
+def test_enrollment_api_next_delivery_is_the_earliest_scheduled_one(
+    viewer_client, content_delivery, course_lesson_content, course_assignment_content
+):
+    later = ContentDelivery.objects.create(
+        enrollment=content_delivery.enrollment,
+        course_content=course_assignment_content,
+    )
+    DeliverySchedule.objects.create(delivery=later, time=timezone.now() + timedelta(days=5))
+    sooner = ContentDelivery.objects.create(
+        enrollment=content_delivery.enrollment,
+        course_content=course_lesson_content,
+    )
+    sooner_schedule = DeliverySchedule.objects.create(delivery=sooner, time=timezone.now() + timedelta(days=1))
+
+    response = viewer_client.get(get_url(enrollment_id=content_delivery.enrollment.id))
+
+    assert response.json()["next_delivery"]["delivery_schedule_id"] == sooner_schedule.id
+
+
+def test_enrollment_api_next_delivery_is_null_without_a_scheduled_delivery(viewer_client, content_delivery):
+    assert not content_delivery.delivery_schedules.filter(status=DeliveryStatus.SCHEDULED).exists()
+
+    response = viewer_client.get(get_url(enrollment_id=content_delivery.enrollment.id))
+
+    assert response.status_code == 200
+    assert response.json()["next_delivery"] is None
+
+
+def test_enrollment_api_email_opened_event(viewer_client, content_delivery):
     content_delivery.enrollment.status = EnrollmentStatus.ACTIVE
     content_delivery.enrollment.save()
     content_delivery.course_content.is_published = True

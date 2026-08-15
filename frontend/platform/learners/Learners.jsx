@@ -24,6 +24,7 @@ import apiClient from '../../src/apiClient.js';
 import { sanitizeEndpointUrl, sanitizeImageUrl } from '../../src/sanitizeUrl.js';
 
 const EnrollentList = lazy(() => import("./components/EnrollmentList.jsx"));
+const NextDelivery = lazy(() => import("./components/NextDelivery.jsx"));
 
 
 const ENROLLMENT_STATUSES = ['active', 'completed', 'deactivated', 'canceled', 'inactive'];
@@ -31,7 +32,7 @@ const ENROLLMENT_STATUSES = ['active', 'completed', 'deactivated', 'canceled', '
 function Learners() {
 
   const [organizationId, setOrganizationId] = useState(null);
-  const { localeMessages, direction, apiBaseUrl: rawApiBaseUrl } = useAppContext();
+  const { localeMessages, direction, userRole, apiBaseUrl: rawApiBaseUrl } = useAppContext();
   const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
   const [learners, setLearners] = useState([]);
   const searcchInputRef = useRef(null);
@@ -89,6 +90,16 @@ function Learners() {
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.learner.email}</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.course.title}</Typography>
+              {data.next_delivery && (
+                <Suspense fallback={null}>
+                  <NextDelivery
+                    nextDelivery={data.next_delivery}
+                    canSend={userRole === 'admin'}
+                    sendUrl={`${apiBaseUrl}/organizations/${organizationId}/enrollments/${enrollmentId}/delivery-schedules/${data.next_delivery.delivery_schedule_id}/send/`}
+                    onSent={() => showEnrollmentStatus(enrollmentId)}
+                  />
+                </Suspense>
+              )}
             </Box>
             <Chip label={`ID: ${data.id}`} size="small" variant="outlined" sx={{ flexShrink: 0, fontFamily: 'monospace' }} />
           </Box>
