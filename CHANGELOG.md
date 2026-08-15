@@ -6,7 +6,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
-## [Unreleased]
+## [5.0.0] - 2026-08-15
+
+> **Upgrading.** No migrations. One thing to check before you upgrade: if you call `POST /api/v1/enrollments/` and rely on the learner receiving a verification link, add `"verified": false` to the request body — that is now opt-in, and the default creates the enrollment active instead. Callers that read `status` from the `201` response get `active` rather than `unverified`. Nothing else in the API changed.
 
 ### Changed
 
