@@ -553,6 +553,22 @@ Optional integer controlling how many threads the ``deliver_contents`` job uses 
 .. note::
    Set ``DELIVERY_WORKERS`` to a value your SMTP provider can handle — most transactional email services impose per-second rate limits. A value between 2 and 10 is typical. Each worker uses its own database connection, so ensure your database connection pool is sized accordingly.
 
+**STALE_CLAIM_HOURS**
+
+Optional integer controlling how long a delivery schedule may sit in ``processing`` before the ``deliver_contents`` job treats the claim as abandoned and returns it to the queue. Defaults to ``2`` hours.
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
+        'STALE_CLAIM_HOURS': 2,
+    }
+
+.. note::
+   A schedule is marked ``processing`` while its email is being sent. A worker that dies in between — a deploy restarting the container, an OOM kill, a request killed by the web server's timeout — never gets to release it, and the queue only looks for ``scheduled`` rows, so the delivery would otherwise never be retried. Each job run requeues claims older than this value and logs the ids it recovered. Raise it if a single delivery can legitimately take longer than the default to send, so an in-flight delivery is never requeued underneath the worker sending it.
+
 
 **JOB_EXECUTOR** / **JOB_EXECUTOR_MAX_WORKERS**
 

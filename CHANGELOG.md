@@ -6,6 +6,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [5.1.2] - 2026-08-19
+
+> **Upgrading.** Run the migrations. Deliveries stranded in `processing` by the bugs below are returned to the queue by the first `deliver_contents` run after you upgrade, and go out on the run after that — nothing to clean up by hand.
+
+### Fixed
+
+- **Content deliveries could get stuck in `processing` and never be sent** — A delivery schedule is moved to `processing` before its email is sent, and moved out of it by whatever happens next — delivered, canceled, rescheduled, blocked. The queue only ever looks for `scheduled` rows, so any path that claimed a schedule without finishing it hid that delivery from every later job run, silently and for good: no error, no retry, and the job still reporting success. The learner simply stopped receiving their course. Four such paths are fixed. The delivery and reminder queues claimed a batch of due schedules while being *constructed*, and the jobs built their queue before checking whether another instance was already running — so two overlapping runs meant the second one claimed up to fifty schedules and then exited without touching any of them. Queue construction and claiming are now both deferred until the job actually starts pulling work. Sending a delivery by hand from the Learners page claimed the row before the block that guards the delivery, so an error while loading the schedule escaped with the row still claimed; the load now happens inside that guard and releases the claim. And a content row whose type had nothing to send returned without changing the status at all, leaving the schedule claimed with nothing logged — it is now blocked and counted in the blocked-delivery metric, rather than handed back to the job to fail on again every run.
+- **A worker killed mid-delivery left its schedule claimed forever** — A process that dies between claiming a schedule and sending it — a deploy restarting the container, an OOM kill, a request killed by the web server's timeout — never gets to run any cleanup, so no amount of error handling releases the row. Schedules now record when they were claimed, and each `deliver_contents` run returns claims older than `STALE_CLAIM_HOURS` (default 2) to the queue, logging the ids it recovered. Deliveries that are genuinely in flight are never touched, including one being sent by hand from the Learners page.
+
+### Added
+
+- **`STALE_CLAIM_HOURS`** — Optional integer setting controlling how long a delivery may sit claimed before the `deliver_contents` job treats it as abandoned and requeues it. Defaults to `2` hours. Raise it if a single delivery can legitimately take longer than that to send.
+
 ## [5.1.1] - 2026-08-19
 
 ### Security
