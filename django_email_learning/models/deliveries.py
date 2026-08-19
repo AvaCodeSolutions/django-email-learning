@@ -149,6 +149,12 @@ class DeliverySchedule(models.Model):
     )
     failed_attempts = models.IntegerField(default=0)
     delivered_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    claimed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="When the schedule was moved to PROCESSING. Used to recover claims whose worker died.",
+    )
 
     def generate_link(self) -> str:
         payload = {

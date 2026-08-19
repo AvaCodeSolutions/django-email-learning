@@ -50,7 +50,21 @@ def _get_max_retries() -> int:
 
 class SendNewslettersJob:
     def __init__(self) -> None:
-        self.sendout_queue: TaskQueueProtocol[SendoutDelivery] = self._get_sendout_queue()
+        # Lazy for the same reason as the other jobs: a queue must not claim
+        # work before `run()` has confirmed this instance is the one running.
+        # `DatabaseSendoutQueue` already defers its own claim, but a queue
+        # supplied through SENDOUT_QUEUE need not.
+        self._sendout_queue: TaskQueueProtocol[SendoutDelivery] | None = None
+
+    @property
+    def sendout_queue(self) -> TaskQueueProtocol[SendoutDelivery]:
+        if self._sendout_queue is None:
+            self._sendout_queue = self._get_sendout_queue()
+        return self._sendout_queue
+
+    @sendout_queue.setter
+    def sendout_queue(self, queue: TaskQueueProtocol[SendoutDelivery]) -> None:
+        self._sendout_queue = queue
 
     def start(self) -> JobExecution | None:
         job_execution = JobExecution.start_if_not_running(job_name=JobName.SEND_NEWSLETTERS.value)

@@ -20,6 +20,8 @@ def test_get_delivery_queue_uses_prebuilt_configured_object(settings):
         "django_email_learning.jobs.queue_utils.import_string",
         return_value=prebuilt_queue,
     ):
+        # The queue is resolved on first access, not on construction, so the
+        # configured object has to be read while the import is patched.
         job = DeliverContentsJob()
 
-    assert job.delivery_queue is prebuilt_queue
+        assert job.delivery_queue is prebuilt_queue

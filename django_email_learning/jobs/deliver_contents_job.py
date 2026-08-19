@@ -4,6 +4,7 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 
 from django.conf import settings
 from django.db import close_old_connections
+from django.db.models import Q
 from django.utils import timezone
 
 from django_email_learning.jobs.job_metrics import track_job_execution
@@ -39,14 +40,32 @@ def _get_delivery_workers() -> int:
     return int(getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("DELIVERY_WORKERS", 1))
 
 
+def _get_stale_claim_hours() -> int:
+    """Hours after which a PROCESSING schedule is considered abandoned (default 2)."""
+    return int(getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("STALE_CLAIM_HOURS", 2))
+
+
 class DeliverContentsJob:
     def __init__(self, delivery_queue: TaskQueueProtocol[DeliverySchedule] | None = None) -> None:
         # A caller that only needs `process_delivery` for a schedule it has
         # already claimed can pass its own queue, so constructing the job does
         # not claim a batch of work the running job should be handling.
-        self.delivery_queue: TaskQueueProtocol[DeliverySchedule] = (
-            delivery_queue if delivery_queue is not None else self.get_delivery_queue()
-        )
+        #
+        # Resolution is lazy: building the default queue reaches the database,
+        # and `run()` may exit without processing anything when another
+        # instance holds the run lock. Anything claimed before that point would
+        # never be released.
+        self._delivery_queue = delivery_queue
+
+    @property
+    def delivery_queue(self) -> TaskQueueProtocol[DeliverySchedule]:
+        if self._delivery_queue is None:
+            self._delivery_queue = self.get_delivery_queue()
+        return self._delivery_queue
+
+    @delivery_queue.setter
+    def delivery_queue(self, queue: TaskQueueProtocol[DeliverySchedule]) -> None:
+        self._delivery_queue = queue
 
     def start(self) -> JobExecution | None:
         job_execution = JobExecution.start_if_not_running(job_name=JobName.DELIVER_CONTENTS.value)
@@ -64,6 +83,7 @@ class DeliverContentsJob:
         job_name=JobName.DELIVER_CONTENTS.value,
     )
     def _run_job(self, job_execution: JobExecution) -> None:
+        self.requeue_stale_claims()
         workers = _get_delivery_workers()
 
         if workers <= 1:
@@ -131,6 +151,40 @@ class DeliverContentsJob:
             self.block_delivery(delivery_schedule, e)
             raise
 
+    def requeue_stale_claims(self) -> int:
+        """Return schedules whose claim was never completed to the queue.
+
+        A schedule is moved to PROCESSING before it is sent, and moved out of it
+        by whatever happens next - delivered, canceled, rescheduled, blocked. A
+        worker that dies in between (SIGKILL on deploy, OOM, a request killed by
+        the gunicorn timeout) never runs that second step, and because the queue
+        only ever looks for SCHEDULED rows the claim is invisible from then on.
+
+        Only claims older than `STALE_CLAIM_HOURS` are touched, so a delivery
+        that is genuinely in flight - including one being sent by hand from the
+        learners page - is never pulled out from under the worker sending it.
+        Rows claimed before `claimed_at` existed are always stale: nothing is
+        writing them any more.
+        """
+        cutoff = timezone.now() - datetime.timedelta(hours=_get_stale_claim_hours())
+        stale_ids = list(
+            DeliverySchedule.objects.filter(status=DeliveryStatus.PROCESSING)
+            .filter(Q(claimed_at__lt=cutoff) | Q(claimed_at__isnull=True))
+            .values_list("id", flat=True)
+        )
+        if not stale_ids:
+            return 0
+
+        DeliverySchedule.objects.filter(id__in=stale_ids).update(
+            status=DeliveryStatus.SCHEDULED,
+            time=timezone.now(),
+            claimed_at=None,
+        )
+        logger.warning(
+            f"Requeued {len(stale_ids)} delivery schedule(s) abandoned in {DeliveryStatus.PROCESSING}: {stale_ids}"
+        )
+        return len(stale_ids)
+
     def block_delivery(self, delivery_schedule: DeliverySchedule, exc: Exception) -> None:
         """Mark a delivery as BLOCKED and emit a metric."""
         delivery_schedule.status = DeliveryStatus.BLOCKED
@@ -197,6 +251,17 @@ class DeliverContentsJob:
                     else:
                         logger.info(f"No more content to schedule for enrollment {enrollment_id}")
                         delivery_schedule.delivery.enrollment.graduate()
+        else:
+            # No branch above matched, so nothing was sent and nothing changed
+            # the status. Leaving the schedule in PROCESSING would hide it from
+            # the queue for good, so fail it loudly instead.
+            logger.error(
+                f"CourseContent {course_content.id} has type '{course_content.type}' with no content to send. "
+                f"Blocking DeliverySchedule ID {delivery_schedule.id}."
+            )
+            delivery_schedule.status = DeliveryStatus.BLOCKED
+            delivery_schedule.save()
+            metric_service.delivery_schedule_blocked(course_content.id)
 
     def send_lesson_content(self, delivery_schedule: DeliverySchedule) -> bool:
         if not delivery_schedule.delivery.course_content.lesson:
@@ -316,4 +381,5 @@ class DeliverContentsJob:
             delivery_schedule.time += datetime.timedelta(minutes=60)
             delivery_schedule.failed_attempts += 1
             delivery_schedule.status = DeliveryStatus.SCHEDULED
+            delivery_schedule.claimed_at = None
             delivery_schedule.save()
