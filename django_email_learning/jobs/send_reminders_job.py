@@ -26,7 +26,20 @@ logger = logging.getLogger(__name__)
 
 class SendRemindersJob:
     def __init__(self) -> None:
-        self.reminder_queue: TaskQueueProtocol[DeliverySchedule] = self.get_reminder_queue()
+        # Lazy: the default queue claims a batch as soon as it is built, and
+        # `run()` exits without processing anything when another instance holds
+        # the run lock. Anything claimed before that would never be released.
+        self._reminder_queue: TaskQueueProtocol[DeliverySchedule] | None = None
+
+    @property
+    def reminder_queue(self) -> TaskQueueProtocol[DeliverySchedule]:
+        if self._reminder_queue is None:
+            self._reminder_queue = self.get_reminder_queue()
+        return self._reminder_queue
+
+    @reminder_queue.setter
+    def reminder_queue(self, queue: TaskQueueProtocol[DeliverySchedule]) -> None:
+        self._reminder_queue = queue
 
     def start(self) -> JobExecution | None:
         job_execution = JobExecution.start_if_not_running(job_name=JobName.SEND_REMINDERS.value)

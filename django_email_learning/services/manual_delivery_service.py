@@ -68,6 +68,7 @@ def send_delivery_schedule_now(delivery_schedule: DeliverySchedule) -> ManualDel
         # `delivered_at` consistent with `time`, and a retry after a failed
         # attempt is then measured from now rather than from a future date.
         time=timezone.now(),
+        claimed_at=timezone.now(),
     )
     if not claimed:
         delivery_schedule.refresh_from_db()
@@ -80,19 +81,40 @@ def send_delivery_schedule_now(delivery_schedule: DeliverySchedule) -> ManualDel
             delivery_status=delivery_schedule.status,
         )
 
-    claimed_schedule = DeliverySchedule.objects.select_related(
-        "delivery__enrollment__learner",
-        "delivery__course_content__course__organization",
-        "delivery__course_content__course__imap_connection",
-        "delivery__course_content__lesson",
-        "delivery__course_content__quiz",
-        "delivery__course_content__assignment",
-    ).get(id=delivery_schedule.id)
-
+    # Everything from here on runs with the row already claimed, so every exit -
+    # including an unexpected one - has to leave it in a status the queue can
+    # see again. Loading the schedule is inside the try for that reason: an
+    # error there would otherwise return the row to no one.
     job = DeliverContentsJob(delivery_queue=_EmptyDeliveryQueue())
+    claimed_schedule: DeliverySchedule | None = None
     try:
+        claimed_schedule = DeliverySchedule.objects.select_related(
+            "delivery__enrollment__learner",
+            "delivery__course_content__course__organization",
+            "delivery__course_content__course__imap_connection",
+            "delivery__course_content__lesson",
+            "delivery__course_content__quiz",
+            "delivery__course_content__assignment",
+        ).get(id=delivery_schedule.id)
+
         job.process_delivery(claimed_schedule)
     except Exception as e:
+        if claimed_schedule is None:
+            # The claim succeeded but the schedule could not be loaded, so
+            # nothing was sent. Release it rather than blocking a delivery that
+            # was never attempted.
+            DeliverySchedule.objects.filter(id=delivery_schedule.id, status=DeliveryStatus.PROCESSING).update(
+                status=DeliveryStatus.SCHEDULED,
+                claimed_at=None,
+            )
+            logger.exception(
+                f"Manual delivery for DeliverySchedule ID {delivery_schedule.id} failed before the schedule "
+                f"could be loaded: {e}. Returning it to {DeliveryStatus.SCHEDULED}."
+            )
+            return ManualDeliveryResult(
+                outcome=ManualDeliveryOutcome.FAILED,
+                delivery_status=DeliveryStatus.SCHEDULED,
+            )
         job.block_delivery(claimed_schedule, e)
         return ManualDeliveryResult(outcome=ManualDeliveryOutcome.FAILED, delivery_status=DeliveryStatus.BLOCKED)
 
@@ -106,6 +128,7 @@ def send_delivery_schedule_now(delivery_schedule: DeliverySchedule) -> ManualDel
             f"Returning it to {DeliveryStatus.SCHEDULED}."
         )
         claimed_schedule.status = DeliveryStatus.SCHEDULED
+        claimed_schedule.claimed_at = None
         claimed_schedule.save()
         metric_service.delivery_schedule_blocked(claimed_schedule.delivery.course_content.id)
         return ManualDeliveryResult(outcome=ManualDeliveryOutcome.FAILED, delivery_status=claimed_schedule.status)

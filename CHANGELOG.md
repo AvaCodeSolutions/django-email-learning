@@ -6,6 +6,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [5.1.1] - 2026-08-19
+
+### Security
+
+- Updated `cryptography` and `dompurify` to their latest versions to pick up upstream security fixes.
+
+### Changed
+
+- Routine dependency updates (Django/Python tooling, Vite, eslint, React ecosystem) — no functional changes.
+
 ## [5.1.0] - 2026-08-15
 
 ### Added

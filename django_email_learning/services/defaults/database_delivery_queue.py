@@ -23,7 +23,12 @@ class DatabaseDeliveryQueue(TaskQueueProtocol[DeliverySchedule]):
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
-        self._task_iterator: Iterator[DeliverySchedule] = self.get_next_batch(limit=self.ITERATOR_BATCH_SIZE)
+        # Claiming is deferred to the first `next_task()` call. Claiming in the
+        # constructor would take rows away from the database before the caller
+        # has decided it is going to process them - a job that exits because
+        # another instance holds the run lock would strand every claimed row in
+        # PROCESSING, where no later run can see it again.
+        self._task_iterator: Iterator[DeliverySchedule] | None = None
 
     def get_next_batch(self, limit: int) -> Iterator[DeliverySchedule]:
         with transaction.atomic():
@@ -39,7 +44,10 @@ class DatabaseDeliveryQueue(TaskQueueProtocol[DeliverySchedule]):
             if not task_ids:
                 return iter([])
 
-            DeliverySchedule.objects.filter(id__in=task_ids).update(status=DeliveryStatus.PROCESSING)
+            DeliverySchedule.objects.filter(id__in=task_ids).update(
+                status=DeliveryStatus.PROCESSING,
+                claimed_at=timezone.now(),
+            )
 
         # Return fully-hydrated objects outside the transaction so the lock
         # is released before we start iterating.
@@ -59,6 +67,8 @@ class DatabaseDeliveryQueue(TaskQueueProtocol[DeliverySchedule]):
 
     def next_task(self) -> DeliverySchedule | None:
         with self._lock:
+            if self._task_iterator is None:
+                self._task_iterator = self.get_next_batch(limit=self.ITERATOR_BATCH_SIZE)
             try:
                 return next(self._task_iterator)
             except StopIteration:

@@ -19,7 +19,9 @@ class DatabaseReminderQueue(TaskQueueProtocol[DeliverySchedule]):
     ITERATOR_BATCH_SIZE = 50
 
     def __init__(self) -> None:
-        self._task_iterator = self.get_next_batch(limit=self.ITERATOR_BATCH_SIZE)
+        # Deferred until the first `next_task()`: see DatabaseDeliveryQueue for
+        # why claiming in the constructor strands rows in PROCESSING.
+        self._task_iterator: Iterator[DeliverySchedule] | None = None
 
     def get_next_batch(self, limit: int) -> Iterator[DeliverySchedule]:
         with transaction.atomic():
@@ -67,6 +69,8 @@ class DatabaseReminderQueue(TaskQueueProtocol[DeliverySchedule]):
         )
 
     def next_task(self) -> DeliverySchedule | None:
+        if self._task_iterator is None:
+            self._task_iterator = self.get_next_batch(limit=self.ITERATOR_BATCH_SIZE)
         try:
             return next(self._task_iterator)
         except StopIteration:

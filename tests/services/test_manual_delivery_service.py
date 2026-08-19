@@ -106,11 +106,15 @@ def test_blocks_the_delivery_when_processing_raises(scheduled_lesson_delivery):
     assert scheduled_lesson_delivery.status == DeliveryStatus.BLOCKED
 
 
-def test_returns_an_unsendable_delivery_to_scheduled(db, active_enrollment, course_assignment_content):
+def test_blocks_an_unsendable_delivery(db, active_enrollment, course_assignment_content):
     """A content row with nothing to send must not be left PROCESSING.
 
-    `process_delivery` recognises no content in that case and returns without
-    touching the status, which would hide the schedule from the job forever.
+    `process_delivery` now recognises this itself and blocks the schedule. It
+    used to return without touching the status, which left the row PROCESSING
+    for the job (invisible to every later run) and made this service hand it
+    back to SCHEDULED - where the job would claim it, fail to send it, and
+    reschedule it again on every run. BLOCKED is terminal and shows up in the
+    blocked metric, so the broken content gets fixed instead of retried.
     Model validation rejects an assignment content with no assignment, so the
     row is broken with a queryset update, the way a stray data change would.
     """
@@ -124,13 +128,15 @@ def test_returns_an_unsendable_delivery_to_scheduled(db, active_enrollment, cour
     )
     schedule = DeliverySchedule.objects.create(delivery=delivery)
 
-    with patch.object(manual_delivery_service_module.metric_service, "delivery_schedule_blocked") as blocked_metric:
+    with patch(
+        "django_email_learning.jobs.deliver_contents_job.metric_service.delivery_schedule_blocked"
+    ) as blocked_metric:
         result = send_delivery_schedule_now(schedule)
 
     assert result.outcome == ManualDeliveryOutcome.FAILED
-    assert result.delivery_status == DeliveryStatus.SCHEDULED
+    assert result.delivery_status == DeliveryStatus.BLOCKED
     schedule.refresh_from_db()
-    assert schedule.status == DeliveryStatus.SCHEDULED
+    assert schedule.status == DeliveryStatus.BLOCKED
     blocked_metric.assert_called_once_with(content_without_assignment.id)
 
 
@@ -147,3 +153,45 @@ def test_cancels_a_delivery_whose_content_is_unpublished(db, active_enrollment, 
 
     assert result.outcome == ManualDeliveryOutcome.FAILED
     assert result.delivery_status == DeliveryStatus.CANCELED
+
+
+def test_failure_before_the_schedule_is_loaded_releases_the_claim(scheduled_lesson_delivery):
+    """The claim must be released on every exit, including unexpected ones.
+
+    The row is moved to PROCESSING before the schedule is re-read. An error in
+    between used to escape with the row still claimed, and the queue only ever
+    looks for SCHEDULED rows - so the delivery was never attempted again.
+    """
+    with patch.object(
+        DeliverySchedule.objects,
+        "select_related",
+        side_effect=RuntimeError("database went away"),
+    ):
+        result = send_delivery_schedule_now(scheduled_lesson_delivery)
+
+    assert result.outcome == ManualDeliveryOutcome.FAILED
+    scheduled_lesson_delivery.refresh_from_db()
+    assert scheduled_lesson_delivery.status == DeliveryStatus.SCHEDULED
+    assert scheduled_lesson_delivery.claimed_at is None
+
+
+def test_claim_is_stamped_so_it_can_be_recovered(scheduled_lesson_delivery):
+    """A claim with no timestamp cannot be told apart from an abandoned one."""
+    seen = {}
+
+    def record(_job, schedule):
+        seen["status"] = schedule.status
+        seen["claimed_at"] = schedule.claimed_at
+        schedule.status = DeliveryStatus.DELIVERED
+        schedule.save()
+
+    with patch.object(
+        manual_delivery_service_module.DeliverContentsJob,
+        "process_delivery",
+        autospec=True,
+        side_effect=record,
+    ):
+        send_delivery_schedule_now(scheduled_lesson_delivery)
+
+    assert seen["status"] == DeliveryStatus.PROCESSING
+    assert seen["claimed_at"] is not None
