@@ -6,7 +6,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
-## [Unreleased]
+## [5.2.0] - 2026-08-25
 
 > **Upgrading.** Run the migrations. The only schema change is a new choice on the enrollment deactivation reason; nothing existing is rewritten.
 
