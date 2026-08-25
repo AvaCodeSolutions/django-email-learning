@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [5.2.1] - 2026-08-25
+
+### Security
+
+- **`nanoid` updated to 3.3.18** — Picks up the fix for [GHSA-2v37-7h3g-55p8](https://github.com/advisories/GHSA-2v37-7h3g-55p8) (high): a custom generator could loop indefinitely when asked for a size of zero. It reaches the project as a transitive dependency of `postcss`, which Vite uses to build the frontend, so it is a build-time dependency only and never ships in the served assets. `npm audit` on the frontend now reports no vulnerabilities.
+
 ## [5.2.0] - 2026-08-25
 
 > **Upgrading.** Run the migrations. The only schema change is a new choice on the enrollment deactivation reason; nothing existing is rewritten.
