@@ -3,6 +3,7 @@ from django.views.defaults import page_not_found
 
 from django_email_learning.platform.api.views import (
     ApiKeyView,
+    CancelEnrollmentView,
     CourseContentView,
     CourseView,
     EmbedSnippetView,
@@ -152,6 +153,11 @@ urlpatterns = [
         "delivery-schedules/<int:delivery_schedule_id>/send/",
         SendDeliveryScheduleNowView.as_view(),
         name="delivery_schedule_send_now",
+    ),
+    path(
+        "organizations/<int:organization_id>/enrollments/<int:enrollment_id>/cancel/",
+        CancelEnrollmentView.as_view(),
+        name="enrollment_cancel",
     ),
     path(
         "organizations/<int:organization_id>/courses/<int:course_id>/enrollments/",

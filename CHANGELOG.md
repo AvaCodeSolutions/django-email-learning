@@ -6,6 +6,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [Unreleased]
+
+> **Upgrading.** Run the migrations. The only schema change is a new choice on the enrollment deactivation reason; nothing existing is rewritten.
+
+### Added
+
+- **Cancel a learner's enrollment from the Learners page** — Organization admins get a **Cancel enrollment** button in the enrollment dialog's header, for enrollments that are still running. Cancelling deactivates the enrollment and cancels every content delivery still scheduled for that learner, so the course stops arriving in their inbox — a delivery already being sent is left alone, since that email is on its way either way. The learner is not notified, and can be enrolled in the same course again afterwards, which leaves the cancelled enrollment in place as a record. The action asks for confirmation first, because the enrollment state machine has no way back out of deactivated. Behind it is a new admin-only endpoint, `POST /api/platform/organizations/<id>/enrollments/<id>/cancel/`, which returns `409` and changes nothing if the enrollment reached a final state in the meantime.
+- **`revoked` deactivation reason** — A cancellation by an admin is recorded as `revoked` rather than reusing `canceled`, which means the learner unsubscribed themselves. Both end the enrollment, but the enrollment timeline and the `user_enrollment_deactivated` metric — which is broken down by reason — can now tell "we cut this learner off" from "this learner opted out". Existing rows keep whatever reason they already had.
+
 ## [5.1.2] - 2026-08-19
 
 > **Upgrading.** Run the migrations. Deliveries stranded in `processing` by the bugs below are returned to the queue by the first `deliver_contents` run after you upgrade, and go out on the run after that — nothing to clean up by hand.

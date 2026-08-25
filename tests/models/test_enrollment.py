@@ -112,7 +112,7 @@ def test_unique_active_enrollment_allows_deactivated(db, learner, course):
     assert enrollment.id is not None
 
 
-@pytest.mark.parametrize("reason", ["canceled", "blocked", "failed", "inactive"])
+@pytest.mark.parametrize("reason", ["canceled", "blocked", "failed", "inactive", "revoked"])
 def test_deactivated_valid_reason(db, learner, course, reason):
     enrollment = Enrollment.objects.create(
         learner=learner, course=course, status="deactivated", deactivation_reason=reason

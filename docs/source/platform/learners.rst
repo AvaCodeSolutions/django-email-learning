@@ -50,6 +50,19 @@ A few things worth knowing:
 - The action is restricted to organization admins. Other roles see the scheduled delivery but no link.
 
 
+Cancelling an Enrollment
+------------------------
+
+Organization admins can end a learner's enrollment from the enrollment view, using the **Cancel enrollment** button in its header. It appears only while the enrollment is still running — an enrollment that has already been completed or deactivated shows no button, and only admins see it at all.
+
+Cancelling does two things: the enrollment is deactivated with the reason **revoked**, and every content delivery still scheduled for that learner is canceled, so nothing further arrives in their inbox. A delivery that is being sent at that very moment is left alone — that email is already on its way. The learner is not notified.
+
+The reason is deliberately distinct from **canceled**, which is what an enrollment gets when the *learner* unsubscribes themselves. Both end the enrollment, but the enrollment timeline and the ``user_enrollment_deactivated`` metric keep them apart, so "we cut this learner off" never looks like "this learner opted out".
+
+The action cannot be undone — the enrollment state machine has no transition out of deactivated — so it asks for confirmation first. The learner can, however, be enrolled in the same course again afterwards, which creates a fresh enrollment and leaves the cancelled one in place as a record.
+
+Behind the button is an admin-only endpoint, ``POST /api/platform/organizations/<id>/enrollments/<id>/cancel/``. An enrollment that reached a final state in the meantime returns ``409`` and is left exactly as it was.
+
 Learner Capacity
 -----------------
 

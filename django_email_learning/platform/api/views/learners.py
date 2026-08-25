@@ -18,6 +18,7 @@ from django_email_learning.decorators import accessible_for
 from django_email_learning.models import (
     Certificate,
     Course,
+    DeactivationReason,
     DeliverySchedule,
     Enrollment,
     EnrollmentStatus,
@@ -37,6 +38,10 @@ from django_email_learning.services.command_models.exceptions.learner_cap_exceed
 )
 from django_email_learning.services.command_models.verify_enrollment_command import (
     VerifyEnrollmentCommand,
+)
+from django_email_learning.services.enrollment_cancellation_service import (
+    CancellationOutcome,
+    cancel_enrollment,
 )
 from django_email_learning.services.manual_delivery_service import (
     ManualDeliveryOutcome,
@@ -273,3 +278,42 @@ class EnrollmentsStatisticsView(View):
         enrollments_dict = {enrollment["created_date"]: enrollment["count"] for enrollment in enrollments}
         stats = [{"date": date.isoformat(), "count": enrollments_dict.get(date, 0)} for date in dates]
         return JsonResponse({"statistics": stats}, status=200)
+
+
+@method_decorator(accessible_for(roles={"admin"}), name="post")
+class CancelEnrollmentView(View):
+    """Cancels one learner's enrollment on the admin's behalf.
+
+    Admin-only: it ends a learner's course and stops content that was already
+    scheduled for them, and the enrollment FSM has no way back out of the
+    deactivated state - so it is not something an instructor or editor should
+    be able to do from the learner list.
+    """
+
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            enrollment = Enrollment.objects.get(
+                id=kwargs["enrollment_id"], course__organization_id=kwargs["organization_id"]
+            )
+        except Enrollment.DoesNotExist:
+            return JsonResponse({"error": "Enrollment not found"}, status=404)
+
+        result = cancel_enrollment(enrollment)
+
+        if result.outcome == CancellationOutcome.NOT_CANCELLABLE:
+            return JsonResponse(
+                {
+                    "error": "Enrollment can no longer be canceled",
+                    "status": result.enrollment_status,
+                },
+                status=409,
+            )
+
+        return JsonResponse(
+            {
+                "id": enrollment.id,
+                "status": result.enrollment_status,
+                "deactivation_reason": DeactivationReason.REVOKED.value,
+            },
+            status=200,
+        )
