@@ -71,4 +71,15 @@ class Learners(BasePlatformView):
             "content_sent_successfully": _("Content sent."),
             "content_send_failed": _("The content could not be sent."),
             "delivery_no_longer_scheduled": _("This delivery is no longer scheduled."),
+            "revoked": _("Revoked"),
+            "cancel_enrollment": _("Cancel enrollment"),
+            "cancel_enrollment_title": _("Cancel this enrollment?"),
+            "cancel_enrollment_confirmation": _(
+                "The learner stops receiving this course immediately and any content still "
+                "scheduled for them is canceled. This cannot be undone."
+            ),
+            "keep_enrollment": _("Keep enrollment"),
+            "confirm_cancel_enrollment": _("Cancel enrollment"),
+            "canceling": _("Canceling..."),
+            "enrollment_cancel_failed": _("The enrollment could not be canceled."),
         }

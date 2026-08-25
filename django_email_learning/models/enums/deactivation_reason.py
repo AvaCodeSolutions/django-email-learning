@@ -6,3 +6,4 @@ class DeactivationReason(StrEnum):
     BLOCKED = "blocked"
     FAILED = "failed"
     INACTIVE = "inactive"
+    REVOKED = "revoked"

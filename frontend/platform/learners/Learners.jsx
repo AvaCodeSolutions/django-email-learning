@@ -25,6 +25,7 @@ import { sanitizeEndpointUrl, sanitizeImageUrl } from '../../src/sanitizeUrl.js'
 
 const EnrollentList = lazy(() => import("./components/EnrollmentList.jsx"));
 const NextDelivery = lazy(() => import("./components/NextDelivery.jsx"));
+const CancelEnrollment = lazy(() => import("./components/CancelEnrollment.jsx"));
 
 
 const ENROLLMENT_STATUSES = ['active', 'completed', 'deactivated', 'canceled', 'inactive'];
@@ -102,6 +103,14 @@ function Learners() {
               )}
             </Box>
             <Chip label={`ID: ${data.id}`} size="small" variant="outlined" sx={{ flexShrink: 0, fontFamily: 'monospace' }} />
+            <Suspense fallback={null}>
+              <CancelEnrollment
+                status={data.status}
+                canCancel={userRole === 'admin'}
+                cancelUrl={`${apiBaseUrl}/organizations/${organizationId}/enrollments/${enrollmentId}/cancel/`}
+                onCanceled={() => { showEnrollmentStatus(enrollmentId); reloadLearners(); }}
+              />
+            </Suspense>
           </Box>
           <Box sx={{ px: 2 }}>
           <Timeline>
@@ -144,7 +153,7 @@ function Learners() {
                   <Box><Typography>{event.event_data.course_content_title}</Typography></Box>
                 </>}
                 { event.type === "deactivated" && <>
-                  <Box><Typography>{localeMessages["reason"]}: {event.event_data.reason}</Typography></Box>
+                  <Box><Typography>{localeMessages["reason"]}: {localeMessages[event.event_data.reason] || event.event_data.reason}</Typography></Box>
                 </>}
                 { event.type === "reminder_sent" && <>
                   <Box><Typography>{localeMessages["quiz_title"]}: {event.event_data.content_title}</Typography></Box>

@@ -128,6 +128,7 @@ class Enrollment(models.Model):
             (DeactivationReason.BLOCKED, "Blocked"),
             (DeactivationReason.FAILED, "Failed"),
             (DeactivationReason.INACTIVE, "Inactive"),
+            (DeactivationReason.REVOKED, "Revoked"),
         ],
         max_length=50,
     )
