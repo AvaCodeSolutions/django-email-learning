@@ -6,6 +6,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [5.5.0] - 2026-08-28
+
+### Added
+
+- **Course Info tab on the platform course page** — The course detail page gets a new **Course Info** tab (after **Course Analytics**) that shows the full course settings form — title, description, target audience, language, public and certificate switches, external references, IMAP connection, newsletter link, instructors and course image — without leaving the page to open the edit dialog. It opens read-only: every field is disabled and the sub-forms for IMAP, newsletter and instructors are non-interactive, so it reads as a summary. A pencil (edit) button in the top-right toggles the form into an editable state with **Cancel** and **Update** buttons; saving, cancelling, or switching to another tab returns it to read-only. The slug stays disabled throughout, since it can never be changed after creation.
+
+### Fixed
+
+- **`CourseForm` locale keys were missing from the course detail page** — Rendering the course settings form on the course detail page (for the new tab) hit a `TypeError` because `CourseView.get_locale_messages()` did not provide the keys `CourseForm` relies on. All of the form's locale keys are now included in the course detail view's context, along with the new tab labels and the "Course updated successfully." confirmation message.
+
 ## [5.4.0] - 2026-08-28
 
 ### Added
