@@ -416,6 +416,110 @@ class CourseView(BasePlatformView):
             "reminder_interval_days_required": _(
                 "Reminder interval days must be greater than 0 when reminders are enabled."
             ),
+            "course_title": _("Course Title"),
+            "course_description": _("Course Description"),
+            "target_audience": _("Target Audience"),
+            "course_is_public": _("Public Course"),
+            "course_is_public_helper_text": _(
+                "Public courses are visible on your organization's public pages."
+                " Turn this off to keep the course private."
+            ),
+            "course_is_public_disabled_helper_text": _(
+                "Courses can't be made public because your organization itself isn't public."
+                " Make your organization public first to enable this option."
+            ),
+            "course_send_certificate": _("Send Certificate on Completion"),
+            "course_send_certificate_helper_text": _(
+                "When enabled, learners will receive a certificate email upon completing this course."
+            ),
+            "external_references": _("External References"),
+            "add_external_reference": _("Add Reference"),
+            "external_references_helper_text": _(
+                "Add up to 10 optional links, such as docs, repos, or supporting resources. These are shown to"
+                " learners on the course's public page before they enroll."
+            ),
+            "reference_name": _("Reference Name"),
+            "reference_url": _("Reference URL"),
+            "remove": _("Remove"),
+            "course_slug": _("Course Slug"),
+            "course_language": _("Course Language"),
+            "slug_tooltip": _(
+                "The slug is a unique identifier for the course used in URLs and API endpoints."
+                " It should be lowercase, contain no spaces (use hyphens instead), and be unique"
+                " across all courses for your organization. Once set, the slug cannot be changed."
+            ),
+            "slug_no_space": _("Slug cannot contain spaces. Use hyphens instead."),
+            "add_newsletter": _("Link Newsletter"),
+            "newsletter_tooltip": _(
+                "Link this course to a newsletter. Subscribers of the linked newsletter can be automatically"
+                " enrolled when the auto-enroll feature is enabled."
+            ),
+            "new_newsletter": _("New Newsletter"),
+            "newsletter": _("Newsletter"),
+            "newsletter_title": _("Title"),
+            "newsletter_language": _("Language"),
+            "newsletter_create_error": _("Failed to create newsletter. Please try again."),
+            "add_imap_connection": _("Add IMAP Connection"),
+            "imap_connection_tooltip": _(
+                "You don't need an IMAP connection to build your course, but you will need one if you want"
+                " your users to interact via email. For example, they can enroll, verify their enrollmnent"
+                " or drop out just by sending a message. This is a great solution if your audience has"
+                " limited platform access."
+            ),
+            "new_imap_connection": _("New IMAP Connection"),
+            "imap_connection": _("IMAP Connection"),
+            "email": _("Email"),
+            "password": _("Password"),
+            "server": _("Server"),
+            "port": _("Port"),
+            "private": _("Private"),
+            "title_required_helper_text": _("The course title is required."),
+            "description_required_helper_text": _("The course description is required."),
+            "description_max_length_helper_text": _("The course description must be 1000 characters or fewer."),
+            "description_char_limit_helper_text": _("COUNT/1000 characters used."),
+            "reference_name_required_helper_text": _("A reference name is required when a reference link is provided."),
+            "reference_url_required_helper_text": _(
+                "A valid reference URL is required when a reference name is provided."
+            ),
+            "slug_required_helper_text": _("The course slug is required."),
+            "language_required_helper_text": _("The course language is required."),
+            "email_required_helper_text": _("The email is required."),
+            "password_required_helper_text": _("The password is required."),
+            "server_required_helper_text": _("The server is required."),
+            "port_required_helper_text": _("The port is required."),
+            "invalid_port_helper_text": _("The port must be a valid number."),
+            "invalid_email_helper_text": _("The email must be a valid email address."),
+            "upload_button_label": _("Upload Image"),
+            "remove_image": _("Remove Image"),
+            "uploaded_image_alt": _("Course Image"),
+            "add_folder_helper_text": _(
+                "Add folders to fetch emails from. The 'inbox' folder is required and will always be included."
+            ),
+            "add_instructors": _("Add Instructors"),
+            "instructors_tooltip": _(
+                "Assign instructors from your organization to this course."
+                " Instructors can review and approve learner assignment submissions."
+            ),
+            "select_instructors": _("Select Instructors"),
+            "new_instructor": _("New Instructor"),
+            "instructor_email": _("Instructor Email"),
+            "instructor_display_name": _("Display Name"),
+            "instructor_display_name_required": _("Display name is required for instructors."),
+            "instructor_photo": _("Instructor Photo"),
+            "add_instructor": _("Add Instructor"),
+            "instructor_add_failed": _("Failed to add instructor. Please try again."),
+            "none": _("None"),
+            "imap_connection_failed": _("Failed to create IMAP connection. Please try again."),
+            "folder_name_cannot_be_empty": _("Folder name cannot be empty."),
+            "folder_already_added": _("Folder already added."),
+            "add_folder": _("Add folder"),
+            "inbox_required_helper_text": _("'inbox' is required and cannot be removed."),
+            "update": _("Update"),
+            "create": _("Create"),
+            "tab_course_info": _("Course Info"),
+            "tab_info": _("Info"),
+            "edit": _("Edit"),
+            "course_updated_successfully": _("Course updated successfully."),
         }
 
     def get_app_context(self) -> Dict[str, Any]:
