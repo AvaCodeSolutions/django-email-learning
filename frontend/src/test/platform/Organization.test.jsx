@@ -71,6 +71,7 @@ const baseAppContext = {
 
 describe('Organization', () => {
   beforeEach(() => {
+    window.history.replaceState({}, '', '/organizations/1/');
     global.fetch.mockImplementation((url) => {
       if (url.includes('/users/')) {
         return Promise.resolve({ ok: true, json: () => Promise.resolve({ organization_users: [] }) });
@@ -85,6 +86,48 @@ describe('Organization', () => {
   const openGeneralInfoTab = async (user) => {
     await user.click(await screen.findByRole('tab', { name: /General Info/i }));
   };
+
+  const selectedTabName = async () => {
+    await screen.findByRole('tab', { name: /General Info/i });
+    return screen.getAllByRole('tab').find((tab) => tab.getAttribute('aria-selected') === 'true')?.textContent;
+  };
+
+  it('opens the General Info tab by default', async () => {
+    renderWithProviders(<Organization />, {
+      appContext: { ...baseAppContext, isOrganizationAdmin: true },
+    });
+
+    expect(await selectedTabName()).toMatch(/General Info/i);
+    await waitFor(() => expect(screen.getByLabelText(/Name/)).toHaveValue('Acme Corp'));
+  });
+
+  it('opens the tab named in the tab query string', async () => {
+    window.history.replaceState({}, '', '/organizations/1/?tab=members');
+    renderWithProviders(<Organization />, {
+      appContext: { ...baseAppContext, isOrganizationAdmin: true },
+    });
+
+    expect(await selectedTabName()).toMatch(/Members/i);
+    expect(await screen.findByText('No users in this organization yet.')).toBeInTheDocument();
+  });
+
+  it('falls back to General Info when the tab query string is unknown', async () => {
+    window.history.replaceState({}, '', '/organizations/1/?tab=does_not_exist');
+    renderWithProviders(<Organization />, {
+      appContext: { ...baseAppContext, isOrganizationAdmin: true },
+    });
+
+    expect(await selectedTabName()).toMatch(/General Info/i);
+  });
+
+  it('falls back to General Info when the tab query string names an unavailable tab', async () => {
+    window.history.replaceState({}, '', '/organizations/1/?tab=api_keys');
+    renderWithProviders(<Organization />, {
+      appContext: { ...baseAppContext, isOrganizationAdmin: true, availableFeatures: [] },
+    });
+
+    expect(await selectedTabName()).toMatch(/General Info/i);
+  });
 
   it('renders the General Info tab fields disabled by default', async () => {
     const user = userEvent.setup();
