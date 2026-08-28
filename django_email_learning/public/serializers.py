@@ -1,6 +1,11 @@
 from pydantic import BaseModel, field_serializer
 
 
+class PublicInstructorSerializer(BaseModel):
+    name: str
+    avatar: str | None = None
+
+
 class PublicCourseSerializer(BaseModel):
     id: int
     title: str
@@ -15,6 +20,7 @@ class PublicCourseSerializer(BaseModel):
     external_references: list[dict[str, str]] | None = None
     newsletter_id: int | None = None
     newsletter_title: str | None = None
+    instructors: list[PublicInstructorSerializer] = []
 
     @field_serializer("description")
     def serialize_description_with_br(self, description: str | None) -> str | None:

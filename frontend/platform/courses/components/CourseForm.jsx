@@ -126,7 +126,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     imapConnectionId: data.imap_connection_id ?? null,
                     newsletterId: data.newsletter_id ?? null,
                     imageServerPath: data.image_path ?? null,
-                    instructors: (data.instructors || []).map((i) => i.id),
+                    instructors: (data.instructors || []).map((i) => i.id).filter((id) => id != null),
                 });
                 const initialExternalReferences = (data.external_references || []).map((reference) => ({
                     name: reference.name || '',
@@ -142,7 +142,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     setNewsletterId(data.newsletter_id);
                     setAddNewsletter(true);
                 }
-                const initialInstructors = (data.instructors || []).map((i) => i.id);
+                const initialInstructors = (data.instructors || []).map((i) => i.id).filter((id) => id != null);
                 setSelectedInstructorIds(initialInstructors);
                 if (initialInstructors.length > 0) {
                     setAddInstructors(true);
@@ -310,7 +310,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             updatePayload.external_references = normalizedExternalReferences;
         }
 
-        const currentInstructors = addInstructors ? selectedInstructorIds : [];
+        const currentInstructors = (addInstructors ? selectedInstructorIds : []).filter((id) => id != null);
         const sortedCurrent = [...currentInstructors].sort((a, b) => a - b);
         const sortedInitial = [...(initialValues.instructors || [])].sort((a, b) => a - b);
         if (JSON.stringify(sortedCurrent) !== JSON.stringify(sortedInitial)) {

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import render from '../../src/render.jsx';
 import Layout from '../components/Layout.jsx';
 import EnrollmentForm from '../components/EnrollmentForm.jsx';
-import { Alert, Box, Button, Card, Chip, Container, Dialog, Grid, Link, List, ListItem, ListItemIcon, ListItemText, Stack, Typography } from '@mui/material';
+import { Alert, Avatar, Box, Button, Card, Chip, Container, Dialog, Grid, Link, List, ListItem, ListItemIcon, ListItemText, Stack, Typography } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import { alpha, ThemeProvider } from '@mui/material/styles';
@@ -299,6 +299,65 @@ function Course() {
 
             </Stack>
         </Box>
+
+        {/* Instructors Section */}
+        {course.instructors && course.instructors.length > 0 && (
+            <Box sx={{ my: 4 }}>
+                <Typography variant="h2" sx={{ mb: 2, direction: courseDirection, fontSize: '1.25rem' }}>
+                    {localeMessages['instructors_title']}
+                </Typography>
+                <Card
+                    sx={{
+                        border: '1px solid',
+                        borderColor: 'border.main',
+                        boxShadow: 'none',
+                    }}
+                >
+                    <List disablePadding sx={{ direction: courseDirection }}>
+                        {course.instructors.map((instructor, index) => (
+                            <ListItem
+                                key={`${instructor.name}-${index}`}
+                                sx={{
+                                    py: 2,
+                                    px: 2,
+                                    gap: 2,
+                                    borderBottom: index < course.instructors.length - 1 ? '1px solid' : 'none',
+                                    borderColor: 'border.main',
+                                }}
+                            >
+                                <Avatar
+                                    src={sanitizeImageUrl(instructor.avatar) || undefined}
+                                    alt={instructor.name}
+                                    sx={{
+                                        width: 48,
+                                        height: 48,
+                                        flexShrink: 0,
+                                        bgcolor: organization.brand_color,
+                                        color: getReadableTextColor(organization.brand_color),
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    {instructor.name ? instructor.name[0].toUpperCase() : '?'}
+                                </Avatar>
+                                <ListItemText
+                                    primary={instructor.name}
+                                    slotProps={{
+                                        primary: {
+                                            variant: 'body1',
+                                            sx: {
+                                                fontWeight: 500,
+                                                color: 'text.primary',
+                                                textAlign: courseDirection === 'rtl' ? 'right' : 'left',
+                                            },
+                                        },
+                                    }}
+                                />
+                            </ListItem>
+                        ))}
+                    </List>
+                </Card>
+            </Box>
+        )}
 
         {/* Topics/Lessons Section */}
         {course.lessons && course.lessons.length > 0 && (

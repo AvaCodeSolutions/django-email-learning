@@ -6,6 +6,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [Unreleased]
+
+### Added
+
+- **The public course page lists its instructors** — When a course has instructors assigned, their names and photos now appear on the course's public page as a bordered, divided list under an **Instructors** heading, between the course info and the topics list — matching the existing "Topics covered" and "External References" sections. An instructor without a photo gets an initial-letter avatar in the organization's brand colour. Courses with no instructors are unchanged. The instructor name shown is the display name set on the organization membership.
+
+### Fixed
+
+- **Editing a course that has instructors no longer fails with a 400** — The platform course API returned each instructor as `{display_name, photo}` with no id, so the edit form could not round-trip the assigned instructors and sent `null` ids back on save, which the update endpoint rejected. `InstructorResponse` now includes the `OrganizationUser` id, the form filters out any missing ids, and the course edit form submits a valid instructor list.
+
 ## [5.3.0] - 2026-08-28
 
 ### Changed

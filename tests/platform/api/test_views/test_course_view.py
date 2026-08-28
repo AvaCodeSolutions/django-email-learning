@@ -527,6 +527,7 @@ def test_create_course_with_instructor_succeeds(users, superadmin_client):
     data = response.json()
     assert "instructors" in data
     assert len(data["instructors"]) == 1
+    assert data["instructors"][0]["id"] == instructor_org_user_id
     assert data["instructors"][0]["display_name"] == "Instructor Name"
     assert data["instructors"][0]["photo"] is None
 
@@ -619,6 +620,7 @@ def test_get_single_course_response_includes_instructors(users, superadmin_clien
     data = get_response.json()
     assert "instructors" in data
     assert len(data["instructors"]) == 1
+    assert data["instructors"][0]["id"] == instructor_org_user_id
     assert data["instructors"][0]["display_name"] == "Instructor Name"
     assert data["instructors"][0]["photo"] is None
 
@@ -659,6 +661,33 @@ def test_update_course_adds_instructor(users, superadmin_client):
     assert len(data["instructors"]) == 1
     assert data["instructors"][0]["display_name"] == "Instructor Name"
     assert data["instructors"][0]["photo"] is None
+
+
+def test_update_course_round_trips_instructor_ids_from_get_response(users, superadmin_client):
+    """The GET/create response must carry the OrganizationUser id for each instructor
+    so the client can send the same list back on update without a 400."""
+    instructor_org_user_id = _org_user_id("instructor")
+
+    create_response = superadmin_client.post(
+        get_url(1),
+        json.dumps({**valid_create_course_payload(slug=uuid.uuid4().hex), "instructors": [instructor_org_user_id]}),
+        content_type="application/json",
+    )
+    assert create_response.status_code == 201
+    course_id = create_response.json()["id"]
+
+    returned_ids = [i["id"] for i in create_response.json()["instructors"]]
+    assert returned_ids == [instructor_org_user_id]
+
+    # Re-send exactly what the response gave us, alongside an unrelated edit.
+    update_response = superadmin_client.post(
+        _single_course_url(course_id),
+        json.dumps({"description": "Updated description", "instructors": returned_ids}),
+        content_type="application/json",
+    )
+
+    assert update_response.status_code == 200
+    assert [i["id"] for i in update_response.json()["instructors"]] == [instructor_org_user_id]
 
 
 def test_update_course_removes_instructor_when_not_in_list(users, superadmin_client):

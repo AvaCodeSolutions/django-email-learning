@@ -308,6 +308,7 @@ class CourseResponse(BaseModel):
                 "send_certificate": course.send_certificate,
                 "instructors": [
                     InstructorResponse(
+                        id=instructor.org_user_id,
                         display_name=instructor.org_user.display_name or instructor.org_user.user.email,
                         photo=instructor.org_user.photo.name if instructor.org_user.photo else None,
                     )

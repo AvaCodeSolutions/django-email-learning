@@ -5,7 +5,14 @@ from django.conf import settings
 from django.test import override_settings
 from django.urls import reverse
 
-from django_email_learning.models import Enrollment, EnrollmentStatus, ExternalReference, Learner
+from django_email_learning.models import (
+    CourseInstructor,
+    Enrollment,
+    EnrollmentStatus,
+    ExternalReference,
+    Learner,
+    OrganizationUser,
+)
 
 
 @pytest.fixture
@@ -54,6 +61,39 @@ def test_course_view_anonymous_client(db, anonymous_client, course, course_lesso
     assert json_ld["name"] == course.title
     assert json_ld["audience"]["audienceType"] == course.target_audience
     assert json_ld["teaches"] == ["Sample Lesson"]
+
+
+def test_course_view_includes_instructors(db, anonymous_client, users, course):
+    course.enabled = True
+    course.save()
+    org_user = OrganizationUser.objects.get(
+        user=users["instructor_user"],
+        organization=course.organization,
+    )
+    CourseInstructor.objects.create(course=course, org_user=org_user)
+
+    url = reverse(
+        "django_email_learning:public:course_view",
+        kwargs={"organization_id": 1, "course_slug": course.slug},
+    )
+    response = anonymous_client.get(url)
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["course"]["instructors"] == [{"name": "Instructor Name", "avatar": None}]
+
+
+def test_course_view_instructors_empty_when_none_assigned(db, anonymous_client, course):
+    course.enabled = True
+    course.save()
+
+    url = reverse(
+        "django_email_learning:public:course_view",
+        kwargs={"organization_id": 1, "course_slug": course.slug},
+    )
+    response = anonymous_client.get(url)
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["course"]["instructors"] == []
 
 
 def test_course_view_includes_organization_brand_color(db, anonymous_client, course):

@@ -9,6 +9,8 @@ from django_email_learning.services.utils import resolve_private_or_public_file_
 
 
 class InstructorResponse(BaseModel):
+    # OrganizationUser id - the client sends these back in UpdateCourseRequest.instructors.
+    id: Optional[int] = None
     display_name: str
     photo: Optional[str] = None
 

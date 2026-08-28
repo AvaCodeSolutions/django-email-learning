@@ -14,6 +14,7 @@ from django_email_learning.models import Course, Newsletter, Organization
 from django_email_learning.public.serializers import (
     OrganizationSerializer,
     PublicCourseSerializer,
+    PublicInstructorSerializer,
     SocialLinkSerializer,
 )
 
@@ -274,7 +275,7 @@ class CourseView(TemplateView):
         try:
             course = (
                 Course.objects.select_related("organization")
-                .prefetch_related("organization__social_links")
+                .prefetch_related("organization__social_links", "instructors__org_user__user")
                 .get(
                     slug=course_slug,
                     organization__id=organization_id,
@@ -287,6 +288,19 @@ class CourseView(TemplateView):
             raise Http404(_("Course does not exist"))
 
         course_lang_info = get_language_info(course.language)
+        # A CourseInstructor always references an org_user that can act as an
+        # instructor, which requires a display_name - but guard anyway rather
+        # than ever fall back to exposing the user's email on a public page.
+        instructors = [
+            PublicInstructorSerializer(
+                name=instructor.org_user.display_name,
+                avatar=self.request.build_absolute_uri(instructor.org_user.photo.url)
+                if instructor.org_user.photo
+                else None,
+            )
+            for instructor in course.instructors.all()
+            if instructor.org_user.display_name
+        ]
         course_data = PublicCourseSerializer(
             id=course.id,
             title=course.title,
@@ -297,6 +311,7 @@ class CourseView(TemplateView):
             language=course.language,
             is_rtl=course_lang_info["bidi"],
             target_audience=course.target_audience,
+            instructors=instructors,
             external_references=[{"name": ref.name, "url": ref.url} for ref in course.external_references.all()]
             or None,
             lessons=[
@@ -353,6 +368,7 @@ class CourseView(TemplateView):
                 "continue": _("Continue"),
                 "target_audience_title": _("Who is this course for?"),
                 "external_references_title": _("External References"),
+                "instructors_title": _("Instructors"),
                 "terms_of_service_confirmation": _(
                     "By enrolling, you agree to our"
                     " <a href='TERMS_OF_SERVICE_URL' target='_blank'>Terms of Service</a>."
