@@ -8,6 +8,8 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import TaskAltIcon from '@mui/icons-material/TaskAlt';
 import InsightsIcon from '@mui/icons-material/Insights';
+import InfoIcon from '@mui/icons-material/Info';
+import EditIcon from '@mui/icons-material/Edit';
 import PublicIcon from '@mui/icons-material/Public';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CodeIcon from '@mui/icons-material/Code';
@@ -41,6 +43,7 @@ const LessonForm = lazy(() => import("./components/LessonForm.jsx"));
 const AssignmentForm = lazy(() => import("./components/AssignmentForm.jsx"));
 const DeleteContentForm = lazy(() => import("./components/DeleteContentForm.jsx"));
 const EnableCourseSwitchPopup = lazy(() => import("../courses/components/EnableCourseSwitchPopup.jsx"));
+const CourseForm = lazy(() => import("../courses/components/CourseForm.jsx"));
 
 
 function Course() {
@@ -75,6 +78,7 @@ function Course() {
     const [pendingAssignmentsCount, setPendingAssignmentsCount] = useState(0);
 
     const [pageSuccessMessage, setPageSuccessMessage] = useState('');
+    const [courseInfoReadOnly, setCourseInfoReadOnly] = useState(true);
 
     const organizationId = localStorage.getItem('activeOrganizationId');
 
@@ -608,6 +612,9 @@ function Course() {
                             if (value === 'content') {
                                 setContentLoaded(false);
                             }
+                            if (value !== 'course_info') {
+                                setCourseInfoReadOnly(true);
+                            }
                         }}
                         variant="scrollable"
                         scrollButtons="auto"
@@ -652,6 +659,12 @@ function Course() {
                             icon={<InsightsIcon fontSize="small" />}
                             iconPosition="start"
                             label={<><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{localeMessages["tab_course_analytics"] || 'Course Analytics'}</Box><Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{localeMessages["tab_analytics"] || 'Analytics'}</Box></>}
+                        />
+                        <Tab
+                            value="course_info"
+                            icon={<InfoIcon fontSize="small" />}
+                            iconPosition="start"
+                            label={<><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{localeMessages["tab_course_info"] || 'Course Info'}</Box><Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{localeMessages["tab_info"] || 'Info'}</Box></>}
                         />
                     </Tabs>
 
@@ -703,6 +716,35 @@ function Course() {
                             hasWeeklyChartData={hasWeeklyChartData}
                             weeklyStats={weeklyStats}
                         />
+                    )}
+
+                    {activeTab === 'course_info' && (
+                        <Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'flex-end', px: 1, pt: 1 }}>
+                                <Tooltip title={courseInfoReadOnly ? (localeMessages["edit"] || 'Edit') : (localeMessages["cancel"] || 'Cancel')}>
+                                    <IconButton
+                                        onClick={() => setCourseInfoReadOnly((prev) => !prev)}
+                                        aria-label={courseInfoReadOnly ? (localeMessages["edit"] || 'Edit') : (localeMessages["cancel"] || 'Cancel')}
+                                    >
+                                        <EditIcon fontSize="small" />
+                                    </IconButton>
+                                </Tooltip>
+                            </Box>
+                            <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
+                                <CourseForm
+                                    createMode={false}
+                                    courseId={courseId}
+                                    activeOrganizationId={organizationId}
+                                    readOnly={courseInfoReadOnly}
+                                    cancelCallback={() => setCourseInfoReadOnly(true)}
+                                    successCallback={() => {
+                                        setCourseInfoReadOnly(true);
+                                        setPageSuccessMessage(localeMessages["course_updated_successfully"] || 'Course updated successfully.');
+                                    }}
+                                    failureCallback={() => {}}
+                                />
+                            </Suspense>
+                        </Box>
                     )}
                 </Box>
             </Grid>

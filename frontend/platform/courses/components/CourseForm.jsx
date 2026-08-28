@@ -34,7 +34,7 @@ const externalReferencesChanged = (originalReferences, currentReferences) => {
     ));
 };
 
-function CourseForm({successCallback, failureCallback, cancelCallback, activeOrganizationId, createMode, courseId}) {
+function CourseForm({successCallback, failureCallback, cancelCallback, activeOrganizationId, createMode, courseId, readOnly = false}) {
     const { localeMessages, apiBaseUrl: rawApiBaseUrl, direction, languageOptions = [], availableFeatures = [], organizationIsPublic } = useAppContext();
     const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const theme = useTheme();
@@ -410,7 +410,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     return (<Box sx={{ p: 2 }}>
               { (!createMode && courseTitle=="") ? <LinearProgress /> : <>
               { errorMessage && <Alert severity="error" sx={{ marginBottom: "10px" }}>{errorMessage}</Alert> }
-              <RequiredTextField label={localeMessages["course_title"]} helperText={titleHelperText} fullWidth margin="normal" value={courseTitle} onChange={(e) => {
+              <RequiredTextField label={localeMessages["course_title"]} helperText={titleHelperText} fullWidth margin="normal" value={courseTitle} disabled={readOnly} onChange={(e) => {
                                     const value = e.target.value;
                                     setCourseTitle(value);
                                     if (createMode && !slugManuallyEdited) {
@@ -451,6 +451,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                                 value={courseLanguage}
                                 onChange={(e) => setCourseLanguage(e.target.value)}
                                 select
+                                disabled={readOnly}
                             >
                                 {languageOptions.map((languageOption) => (
                                         <MenuItem key={languageOption.value} value={languageOption.value}>
@@ -468,6 +469,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 multiline
                 rows={4}
                 value={courseDescription}
+                disabled={readOnly}
                 onChange={(e) => setCourseDescription(e.target.value)}
                 slotProps={{
                     htmlInput: { maxLength: DESCRIPTION_MAX_LENGTH },
@@ -483,13 +485,14 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 multiline
                 rows={3}
                 value={courseTargetAudience}
+                disabled={readOnly}
                 onChange={(e) => setCourseTargetAudience(e.target.value)}
                 dir={direction}
               />
               <Divider sx={{ my: 2 }} />
               <Box sx={{ mt: 1 }}>
                     <FormControlLabel
-                            control={<Switch checked={isPublic} disabled={!organizationIsPublic} onChange={(e) => setIsPublic(e.target.checked)} dir={direction} />}
+                            control={<Switch checked={isPublic} disabled={!organizationIsPublic || readOnly} onChange={(e) => setIsPublic(e.target.checked)} dir={direction} />}
                             label={localeMessages["course_is_public"]}
                             sx={{ m: 0 }}
                     />
@@ -499,7 +502,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
               </Box>
               <Box sx={{ mt: 2 }}>
                     <FormControlLabel
-                            control={<Switch checked={sendCertificate} onChange={(e) => setSendCertificate(e.target.checked)} dir={direction} />}
+                            control={<Switch checked={sendCertificate} disabled={readOnly} onChange={(e) => setSendCertificate(e.target.checked)} dir={direction} />}
                             label={localeMessages["course_send_certificate"]}
                             sx={{ m: 0 }}
                     />
@@ -513,7 +516,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     <Typography variant="subtitle1">{localeMessages["external_references"]}</Typography>
                     <Button
                         onClick={handleAddExternalReference}
-                        disabled={externalReferences.length >= MAX_EXTERNAL_REFERENCES}
+                        disabled={externalReferences.length >= MAX_EXTERNAL_REFERENCES || readOnly}
                     >
                         {localeMessages["add_external_reference"]}
                     </Button>
@@ -541,6 +544,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                                 onChange={(e) => handleExternalReferenceChange(index, 'name', e.target.value)}
                                 error={Boolean(externalReferenceErrors[index]?.name)}
                                 helperText={externalReferenceErrors[index]?.name ? localeMessages["reference_name_required_helper_text"] : ' '}
+                                disabled={readOnly}
                                 sx={{
                                     mb: 0,
                                     '&.MuiTextField-root': {
@@ -561,6 +565,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                                 onChange={(e) => handleExternalReferenceChange(index, 'url', e.target.value)}
                                 error={Boolean(externalReferenceErrors[index]?.url)}
                                 helperText={externalReferenceErrors[index]?.url ? localeMessages["reference_url_required_helper_text"] : ' '}
+                                disabled={readOnly}
                                 sx={{
                                     mt: 0,
                                     '&.MuiTextField-root': {
@@ -569,7 +574,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                                 }}
                                 dir={direction}
                             />
-                            <Button color="error" onClick={() => handleRemoveExternalReference(index)} sx={{ mt: { xs: 0.5, md: 0 }, justifySelf: { xs: 'flex-start', md: 'start' }, alignSelf: { xs: 'flex-start', md: 'center' } }}>
+                            <Button color="error" onClick={() => handleRemoveExternalReference(index)} disabled={readOnly} sx={{ mt: { xs: 0.5, md: 0 }, justifySelf: { xs: 'flex-start', md: 'start' }, alignSelf: { xs: 'flex-start', md: 'center' } }}>
                                 {localeMessages["remove"]}
                             </Button>
                         </Box>
@@ -578,7 +583,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
               </Box>
               <Divider sx={{ my: 2 }} />
               <FormControlLabel
-                control={<Switch onChange={() => switchImapConnection()} checked={addImapConnection} dir={direction} />}
+                control={<Switch onChange={() => switchImapConnection()} checked={addImapConnection} disabled={readOnly} dir={direction} />}
                 label={localeMessages["add_imap_connection"]} sx={{ m: 0 }} />
                 <ClickAwayListener onClickAway={() => setImapTooltipOpen(false)}>
                 <Tooltip
@@ -606,7 +611,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
               {newslettersEnabled && (<>
               <Divider sx={{ my: 2 }} />
                 <FormControlLabel
-                    control={<Switch onChange={() => setAddNewsletter(!addNewsletter)} checked={addNewsletter} dir={direction} />}
+                    control={<Switch onChange={() => setAddNewsletter(!addNewsletter)} checked={addNewsletter} disabled={readOnly} dir={direction} />}
                     label={localeMessages["add_newsletter"]} sx={{ m: 0 }} />
                 <ClickAwayListener onClickAway={() => setNewsletterTooltipOpen(false)}>
                 <Tooltip
@@ -636,7 +641,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
               <Divider sx={{ my: 2 }} />
               <Box sx={{ mt: 1 }}>
                 <FormControlLabel
-                    control={<Switch onChange={() => setAddInstructors(!addInstructors)} checked={addInstructors} dir={direction} />}
+                    control={<Switch onChange={() => setAddInstructors(!addInstructors)} checked={addInstructors} disabled={readOnly} dir={direction} />}
                     label={localeMessages["add_instructors"]}
                     sx={{ m: 0 }}
                 />
@@ -664,15 +669,15 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
               </Box>}
               <Divider sx={{ my: 2 }} />
               <Box>
-                <ImageUpload organizationId={activeOrganizationId} initialUrl={imageUrl} onUploadSuccess={(data) => {
+                <ImageUpload organizationId={activeOrganizationId} initialUrl={imageUrl} disabled={readOnly} onUploadSuccess={(data) => {
                     setImageUrl(data.file_url);
                     setImageServerPath(data.file_path);
                 }} />
               </Box>
                             <Box sx={{ mt: 2, textAlign: 'right' }}>
-                <Button onClick={cancelCallback} sx={{ mr: 1 }}>{localeMessages["cancel"]}</Button>
-                { createMode && <Button variant="contained" onClick={() => handleCreateCourse()} sx={{ boxShadow: 'none' }}>{localeMessages["create"]}</Button> }
-                { !createMode && <Button variant="contained" onClick={() => handleUpdateCourse()} sx={{ boxShadow: 'none' }}>{localeMessages["update"]}</Button> }
+                {!readOnly && <Button onClick={cancelCallback} sx={{ mr: 1 }}>{localeMessages["cancel"]}</Button>}
+                { !readOnly && createMode && <Button variant="contained" onClick={() => handleCreateCourse()} sx={{ boxShadow: 'none' }}>{localeMessages["create"]}</Button> }
+                { !readOnly && !createMode && <Button variant="contained" onClick={() => handleUpdateCourse()} sx={{ boxShadow: 'none' }}>{localeMessages["update"]}</Button> }
               </Box></>}
             </Box>);
 }
