@@ -6,6 +6,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [Unreleased]
+
+### Changed
+
+- **The organization page opens on General Info** — It opened on Members, which is the tab an admin is least likely to want first: the page's own identity — name, description, logo, public page — lived one click away behind a tab that, for most organizations, lists a handful of people who rarely change. General Info is now the tab you land on. Links that name a tab explicitly are unaffected, including the dashboard's setup shortcuts and the newsletter breadcrumbs.
+- **`?tab=` is validated before it selects a tab** — The organization page already accepted a `tab` query parameter, but took whatever the URL said. A misspelled name, or `?tab=api_keys` from someone without the organization API feature, selected a tab that was not on the page: an empty panel below a tab strip with nothing highlighted. The parameter is now checked against the tabs that actually render for that user, and anything else falls back to General Info. Accepted values are `general_info`, `members`, `newsletters`, and `api_keys`.
+
 ## [5.2.1] - 2026-08-25
 
 ### Security

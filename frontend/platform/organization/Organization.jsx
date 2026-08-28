@@ -38,6 +38,8 @@ const ApiKeyForm = lazy(() => import("./components/ApiKeyForm.jsx"));
 const NewApiKeyDialog = lazy(() => import("./components/NewApiKeyDialog.jsx"));
 const RevokeApiKeyDialog = lazy(() => import("./components/RevokeApiKeyDialog.jsx"));
 
+const DEFAULT_TAB = 'general_info';
+
 const apiKeyStatusOf = (apiKey) => {
     if (apiKey.revoked_at) return 'revoked';
     if (apiKey.expires_at && new Date(apiKey.expires_at) <= new Date()) return 'expired';
@@ -49,8 +51,6 @@ function Organization() {
     const [organizationUsers, setOrganizationUsers] = useState([]);
     const [newsletters, setNewsletters] = useState([]);
     const [apiKeys, setApiKeys] = useState([]);
-    const initialTab = new URLSearchParams(window.location.search).get('tab') || 'members';
-    const [activeTab, setActiveTab] = useState(initialTab);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [dialogContent, setDialogContent] = useState(null);
     const [generalInfoEditable, setGeneralInfoEditable] = useState(false);
@@ -67,6 +67,19 @@ function Organization() {
     const organizationApiEnabled = availableFeatures.includes('organization_api');
     const canManageApiKeys = canEditOrganization && organizationApiEnabled;
     const [canAddMember, setCanAddMember] = useState(availableFeatures.includes('can_add_member'));
+
+    // ?tab=<name> opens a specific tab on load; anything unknown - or a tab this
+    // user cannot see - falls back to the default one.
+    const availableTabs = [
+        'general_info',
+        'members',
+        ...(newslettersEnabled ? ['newsletters'] : []),
+        ...(canManageApiKeys ? ['api_keys'] : []),
+    ];
+    const [activeTab, setActiveTab] = useState(() => {
+        const requestedTab = new URLSearchParams(window.location.search).get('tab');
+        return availableTabs.includes(requestedTab) ? requestedTab : DEFAULT_TAB;
+    });
 
     const refreshUsers = () => {
         apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/users/`)

@@ -69,6 +69,21 @@ When editing an organization, you can modify:
   - Logo image (supported formats: JPG, PNG, GIF)
 
 
+Organization Tabs
+~~~~~~~~~~~~~~~~~
+
+The organization page is split into tabs: **General Info**, **Members**, and -
+when the matching features are enabled for you - **Newsletters** and **API Keys**.
+The page opens on **General Info**.
+
+To link straight to another tab, append a ``tab`` query parameter to the URL::
+
+   /organizations/<organization_id>/?tab=members
+
+Accepted values are ``general_info``, ``members``, ``newsletters``, and
+``api_keys``. An unknown value, or one naming a tab you do not have access to,
+opens **General Info** instead.
+
 Organization Actions
 ~~~~~~~~~~~~~~~~~~~~
 
