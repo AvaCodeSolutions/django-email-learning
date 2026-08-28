@@ -601,7 +601,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 </ClickAwayListener>
 
 
-              { addImapConnection && <Box sx={{ py: 2 }}>
+              { addImapConnection && <Box sx={{ py: 2, ...(readOnly && { pointerEvents: 'none', opacity: 0.6 }) }}>
                     <AddImapConnectionForm
                         onChangeCallback={(id) => setImapConnectionId(id)}
                         activeOrganizationId={activeOrganizationId}
@@ -628,7 +628,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 </Tooltip>
                 </ClickAwayListener>
                 {addNewsletter && (
-                    <Box sx={{ py: 2 }}>
+                    <Box sx={{ py: 2, ...(readOnly && { pointerEvents: 'none', opacity: 0.6 }) }}>
                         <AddNewsletterForm
                             onChangeCallback={(id) => setNewsletterId(id)}
                             activeOrganizationId={activeOrganizationId}
@@ -660,7 +660,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 </Tooltip>
                 </ClickAwayListener>
               </Box>
-              {addInstructors && <Box sx={{ py: 2 }}>
+              {addInstructors && <Box sx={{ py: 2, ...(readOnly && { pointerEvents: 'none', opacity: 0.6 }) }}>
                 <AddInstructorsSection
                     onChangeCallback={(ids) => setSelectedInstructorIds(ids)}
                     activeOrganizationId={activeOrganizationId}
