@@ -417,32 +417,93 @@ class VerifyEnrollmentView(BaseTemplateView):
         )
 
 
+# Keeps the unsubscribe token out of the confirm POST's Referer header (and
+# therefore out of access logs / APM traces of that request). SecurityMiddleware
+# only sets Referrer-Policy if it isn't already present, so this wins.
+_UNSUBSCRIBE_REFERRER_POLICY = "strict-origin"
+
+
+def _is_human_confirmation(request) -> bool:  # type: ignore[no-untyped-def]
+    """
+    Whether the unsubscribe POST looks like a real person clicking the confirm
+    button, as opposed to an automated form submission (email link scanners,
+    headless-browser mail sandboxes, "click every button" extensions).
+
+    A genuine submit is a user-activated, same-origin top-level navigation, which
+    the browser marks with `Sec-Fetch-User: ?1`. Programmatic `form.submit()` /
+    `element.click()` and `fetch()` calls don't carry that. Clients too old to
+    send Fetch Metadata headers at all fall through to the explicit confirmation
+    checkbox instead of being hard-blocked here.
+    """
+    fetch_site = request.headers.get("Sec-Fetch-Site")
+    fetch_mode = request.headers.get("Sec-Fetch-Mode")
+    fetch_user = request.headers.get("Sec-Fetch-User")
+
+    if fetch_site is None and fetch_mode is None and fetch_user is None:
+        return True
+
+    if fetch_site not in ("same-origin", "same-site"):
+        return False
+    if fetch_mode not in (None, "navigate"):
+        return False
+    return fetch_user == "?1"
+
+
 class UnsubscribeView(BaseTemplateView):
     template_name = "personalised/command_result.html"
+
+    def _render_confirmation(  # type: ignore[no-untyped-def]
+        self,
+        request,
+        organization: Organization | None,
+        *,
+        confirm_required: bool = False,
+    ) -> HttpResponse:
+        locale_messages = {
+            "Unsubscribe": _("Unsubscribe"),
+            "confirm_checkbox_label": _("Yes, unsubscribe me from this course"),
+        }
+        if confirm_required:
+            locale_messages["confirm_required_message"] = _("Please tick the box to confirm, then choose Unsubscribe.")
+        response = self.render_to_response(
+            context={
+                "page_title": _("Confirm Unsubscription"),
+                "appContext": {
+                    "confirmationMessage": _("Are you sure you want to unsubscribe from our mailing list?"),
+                    "confirmUrl": request.path,
+                    "confirmToken": request.POST.get("token") or request.GET.get("token"),
+                    "localeMessages": locale_messages,
+                }
+                | self.get_app_context(organization),
+            }
+        )
+        response["Referrer-Policy"] = _UNSUBSCRIBE_REFERRER_POLICY
+        return response
 
     def get(self, request, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
         decoded_token = self.get_decoded_token(request)
         if isinstance(decoded_token, HttpResponse):
             return decoded_token  # Return error response if token is invalid
         organization = Organization.objects.filter(id=decoded_token["organization_id"]).first()
-        return self.render_to_response(
-            context={
-                "page_title": _("Confirm Unsubscription"),
-                "appContext": {
-                    "confirmationMessage": _("Are you sure you want to unsubscribe from our mailing list?"),
-                    "confirmUrl": request.path,
-                    "confirmToken": request.GET.get("token"),
-                    "localeMessages": {"Confirm": _("Confirm")},
-                }
-                | self.get_app_context(organization),
-            }
-        )
+        return self._render_confirmation(request, organization)
 
     def post(self, request, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
         decoded_token = self.get_decoded_token(request, token_source="POST")
         if isinstance(decoded_token, HttpResponse):
             return decoded_token  # Return error response if token is invalid
         organization = Organization.objects.filter(id=decoded_token["organization_id"]).first()
+
+        if request.POST.get("confirm") != "on" or not _is_human_confirmation(request):
+            logging.warning(
+                "Unsubscribe confirmation rejected as non-interactive "
+                "(sec-fetch-site=%r, sec-fetch-mode=%r, sec-fetch-user=%r, confirm=%r)",
+                request.headers.get("Sec-Fetch-Site"),
+                request.headers.get("Sec-Fetch-Mode"),
+                request.headers.get("Sec-Fetch-User"),
+                request.POST.get("confirm"),
+            )
+            return self._render_confirmation(request, organization, confirm_required=True)
+
         command = UnsubscribeCommand(
             email=decoded_token["email"],
             course_slug=decoded_token["course_slug"],
@@ -457,19 +518,20 @@ class UnsubscribeView(BaseTemplateView):
                 title=_("Unsubscription Error"),
                 organization=organization,
             )
-        return self.render_to_response(
+        response = self.render_to_response(
             context={
                 "page_title": _("Unsubscribed"),
                 "appContext": {
                     "successMessage": _("You have been successfully unsubscribed from our mailing list."),
                     "localeMessages": {
-                        "Confirm": _("Confirm"),
                         "close_window_message": _("You can now close this window."),
                     },
                 }
                 | self.get_app_context(organization),
             }
         )
+        response["Referrer-Policy"] = _UNSUBSCRIBE_REFERRER_POLICY
+        return response
 
 
 class CertificateView(BaseTemplateView):

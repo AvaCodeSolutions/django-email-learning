@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Typography } from '@mui/material';
+import { Alert, Box, Button, Checkbox, FormControlLabel, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import render, { useAppContext } from '../../src/render.jsx';
 import Layout from '../../public/components/Layout.jsx';
@@ -38,10 +38,19 @@ const CommandResult = () => {
            {successMessage}
         </Alert> : confirmationMessage ? <Box><Typography variant='h6' align='center' sx={{ color: 'text.primary' }}>
            {confirmationMessage}
-        </Typography> <Box component='form' method='post' action={confirmUrl} sx={{ mt: 4 }}>
+        </Typography>
+        {localeMessages?.confirm_required_message && <Alert severity='warning' sx={{ maxWidth: 800, margin: '16px auto 0' }}>
+           {localeMessages.confirm_required_message}
+        </Alert>}
+        <Box component='form' method='post' action={confirmUrl} sx={{ mt: 4 }}>
             <input type='hidden' name='token' value={confirmToken || ''} />
             <input type='hidden' name='csrfmiddlewaretoken' value={csrfToken || ''} />
-            <Button type='submit' variant='contained' sx={{ px: 3, fontSize: '1rem' }}>{localeMessages["Confirm"]}</Button>
+            <FormControlLabel
+                control={<Checkbox name='confirm' required />}
+                label={localeMessages['confirm_checkbox_label']}
+                sx={{ display: 'block', mb: 2, color: 'text.primary' }}
+            />
+            <Button type='submit' variant='contained' sx={{ px: 3, fontSize: '1rem' }}>{localeMessages['Unsubscribe']}</Button>
         </Box></Box>: <Alert severity="error" sx={{ maxWidth: 800, margin: '0 auto', textAlign: showCloseWindowMessage ? 'center' : 'left' }}>
            {errorMessage} (ref: {ref})
         </Alert>}
@@ -52,5 +61,7 @@ const CommandResult = () => {
     <Box sx={{ flexGrow: GOLDEN_RATIO_SQUARED }} />
     </Layout>
 }
+
+export { CommandResult };
 
 render({children: <CommandResult />});

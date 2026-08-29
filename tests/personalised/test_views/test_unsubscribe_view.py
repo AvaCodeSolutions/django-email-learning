@@ -6,10 +6,18 @@ from django_email_learning.services import jwt_service
 
 URL = reverse("django_email_learning:personalised:unsubscribe")
 
+# What a browser sends when a real person clicks the confirm button: a
+# user-activated, same-origin top-level navigation.
+HUMAN_HEADERS = {
+    "Sec-Fetch-Site": "same-origin",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-User": "?1",
+    "Sec-Fetch-Dest": "document",
+}
 
-@patch("django_email_learning.personalised.views.UnsubscribeCommand")
-def test_unsubscribe_valid_token(command, enrollment, anonymous_client):
-    token = jwt_service.generate_jwt(
+
+def _token(enrollment) -> str:
+    return jwt_service.generate_jwt(
         {
             "email": enrollment.learner.email,
             "course_slug": enrollment.course.slug,
@@ -17,11 +25,14 @@ def test_unsubscribe_valid_token(command, enrollment, anonymous_client):
         }
     )
 
-    response = anonymous_client.post(URL, data={"token": token})
+
+@patch("django_email_learning.personalised.views.UnsubscribeCommand")
+def test_unsubscribe_valid_token(command, enrollment, anonymous_client):
+    # No Sec-Fetch-* headers (older client) -> the confirm checkbox is the gate.
+    response = anonymous_client.post(URL, data={"token": _token(enrollment), "confirm": "on"})
 
     assert command.return_value.execute.called
     assert response.status_code == 200
-    assert "page_title" in response.context
     assert response.context["page_title"] == "Unsubscribed"
     assert (
         response.context["appContext"]["successMessage"]
@@ -30,41 +41,75 @@ def test_unsubscribe_valid_token(command, enrollment, anonymous_client):
 
 
 @patch("django_email_learning.personalised.views.UnsubscribeCommand")
-def test_unsubscribe_valid_token_confirmation(command, enrollment, anonymous_client):
-    token = jwt_service.generate_jwt(
-        {
-            "email": enrollment.learner.email,
-            "course_slug": enrollment.course.slug,
-            "organization_id": enrollment.course.organization.id,
-        }
+def test_unsubscribe_with_user_activation_headers(command, enrollment, anonymous_client):
+    response = anonymous_client.post(URL, data={"token": _token(enrollment), "confirm": "on"}, headers=HUMAN_HEADERS)
+
+    assert command.return_value.execute.called
+    assert response.status_code == 200
+    assert response.context["page_title"] == "Unsubscribed"
+
+
+@patch("django_email_learning.personalised.views.UnsubscribeCommand")
+def test_unsubscribe_without_confirm_checkbox_does_not_unsubscribe(command, enrollment, anonymous_client):
+    response = anonymous_client.post(URL, data={"token": _token(enrollment)}, headers=HUMAN_HEADERS)
+
+    assert not command.return_value.execute.called
+    assert response.status_code == 200
+    assert response.context["page_title"] == "Confirm Unsubscription"
+    assert response.context["appContext"]["localeMessages"]["confirm_required_message"]
+
+
+@patch("django_email_learning.personalised.views.UnsubscribeCommand")
+def test_unsubscribe_from_non_interactive_client_does_not_unsubscribe(command, enrollment, anonymous_client):
+    # Programmatic form.submit() from a headless browser: a same-origin
+    # navigation, but with no Sec-Fetch-User activation flag.
+    response = anonymous_client.post(
+        URL,
+        data={"token": _token(enrollment), "confirm": "on"},
+        headers={"Sec-Fetch-Site": "same-origin", "Sec-Fetch-Mode": "navigate"},
     )
+
+    assert not command.return_value.execute.called
+    assert response.status_code == 200
+    assert response.context["page_title"] == "Confirm Unsubscription"
+
+
+@patch("django_email_learning.personalised.views.UnsubscribeCommand")
+def test_unsubscribe_cross_site_post_does_not_unsubscribe(command, enrollment, anonymous_client):
+    response = anonymous_client.post(
+        URL,
+        data={"token": _token(enrollment), "confirm": "on"},
+        headers={**HUMAN_HEADERS, "Sec-Fetch-Site": "cross-site"},
+    )
+
+    assert not command.return_value.execute.called
+    assert response.status_code == 200
+    assert response.context["page_title"] == "Confirm Unsubscription"
+
+
+@patch("django_email_learning.personalised.views.UnsubscribeCommand")
+def test_unsubscribe_valid_token_confirmation(command, enrollment, anonymous_client):
+    token = _token(enrollment)
 
     response = anonymous_client.get(f"{URL}?token={token}")
 
     assert not command.return_value.execute.called
     assert response.status_code == 200
-    assert "page_title" in response.context
     assert response.context["page_title"] == "Confirm Unsubscription"
     assert (
         response.context["appContext"]["confirmationMessage"]
         == "Are you sure you want to unsubscribe from our mailing list?"
     )
-    assert "confirmUrl" in response.context["appContext"]
     assert response.context["appContext"]["confirmUrl"] == URL
     assert response.context["appContext"]["confirmToken"] == token
+    # The token must not leak into the confirm POST's Referer (and from there
+    # into access logs / traces).
+    assert response["Referrer-Policy"] == "strict-origin"
 
 
 @patch("django_email_learning.personalised.views.UnsubscribeCommand")
 def test_unsubscribe_get_with_confirm_param_does_not_unsubscribe(command, enrollment, anonymous_client):
-    token = jwt_service.generate_jwt(
-        {
-            "email": enrollment.learner.email,
-            "course_slug": enrollment.course.slug,
-            "organization_id": enrollment.course.organization.id,
-        }
-    )
-
-    response = anonymous_client.get(f"{URL}?token={token}&confirm=true")
+    response = anonymous_client.get(f"{URL}?token={_token(enrollment)}&confirm=true")
 
     assert not command.return_value.execute.called
     assert response.status_code == 200
