@@ -175,7 +175,14 @@ class EnrollmentsView(PaginatedApiMixin, View):
                 logger.warning(f"Enrollment already exists for {serializer.learner_email}: {str(e)}")
                 return JsonResponse({"error": "Enrollment already exists"}, status=409)
 
-            enrollment = Enrollment.objects.get(learner__email=serializer.learner_email, course_id=kwargs["course_id"])
+            # A learner may also have past DEACTIVATED enrollments for this course
+            # (those aren't covered by the unique_active_enrollment constraint), so
+            # scope the lookup to the non-deactivated one the command just created.
+            enrollment = (
+                Enrollment.objects.filter(learner__email=serializer.learner_email, course_id=kwargs["course_id"])
+                .exclude(status=EnrollmentStatus.DEACTIVATED)
+                .get()
+            )
             verify_command = VerifyEnrollmentCommand(
                 enrollment_id=enrollment.id,
                 verification_code=enrollment.activation_code,  # type: ignore[arg-type]

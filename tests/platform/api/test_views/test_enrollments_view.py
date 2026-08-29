@@ -4,7 +4,7 @@ import uuid
 import pytest
 from django.urls import reverse
 
-from django_email_learning.models import Enrollment, EnrollmentStatus, Learner
+from django_email_learning.models import DeactivationReason, Enrollment, EnrollmentStatus, Learner
 
 
 def get_url(organization_id: int, course_id: int) -> str:
@@ -58,6 +58,36 @@ def test_enrollments_view_post_creates_active_enrollment_and_sends_one_email(
 
     assert len(mailoutbox) == 1
     assert learner_email in mailoutbox[0].to
+
+
+def test_enrollments_view_post_re_enrolls_learner_with_prior_deactivated_enrollment(
+    org_admin_client, course, course_lesson_content
+):
+    course.enabled = True
+    course.save()
+    learner_email = f"{uuid.uuid4().hex}@example.com"
+    learner = Learner.objects.create(email=learner_email, organization_id=course.organization_id)
+    Enrollment.objects.create(
+        learner=learner,
+        course=course,
+        status=EnrollmentStatus.DEACTIVATED,
+        deactivation_reason=DeactivationReason.CANCELED,
+    )
+
+    response = org_admin_client.post(
+        get_url(organization_id=1, course_id=course.id),
+        json.dumps({"learner_email": learner_email}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    active_enrollment = (
+        Enrollment.objects.filter(learner=learner, course_id=course.id)
+        .exclude(status=EnrollmentStatus.DEACTIVATED)
+        .get()
+    )
+    assert active_enrollment.status == EnrollmentStatus.ACTIVE
+    assert Enrollment.objects.filter(learner=learner, course_id=course.id).count() == 2
 
 
 def test_enrollments_view_post_rejects_new_learner_when_cap_reached(
