@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [5.5.1] - 2026-08-29
+
+### Fixed
+
+- **Enrolling a learner who was previously cancelled on the same course no longer 500s** — The manual enrollment endpoint (`POST /api/platform/organizations/<id>/courses/<id>/enrollments/`) re-fetched the enrollment it had just created with a lookup by learner email and course. A learner who had a deactivated enrollment for that course — from an earlier admin cancellation or self-unsubscribe — still has that row on file, so the lookup matched two enrollments and raised `MultipleObjectsReturned`. The lookup now excludes deactivated enrollments, so re-enrolling such a learner succeeds and returns the new active enrollment.
+
 ## [5.5.0] - 2026-08-28
 
 ### Added
