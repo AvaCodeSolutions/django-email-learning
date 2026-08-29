@@ -6,6 +6,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [5.5.3] - 2026-08-29
+
+### Fixed
+
+- **Course unsubscribe confirmation rejected real submissions from Safari** — 5.5.2's confirmation gate required the request to carry `Sec-Fetch-User: ?1`, but Safari never sends that header (it implements `Sec-Fetch-Site`/`Mode`/`Dest` only), so ticking the box and choosing **Unsubscribe** in Safari just redisplayed the "please tick the box" message. The required checkbox is now the sole human gate; Fetch Metadata is used only to reject clearly automated submissions — a cross-site origin, or a scripted `fetch()`/XHR instead of a same-origin form navigation.
+- **Confirmation checkbox and its label now sit on one line** — the checkbox is wrapped in a centered flex row instead of a full-width block, so the box and "Yes, unsubscribe me from this course" render together rather than stacked.
+
 ## [5.5.2] - 2026-08-29
 
 ### Security
