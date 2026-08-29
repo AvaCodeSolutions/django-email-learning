@@ -45,11 +45,13 @@ const CommandResult = () => {
         <Box component='form' method='post' action={confirmUrl} sx={{ mt: 4 }}>
             <input type='hidden' name='token' value={confirmToken || ''} />
             <input type='hidden' name='csrfmiddlewaretoken' value={csrfToken || ''} />
-            <FormControlLabel
-                control={<Checkbox name='confirm' required />}
-                label={localeMessages['confirm_checkbox_label']}
-                sx={{ display: 'block', mb: 2, color: 'text.primary' }}
-            />
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                <FormControlLabel
+                    control={<Checkbox name='confirm' required />}
+                    label={localeMessages['confirm_checkbox_label']}
+                    sx={{ m: 0, color: 'text.primary' }}
+                />
+            </Box>
             <Button type='submit' variant='contained' sx={{ px: 3, fontSize: '1rem' }}>{localeMessages['Unsubscribe']}</Button>
         </Box></Box>: <Alert severity="error" sx={{ maxWidth: 800, margin: '0 auto', textAlign: showCloseWindowMessage ? 'center' : 'left' }}>
            {errorMessage} (ref: {ref})

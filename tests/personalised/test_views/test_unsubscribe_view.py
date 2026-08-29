@@ -6,12 +6,12 @@ from django_email_learning.services import jwt_service
 
 URL = reverse("django_email_learning:personalised:unsubscribe")
 
-# What a browser sends when a real person clicks the confirm button: a
-# user-activated, same-origin top-level navigation.
+# What a browser sends when a real person submits the confirm form: a
+# same-origin top-level navigation. (Chrome/Firefox also add Sec-Fetch-User:
+# ?1; Safari omits it, so it is not relied on.)
 HUMAN_HEADERS = {
     "Sec-Fetch-Site": "same-origin",
     "Sec-Fetch-Mode": "navigate",
-    "Sec-Fetch-User": "?1",
     "Sec-Fetch-Dest": "document",
 }
 
@@ -41,11 +41,25 @@ def test_unsubscribe_valid_token(command, enrollment, anonymous_client):
 
 
 @patch("django_email_learning.personalised.views.UnsubscribeCommand")
-def test_unsubscribe_with_user_activation_headers(command, enrollment, anonymous_client):
+def test_unsubscribe_with_navigation_headers(command, enrollment, anonymous_client):
     response = anonymous_client.post(URL, data={"token": _token(enrollment), "confirm": "on"}, headers=HUMAN_HEADERS)
 
     assert command.return_value.execute.called
     assert response.status_code == 200
+    assert response.context["page_title"] == "Unsubscribed"
+
+
+@patch("django_email_learning.personalised.views.UnsubscribeCommand")
+def test_unsubscribe_from_safari_without_sec_fetch_user_unsubscribes(command, enrollment, anonymous_client):
+    # Safari sends Sec-Fetch-Site/Mode/Dest but not Sec-Fetch-User; a checked
+    # box plus a same-origin navigation must still go through.
+    response = anonymous_client.post(
+        URL,
+        data={"token": _token(enrollment), "confirm": "on"},
+        headers={"Sec-Fetch-Site": "same-origin", "Sec-Fetch-Mode": "navigate", "Sec-Fetch-Dest": "document"},
+    )
+
+    assert command.return_value.execute.called
     assert response.context["page_title"] == "Unsubscribed"
 
 
@@ -60,13 +74,12 @@ def test_unsubscribe_without_confirm_checkbox_does_not_unsubscribe(command, enro
 
 
 @patch("django_email_learning.personalised.views.UnsubscribeCommand")
-def test_unsubscribe_from_non_interactive_client_does_not_unsubscribe(command, enrollment, anonymous_client):
-    # Programmatic form.submit() from a headless browser: a same-origin
-    # navigation, but with no Sec-Fetch-User activation flag.
+def test_unsubscribe_via_fetch_call_does_not_unsubscribe(command, enrollment, anonymous_client):
+    # A scripted fetch()/XHR POST rather than a form navigation.
     response = anonymous_client.post(
         URL,
         data={"token": _token(enrollment), "confirm": "on"},
-        headers={"Sec-Fetch-Site": "same-origin", "Sec-Fetch-Mode": "navigate"},
+        headers={"Sec-Fetch-Site": "same-origin", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Dest": "empty"},
     )
 
     assert not command.return_value.execute.called

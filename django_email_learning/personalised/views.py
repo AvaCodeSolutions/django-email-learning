@@ -423,30 +423,29 @@ class VerifyEnrollmentView(BaseTemplateView):
 _UNSUBSCRIBE_REFERRER_POLICY = "strict-origin"
 
 
-def _is_human_confirmation(request) -> bool:  # type: ignore[no-untyped-def]
+def _looks_automated(request) -> bool:  # type: ignore[no-untyped-def]
     """
-    Whether the unsubscribe POST looks like a real person clicking the confirm
-    button, as opposed to an automated form submission (email link scanners,
-    headless-browser mail sandboxes, "click every button" extensions).
+    Whether the unsubscribe POST carries Fetch Metadata that a real same-origin
+    form submission never would: a cross-site origin, or a `fetch()`/XHR call
+    rather than a top-level navigation. This catches email link scanners and
+    mail sandboxes that POST the confirmation form programmatically.
 
-    A genuine submit is a user-activated, same-origin top-level navigation, which
-    the browser marks with `Sec-Fetch-User: ?1`. Programmatic `form.submit()` /
-    `element.click()` and `fetch()` calls don't carry that. Clients too old to
-    send Fetch Metadata headers at all fall through to the explicit confirmation
-    checkbox instead of being hard-blocked here.
+    It deliberately does not require `Sec-Fetch-User: ?1` — Safari omits that
+    header entirely, and some CDNs strip it — so the explicit confirmation
+    checkbox is the primary human gate and this is a secondary filter. Clients
+    that send no Fetch Metadata headers at all are not judged here.
     """
     fetch_site = request.headers.get("Sec-Fetch-Site")
     fetch_mode = request.headers.get("Sec-Fetch-Mode")
-    fetch_user = request.headers.get("Sec-Fetch-User")
+    fetch_dest = request.headers.get("Sec-Fetch-Dest")
 
-    if fetch_site is None and fetch_mode is None and fetch_user is None:
+    if fetch_site is not None and fetch_site not in ("same-origin", "same-site", "none"):
         return True
-
-    if fetch_site not in ("same-origin", "same-site"):
-        return False
-    if fetch_mode not in (None, "navigate"):
-        return False
-    return fetch_user == "?1"
+    if fetch_mode is not None and fetch_mode != "navigate":
+        return True
+    if fetch_dest is not None and fetch_dest != "document":
+        return True
+    return False
 
 
 class UnsubscribeView(BaseTemplateView):
@@ -493,16 +492,18 @@ class UnsubscribeView(BaseTemplateView):
             return decoded_token  # Return error response if token is invalid
         organization = Organization.objects.filter(id=decoded_token["organization_id"]).first()
 
-        if request.POST.get("confirm") != "on" or not _is_human_confirmation(request):
+        if request.POST.get("confirm") != "on":
+            return self._render_confirmation(request, organization, confirm_required=True)
+
+        if _looks_automated(request):
             logging.warning(
-                "Unsubscribe confirmation rejected as non-interactive "
-                "(sec-fetch-site=%r, sec-fetch-mode=%r, sec-fetch-user=%r, confirm=%r)",
+                "Unsubscribe confirmation rejected as automated "
+                "(sec-fetch-site=%r, sec-fetch-mode=%r, sec-fetch-dest=%r)",
                 request.headers.get("Sec-Fetch-Site"),
                 request.headers.get("Sec-Fetch-Mode"),
-                request.headers.get("Sec-Fetch-User"),
-                request.POST.get("confirm"),
+                request.headers.get("Sec-Fetch-Dest"),
             )
-            return self._render_confirmation(request, organization, confirm_required=True)
+            return self._render_confirmation(request, organization)
 
         command = UnsubscribeCommand(
             email=decoded_token["email"],
