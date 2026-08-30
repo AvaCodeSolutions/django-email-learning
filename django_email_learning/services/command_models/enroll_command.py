@@ -156,7 +156,7 @@ class EnrollCommand(AbstractCommand):
         email = EmailMultiAlternatives(
             subject=subject,
             body=body,
-            from_email=email_sender_service.from_email,
+            from_email=email_sender_service.from_email_for_course(course),
             to=to_emails,
         )
         email.attach_alternative(html_content, "text/html")

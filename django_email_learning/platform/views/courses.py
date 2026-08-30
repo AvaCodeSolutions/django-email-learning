@@ -61,6 +61,19 @@ class Courses(BasePlatformView):
             "course_send_certificate_helper_text": _(
                 "When enabled, learners will receive a certificate email upon completing this course."
             ),
+            "course_from_email": _("Send course emails from"),
+            "course_from_email_platform_option": _("Platform default"),
+            "course_from_email_organization_option": _("Organization address"),
+            "course_from_email_platform_helper": _("Course emails are sent from ADDRESS."),
+            "course_from_email_organization_helper": _("Course emails are sent from ADDRESS."),
+            "course_from_email_organization_disabled_helper": _(
+                "Sending from your organization's own address requires this installation"
+                " to enable a domain-wide sending domain first."
+            ),
+            "course_from_email_organization_amp_note": _(
+                "If this course sends AMP (dynamic) emails, Gmail only renders them for domains registered with Google."
+            ),
+            "course_from_email_organization_amp_note_link": _("Register for Gmail dynamic email"),
             "external_references": _("External References"),
             "add_external_reference": _("Add Reference"),
             "external_references_helper_text": _(
@@ -432,6 +445,19 @@ class CourseView(BasePlatformView):
             "course_send_certificate_helper_text": _(
                 "When enabled, learners will receive a certificate email upon completing this course."
             ),
+            "course_from_email": _("Send course emails from"),
+            "course_from_email_platform_option": _("Platform default"),
+            "course_from_email_organization_option": _("Organization address"),
+            "course_from_email_platform_helper": _("Course emails are sent from ADDRESS."),
+            "course_from_email_organization_helper": _("Course emails are sent from ADDRESS."),
+            "course_from_email_organization_disabled_helper": _(
+                "Sending from your organization's own address requires this installation"
+                " to enable a domain-wide sending domain first."
+            ),
+            "course_from_email_organization_amp_note": _(
+                "If this course sends AMP (dynamic) emails, Gmail only renders them for domains registered with Google."
+            ),
+            "course_from_email_organization_amp_note_link": _("Register for Gmail dynamic email"),
             "external_references": _("External References"),
             "add_external_reference": _("Add Reference"),
             "external_references_helper_text": _(

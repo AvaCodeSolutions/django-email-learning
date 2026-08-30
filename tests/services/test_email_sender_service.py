@@ -63,6 +63,32 @@ def test_email_sender_service_raises_when_no_from_email_available(settings):
         EmailSenderService()
 
 
+def test_from_email_for_organization_falls_back_to_platform_default(db, settings):
+    from django_email_learning.models import Organization
+
+    settings.DJANGO_EMAIL_LEARNING = {"FROM_EMAIL": "noreply@example.com"}
+    service = EmailSenderService()
+    org = Organization.objects.create(name="Acme Inc")
+
+    assert service.from_email_for_organization(org) == "noreply@example.com"
+    assert service.from_email_for_organization(org, fallback="nl@example.com") == "nl@example.com"
+
+
+def test_from_email_for_organization_uses_org_address_when_enabled(db, settings):
+    from django_email_learning.models import Organization
+
+    settings.DJANGO_EMAIL_LEARNING = {
+        "FROM_EMAIL": "noreply@example.com",
+        "DOMAIN_WIDE_EMAIL": {"ENABLED": True, "DOMAIN": "learn.example.com"},
+    }
+    service = EmailSenderService()
+    org = Organization.objects.create(name="Acme Inc")
+
+    assert service.from_email_for_organization(org, fallback="nl@example.com") == (
+        f"Acme Inc <acme-inc-{org.id}@learn.example.com>"
+    )
+
+
 def test_email_sender_service_send_delegates_to_sender(settings):
     settings.DJANGO_EMAIL_LEARNING = {
         "EMAIL_SENDER": "tests.services.test_email_sender_service.ConfiguredEmailSender",

@@ -72,7 +72,7 @@ class SendLessonCommand(AbstractCommand):
         email_message = EmailMultiAlternatives(
             subject=subject,
             body=payload,
-            from_email=email_sender_service.from_email,
+            from_email=email_sender_service.from_email_for_course(content.course),
             to=[self.email],
         )
         email_message.attach_alternative(render_to_string("emails/lesson.html", context), "text/html")

@@ -1,5 +1,6 @@
 import base64
 import uuid
+from email.utils import formataddr
 from typing import Any
 
 from django.conf import settings
@@ -9,6 +10,7 @@ from django.core.validators import MaxLengthValidator, RegexValidator
 from django.db import models
 from django.urls import reverse
 from django.utils.module_loading import import_string
+from django.utils.text import slugify
 
 from .enums.enrollment_status import EnrollmentStatus
 
@@ -18,6 +20,19 @@ hex_color_validator = RegexValidator(
     regex=r"^#[0-9A-Fa-f]{6}$",
     message="Enter a valid hex color, e.g. #4A5EC0.",
 )
+
+
+def domain_wide_email_enabled() -> bool:
+    """True when the installation has authorized this platform's mail service to
+    send from any address at a shared domain (see DJANGO_EMAIL_LEARNING
+    ["DOMAIN_WIDE_EMAIL"]). Both ENABLED and a non-empty DOMAIN are required.
+
+    This single switch gates the organization-addressed sender for both course
+    content emails (per-course opt-in via Course.from_email_type) and newsletter
+    sendouts.
+    """
+    conf = getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("DOMAIN_WIDE_EMAIL", {})
+    return bool(conf.get("ENABLED") and conf.get("DOMAIN"))
 
 
 class Organization(models.Model):
@@ -59,6 +74,26 @@ class Organization(models.Model):
             self.embed_token = self.generate_embed_token()
             self.save(update_fields=["embed_token"])
         return self.embed_token
+
+    @property
+    def email_local_part(self) -> str:
+        """Local part for this organization's domain-wide sending address. The id
+        keeps it unique since organization names are not (see __str__).
+        """
+        slug = slugify(self.name)
+        return f"{slug}-{self.id}" if slug else f"org-{self.id}"
+
+    @property
+    def domain_wide_from_email(self) -> str:
+        """The ``From`` header for this organization under a shared sending domain:
+        ``<Organization Name> <org-slug-id@domain>``. Returns "" when no
+        ``DOMAIN_WIDE_EMAIL["DOMAIN"]`` is configured. Callers that must also
+        honour the ENABLED switch should guard with ``domain_wide_email_enabled()``.
+        """
+        domain = getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("DOMAIN_WIDE_EMAIL", {}).get("DOMAIN")
+        if not domain:
+            return ""
+        return formataddr((self.name, f"{self.email_local_part}@{domain}"))
 
     @property
     def public_url(self) -> str | None:

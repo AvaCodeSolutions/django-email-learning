@@ -106,7 +106,7 @@ class DeactivateInactiveEnrollmentsJob:
         email_message = EmailMultiAlternatives(
             subject=subject,
             body=body,
-            from_email=email_sender_service.from_email,
+            from_email=email_sender_service.from_email_for_course(delivery.course_content.course),
             to=[email],
         )
         email_message.attach_alternative(

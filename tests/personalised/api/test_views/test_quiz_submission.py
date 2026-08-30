@@ -209,3 +209,30 @@ def test_amp_quiz_submission_success_returns_200_with_amp_headers(content_delive
     assert response["Access-Control-Allow-Origin"] == REQUEST_ORIGIN
     assert response["AMP-Access-Control-Allow-Source-Origin"] == SOURCE_ORIGIN
     assert response["Access-Control-Allow-Credentials"] == "true"
+
+
+def test_amp_quiz_submission_rejects_untrusted_sender(content_delivery, anonymous_client):
+    token = jwt_service.generate_jwt({"delivery_id": content_delivery.id, "delivery_hash": content_delivery.hash_value})
+    response = anonymous_client.post(
+        f"{AMP_URL}?__amp_source_origin=attacker@evil.example.com",
+        data={"token": token},
+        headers={"Origin": REQUEST_ORIGIN},
+    )
+    assert response.status_code == 400
+    assert "untrusted" in response.json()["error"].lower()
+
+
+def test_amp_quiz_submission_accepts_domain_wide_sender(content_delivery, anonymous_client, settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "DOMAIN_WIDE_EMAIL": {"ENABLED": True, "DOMAIN": "learn.example.com"},
+    }
+    token = jwt_service.generate_jwt({"delivery_id": content_delivery.id, "delivery_hash": content_delivery.hash_value})
+    first_question = content_delivery.course_content.quiz.questions.first()
+
+    response = anonymous_client.post(
+        f"{AMP_URL}?__amp_source_origin=some-org-1@learn.example.com",
+        data={"token": token, str(first_question.id): ""},
+        headers={"Origin": REQUEST_ORIGIN},
+    )
+    assert response.status_code == 200

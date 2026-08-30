@@ -1,4 +1,23 @@
+import pytest
+from django.core.exceptions import ValidationError
 from django.urls import reverse
+
+from django_email_learning.models import FromEmailType
+from django_email_learning.services.email_sender_service import email_sender_service
+
+
+def _enable_domain_wide(settings, domain="learn.example.com"):
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "DOMAIN_WIDE_EMAIL": {"ENABLED": True, "DOMAIN": domain},
+    }
+
+
+def _disable_domain_wide(settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "DOMAIN_WIDE_EMAIL": {"ENABLED": False, "DOMAIN": None},
+    }
 
 
 def test_public_url_is_none_when_course_disabled(course):
@@ -51,3 +70,50 @@ def test_enrollments_count_property(course, enrollments_factory):
     assert counts["completed"] == 2
     assert counts["deactivated"] == 1
     assert counts["total"] == 11
+
+
+def test_from_email_type_defaults_to_platform(course):
+    assert course.from_email_type == FromEmailType.PLATFORM_DEFAULT
+
+
+def test_from_email_for_course_uses_platform_default_by_default(course, settings):
+    assert email_sender_service.from_email_for_course(course) == email_sender_service.from_email
+
+
+def test_from_email_for_course_uses_organization_address_when_enabled(course, settings):
+    _enable_domain_wide(settings)
+    course.from_email_type = FromEmailType.ORGANIZATION
+    course.save()
+
+    expected_local = f"{course.organization.email_local_part}@learn.example.com"
+    resolved = email_sender_service.from_email_for_course(course)
+    assert course.organization.name in resolved
+    assert expected_local in resolved
+
+
+def test_from_email_for_course_falls_back_when_domain_wide_disabled(course, settings):
+    _enable_domain_wide(settings)
+    course.from_email_type = FromEmailType.ORGANIZATION
+    course.save()
+
+    _disable_domain_wide(settings)
+    assert email_sender_service.from_email_for_course(course) == email_sender_service.from_email
+
+
+def test_clean_blocks_switching_to_organization_when_disabled(course, settings):
+    _disable_domain_wide(settings)
+    course.from_email_type = FromEmailType.ORGANIZATION
+    with pytest.raises(ValidationError):
+        course.save()
+
+
+def test_clean_allows_saving_existing_organization_course_when_disabled(course, settings):
+    _enable_domain_wide(settings)
+    course.from_email_type = FromEmailType.ORGANIZATION
+    course.save()
+
+    _disable_domain_wide(settings)
+    course.title = "Renamed while domain-wide disabled"
+    course.save()  # must not raise
+    course.refresh_from_db()
+    assert course.from_email_type == FromEmailType.ORGANIZATION

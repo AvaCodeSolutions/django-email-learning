@@ -14,7 +14,8 @@ from django_email_learning.models.newsletters import Newsletter
 from django_email_learning.services import jwt_service
 
 from .enums.enrollment_status import EnrollmentStatus
-from .organizations import Organization, OrganizationUser
+from .enums.from_email_type import FromEmailType
+from .organizations import Organization, OrganizationUser, domain_wide_email_enabled
 
 
 class Course(models.Model):
@@ -43,6 +44,12 @@ class Course(models.Model):
     target_audience = models.TextField(null=True, blank=True)
     is_public = models.BooleanField(default=True)
     send_certificate = models.BooleanField(default=True)
+    from_email_type = models.CharField(
+        max_length=32,
+        choices=[(t.value, t.name.replace("_", " ").title()) for t in FromEmailType],
+        default=FromEmailType.PLATFORM_DEFAULT.value,
+        help_text="Which address course content emails are sent from.",
+    )
 
     def __str__(self) -> str:
         return self.title
@@ -50,9 +57,25 @@ class Course(models.Model):
     class Meta:
         unique_together = [["slug", "organization"], ["title", "organization"]]
 
+    def clean(self) -> None:
+        super().clean()
+        if self.from_email_type == FromEmailType.ORGANIZATION and not domain_wide_email_enabled():
+            previous = (
+                Course.objects.filter(pk=self.pk).values_list("from_email_type", flat=True).first() if self.pk else None
+            )
+            if previous != FromEmailType.ORGANIZATION:
+                raise ValidationError({"from_email_type": "Domain-wide email is not enabled for this installation."})
+
     def save(self, *args: Any, **kwargs: Any) -> None:  # type: ignore[no-untyped-def]
         self.full_clean()
         super().save(*args, **kwargs)
+
+    @property
+    def organization_from_email(self) -> str:
+        """The 'From' header this course would use under the organization option:
+        "<Org Name> <org-slug-id@domain>". Returns "" when no domain is configured.
+        """
+        return self.organization.domain_wide_from_email
 
     def delete(self, using: Any | None = None, keep_parents: bool = False) -> tuple[int, dict[str, int]]:
         if self.enabled:

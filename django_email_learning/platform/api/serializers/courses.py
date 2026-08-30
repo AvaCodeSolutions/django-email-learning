@@ -10,6 +10,7 @@ from django_email_learning.models import (
     CourseContent,
     CourseContentType,
     CourseInstructor,
+    FromEmailType,
     ImapConnection,
     Lesson,
     Newsletter,
@@ -17,6 +18,7 @@ from django_email_learning.models import (
     OrganizationUser,
     Question,
     Quiz,
+    domain_wide_email_enabled,
 )
 from django_email_learning.platform.api.serializers.assignments import (
     AssignmentCreate,
@@ -36,6 +38,7 @@ from django_email_learning.platform.api.serializers.quizzes import (
     QuizResponse,
     UpdateQuiz,
 )
+from django_email_learning.services.email_sender_service import email_sender_service
 from django_email_learning.services.sanitize import strip_html
 
 
@@ -101,6 +104,10 @@ class CreateCourseRequest(BaseModel):
     )
     is_public: bool = Field(default=True, examples=[True])
     send_certificate: bool = Field(default=True, examples=[True])
+    from_email_type: str = Field(
+        default=FromEmailType.PLATFORM_DEFAULT.value,
+        examples=[FromEmailType.PLATFORM_DEFAULT.value],
+    )
     instructors: Optional[list[int]] = Field(
         None,
         examples=[[1, 2, 3]],
@@ -111,6 +118,13 @@ class CreateCourseRequest(BaseModel):
     @classmethod
     def strip_html_markup(cls, value: Optional[str]) -> Optional[str]:
         return strip_html(value) if value else value
+
+    @field_validator("from_email_type")
+    @classmethod
+    def validate_from_email_type(cls, value: str) -> str:
+        if value not in FromEmailType:
+            raise ValueError(f"Invalid from_email_type: {value}")
+        return value
 
     def to_django_model(self, organization_id: int) -> Course:
         organization = Organization.objects.get(id=organization_id)
@@ -131,6 +145,7 @@ class CreateCourseRequest(BaseModel):
             language=self.language,
             is_public=self.is_public,
             send_certificate=self.send_certificate,
+            from_email_type=self.from_email_type,
         )
         if imap_connection:
             course.imap_connection = imap_connection
@@ -191,12 +206,20 @@ class UpdateCourseRequest(BaseModel):
     )
     is_public: Optional[bool] = Field(None, examples=[True])
     send_certificate: Optional[bool] = Field(None, examples=[True])
+    from_email_type: Optional[str] = Field(None, examples=[FromEmailType.PLATFORM_DEFAULT.value])
     instructors: Optional[list[int]] = Field(None, examples=[1, 2, 3])
 
     @field_validator("description", "target_audience")
     @classmethod
     def strip_html_markup(cls, value: Optional[str]) -> Optional[str]:
         return strip_html(value) if value else value
+
+    @field_validator("from_email_type")
+    @classmethod
+    def validate_from_email_type(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None and value not in FromEmailType:
+            raise ValueError(f"Invalid from_email_type: {value}")
+        return value
 
     def to_django_model(self, course_id: int, organization_id: int) -> Course:
         try:
@@ -241,6 +264,8 @@ class UpdateCourseRequest(BaseModel):
             course.is_public = self.is_public
         if self.send_certificate is not None:
             course.send_certificate = self.send_certificate
+        if self.from_email_type is not None:
+            course.from_email_type = self.from_email_type
         if self.instructors is not None:
             instructors_to_remove = course.instructors.exclude(org_user_id__in=self.instructors)
             for instructor in instructors_to_remove:
@@ -278,6 +303,10 @@ class CourseResponse(BaseModel):
     external_references: Optional[list[dict[str, str]]] = None
     is_public: bool
     send_certificate: bool
+    from_email_type: str
+    platform_from_email: str
+    organization_from_email_preview: str
+    domain_wide_email_enabled: bool
     instructors: Optional[list[InstructorResponse]] = None
 
     model_config = ConfigDict(from_attributes=True)
@@ -306,6 +335,10 @@ class CourseResponse(BaseModel):
                 else None,
                 "is_public": course.is_public,
                 "send_certificate": course.send_certificate,
+                "from_email_type": course.from_email_type,
+                "platform_from_email": email_sender_service.from_email,
+                "organization_from_email_preview": course.organization_from_email,
+                "domain_wide_email_enabled": domain_wide_email_enabled(),
                 "instructors": [
                     InstructorResponse(
                         id=instructor.org_user_id,

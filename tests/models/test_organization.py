@@ -140,6 +140,34 @@ def test_str_includes_the_id_to_disambiguate_same_named_organizations(db):
     assert str(organization) == f"Acme Consulting (#{organization.id})"
 
 
+def test_email_local_part_uses_slug_and_id(db):
+    organization = Organization.objects.create(name="Acme Consulting")
+    assert organization.email_local_part == f"acme-consulting-{organization.id}"
+
+
+def test_email_local_part_falls_back_to_org_id_for_non_ascii_name(db):
+    organization = Organization.objects.create(name="日本語")
+    assert organization.email_local_part == f"org-{organization.id}"
+
+
+def test_domain_wide_from_email_is_empty_without_domain(db, settings):
+    settings.DJANGO_EMAIL_LEARNING = {**settings.DJANGO_EMAIL_LEARNING, "DOMAIN_WIDE_EMAIL": {}}
+    organization = Organization.objects.create(name="Acme Consulting")
+    assert organization.domain_wide_from_email == ""
+
+
+def test_domain_wide_from_email_builds_address_when_domain_set(db, settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "DOMAIN_WIDE_EMAIL": {"ENABLED": False, "DOMAIN": "learn.example.com"},
+    }
+    organization = Organization.objects.create(name="Acme Consulting")
+    # built from DOMAIN alone; the ENABLED switch is applied by callers
+    assert organization.domain_wide_from_email == (
+        f"Acme Consulting <acme-consulting-{organization.id}@learn.example.com>"
+    )
+
+
 def test_generate_embed_token_returns_distinct_values(db):
     assert Organization.generate_embed_token() != Organization.generate_embed_token()
 

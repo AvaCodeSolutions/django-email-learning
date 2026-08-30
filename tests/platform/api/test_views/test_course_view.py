@@ -290,6 +290,56 @@ def test_update_course_success(superadmin_client):
     assert update_response.json()["enabled"] == update_payload["enabled"]
 
 
+def test_create_course_response_exposes_from_email_fields(superadmin_client):
+    response = superadmin_client.post(
+        get_url(1), json.dumps(valid_create_course_payload()), content_type="application/json"
+    )
+    assert response.status_code == 201
+    body = response.json()
+    assert body["from_email_type"] == "platform_default"
+    assert body["domain_wide_email_enabled"] is False
+    assert body["platform_from_email"]
+    assert "platform_from_email" in body and "organization_from_email_preview" in body
+
+
+def test_update_course_rejects_organization_from_email_when_domain_wide_disabled(superadmin_client):
+    create_response = superadmin_client.post(
+        get_url(1), json.dumps(valid_create_course_payload()), content_type="application/json"
+    )
+    course_id = create_response.json()["id"]
+    update_url = reverse(
+        "django_email_learning:api_platform:courses_detail",
+        kwargs={"organization_id": 1, "course_id": course_id},
+    )
+    response = superadmin_client.post(
+        update_url, json.dumps({"from_email_type": "organization"}), content_type="application/json"
+    )
+    assert response.status_code == 400
+
+
+def test_update_course_accepts_organization_from_email_when_domain_wide_enabled(superadmin_client, settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "DOMAIN_WIDE_EMAIL": {"ENABLED": True, "DOMAIN": "learn.example.com"},
+    }
+    create_response = superadmin_client.post(
+        get_url(1), json.dumps(valid_create_course_payload()), content_type="application/json"
+    )
+    course_id = create_response.json()["id"]
+    update_url = reverse(
+        "django_email_learning:api_platform:courses_detail",
+        kwargs={"organization_id": 1, "course_id": course_id},
+    )
+    response = superadmin_client.post(
+        update_url, json.dumps({"from_email_type": "organization"}), content_type="application/json"
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["from_email_type"] == "organization"
+    assert body["domain_wide_email_enabled"] is True
+    assert "@learn.example.com" in body["organization_from_email_preview"]
+
+
 def test_update_course_with_target_audience_and_external_references(superadmin_client):
     # First, create a course to update
     create_payload = valid_create_course_payload()

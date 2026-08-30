@@ -35,6 +35,22 @@ from django_email_learning.services.utils import PRIVATE_FILE_STORAGE
 logger = logging.getLogger(__name__)
 
 
+def _is_trusted_amp_sender(source_origin: str) -> bool:
+    """An AMP form submission is trusted when its sender address is the platform
+    default FROM_EMAIL, or - when domain-wide email is enabled - any address at
+    the configured sending domain (courses using the organization option send
+    from ``org-slug-id@<domain>``).
+    """
+    origin = source_origin.lower()
+    if origin and origin in email_sender_service.from_email.lower():
+        return True
+    conf = getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("DOMAIN_WIDE_EMAIL", {})
+    domain = conf.get("DOMAIN")
+    if conf.get("ENABLED") and domain and origin.endswith(f"@{domain.lower()}"):
+        return True
+    return False
+
+
 class FileUploadView(View):
     def post(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
         token = request.POST.get("token")
@@ -441,10 +457,7 @@ class AmpQuizSubmissionView(View):
 
     def post(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
         source_origin = request.GET.get("__amp_source_origin") or request.headers.get("AMP-Email-Sender")
-        if (
-            not source_origin
-            or urllib.parse.unquote(source_origin).lower() not in email_sender_service.from_email.lower()
-        ):
+        if not source_origin or not _is_trusted_amp_sender(urllib.parse.unquote(source_origin)):
             return JsonResponse(
                 {"error": _("Missing or untrusted __amp_source_origin query parameter.")},
                 status=400,

@@ -1,4 +1,4 @@
-import { Alert, Box, Button, ClickAwayListener, Divider, IconButton, MenuItem, Stack, TextField, Tooltip, FormControlLabel, Switch, Typography, LinearProgress, useMediaQuery, useTheme } from '@mui/material';
+import { Alert, Box, Button, ClickAwayListener, Divider, IconButton, Link, MenuItem, Stack, TextField, Tooltip, FormControlLabel, Switch, Typography, LinearProgress, useMediaQuery, useTheme } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import RequiredTextField  from '../../../src/components/RequiredTextField.jsx';
 import AddImapConnectionForm from '../components/AddImapConnectionForm.jsx';
@@ -35,7 +35,7 @@ const externalReferencesChanged = (originalReferences, currentReferences) => {
 };
 
 function CourseForm({successCallback, failureCallback, cancelCallback, activeOrganizationId, createMode, courseId, readOnly = false}) {
-    const { localeMessages, apiBaseUrl: rawApiBaseUrl, direction, languageOptions = [], availableFeatures = [], organizationIsPublic } = useAppContext();
+    const { localeMessages, apiBaseUrl: rawApiBaseUrl, direction, languageOptions = [], availableFeatures = [], organizationIsPublic, platformFromEmail = '', organizationFromEmailPreview = '', domainWideEmailEnabled = false } = useAppContext();
     const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const theme = useTheme();
     const isMobileView = useMediaQuery(theme.breakpoints.down('md'));
@@ -54,6 +54,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     const [courseLanguage, setCourseLanguage] = useState("")
     const [isPublic, setIsPublic] = useState(createMode && organizationIsPublic)
     const [sendCertificate, setSendCertificate] = useState(true)
+    const [fromEmailType, setFromEmailType] = useState('platform_default')
     const [addImapConnection, setAddImapConnection] = useState(false)
     const [imapConnectionId, setImapConnectionId] = useState(null)
     const [addNewsletter, setAddNewsletter] = useState(false)
@@ -77,6 +78,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
         language: "",
         isPublic: true,
         sendCertificate: true,
+        fromEmailType: 'platform_default',
         imapConnectionId: null,
         newsletterId: null,
         imageServerPath: null,
@@ -114,6 +116,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setCourseLanguage(data.language || "");
                 setIsPublic(organizationIsPublic ? (data.is_public ?? true) : false);
                 setSendCertificate(data.send_certificate ?? true);
+                setFromEmailType(data.from_email_type || 'platform_default');
                 setImageUrl(data.image);
                 setImageServerPath(data.image_path);
                 setInitialValues({
@@ -123,6 +126,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     language: data.language || "",
                     isPublic: data.is_public ?? true,
                     sendCertificate: data.send_certificate ?? true,
+                    fromEmailType: data.from_email_type || 'platform_default',
                     imapConnectionId: data.imap_connection_id ?? null,
                     newsletterId: data.newsletter_id ?? null,
                     imageServerPath: data.image_path ?? null,
@@ -290,6 +294,10 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             updatePayload.send_certificate = sendCertificate;
         }
 
+        if (fromEmailType !== initialValues.fromEmailType) {
+            updatePayload.from_email_type = fromEmailType;
+        }
+
         if (currentImapConnectionId !== initialValues.imapConnectionId) {
             if (currentImapConnectionId == null) {
                 updatePayload.reset_imap_connection = true;
@@ -330,6 +338,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     language: data.language || courseLanguage,
                     isPublic: data.is_public ?? isPublic,
                     sendCertificate: data.send_certificate ?? sendCertificate,
+                    fromEmailType: data.from_email_type || fromEmailType,
                     imapConnectionId: data.imap_connection_id ?? currentImapConnectionId,
                     newsletterId: data.newsletter_id ?? currentNewsletterId,
                     imageServerPath: data.image_path ?? imageServerPath,
@@ -367,6 +376,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             language: courseLanguage,
             is_public: isPublic,
             send_certificate: sendCertificate,
+            from_email_type: fromEmailType,
             imap_connection_id: imapConnectionId ? parseInt(imapConnectionId) : null,
             newsletter_id: addNewsletter && newsletterId ? parseInt(newsletterId) : null,
             external_references: normalizedExternalReferences.length > 0 ? normalizedExternalReferences : null,
@@ -387,6 +397,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setCourseLanguage(languageOptions.length > 0 ? languageOptions[0].value : "");
                 setIsPublic(true);
                 setSendCertificate(true);
+                setFromEmailType('platform_default');
                 setExternalReferences([]);
                 setOriginalExternalReferences([]);
                 setExternalReferenceErrors([]);
@@ -509,6 +520,45 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                             {localeMessages["course_send_certificate_helper_text"]}
                     </Typography>
+              </Box>
+              <Box sx={{ mt: 2 }}>
+                    <TextField
+                            select
+                            fullWidth
+                            margin="normal"
+                            label={localeMessages["course_from_email"]}
+                            value={fromEmailType}
+                            disabled={readOnly}
+                            onChange={(e) => setFromEmailType(e.target.value)}
+                            dir={direction}
+                    >
+                            <MenuItem value="platform_default">{localeMessages["course_from_email_platform_option"]}</MenuItem>
+                            <MenuItem value="organization" disabled={!domainWideEmailEnabled}>{localeMessages["course_from_email_organization_option"]}</MenuItem>
+                    </TextField>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                            {fromEmailType === 'organization'
+                                ? (domainWideEmailEnabled
+                                        ? (localeMessages["course_from_email_organization_helper"] || "").replace("ADDRESS", organizationFromEmailPreview)
+                                        : localeMessages["course_from_email_organization_disabled_helper"])
+                                : (localeMessages["course_from_email_platform_helper"] || "").replace("ADDRESS", platformFromEmail)}
+                    </Typography>
+                    {!domainWideEmailEnabled && fromEmailType !== 'organization' && (
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                                    {localeMessages["course_from_email_organization_disabled_helper"]}
+                            </Typography>
+                    )}
+                    {fromEmailType === 'organization' && domainWideEmailEnabled && (
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                                    {localeMessages["course_from_email_organization_amp_note"]}{' '}
+                                    <Link
+                                        href="https://developers.google.com/workspace/gmail/ampemail/register"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                            {localeMessages["course_from_email_organization_amp_note_link"]}
+                                    </Link>
+                            </Typography>
+                    )}
               </Box>
               <Divider sx={{ my: 2 }} />
                             <Box sx={{ mt: 2 }}>

@@ -1,13 +1,11 @@
 import logging
 from datetime import timedelta
-from email.utils import formataddr
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.text import slugify
 
 from django_email_learning.jobs.job_metrics import track_job_execution
 from django_email_learning.jobs.queue_utils import resolve_queue
@@ -18,6 +16,7 @@ from django_email_learning.models import (
     Organization,
     Sendout,
     SendoutDelivery,
+    domain_wide_email_enabled,
 )
 from django_email_learning.ports.task_queue_protocol import TaskQueueProtocol
 from django_email_learning.services.email_sender_service import email_sender_service
@@ -28,18 +27,17 @@ logger = logging.getLogger(__name__)
 _DEFAULT_FROM_EMAIL = "webmaster@localhost"
 
 
-def _snake_case_organization_name(organization: Organization) -> str:
-    local_part = slugify(organization.name).replace("-", "_")
-    return local_part or f"org_{organization.id}"
-
-
 def _get_newsletter_from_email(organization: Organization) -> str:
+    """Newsletter sendouts share the platform-wide ``DOMAIN_WIDE_EMAIL`` switch
+    with course content: when enabled, the newsletter is sent from the
+    organization's own address (``<Org Name> <org-slug-id@domain>``). Otherwise
+    it falls back to ``NEWSLETTERS.FROM_EMAIL``, then the top-level ``FROM_EMAIL``,
+    then ``webmaster@localhost``.
+    """
+    if domain_wide_email_enabled() and organization.domain_wide_from_email:
+        return organization.domain_wide_from_email
     conf: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
     newsletters_conf: dict = conf.get("NEWSLETTERS", {})
-    from_domain = newsletters_conf.get("FROM_DOMAIN")
-    if from_domain:
-        address = f"{_snake_case_organization_name(organization)}@{from_domain}"
-        return formataddr((organization.name, address))
     return newsletters_conf.get("FROM_EMAIL") or conf.get("FROM_EMAIL") or _DEFAULT_FROM_EMAIL
 
 

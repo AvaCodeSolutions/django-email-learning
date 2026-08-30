@@ -43,6 +43,8 @@ All newsletter settings are nested under ``DJANGO_EMAIL_LEARNING`` in your Djang
     DJANGO_EMAIL_LEARNING = {
         # Sender address for newsletter emails.
         # Falls back to FROM_EMAIL, then "webmaster@localhost".
+        # When the top-level DOMAIN_WIDE_EMAIL setting is enabled, sendouts are
+        # instead sent from the organization's own address and this is ignored.
         "NEWSLETTERS": {
             "FROM_EMAIL": "newsletter@example.com",
             "MAX_RETRIES": 3,       # per-subscriber retry limit (default 3)

@@ -53,6 +53,18 @@ Course Fields
   If you want your learners to be able to interact with the course via email, you can set up an IMAP connection.
   This allows learners to enroll or unsubscribe from the course via email without visiting the platform.
 
+**Send course emails from** (Optional)
+  Controls the ``From`` address on this course's emails. **Platform default** uses
+  the installation-wide ``FROM_EMAIL``. **Organization address** sends from
+  ``<Organization Name> <organization-slug-<id>@your-domain>`` so learners see your
+  organization as the sender. The organization option is only selectable when the
+  installation has enabled a domain-wide sending domain
+  (``DOMAIN_WIDE_EMAIL`` - see the installation guide); otherwise it is disabled
+  with an explanatory note. If the course sends AMP (dynamic) emails, note that
+  Gmail renders those only for sending domains
+  `registered with Google <https://developers.google.com/workspace/gmail/ampemail/register>`_,
+  and the organization's domain must be registered separately from the platform default.
+
 Course Status Management
 ------------------------
 

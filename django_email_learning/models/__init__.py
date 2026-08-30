@@ -16,9 +16,15 @@ from .enums.course_content_type import CourseContentType
 from .enums.deactivation_reason import DeactivationReason
 from .enums.delivery_status import DeliveryStatus
 from .enums.enrollment_status import EnrollmentStatus
+from .enums.from_email_type import FromEmailType
 from .imap_connections import ImapConnection, InboxFolder, is_domain_or_ip
 from .jobs import JobExecution, JobName, JobStatus
 from .mixin_models import EncryptionMixin
 from .newsletters import Newsletter, NewsletterSubscriber, Sendout, SendoutDelivery
-from .organizations import Organization, OrganizationUser, SocialLink
+from .organizations import (
+    Organization,
+    OrganizationUser,
+    SocialLink,
+    domain_wide_email_enabled,
+)
 from .submissions import AssignmentFeedback, AssignmentSubmission, QuizSubmission

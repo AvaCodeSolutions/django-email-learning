@@ -217,7 +217,7 @@ class Enrollment(models.Model):
         email_message = EmailMultiAlternatives(
             subject=subject,
             body=payload,
-            from_email=email_sender_service.from_email,
+            from_email=email_sender_service.from_email_for_course(self.course),
             to=[self.learner.email],
         )
         email_message.attach_alternative(render_to_string("emails/certificate_form.html", context), "text/html")

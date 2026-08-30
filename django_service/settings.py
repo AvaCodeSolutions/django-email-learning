@@ -123,6 +123,13 @@ DJANGO_EMAIL_LEARNING = {
     "JWT_SECRET_KEY": "your-very-asdasdasdasdaasdawqA2eSDFaasecret-keym0824+s26vkron%(@whp&wyaw=26",
     "ENCRYPTION_SECRET_KEY": "your-very-asdasdasdasecure-and-random-jwt-secret-keym0824+s26vkron%(@whp&wyaw=26",
     "FROM_EMAIL": os.environ.get("FROM_EMAIL", "webmaster@localhost"),
+    "DOMAIN_WIDE_EMAIL": {
+        # Enable only once SPF/DKIM/DMARC authorize this platform's mail service
+        # to send for any address at DOMAIN. When enabled, a course can send its
+        # content from "<Org Name> <org-slug-id@DOMAIN>" instead of FROM_EMAIL.
+        "ENABLED": os.environ.get("DOMAIN_WIDE_EMAIL_ENABLED", "False").lower() == "true",
+        "DOMAIN": os.environ.get("DOMAIN_WIDE_EMAIL_DOMAIN"),
+    },
     "TERMS_OF_SERVICE_URL": "https://www.example.com/terms",
     "PRIVATE_FILE_STORAGE_LOCATION": os.path.join(BASE_DIR, "private_files"),
     "AI": {

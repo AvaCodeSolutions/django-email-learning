@@ -46,7 +46,7 @@ class SendQuizReminderCommand(AbstractCommand):
         email_message = EmailMultiAlternatives(
             subject=subject,
             body=payload,
-            from_email=email_sender_service.from_email,
+            from_email=email_sender_service.from_email_for_course(content.course),
             to=[email],
         )
         email_message.attach_alternative(render_to_string("emails/quiz_reminder.html", context), "text/html")

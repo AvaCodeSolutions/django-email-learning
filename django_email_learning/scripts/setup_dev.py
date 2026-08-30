@@ -593,6 +593,10 @@ DJANGO_EMAIL_LEARNING = {{
     "JWT_SECRET_KEY": os.environ.get("JWT_SECRET_KEY"),
     "ENCRYPTION_SECRET_KEY": os.environ.get("ENCRYPTION_SECRET_KEY"),
     "FROM_EMAIL": os.environ.get("FROM_EMAIL", "webmaster@localhost"),
+    "DOMAIN_WIDE_EMAIL": {{
+        "ENABLED": os.environ.get("DOMAIN_WIDE_EMAIL_ENABLED", "False").lower() == "true",
+        "DOMAIN": os.environ.get("DOMAIN_WIDE_EMAIL_DOMAIN"),
+    }},
     "NEWSLETTERS": {{
         "FROM_EMAIL": os.environ.get("NEWSLETTER_FROM_EMAIL", "webmaster@localhost"),
         "MAX_RETRIES": 3,

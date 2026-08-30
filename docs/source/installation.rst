@@ -180,6 +180,45 @@ The default email address for outgoing course emails. If not specified, falls ba
         'FROM_EMAIL': 'courses@yourdomain.com',
     }
 
+**DOMAIN_WIDE_EMAIL**
+
+Lets emails be sent from an organization's own address instead of ``FROM_EMAIL``.
+When enabled:
+
+- A course whose *From address* is set to "Organization address" sends every
+  course email (lessons, quizzes, assignments, reminders, certificate, enrollment
+  verification, deactivation notices) from
+  ``<Organization Name> <organization-slug-<id>@DOMAIN>``.
+- Newsletter sendouts are sent from that same per-organization address,
+  overriding ``NEWSLETTERS.FROM_EMAIL`` and the top-level ``FROM_EMAIL``.
+
+Only turn this on once SPF, DKIM, and DMARC for ``DOMAIN`` authorize this
+platform's mail service to send for any local part on that domain (true for most
+transactional providers with domain verification, e.g. SES or SendGrid).
+Both keys are required; with either missing the option is unavailable and
+courses fall back to ``FROM_EMAIL``. Disabling it later does not rewrite existing
+courses - they simply fall back to ``FROM_EMAIL`` until it is re-enabled.
+
+.. note::
+   If you send AMP (dynamic) emails (``AMP_ENABLED``), Gmail only renders the
+   dynamic version for sending domains registered with Google, and that
+   registration is per-domain. A registration for your default ``FROM_EMAIL``
+   domain does not cover ``DOMAIN`` here, so register it separately -
+   https://developers.google.com/workspace/gmail/ampemail/register - or Gmail
+   recipients silently get the plain HTML fallback.
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
+        'DOMAIN_WIDE_EMAIL': {
+            'ENABLED': True,
+            'DOMAIN': 'learn.yourdomain.com',
+        },
+    }
+
 **TERMS_OF_SERVICE_URL**
 
 Optional link to your terms of service. When provided, this link is displayed in the public enrollment dialog so learners can review your terms before submitting their email address.
@@ -603,8 +642,14 @@ Controls how the HTTP job-trigger endpoints (see :doc:`technical/jobs-api`) run 
 Optional configuration for the newsletter feature.
 
 - ``FROM_EMAIL``: The sender address used for newsletter sendouts. Overrides the top-level ``FROM_EMAIL`` and Django's ``DEFAULT_FROM_EMAIL`` for newsletter emails specifically. Useful when newsletters are sent from a different address than course emails.
-- ``FROM_DOMAIN``: When set, generates a per-organization sender address instead of using a single fixed ``FROM_EMAIL``. The address is built as ``<snake_cased_organization_name>@<FROM_DOMAIN>``, with the organization's actual name set as the display name (e.g. an organization named "Acme Inc" sends from ``Acme Inc <acme_inc@yourdomain.com>``). Takes priority over ``NEWSLETTERS.FROM_EMAIL`` and the top-level ``FROM_EMAIL`` when set. Requires your mail provider to allow sending from arbitrary local parts on a domain-verified sender (true for most transactional providers with domain verification, e.g. SES or SendGrid).
 - ``MAX_SUBSCRIBER_PER_NEWSLETTER``: The maximum number of subscribers allowed per newsletter. Defaults to ``500``. Once a newsletter reaches this limit it is hidden from the public subscription form and new subscriptions via the API are rejected with a ``400`` error. Existing subscribers are never affected.
+
+.. note::
+   To send newsletters from a per-organization address, enable the top-level
+   ``DOMAIN_WIDE_EMAIL`` setting (see *Optional Settings*). When it is enabled,
+   newsletter sendouts are sent from ``<Organization Name> <org-slug-<id>@DOMAIN>``,
+   taking priority over ``NEWSLETTERS.FROM_EMAIL`` and the top-level ``FROM_EMAIL``.
+   This replaces the former ``NEWSLETTERS.FROM_DOMAIN`` setting.
 
 .. code-block:: python
 
@@ -614,7 +659,6 @@ Optional configuration for the newsletter feature.
         'JWT_SECRET_KEY': 'another-very-long-random-string',
         'NEWSLETTERS': {
             'FROM_EMAIL': 'newsletter@yourdomain.com',
-            'FROM_DOMAIN': 'yourdomain.com',
             'MAX_SUBSCRIBER_PER_NEWSLETTER': 1000,
         },
     }

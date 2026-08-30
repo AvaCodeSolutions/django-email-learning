@@ -1,4 +1,5 @@
 import logging
+from email.utils import formataddr
 from typing import Any, Dict
 
 from django.apps import apps
@@ -18,6 +19,7 @@ from django_email_learning.platform.features import PlatformFeature
 from django_email_learning.services import (
     jwt_service,  # noqa: F401 — re-exported for views that import from here
 )
+from django_email_learning.services.email_sender_service import email_sender_service
 
 DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
 AI_CONFIGURATIONS: dict = DJANGO_EMAIL_LEARNING_SETTINGS.get("AI", {})
@@ -72,6 +74,14 @@ class BasePlatformView(TemplateView):
 
         current_lang_code = get_language()
         lang_info = get_language_info(current_lang_code)
+
+        domain_wide_conf = getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("DOMAIN_WIDE_EMAIL", {})
+        domain_wide_domain = domain_wide_conf.get("DOMAIN")
+        organization_from_email_preview = (
+            formataddr((active_organization.name, f"{active_organization.email_local_part}@{domain_wide_domain}"))
+            if domain_wide_domain
+            else ""
+        )
 
         return {
             "appContext": {
@@ -142,6 +152,9 @@ class BasePlatformView(TemplateView):
                 ),
                 "organizationIsPublic": active_organization.is_public,
                 "activeOrganizationBrandColor": active_organization.brand_color,
+                "platformFromEmail": email_sender_service.from_email,
+                "organizationFromEmailPreview": organization_from_email_preview,
+                "domainWideEmailEnabled": bool(domain_wide_conf.get("ENABLED") and domain_wide_domain),
                 "localeMessages": {
                     "dashboard": _("Dashboard"),
                     "organizations": _("Organizations"),

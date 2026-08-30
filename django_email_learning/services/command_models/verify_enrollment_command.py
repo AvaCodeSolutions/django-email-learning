@@ -103,7 +103,7 @@ class VerifyEnrollmentCommand(AbstractCommand):
         email = EmailMultiAlternatives(
             subject=subject,
             body=body,
-            from_email=email_sender_service.from_email,
+            from_email=email_sender_service.from_email_for_course(enrollment.course),
             to=[enrollment.learner.email],
         )
         html_content = render_to_string(
