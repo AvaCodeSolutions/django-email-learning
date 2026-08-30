@@ -6,6 +6,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [6.0.0] - 2026-08-30
+
+### Added
+
+- **Per-course "From" address** — A course can now send its content from its organization's own address instead of the platform-wide `DJANGO_EMAIL_LEARNING["FROM_EMAIL"]`. The course create/edit form gets a **Send course emails from** selector with **Platform default** and **Organization address**; the second shows a live preview of the resulting address (`<Organization Name> <org-slug-<id>@your-domain>`) and is disabled, with an explanation, until the installation opts in. Opting in is a single new setting, `DJANGO_EMAIL_LEARNING["DOMAIN_WIDE_EMAIL"] = {"ENABLED": True, "DOMAIN": "learn.example.com"}` — turn it on only once SPF/DKIM/DMARC authorise your mail service to send for any local part on that domain. When enabled, the organization address is used for every course-scoped email: lessons, quizzes, assignments, reminders, assignment reviews, certificate finalization, enrollment verification and confirmation, and deadline-deactivation notices. The stored per-course choice is never rewritten — disabling the switch transparently falls back to `FROM_EMAIL`, and re-enabling it restores the organization address. The organization's local part includes its id because organization names are not unique. The AMP quiz-submission origin check now also trusts any sender at the configured domain. If you send AMP (dynamic) emails, note that Gmail's dynamic-email registration is per-domain, so the organization domain must be registered separately from your default `FROM_EMAIL` domain.
+
+### Changed
+
+- **BREAKING: `NEWSLETTERS.FROM_DOMAIN` removed** — Newsletter sendouts now share the new top-level `DOMAIN_WIDE_EMAIL` switch with course content instead of their own `NEWSLETTERS.FROM_DOMAIN` setting. When `DOMAIN_WIDE_EMAIL` is enabled, sendouts are sent from the organization address; otherwise they fall back to `NEWSLETTERS.FROM_EMAIL`, then the top-level `FROM_EMAIL`, then `webmaster@localhost` as before. The generated local part also changes: it is now `organization-slug-<id>` (e.g. `acme-inc-7`) rather than the previous `snake_cased_name` (`acme_inc`), which fixes newsletter senders from different organizations sharing an address when their names matched. Deployments using `NEWSLETTERS.FROM_DOMAIN` must move the domain to `DJANGO_EMAIL_LEARNING["DOMAIN_WIDE_EMAIL"]` and re-verify any address allow-lists.
+
 ## [5.5.3] - 2026-08-29
 
 ### Fixed
