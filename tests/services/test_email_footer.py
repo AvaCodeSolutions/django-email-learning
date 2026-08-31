@@ -72,6 +72,36 @@ def test_footer_shows_name_and_social_links_when_enabled(db, course_lesson_conte
     assert "linkedin.com/company/acme" not in email.body
 
 
+def test_footer_shows_org_logo_when_set(db, course_lesson_content, settings):
+    settings.DJANGO_EMAIL_LEARNING = {**settings.DJANGO_EMAIL_LEARNING, "SITE_BASE_URL": "https://learn.example.com"}
+    course = course_lesson_content.course
+    course.show_organization_footer = True
+    course.save()
+    course.organization.logo = "organization_logos/acme.png"
+    course.organization.save()
+
+    SendLessonCommand(
+        command_name="send_lesson", content_id=course_lesson_content.id, email="learner@example.com"
+    ).execute()
+
+    html = _html_body(mail.outbox[0])
+    assert 'class="email-org-logo"' in html
+    assert 'src="https://learn.example.com/media/organization_logos/acme.png"' in html
+
+
+def test_footer_has_no_logo_img_when_org_has_no_logo(db, course_lesson_content):
+    course = course_lesson_content.course
+    course.show_organization_footer = True
+    course.save()
+
+    SendLessonCommand(
+        command_name="send_lesson", content_id=course_lesson_content.id, email="learner@example.com"
+    ).execute()
+
+    html = _html_body(mail.outbox[0])
+    assert 'class="email-org-logo"' not in html
+
+
 def test_footer_name_is_plain_text_not_a_link(db, course_lesson_content):
     course = course_lesson_content.course
     course.show_organization_footer = True

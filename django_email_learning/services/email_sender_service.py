@@ -57,16 +57,26 @@ class EmailSenderService:
             return self.from_email_for_organization(course.organization)
         return self.from_email
 
+    def _absolute_url(self, url: str) -> str:
+        """Make a possibly-relative media/static URL absolute for use in email,
+        prefixing ``SITE_BASE_URL`` unless the storage already returns an
+        absolute URL (e.g. S3)."""
+        if url.startswith(("http://", "https://", "//")):
+            return url
+        site_base_url = str(settings.DJANGO_EMAIL_LEARNING.get("SITE_BASE_URL", "")).rstrip("/")
+        return f"{site_base_url}{url}"
+
     def organization_footer_context(self, course: "Course") -> dict:
         """Template context for the optional organization footer on a course's
         HTML emails. When ``course.show_organization_footer`` is off, only the
-        ``org_footer_enabled`` flag is meaningful and no social links are loaded.
+        ``org_footer_enabled`` flag is meaningful and nothing else is loaded.
         """
         organization = course.organization
         enabled = course.show_organization_footer
         return {
             "org_footer_enabled": enabled,
             "org_footer_name": organization.name,
+            "org_footer_logo_url": self._absolute_url(organization.logo.url) if enabled and organization.logo else None,
             "org_footer_social_links": list(organization.social_links.all()) if enabled else [],
         }
 

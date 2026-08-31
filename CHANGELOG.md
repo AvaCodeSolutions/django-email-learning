@@ -10,7 +10,7 @@ Changes prior to v1.0.0 are available in the [git history](https://github.com/Av
 
 ### Added
 
-- **Per-course organization branding in email footers** — a new **Show organization branding in email footer** toggle on the course form (off by default) adds the organization's name and social links to the footer of every course-scoped email: lessons, quizzes, assignments, both reminder types, assignment reviews, enrollment verification, certificate finalization, and deadline-deactivation notices. Applies to the HTML part of each email only; the plain-text and AMP alternatives are unchanged. Backed by the additive `Course.show_organization_footer` field (migration `0024`, default `False`, no backfill). The social links render as plain text links, shared with newsletter sendouts via `emails/_social_links.html`.
+- **Per-course organization branding in email footers** — a new **Show organization branding in email footer** toggle on the course form (off by default) adds the organization's logo (when set), name and social links to the footer of every course-scoped email: lessons, quizzes, assignments, both reminder types, assignment reviews, enrollment verification, certificate finalization, and deadline-deactivation notices. Applies to the HTML part of each email only; the plain-text and AMP alternatives are unchanged. Backed by the additive `Course.show_organization_footer` field (migration `0024`, default `False`, no backfill). The social links render as plain text links, shared with newsletter sendouts via `emails/_social_links.html`.
 - Newsletter email footers now render social links as plain text links too. The previous inline-SVG icons rendered blank in Gmail, which strips `<svg>` from HTML email.
 
 ### Changed

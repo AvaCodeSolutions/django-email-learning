@@ -108,5 +108,6 @@ class EmailTemplatePreview(TemplateView):
             "social_links": social_links,
             "org_footer_enabled": True,
             "org_footer_name": "Example Organization",
+            "org_footer_logo_url": "https://placehold.co/160x40/eef/336?text=Logo",
             "org_footer_social_links": social_links,
         }
