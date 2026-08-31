@@ -1,0 +1,13 @@
+{% comment %}
+Renders the organization's social links as a row of text links for an email
+footer. Icons are avoided on purpose: inline SVG is stripped by Gmail and
+remote images are unreliable across email clients, so plain text links are the
+one thing that renders everywhere.
+
+Context:
+  social_links -- iterable of SocialLink (each with .url and .get_platform_display)
+
+Wrap the include in an element carrying the `email-social-links` class, e.g.
+  <p class="email-social-links">{% include "emails/_social_links.html" %}</p>
+{% endcomment %}
+{% for link in social_links %}<a href="{{ link.url }}" class="email-social-link color-brand" style="text-decoration: none;">{{ link.get_platform_display }}</a>{% if not forloop.last %} <span class="email-social-sep">&middot;</span> {% endif %}{% endfor %}

@@ -37,7 +37,7 @@ def test_footer_absent_when_disabled(db, course_lesson_content):
     assert "https://linkedin.com/company/acme" not in html
 
 
-def test_footer_shows_name_and_social_icons_when_enabled(db, course_lesson_content):
+def test_footer_shows_name_and_social_links_when_enabled(db, course_lesson_content):
     course = course_lesson_content.course
     course.show_organization_footer = True
     course.save()
@@ -51,10 +51,12 @@ def test_footer_shows_name_and_social_icons_when_enabled(db, course_lesson_conte
     html = _html_body(email)
     assert course.organization.name in html
     assert 'class="email-social-links"' in html
-    assert 'href="https://acme.example"' in html
-    assert 'data-platform="website"' in html
-    assert 'href="https://linkedin.com/company/acme"' in html
-    assert "<svg" in html
+    # Plain text links, not icons (Gmail strips inline SVG).
+    assert '<a href="https://acme.example" class="email-social-link' in html
+    assert ">Website</a>" in html
+    assert '<a href="https://linkedin.com/company/acme" class="email-social-link' in html
+    assert ">LinkedIn</a>" in html
+    assert "<svg" not in html
     # The plain-text alternative is intentionally left untouched.
     assert "https://acme.example" not in email.body
     assert "linkedin.com/company/acme" not in email.body
