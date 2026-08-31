@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../test-utils';
 import Course from '../../../platform/course/Course';
@@ -39,6 +39,13 @@ const localeMessages = {
   embed_button_bg_color_label: 'Button background',
   embed_button_text_color_label: 'Button text color',
   close: 'Close',
+  delete: 'Delete',
+  delete_content_confirmation: 'Are you sure you want to delete the content: CONTENT_TITLE?',
+  content_delete_failed: 'Failed to delete content. Please try again.',
+  title: 'Title',
+  type: 'Type',
+  published: 'Published',
+  actions: 'Actions',
 };
 
 const baseAppContext = {
@@ -464,6 +471,62 @@ describe('Course', () => {
       await screen.findByText(
         '<del-enroll-form button_bg_color="#4A5EC0" button_text_color="#ffffff" token="tok" course_id="sample-course" course_title="Sample Course"></del-enroll-form>'
       );
+    });
+  });
+
+  describe('deleting course content', () => {
+    const contents = [
+      { id: '7', title: 'Welcome Lesson', type: 'lesson', waiting_period: null, is_published: true },
+    ];
+
+    const mockFetchWithDeleteResponse = (deleteResponse) => {
+      global.fetch.mockImplementation((url, options) => {
+        if (options?.method === 'DELETE') {
+          return Promise.resolve(deleteResponse);
+        }
+        if (url.includes('/contents')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: contents }) });
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      });
+    };
+
+    it('surfaces the server message when deletion is rejected with a 409', async () => {
+      const user = userEvent.setup();
+      mockFetchWithDeleteResponse({
+        ok: false,
+        status: 409,
+        json: () =>
+          Promise.resolve({
+            error:
+              'Cannot delete content that has already been scheduled or delivered to learners. Unpublish it instead.',
+          }),
+      });
+      renderWithProviders(<Course />, { appContext: { ...baseAppContext, courseEnabled: true } });
+
+      const rowDeleteButtons = await screen.findAllByRole('button', { name: 'Delete' });
+      await user.click(rowDeleteButtons[0]);
+      await screen.findByText('Are you sure you want to delete the content: Welcome Lesson?');
+      const dialog = screen.getByRole('dialog');
+      await user.click(within(dialog).getByRole('button', { name: 'Delete' }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'Cannot delete content that has already been scheduled or delivered to learners. Unpublish it instead.'
+      );
+    });
+
+    it('falls back to a generic message for an unexpected delete failure', async () => {
+      const user = userEvent.setup();
+      mockFetchWithDeleteResponse({ ok: false, status: 500, json: () => Promise.resolve({}) });
+      renderWithProviders(<Course />, { appContext: { ...baseAppContext, courseEnabled: true } });
+
+      const rowDeleteButtons = await screen.findAllByRole('button', { name: 'Delete' });
+      await user.click(rowDeleteButtons[0]);
+      await screen.findByText('Are you sure you want to delete the content: Welcome Lesson?');
+      const dialog = screen.getByRole('dialog');
+      await user.click(within(dialog).getByRole('button', { name: 'Delete' }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(localeMessages.content_delete_failed);
     });
   });
 });

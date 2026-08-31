@@ -5,7 +5,7 @@ from typing import Optional
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.utils.translation import ngettext
+from django.utils.translation import gettext, ngettext
 
 from .courses import Course
 from .enums.course_content_type import CourseContentType
@@ -249,7 +249,10 @@ class CourseContent(models.Model):
         # skipping the content and advancing the enrollment.
         if self.contentdelivery_set.exists():
             raise ValidationError(
-                "Cannot delete content that has already been scheduled or delivered to learners. Unpublish it instead."
+                gettext(
+                    "Cannot delete content that has already been scheduled or delivered to learners. "
+                    "Unpublish it instead."
+                )
             )
         return super().delete(*args, **kwargs)
 
