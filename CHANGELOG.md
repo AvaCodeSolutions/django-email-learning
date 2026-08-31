@@ -6,7 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
-## [6.0.1] - 2026-08-31
+## [Unreleased]
+
+### Fixed
+
+- **Deleting course content that learners had already reached silently destroyed their data and stranded them mid-course** — `DELETE /organizations/<id>/courses/<id>/course-contents/<id>/` called `CourseContent.delete()` with no guard, so Django cascaded through every `ContentDelivery` for that content: pending `DeliverySchedule` rows vanished without being marked `CANCELED`, learners' quiz/assignment submissions and their feedback were permanently deleted, delivery history disappeared from analytics, and any learner sitting on that content stopped progressing because the `ContentDelivery` that would have triggered the next one was gone. `CourseContent.delete()` now refuses (HTTP 409) once any `ContentDelivery` references the content; the message points the caller to unpublish instead. Content that no learner has reached still deletes normally. The course page now surfaces the rejection (and any other delete failure) as an error alert instead of only logging it to the console.
+- **Unpublishing content mid-course stranded learners sitting on it** — `DeliverContentsJob.process_delivery` canceled the delivery for unpublished content but never scheduled what came next, so the enrollment stalled forever. It now skips the unpublished content the same way a delivered lesson advances the learner: the next published content is scheduled, or the enrollment graduates if there is none. This makes "unpublish" the safe way to pull content out of a running course.
 
 ### Fixed
 

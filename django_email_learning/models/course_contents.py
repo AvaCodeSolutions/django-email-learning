@@ -5,7 +5,7 @@ from typing import Optional
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.utils.translation import ngettext
+from django.utils.translation import gettext, ngettext
 
 from .courses import Course
 from .enums.course_content_type import CourseContentType
@@ -237,6 +237,24 @@ class CourseContent(models.Model):
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self.full_clean()
         super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs) -> tuple[int, dict[str, int]]:  # type: ignore[no-untyped-def]
+        # A hard delete cascades to every ContentDelivery for this content and,
+        # through them, to learners' quiz/assignment submissions, their feedback,
+        # pending DeliverySchedule rows and the delivery history. It also breaks
+        # the delivery chain for anyone currently sitting on this content, since
+        # the ContentDelivery that would have triggered the next one is gone.
+        # Refuse it once the content has reached any learner; the caller can
+        # unpublish instead, which DeliverContentsJob handles gracefully by
+        # skipping the content and advancing the enrollment.
+        if self.contentdelivery_set.exists():
+            raise ValidationError(
+                gettext(
+                    "Cannot delete content that has already been scheduled or delivered to learners. "
+                    "Unpublish it instead."
+                )
+            )
+        return super().delete(*args, **kwargs)
 
     def get_next(self) -> Optional["CourseContent"]:
         next_content = (

@@ -78,6 +78,7 @@ function Course() {
     const [pendingAssignmentsCount, setPendingAssignmentsCount] = useState(0);
 
     const [pageSuccessMessage, setPageSuccessMessage] = useState('');
+    const [pageErrorMessage, setPageErrorMessage] = useState('');
     const [courseInfoReadOnly, setCourseInfoReadOnly] = useState(true);
 
     const organizationId = localStorage.getItem('activeOrganizationId');
@@ -381,7 +382,17 @@ function Course() {
             .then(() => {
                 setContentLoaded(false);
             })
-            .catch(error => console.error('Error deleting content:', error));
+            .catch(error => {
+                console.error('Error deleting content:', error);
+                // A 409 is a business-rule rejection (e.g. the content has already
+                // been delivered to learners) with a message written for the user.
+                // Anything else is unexpected, so fall back to the generic message.
+                const serverMessage = error instanceof apiClient.ApiError && error.status === 409
+                    ? error.body?.error
+                    : null;
+                setPageErrorMessage(serverMessage || localeMessages["content_delete_failed"]);
+                setTimeout(() => setPageErrorMessage(''), 8000);
+            });
         setDialogMaxWidth('lg');
         setDialogOpen(false);
     }
@@ -484,6 +495,21 @@ function Course() {
                 >
                     <Alert severity="success" onClose={() => setPageSuccessMessage('')}>
                         {pageSuccessMessage}
+                    </Alert>
+                </Box>
+            )}
+            {pageErrorMessage && (
+                <Box
+                    sx={{
+                        position: 'fixed',
+                        top: 88,
+                        insetInlineEnd: 24,
+                        zIndex: (muiTheme) => muiTheme.zIndex.snackbar,
+                        width: { xs: 'calc(100% - 32px)', sm: 420 },
+                    }}
+                >
+                    <Alert severity="error" onClose={() => setPageErrorMessage('')}>
+                        {pageErrorMessage}
                     </Alert>
                 </Box>
             )}

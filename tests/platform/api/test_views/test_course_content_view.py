@@ -3,7 +3,14 @@ import json
 import pytest
 from django.urls import reverse
 
-from django_email_learning.models import Course, CourseContent, CourseContentType, Lesson, Organization
+from django_email_learning.models import (
+    ContentDelivery,
+    Course,
+    CourseContent,
+    CourseContentType,
+    Lesson,
+    Organization,
+)
 
 LESSON_TITLE = "Introduction to Python"
 LESSON_CONTENT = "Welcome to the Python course!"
@@ -446,6 +453,21 @@ def test_delete_course_content(superadmin_client, create_course):
     assert len(contents_response_after_delete.json()["course_contents"]) == 0
     get_response = superadmin_client.delete(delete_url)
     assert get_response.status_code == 404
+
+
+def test_delete_course_content_with_delivery_returns_409(editor_client, course_lesson_content, enrollment):
+    ContentDelivery.objects.create(enrollment=enrollment, course_content=course_lesson_content)
+    url = single_content_url(
+        course_content_id=course_lesson_content.id,
+        course_id=course_lesson_content.course.id,
+        organization_id=course_lesson_content.course.organization.id,
+    )
+
+    response = editor_client.delete(url)
+
+    assert response.status_code == 409
+    assert "Unpublish it instead" in response.json()["error"]
+    assert CourseContent.objects.filter(id=course_lesson_content.id).exists()
 
 
 def test_viewer_cannot_delete_course_content(viewer_client, course_lesson_content):

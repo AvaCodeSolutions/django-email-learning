@@ -368,6 +368,7 @@ class CourseView(BasePlatformView):
             "lesson_title_required": _("Lesson title is required."),
             "lesson_content_required": _("Lesson content is required."),
             "delete_content_confirmation": _("Are you sure you want to delete the content: CONTENT_TITLE?"),
+            "content_delete_failed": _("Failed to delete content. Please try again."),
             "total_enrollments": _("Total Enrollments"),
             "unverified": _("Unverified"),
             "active": _("Active"),
