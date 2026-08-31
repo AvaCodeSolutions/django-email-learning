@@ -143,6 +143,51 @@ describe('CourseForm slug auto-population', () => {
   });
 });
 
+describe('CourseForm organization footer toggle', () => {
+  const editCourseData = {
+    title: 'Existing Course',
+    slug: 'existing-slug',
+    description: 'A description.',
+    target_audience: '',
+    language: 'en',
+    is_public: true,
+    send_certificate: true,
+    show_organization_footer: false,
+    from_email_type: 'platform_default',
+    image: null,
+    image_path: null,
+    imap_connection_id: null,
+    newsletter_id: null,
+    external_references: [],
+    instructors: [],
+  };
+
+  it('sends show_organization_footer in the update payload when toggled on', async () => {
+    global.fetch.mockImplementation((url, options) => {
+      if (options?.method === 'POST') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ ...editCourseData, show_organization_footer: true }) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(editCourseData) });
+    });
+    const user = userEvent.setup();
+    renderWithProviders(
+      <CourseForm {...createProps} createMode={false} courseId="1" />,
+      { appContext: { localeMessages: { ...localeMessages, update: 'Update', course_show_organization_footer: 'Show organization branding in email footer' } } }
+    );
+
+    const toggle = await screen.findByLabelText('Show organization branding in email footer');
+    expect(toggle).not.toBeChecked();
+    await user.click(toggle);
+    await user.click(screen.getByRole('button', { name: 'Update' }));
+
+    await waitFor(() => {
+      const postCall = global.fetch.mock.calls.find(([, opts]) => opts?.method === 'POST');
+      expect(postCall).toBeTruthy();
+      expect(JSON.parse(postCall[1].body)).toMatchObject({ show_organization_footer: true });
+    });
+  });
+});
+
 describe('CourseForm description character limit', () => {
   it('shows a live character counter and caps input at 1000 characters', async () => {
     const user = userEvent.setup();

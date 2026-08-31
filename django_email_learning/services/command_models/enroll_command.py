@@ -137,6 +137,7 @@ class EnrollCommand(AbstractCommand):
             "organization_name": course.organization.name,
             "support_imap_interface": course.imap_connection is not None,
             "imap_email_address": course.imap_connection.email if course.imap_connection else None,
+            **email_sender_service.organization_footer_context(course),
         }
         subject = _("Verify your enrollment")
         body = render_to_string(

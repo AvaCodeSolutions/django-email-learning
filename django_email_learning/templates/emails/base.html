@@ -146,28 +146,15 @@
             .email-social-links {
                 margin: 0 0 12px;
                 font-size: 14px;
+                line-height: 1.8;
             }
             .email-social-link {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                width: 28px;
-                height: 28px;
-                margin-right: 8px;
-                border-radius: 999px;
-                background-color: #4f46e5;
-                border: 1px solid #4f46e5;
-                color: #ffffff !important;
-                vertical-align: middle;
+                text-decoration: none;
+                white-space: nowrap;
             }
-            .email-social-icon {
-                width: 20px;
-                height: 20px;
-                display: block;
-            }
-            .email-social-link[data-platform="whatsapp"] .email-social-icon {
-                width: 22px;
-                height: 22px;
+            .email-social-sep {
+                color: #b7bcd0;
+                margin: 0 2px;
             }
             .email-muted-note {
                 font-size: 14px;
@@ -181,10 +168,17 @@
             .email-signoff.centered {
                 text-align: center;
             }
+            .email-org-logo {
+                height: 40px;
+                width: auto;
+                max-width: 180px;
+                border-radius: 0;
+                display: inline-block;
+            }
             .email-org-name {
                 font-weight: bold;
                 font-size: 18px;
-                margin: 0;
+                margin: 0 0 20px;
             }
             .email-list {
                 margin: 0 0 16px;
@@ -244,6 +238,10 @@
                 padding: 0 10px !important;
                 width: 100% !important;
             }
+            .email-credit {
+                margin: 20px 0 0;
+                color: #6c757d;
+            }
             {% block extra_styles %}{% endblock %}
         </style>
     </head>
@@ -252,7 +250,19 @@
         <div class="mobile-content locale">
             {% block content %}{% endblock %}
         </div>
-        {% block footer %}{% endblock %}
+        {% block footer %}
+        <div class="footer">
+            <div class="mobile-content" style="text-align: center;">
+                {% if org_footer_enabled %}
+                    {% include "emails/_organization_footer.html" %}
+                {% endif %}
+                {# Override the "credit" block (or the whole "footer" block) to change or remove the attribution. #}
+                {% block credit %}
+                <p class="email-credit">{% blocktranslate %}Powered by <a href="https://github.com/AvaCodeSolutions/django-email-learning" class="color-brand" style="text-decoration: none;">Django Email Learning</a>.{% endblocktranslate %}</p>
+                {% endblock %}
+            </div>
+        </div>
+        {% endblock %}
     </div>
 </body>
 </html>

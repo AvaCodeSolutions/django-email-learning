@@ -39,6 +39,7 @@ class SendQuizReminderCommand(AbstractCommand):
             "link": self.delivery_schedule.link,
             "unsubscribe_link": content.course.generate_unsubscribe_link(email),
             "deadline_time": self.delivery_schedule.delivery.valid_until,
+            **email_sender_service.organization_footer_context(content.course),
         }
         payload = render_to_string("emails/quiz_reminder.txt", context)
 

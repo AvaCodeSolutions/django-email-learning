@@ -93,6 +93,7 @@ class VerifyEnrollmentCommand(AbstractCommand):
         email_ctx = {
             "course_title": enrollment.course.title,
             "organization_name": enrollment.course.organization.name,
+            **email_sender_service.organization_footer_context(enrollment.course),
         }
         if newsletter_unsubscribe_url:
             email_ctx["newsletter_title"] = newsletter.title  # type: ignore[union-attr]

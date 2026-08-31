@@ -290,6 +290,28 @@ def test_update_course_success(superadmin_client):
     assert update_response.json()["enabled"] == update_payload["enabled"]
 
 
+def test_show_organization_footer_defaults_false_and_round_trips(superadmin_client):
+    create_response = superadmin_client.post(
+        get_url(1), json.dumps(valid_create_course_payload()), content_type="application/json"
+    )
+    assert create_response.status_code == 201
+    course_id = create_response.json()["id"]
+    assert create_response.json()["show_organization_footer"] is False
+
+    update_url = reverse(
+        "django_email_learning:api_platform:courses_detail",
+        kwargs={"organization_id": 1, "course_id": course_id},
+    )
+    update_response = superadmin_client.post(
+        update_url, json.dumps({"show_organization_footer": True}), content_type="application/json"
+    )
+    assert update_response.status_code == 200
+    assert update_response.json()["show_organization_footer"] is True
+
+    get_response = superadmin_client.get(update_url)
+    assert get_response.json()["show_organization_footer"] is True
+
+
 def test_create_course_response_exposes_from_email_fields(superadmin_client):
     response = superadmin_client.post(
         get_url(1), json.dumps(valid_create_course_payload()), content_type="application/json"

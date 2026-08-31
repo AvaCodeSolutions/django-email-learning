@@ -1,7 +1,7 @@
 from django.utils import timezone
 from django.views.generic import TemplateView
 
-from django_email_learning.models import Assignment, CourseContent, Lesson, Quiz
+from django_email_learning.models import Assignment, CourseContent, Lesson, Quiz, SocialLink
 from django_email_learning.platform.serializers import WebComponent
 from django_email_learning.platform.views import CourseView
 
@@ -52,6 +52,20 @@ class EmailTemplatePreview(TemplateView):
         quiz = Quiz.objects.first()
         assignment = Assignment.objects.first()
         content = CourseContent.objects.filter(lesson=lesson).first() if lesson else None
+        social_links = [
+            SocialLink(platform=platform, url=url)
+            for platform, url in [
+                ("website", "https://example.com"),
+                ("linkedin", "https://linkedin.com/company/example"),
+                ("x", "https://x.com/example"),
+                ("facebook", "https://facebook.com/example"),
+                ("instagram", "https://instagram.com/example"),
+                ("tiktok", "https://tiktok.com/@example"),
+                ("whatsapp", "https://wa.me/1234567890"),
+                ("youtube", "https://youtube.com/channel/example"),
+                ("telegram", "https://t.me/example"),
+            ]
+        ]
         return {
             "course_title": "Example Course",
             "course_slug": "example-course",
@@ -91,42 +105,9 @@ class EmailTemplatePreview(TemplateView):
             "assignment": assignment,
             "next_content": content.get_next() if content else None,
             "content_title": "assignment programming exercise",
-            "social_links": [
-                {
-                    "platform": "website",
-                    "url": "https://example.com",
-                },
-                {
-                    "platform": "linkedin",
-                    "url": "https://linkedin.com/company/example",
-                },
-                {
-                    "platform": "x",
-                    "url": "https://x.com/example",
-                },
-                {
-                    "platform": "facebook",
-                    "url": "https://facebook.com/example",
-                },
-                {
-                    "platform": "instagram",
-                    "url": "https://instagram.com/example",
-                },
-                {
-                    "platform": "tiktok",
-                    "url": "https://tiktok.com/@example",
-                },
-                {
-                    "platform": "whatsapp",
-                    "url": "https://wa.me/1234567890",
-                },
-                {
-                    "platform": "youtube",
-                    "url": "https://youtube.com/channel/example",
-                },
-                {
-                    "platform": "telegram",
-                    "url": "https://t.me/example",
-                },
-            ],
+            "social_links": social_links,
+            "org_footer_enabled": True,
+            "org_footer_name": "Example Organization",
+            "org_footer_logo_url": "https://placehold.co/160x40/eef/336?text=Logo",
+            "org_footer_social_links": social_links,
         }

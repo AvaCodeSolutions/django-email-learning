@@ -66,6 +66,7 @@ class SendLessonCommand(AbstractCommand):
             "support_imap_interface": content.course.imap_connection is not None,
             "imap_email_address": content.course.imap_connection.email if content.course.imap_connection else None,
             "track_open_url": track_open_url,
+            **email_sender_service.organization_footer_context(content.course),
         }
         payload = render_to_string("emails/lesson.txt", context)
 

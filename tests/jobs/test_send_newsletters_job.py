@@ -124,13 +124,12 @@ def test_process_delivery_includes_organization_social_links_in_email(db, delive
 
     sent_message = send_mock.call_args[0][0]
     html_body = sent_message.alternatives[0][0]
-    assert 'href="https://example.com"' in html_body
-    assert 'data-platform="website"' in html_body
-    assert 'aria-label="Website"' in html_body
-    assert 'href="https://linkedin.com/company/example"' in html_body
-    assert 'data-platform="linkedin"' in html_body
-    assert 'aria-label="LinkedIn"' in html_body
-    assert "<svg" in html_body
+    # Rendered as plain text links (Gmail strips inline SVG / unreliable images).
+    assert '<a href="https://example.com" class="email-social-link' in html_body
+    assert ">Website</a>" in html_body
+    assert '<a href="https://linkedin.com/company/example" class="email-social-link' in html_body
+    assert ">LinkedIn</a>" in html_body
+    assert "<svg" not in html_body
 
 
 def test_process_delivery_omits_social_links_section_when_none_exist(db, delivery):
@@ -140,6 +139,15 @@ def test_process_delivery_omits_social_links_section_when_none_exist(db, deliver
     sent_message = send_mock.call_args[0][0]
     html_body = sent_message.alternatives[0][0]
     assert 'class="email-social-links"' not in html_body
+
+
+def test_newsletter_opts_out_of_the_base_footer_and_platform_credit(db, delivery):
+    with patch("django_email_learning.jobs.send_newsletters_job.email_sender_service.send") as send_mock:
+        SendNewslettersJob().process_delivery(delivery)
+
+    html_body = send_mock.call_args[0][0].alternatives[0][0]
+    assert '<div class="footer">' not in html_body
+    assert "Powered by" not in html_body
 
 
 def test_process_delivery_sets_list_unsubscribe_headers_when_url_available(db, delivery):

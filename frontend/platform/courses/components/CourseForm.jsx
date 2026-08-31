@@ -54,6 +54,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     const [courseLanguage, setCourseLanguage] = useState("")
     const [isPublic, setIsPublic] = useState(createMode && organizationIsPublic)
     const [sendCertificate, setSendCertificate] = useState(true)
+    const [showOrganizationFooter, setShowOrganizationFooter] = useState(false)
     const [fromEmailType, setFromEmailType] = useState('platform_default')
     const [addImapConnection, setAddImapConnection] = useState(false)
     const [imapConnectionId, setImapConnectionId] = useState(null)
@@ -78,6 +79,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
         language: "",
         isPublic: true,
         sendCertificate: true,
+        showOrganizationFooter: false,
         fromEmailType: 'platform_default',
         imapConnectionId: null,
         newsletterId: null,
@@ -116,6 +118,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setCourseLanguage(data.language || "");
                 setIsPublic(organizationIsPublic ? (data.is_public ?? true) : false);
                 setSendCertificate(data.send_certificate ?? true);
+                setShowOrganizationFooter(data.show_organization_footer ?? false);
                 setFromEmailType(data.from_email_type || 'platform_default');
                 setImageUrl(data.image);
                 setImageServerPath(data.image_path);
@@ -126,6 +129,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     language: data.language || "",
                     isPublic: data.is_public ?? true,
                     sendCertificate: data.send_certificate ?? true,
+                    showOrganizationFooter: data.show_organization_footer ?? false,
                     fromEmailType: data.from_email_type || 'platform_default',
                     imapConnectionId: data.imap_connection_id ?? null,
                     newsletterId: data.newsletter_id ?? null,
@@ -294,6 +298,10 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             updatePayload.send_certificate = sendCertificate;
         }
 
+        if (showOrganizationFooter !== initialValues.showOrganizationFooter) {
+            updatePayload.show_organization_footer = showOrganizationFooter;
+        }
+
         if (fromEmailType !== initialValues.fromEmailType) {
             updatePayload.from_email_type = fromEmailType;
         }
@@ -338,6 +346,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     language: data.language || courseLanguage,
                     isPublic: data.is_public ?? isPublic,
                     sendCertificate: data.send_certificate ?? sendCertificate,
+                    showOrganizationFooter: data.show_organization_footer ?? showOrganizationFooter,
                     fromEmailType: data.from_email_type || fromEmailType,
                     imapConnectionId: data.imap_connection_id ?? currentImapConnectionId,
                     newsletterId: data.newsletter_id ?? currentNewsletterId,
@@ -376,6 +385,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             language: courseLanguage,
             is_public: isPublic,
             send_certificate: sendCertificate,
+            show_organization_footer: showOrganizationFooter,
             from_email_type: fromEmailType,
             imap_connection_id: imapConnectionId ? parseInt(imapConnectionId) : null,
             newsletter_id: addNewsletter && newsletterId ? parseInt(newsletterId) : null,
@@ -397,6 +407,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setCourseLanguage(languageOptions.length > 0 ? languageOptions[0].value : "");
                 setIsPublic(true);
                 setSendCertificate(true);
+                setShowOrganizationFooter(false);
                 setFromEmailType('platform_default');
                 setExternalReferences([]);
                 setOriginalExternalReferences([]);
@@ -519,6 +530,16 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     />
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                             {localeMessages["course_send_certificate_helper_text"]}
+                    </Typography>
+              </Box>
+              <Box sx={{ mt: 2 }}>
+                    <FormControlLabel
+                            control={<Switch checked={showOrganizationFooter} disabled={readOnly} onChange={(e) => setShowOrganizationFooter(e.target.checked)} dir={direction} />}
+                            label={localeMessages["course_show_organization_footer"]}
+                            sx={{ m: 0 }}
+                    />
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                            {localeMessages["course_show_organization_footer_helper_text"]}
                     </Typography>
               </Box>
               <Box sx={{ mt: 2 }}>

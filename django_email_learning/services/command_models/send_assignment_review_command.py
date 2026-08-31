@@ -90,6 +90,7 @@ class SendAssignmentReviewCommand(AbstractCommand):
             "change_requested": change_requested,
             "link": self.submission.delivery.link,
             "unsubscribe_link": course.generate_unsubscribe_link(email),
+            **email_sender_service.organization_footer_context(course),
         }
         payload = render_to_string("emails/assignment_review.txt", context)
 
