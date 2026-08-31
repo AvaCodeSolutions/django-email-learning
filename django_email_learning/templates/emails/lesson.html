@@ -74,6 +74,9 @@
     <div class="footer">
 
         <div class="mobile-content" style="text-align: center;">
+        {% if org_footer_enabled %}
+            {% include "emails/_organization_footer.html" %}
+        {% endif %}
         {% blocktranslate %}This course is powered by <a href="https://github.com/AvaCodeSolutions/django-email-learning" class="color-brand" style="text-decoration: none;">Django Email Learning</a>.{% endblocktranslate %}
         </div>
     </div>

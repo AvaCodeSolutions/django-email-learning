@@ -57,6 +57,20 @@ class EmailSenderService:
             return self.from_email_for_organization(course.organization)
         return self.from_email
 
+    def organization_footer_context(self, course: "Course") -> dict:
+        """Template context for the optional organization footer on a course's
+        HTML emails. When ``course.show_organization_footer`` is off, only the
+        ``org_footer_enabled`` flag is meaningful and no social links are loaded.
+        """
+        organization = course.organization
+        enabled = course.show_organization_footer
+        return {
+            "org_footer_enabled": enabled,
+            "org_footer_name": organization.name,
+            "org_footer_url": organization.public_url,  # None when the org isn't public
+            "org_footer_social_links": list(organization.social_links.all()) if enabled else [],
+        }
+
     def send(self, email: EmailMultiAlternatives) -> None:
         self.email_sender.send_email(email)
 

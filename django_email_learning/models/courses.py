@@ -50,6 +50,10 @@ class Course(models.Model):
         default=FromEmailType.PLATFORM_DEFAULT.value,
         help_text="Which address course content emails are sent from.",
     )
+    show_organization_footer = models.BooleanField(
+        default=False,
+        help_text="Show the organization name and social links in the footer of this course's emails.",
+    )
 
     def __str__(self) -> str:
         return self.title

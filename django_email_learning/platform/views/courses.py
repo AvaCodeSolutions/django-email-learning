@@ -61,6 +61,10 @@ class Courses(BasePlatformView):
             "course_send_certificate_helper_text": _(
                 "When enabled, learners will receive a certificate email upon completing this course."
             ),
+            "course_show_organization_footer": _("Show organization branding in email footer"),
+            "course_show_organization_footer_helper_text": _(
+                "Add your organization's name and social links to the footer of this course's emails."
+            ),
             "course_from_email": _("Send course emails from"),
             "course_from_email_platform_option": _("Platform default"),
             "course_from_email_organization_option": _("Organization address"),
@@ -446,6 +450,10 @@ class CourseView(BasePlatformView):
             "course_send_certificate": _("Send Certificate on Completion"),
             "course_send_certificate_helper_text": _(
                 "When enabled, learners will receive a certificate email upon completing this course."
+            ),
+            "course_show_organization_footer": _("Show organization branding in email footer"),
+            "course_show_organization_footer_helper_text": _(
+                "Add your organization's name and social links to the footer of this course's emails."
             ),
             "course_from_email": _("Send course emails from"),
             "course_from_email_platform_option": _("Platform default"),

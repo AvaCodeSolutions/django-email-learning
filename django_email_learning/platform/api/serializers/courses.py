@@ -104,6 +104,7 @@ class CreateCourseRequest(BaseModel):
     )
     is_public: bool = Field(default=True, examples=[True])
     send_certificate: bool = Field(default=True, examples=[True])
+    show_organization_footer: bool = Field(default=False, examples=[False])
     from_email_type: str = Field(
         default=FromEmailType.PLATFORM_DEFAULT.value,
         examples=[FromEmailType.PLATFORM_DEFAULT.value],
@@ -145,6 +146,7 @@ class CreateCourseRequest(BaseModel):
             language=self.language,
             is_public=self.is_public,
             send_certificate=self.send_certificate,
+            show_organization_footer=self.show_organization_footer,
             from_email_type=self.from_email_type,
         )
         if imap_connection:
@@ -206,6 +208,7 @@ class UpdateCourseRequest(BaseModel):
     )
     is_public: Optional[bool] = Field(None, examples=[True])
     send_certificate: Optional[bool] = Field(None, examples=[True])
+    show_organization_footer: Optional[bool] = Field(None, examples=[False])
     from_email_type: Optional[str] = Field(None, examples=[FromEmailType.PLATFORM_DEFAULT.value])
     instructors: Optional[list[int]] = Field(None, examples=[1, 2, 3])
 
@@ -264,6 +267,8 @@ class UpdateCourseRequest(BaseModel):
             course.is_public = self.is_public
         if self.send_certificate is not None:
             course.send_certificate = self.send_certificate
+        if self.show_organization_footer is not None:
+            course.show_organization_footer = self.show_organization_footer
         if self.from_email_type is not None:
             course.from_email_type = self.from_email_type
         if self.instructors is not None:
@@ -303,6 +308,7 @@ class CourseResponse(BaseModel):
     external_references: Optional[list[dict[str, str]]] = None
     is_public: bool
     send_certificate: bool
+    show_organization_footer: bool
     from_email_type: str
     platform_from_email: str
     organization_from_email_preview: str
@@ -335,6 +341,7 @@ class CourseResponse(BaseModel):
                 else None,
                 "is_public": course.is_public,
                 "send_certificate": course.send_certificate,
+                "show_organization_footer": course.show_organization_footer,
                 "from_email_type": course.from_email_type,
                 "platform_from_email": email_sender_service.from_email,
                 "organization_from_email_preview": course.organization_from_email,

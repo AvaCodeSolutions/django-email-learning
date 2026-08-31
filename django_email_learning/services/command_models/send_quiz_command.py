@@ -59,6 +59,7 @@ class SendQuizCommand(AbstractCommand):
             "token": token,
             "unsubscribe_link": content.course.generate_unsubscribe_link(self.email),
             "track_open_url": track_open_url,
+            **email_sender_service.organization_footer_context(content.course),
         }
         payload = render_to_string("emails/quiz.txt", context)
 

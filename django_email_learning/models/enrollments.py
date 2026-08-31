@@ -211,6 +211,7 @@ class Enrollment(models.Model):
             "course_title": self.course.title,
             "organization_name": self.course.organization.name,
             "link": link,
+            **email_sender_service.organization_footer_context(self.course),
         }
         payload = render_to_string("emails/certificate_form.txt", context)
 

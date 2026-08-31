@@ -76,6 +76,10 @@ def test_from_email_type_defaults_to_platform(course):
     assert course.from_email_type == FromEmailType.PLATFORM_DEFAULT
 
 
+def test_show_organization_footer_defaults_to_false(course):
+    assert course.show_organization_footer is False
+
+
 def test_from_email_for_course_uses_platform_default_by_default(course, settings):
     assert email_sender_service.from_email_for_course(course) == email_sender_service.from_email
 

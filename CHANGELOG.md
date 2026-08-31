@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [Unreleased]
+
+### Added
+
+- **Per-course organization branding in email footers** — a new **Show organization branding in email footer** toggle on the course form (off by default) adds the organization's name and social links (with icons) to the footer of every course-scoped email: lessons, quizzes, assignments, both reminder types, assignment reviews, enrollment verification, certificate finalization, and deadline-deactivation notices. The name links to the organization's public page when the organization is public. Applies to the HTML part of each email only; the plain-text and AMP alternatives are unchanged. Backed by the additive `Course.show_organization_footer` field (migration `0024`, default `False`, no backfill). The social-icon markup is now shared between these emails and newsletter sendouts via `emails/_social_icons.html`.
+
 ## [6.0.2] - 2026-08-31
 
 ### Fixed

@@ -252,7 +252,15 @@
         <div class="mobile-content locale">
             {% block content %}{% endblock %}
         </div>
-        {% block footer %}{% endblock %}
+        {% block footer %}
+            {% if org_footer_enabled %}
+            <div class="footer">
+                <div class="mobile-content" style="text-align: center;">
+                    {% include "emails/_organization_footer.html" %}
+                </div>
+            </div>
+            {% endif %}
+        {% endblock %}
     </div>
 </body>
 </html>

@@ -98,6 +98,7 @@ class DeactivateInactiveEnrollmentsJob:
             "content_title": f"{delivery.course_content.type} {delivery.course_content.title}",
             "course_title": course_title,
             "organization_name": organization_name,
+            **email_sender_service.organization_footer_context(delivery.course_content.course),
         }
         body = render_to_string(
             "emails/deactivation_deadline_passed.txt",
