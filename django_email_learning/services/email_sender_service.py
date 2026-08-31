@@ -67,7 +67,6 @@ class EmailSenderService:
         return {
             "org_footer_enabled": enabled,
             "org_footer_name": organization.name,
-            "org_footer_url": organization.public_url,  # None when the org isn't public
             "org_footer_social_links": list(organization.social_links.all()) if enabled else [],
         }
 

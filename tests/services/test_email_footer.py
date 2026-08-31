@@ -62,7 +62,7 @@ def test_footer_shows_name_and_social_links_when_enabled(db, course_lesson_conte
     assert "linkedin.com/company/acme" not in email.body
 
 
-def test_footer_name_links_to_public_org_page_when_org_is_public(db, course_lesson_content, settings):
+def test_footer_name_is_plain_text_not_a_link(db, course_lesson_content):
     course = course_lesson_content.course
     course.show_organization_footer = True
     course.save()
@@ -72,8 +72,7 @@ def test_footer_name_links_to_public_org_page_when_org_is_public(db, course_less
     ).execute()
 
     html = _html_body(mail.outbox[0])
-    assert course.organization.public_url is not None
-    assert f'href="{course.organization.public_url}"' in html
+    assert f'<p class="email-org-name" style="margin: 0 0 20px;">{course.organization.name}</p>' in html
 
 
 def test_footer_applies_to_other_course_emails(db, course_assignment_content):

@@ -1,10 +1,9 @@
 {% comment %}
-Organization branding for a course email footer: the org name (linked to the
-public org page when the org is public) and its social links.
+Organization branding for a course email footer: the organization name (plain
+text) and its social links.
 
 Context (from EmailSenderService.organization_footer_context):
   org_footer_name         -- organization name
-  org_footer_url          -- public org page URL, or None
   org_footer_social_links -- iterable of SocialLink
 
 Render inside a footer wrapper, e.g.
@@ -12,15 +11,9 @@ Render inside a footer wrapper, e.g.
     {% include "emails/_organization_footer.html" %}
   </div></div>
 {% endcomment %}
-<p class="email-org-name">
-    {% if org_footer_url %}
-        <a href="{{ org_footer_url }}" class="color-brand" style="text-decoration: none;">{{ org_footer_name }}</a>
-    {% else %}
-        {{ org_footer_name }}
-    {% endif %}
-</p>
+<p class="email-org-name" style="margin: 0 0 20px;">{{ org_footer_name }}</p>
 {% if org_footer_social_links %}
-<p class="email-social-links">
+<p class="email-social-links" style="margin: 20px 0 0;">
     {% include "emails/_social_links.html" with social_links=org_footer_social_links %}
 </p>
 {% endif %}
