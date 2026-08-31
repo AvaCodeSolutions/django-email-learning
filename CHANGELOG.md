@@ -6,6 +6,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [6.0.1] - 2026-08-31
+
+### Fixed
+
+- **Deadline-less quiz/assignment reminders now actually recur** — `reminder_interval_days` is documented as "send reminder emails every N days", but `SendRemindersJob` marked `reminder_state = SENT` after the first send and nothing ever re-armed it, so a learner who never attempted the quiz got exactly one reminder, N days after delivery. For content with **no deadline** (`deadline_days = 0`) and a positive `reminder_interval_days`, a successful send now re-arms `remind_at` for another nudge N days later, up to a cap of **3 reminder emails** total (`ContentDelivery.MAX_RECURRING_REMINDERS`), after which the delivery settles in `SENT`. Submitting, graduating or failing still flips `reminder_state` to `NOT_APPLICABLE` and stops the reminders early. Content **with** a deadline is unchanged: a single reminder, sent one day before the deadline (ten hours before for a one-day deadline).
+- **Reminder for the second quiz attempt was never sent** — When a learner failed a `limited_attempts` quiz for the first time, the retry delivery recomputed `remind_at` but left `reminder_state` at `NOT_APPLICABLE` (set earlier in the submission handler), so the reminder queue — which only picks up `PENDING` rows — skipped it. The retry now re-arms the reminder (`reminder_state = PENDING`, `reminder_count` reset to 0) whenever a new `remind_at` is scheduled.
+
+### Changed
+
+- **New `ContentDelivery.reminder_count` field** (migration `0023`) tracks how many reminder emails a delivery has received, backing the 3-reminder cap. Additive column with a default of `0`; no data backfill required.
+- The `reminder_interval_days` help text on `Quiz` and `Assignment`, and the **Reminder Interval Days** tooltip in the course form, now state that at most 3 reminders are sent and that they stop once the learner completes the item.
+
 ## [6.0.0] - 2026-08-30
 
 ### Added

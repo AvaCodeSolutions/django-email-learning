@@ -19,6 +19,11 @@ logger = logging.getLogger(__name__)
 
 
 class ContentDelivery(models.Model):
+    # Cap on how many reminder emails a single delivery for deadline-less content
+    # may receive before it stops nudging. Content with a deadline is always a
+    # single reminder regardless of this value.
+    MAX_RECURRING_REMINDERS = 3
+
     class ReminderStatus(models.TextChoices):
         NOT_APPLICABLE = "not_applicable", "Not Applicable"
         PENDING = "pending", "Pending"
@@ -36,6 +41,10 @@ class ContentDelivery(models.Model):
         choices=ReminderStatus.choices,
         default=ReminderStatus.NOT_APPLICABLE,
         db_index=True,
+    )
+    reminder_count = models.IntegerField(
+        default=0,
+        help_text="How many reminder emails have been sent for this delivery.",
     )
     opened_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
@@ -109,6 +118,28 @@ class ContentDelivery(models.Model):
                 if self.course_content.reminder_interval_days:
                     return timezone.now() + timedelta(days=self.course_content.reminder_interval_days)
         return None
+
+    def record_reminder_sent(self) -> None:
+        """
+        Advance reminder bookkeeping after a reminder email has gone out.
+
+        Content with a deadline gets a single reminder: it lands in SENT and
+        stays there. Content without a deadline that has a reminder interval is
+        re-armed for another nudge `reminder_interval_days` later, up to
+        MAX_RECURRING_REMINDERS emails in total, after which it also settles in
+        SENT. Submitting, graduating or failing resets `reminder_state` to
+        NOT_APPLICABLE elsewhere, which stops the loop early.
+        """
+        self.reminder_count += 1
+        interval = self.course_content.reminder_interval_days
+        has_deadline = bool(self.course_content.deadline_days and self.course_content.deadline_days > 0)
+        if not has_deadline and interval and self.reminder_count < self.MAX_RECURRING_REMINDERS:
+            self.remind_at = timezone.now() + timedelta(days=interval)
+            self.reminder_state = self.ReminderStatus.PENDING
+        else:
+            self.remind_at = timezone.now()
+            self.reminder_state = self.ReminderStatus.SENT
+        self.save()
 
     def calculate_valid_until(self) -> Optional[datetime]:
         if self.course_content.deadline_days and self.course_content.deadline_days > 0:

@@ -406,8 +406,9 @@ class CourseView(BasePlatformView):
             ),
             "reminder_interval_days": _("Reminder Interval Days"),
             "reminder_interval_days_tooltip": _(
-                "When a quiz does not have a deadline, you can define a reminder interval to specify"
-                " how often learners should receive reminder emails to complete the quiz."
+                "When there is no deadline, you can define a reminder interval to specify"
+                " how often learners should receive reminder emails to complete the item."
+                " A maximum of 3 reminders are sent, and they stop once the learner completes it."
                 " Setting to 0 means no reminder emails will be sent."
             ),
             "assignment_description": _("Assignment Description"),

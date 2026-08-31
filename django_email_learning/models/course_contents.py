@@ -41,7 +41,10 @@ class Quiz(models.Model):
     limited_attempts = models.BooleanField(default=True)
     is_blocking = models.BooleanField(default=True)
     reminder_interval_days = models.IntegerField(
-        help_text="For quizzes without a deadline (deadline_days = 0), send reminder emails every N days.",
+        help_text=(
+            "For quizzes without a deadline (deadline_days = 0), send a reminder email every N days "
+            "until the learner completes the quiz, up to 3 reminders. 0 or empty means no reminders."
+        ),
         validators=[MinValueValidator(0)],
         blank=True,
         null=True,
@@ -121,7 +124,10 @@ class Assignment(models.Model):
     requires_text_submission = models.BooleanField(help_text="Whether the assignment requires text submission.")
     requires_file_submission = models.BooleanField(help_text="Whether the assignment requires file submission.")
     reminder_interval_days = models.IntegerField(
-        help_text="For assignments without a deadline (deadline_days = 0), send reminder emails every N days.",
+        help_text=(
+            "For assignments without a deadline (deadline_days = 0), send a reminder email every N days "
+            "until the learner submits, up to 3 reminders. 0 or empty means no reminders."
+        ),
         validators=[MinValueValidator(0)],
         null=True,
         blank=True,

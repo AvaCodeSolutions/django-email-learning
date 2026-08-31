@@ -339,6 +339,9 @@ class QuizSubmissionView(View):
                     )
                     delivery.remind_at = delivery.calculate_remind_at()
                     delivery.valid_until = delivery.calculate_valid_until()
+                    delivery.reminder_count = 0
+                    if delivery.remind_at:
+                        delivery.reminder_state = ContentDelivery.ReminderStatus.PENDING
                     delivery.save()
                     delivery.repeat_delivery_in_days(1)
             else:

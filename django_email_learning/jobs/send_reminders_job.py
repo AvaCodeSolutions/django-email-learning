@@ -94,8 +94,9 @@ class SendRemindersJob:
                 delivery_schedule.delivery.save()
                 return
             command.execute()
-            delivery_schedule.delivery.reminder_state = ContentDelivery.ReminderStatus.SENT
-            delivery_schedule.delivery.save()
+            # `command.execute()` calls `delivery.record_reminder_sent()` on a
+            # successful send, which advances `reminder_state` (to SENT, or back
+            # to PENDING for deadline-less content that still has nudges left).
         except QuizNotFoundError as e:
             logger.error(
                 f"Quiz not found for CourseContent ID {delivery_schedule.delivery.course_content.id}: {str(e)}. "

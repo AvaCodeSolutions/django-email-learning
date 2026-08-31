@@ -51,10 +51,18 @@ def test_send_reminders_job_runs_with_tasks(db, reminder_queue_mock, enrollment,
 
     reminder_queue_mock.add_task(delivery_schedule)
 
-    with patch.object(SendQuizReminderCommand, "execute", return_value=None):
+    # `execute()` owns the post-send state transition (via
+    # `delivery.record_reminder_sent()`), so mimic that from the stub.
+    with patch.object(
+        SendQuizReminderCommand,
+        "execute",
+        autospec=True,
+        side_effect=lambda self: self.delivery_schedule.delivery.record_reminder_sent(),
+    ) as quiz_execute:
         job = SendRemindersJob()
         job.run()
 
+    quiz_execute.assert_called_once()
     delivery.refresh_from_db()
     assert delivery.reminder_state == ContentDelivery.ReminderStatus.SENT
     assert reminder_queue_mock.index == 1
@@ -210,7 +218,12 @@ def test_send_reminders_job_uses_assignment_reminder_command_for_assignment_cont
     reminder_queue_mock.add_task(delivery_schedule)
 
     with (
-        patch.object(SendAssignmentReminderCommand, "execute", return_value=None) as assignment_execute,
+        patch.object(
+            SendAssignmentReminderCommand,
+            "execute",
+            autospec=True,
+            side_effect=lambda self: self.delivery_schedule.delivery.record_reminder_sent(),
+        ) as assignment_execute,
         patch.object(SendQuizReminderCommand, "execute", return_value=None) as quiz_execute,
     ):
         job = SendRemindersJob()

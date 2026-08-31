@@ -44,6 +44,9 @@ def test_quiz_submission_api_valid_token(content_delivery, anonymous_client):
     content_delivery.refresh_from_db()
     assert content_delivery.remind_at != original_remind_at
     assert content_delivery.remind_at is not None
+    # the retry attempt re-arms the reminder so the learner is nudged again
+    assert content_delivery.reminder_state == ContentDelivery.ReminderStatus.PENDING
+    assert content_delivery.reminder_count == 0
     assert content_delivery.hash_value != jwt_service.decode_jwt(token)["delivery_hash"]
 
 

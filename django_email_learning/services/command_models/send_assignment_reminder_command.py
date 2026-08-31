@@ -2,11 +2,10 @@ from typing import Literal
 
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from django.utils import timezone
 from django.utils.translation import gettext as _
 from pydantic import ConfigDict
 
-from django_email_learning.models import ContentDelivery, DeliverySchedule
+from django_email_learning.models import DeliverySchedule
 from django_email_learning.services.command_models.abstract_command import (
     AbstractCommand,
 )
@@ -55,9 +54,7 @@ class SendAssignmentReminderCommand(AbstractCommand):
 
         try:
             email_sender_service.send(email_message)
-            self.delivery_schedule.delivery.remind_at = timezone.now()
-            self.delivery_schedule.delivery.reminder_state = ContentDelivery.ReminderStatus.SENT
-            self.delivery_schedule.delivery.save()
+            self.delivery_schedule.delivery.record_reminder_sent()
             metric_service.assignment_reminder_sent(
                 course_slug=content.course.slug,
                 organization_id=content.course.organization.id,
