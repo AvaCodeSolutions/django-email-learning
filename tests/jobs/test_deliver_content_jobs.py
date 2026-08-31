@@ -106,6 +106,54 @@ def test_deliver_contents_job_runs_with_tasks(
     assert ContentDelivery.objects.filter(enrollment=enrollment2, course_content=course_content_3).exists()
 
 
+def test_unpublished_content_is_skipped_and_enrollment_advances(
+    db, delivery_queue_mock, enrollment, course_lesson_content, course_quiz_content
+):
+    enrollment.status = EnrollmentStatus.ACTIVE
+    enrollment.save()
+
+    # The learner reached the lesson (priority 1), which is then unpublished.
+    # The quiz (priority 2) is the next published content.
+    course_lesson_content.is_published = False
+    course_lesson_content.save()
+    course_quiz_content.is_published = True
+    course_quiz_content.save()
+
+    delivery = ContentDelivery.objects.create(enrollment=enrollment, course_content=course_lesson_content)
+    schedule = DeliverySchedule.objects.create(delivery=delivery)
+    delivery_queue_mock.add_task(schedule)
+
+    DeliverContentsJob().run()
+
+    schedule.refresh_from_db()
+    assert schedule.status == DeliveryStatus.CANCELED
+
+    enrollment.refresh_from_db()
+    assert enrollment.status == EnrollmentStatus.ACTIVE
+    assert ContentDelivery.objects.filter(enrollment=enrollment, course_content=course_quiz_content).exists()
+
+
+def test_unpublished_last_content_graduates_enrollment(db, delivery_queue_mock, enrollment, course_lesson_content):
+    enrollment.status = EnrollmentStatus.ACTIVE
+    enrollment.save()
+
+    # The only content in the course is unpublished while the learner sits on it.
+    course_lesson_content.is_published = False
+    course_lesson_content.save()
+
+    delivery = ContentDelivery.objects.create(enrollment=enrollment, course_content=course_lesson_content)
+    schedule = DeliverySchedule.objects.create(delivery=delivery)
+    delivery_queue_mock.add_task(schedule)
+
+    DeliverContentsJob().run()
+
+    schedule.refresh_from_db()
+    assert schedule.status == DeliveryStatus.CANCELED
+
+    enrollment.refresh_from_db()
+    assert enrollment.status == EnrollmentStatus.COMPLETED
+
+
 def test_deliver_contents_job_blocks_after_3_failed_attempts(
     db, delivery_queue_mock, enrollment, course_lesson_content
 ):

@@ -209,6 +209,10 @@ class SingleCourseContentView(View):
             return JsonResponse({"message": "Course content deleted successfully"}, status=200)
         except CourseContent.DoesNotExist:
             return JsonResponse({"error": "Course content not found"}, status=404)
+        except DjangoValidationError as e:
+            # CourseContent.delete() refuses to remove content that has already
+            # reached learners; the message is written for the caller.
+            return JsonResponse({"error": "; ".join(e.messages)}, status=409)
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
         except ValueError as e:

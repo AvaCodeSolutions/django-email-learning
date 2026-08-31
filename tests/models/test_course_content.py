@@ -1,7 +1,7 @@
 import pytest
 from django.forms import ValidationError
 
-from django_email_learning.models import CourseContent
+from django_email_learning.models import ContentDelivery, CourseContent
 
 
 def test_no_lesson_for_content_of_type_lesson_raises_error(course):
@@ -56,3 +56,21 @@ def test_unique_quiz_content_per_course(course, quiz):
     CourseContent.objects.create(course=course, priority=1, type="quiz", quiz=quiz, waiting_period=10)
     with pytest.raises(ValidationError):
         CourseContent.objects.create(course=course, priority=2, type="quiz", quiz=quiz, waiting_period=20)
+
+
+def test_delete_content_without_deliveries_succeeds(course, lesson):
+    content = CourseContent.objects.create(course=course, priority=1, type="lesson", lesson=lesson, waiting_period=10)
+    content_id = content.id
+
+    content.delete()
+
+    assert not CourseContent.objects.filter(id=content_id).exists()
+
+
+def test_delete_content_with_a_delivery_is_refused(course_lesson_content, enrollment):
+    ContentDelivery.objects.create(enrollment=enrollment, course_content=course_lesson_content)
+
+    with pytest.raises(ValidationError, match="already been scheduled or delivered"):
+        course_lesson_content.delete()
+
+    assert CourseContent.objects.filter(id=course_lesson_content.id).exists()

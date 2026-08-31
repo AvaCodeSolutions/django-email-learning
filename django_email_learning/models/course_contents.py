@@ -238,6 +238,21 @@ class CourseContent(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
+    def delete(self, *args, **kwargs) -> tuple[int, dict[str, int]]:  # type: ignore[no-untyped-def]
+        # A hard delete cascades to every ContentDelivery for this content and,
+        # through them, to learners' quiz/assignment submissions, their feedback,
+        # pending DeliverySchedule rows and the delivery history. It also breaks
+        # the delivery chain for anyone currently sitting on this content, since
+        # the ContentDelivery that would have triggered the next one is gone.
+        # Refuse it once the content has reached any learner; the caller can
+        # unpublish instead, which DeliverContentsJob handles gracefully by
+        # skipping the content and advancing the enrollment.
+        if self.contentdelivery_set.exists():
+            raise ValidationError(
+                "Cannot delete content that has already been scheduled or delivered to learners. Unpublish it instead."
+            )
+        return super().delete(*args, **kwargs)
+
     def get_next(self) -> Optional["CourseContent"]:
         next_content = (
             CourseContent.objects.filter(course=self.course, is_published=True, priority__gt=self.priority)

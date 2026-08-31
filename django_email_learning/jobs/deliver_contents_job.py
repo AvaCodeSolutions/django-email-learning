@@ -204,9 +204,23 @@ class DeliverContentsJob:
     def process_delivery(self, delivery_schedule: DeliverySchedule) -> None:
         course_content = delivery_schedule.delivery.course_content
         if not course_content.is_published:
-            logger.warning(f"CourseContent {course_content.id} is not published. Canceling the delivery.")
+            enrollment_id = delivery_schedule.delivery.enrollment.id
+            logger.warning(
+                f"CourseContent {course_content.id} is not published. Canceling the delivery "
+                f"and advancing enrollment {enrollment_id} to the next content."
+            )
             delivery_schedule.status = DeliveryStatus.CANCELED
             delivery_schedule.save()
+            # Unpublishing content mid-course used to strand the learner here: the
+            # schedule was canceled but nothing scheduled what comes next, so the
+            # enrollment never progressed. Skip over the unpublished content the
+            # same way a delivered lesson would.
+            next_delivery = delivery_schedule.delivery.schedule_next_delivery()
+            if next_delivery:
+                logger.info(f"Scheduled next delivery {next_delivery.id} for enrollment {enrollment_id}")
+            else:
+                logger.info(f"No more content to schedule for enrollment {enrollment_id}. Graduating.")
+                delivery_schedule.delivery.enrollment.graduate()
             return
 
         if course_content.type == CourseContentType.LESSON:
