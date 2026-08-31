@@ -141,6 +141,15 @@ def test_process_delivery_omits_social_links_section_when_none_exist(db, deliver
     assert 'class="email-social-links"' not in html_body
 
 
+def test_newsletter_opts_out_of_the_base_footer_and_platform_credit(db, delivery):
+    with patch("django_email_learning.jobs.send_newsletters_job.email_sender_service.send") as send_mock:
+        SendNewslettersJob().process_delivery(delivery)
+
+    html_body = send_mock.call_args[0][0].alternatives[0][0]
+    assert '<div class="footer">' not in html_body
+    assert "Powered by" not in html_body
+
+
 def test_process_delivery_sets_list_unsubscribe_headers_when_url_available(db, delivery):
     with patch("django_email_learning.jobs.send_newsletters_job.email_sender_service.send") as send_mock:
         SendNewslettersJob().process_delivery(delivery)

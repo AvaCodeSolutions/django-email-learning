@@ -231,6 +231,10 @@
                 padding: 0 10px !important;
                 width: 100% !important;
             }
+            .email-credit {
+                margin: 20px 0 0;
+                color: #6c757d;
+            }
             {% block extra_styles %}{% endblock %}
         </style>
     </head>
@@ -240,13 +244,17 @@
             {% block content %}{% endblock %}
         </div>
         {% block footer %}
-            {% if org_footer_enabled %}
-            <div class="footer">
-                <div class="mobile-content" style="text-align: center;">
+        <div class="footer">
+            <div class="mobile-content" style="text-align: center;">
+                {% if org_footer_enabled %}
                     {% include "emails/_organization_footer.html" %}
-                </div>
+                {% endif %}
+                {# Override the "credit" block (or the whole "footer" block) to change or remove the attribution. #}
+                {% block credit %}
+                <p class="email-credit">{% blocktranslate %}Powered by <a href="https://github.com/AvaCodeSolutions/django-email-learning" class="color-brand" style="text-decoration: none;">Django Email Learning</a>.{% endblocktranslate %}</p>
+                {% endblock %}
             </div>
-            {% endif %}
+        </div>
         {% endblock %}
     </div>
 </body>

@@ -16,3 +16,7 @@
     <p>{% blocktranslate %}If you no longer wish to receive these emails, you can <a href="{{ unsubscribe_url }}">unsubscribe from this newsletter</a>.{% endblocktranslate %}</p>
 </div>
 {% endblock %}
+
+{# Newsletters carry their own footer (above) and are the organization's own
+   branded mail, so they opt out of the shared base footer / attribution. #}
+{% block footer %}{% endblock %}

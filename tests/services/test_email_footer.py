@@ -37,6 +37,16 @@ def test_footer_absent_when_disabled(db, course_lesson_content):
     assert "https://linkedin.com/company/acme" not in html
 
 
+def test_base_footer_credit_is_present_even_without_org_footer(db, course_lesson_content):
+    SendLessonCommand(
+        command_name="send_lesson", content_id=course_lesson_content.id, email="learner@example.com"
+    ).execute()
+
+    html = _html_body(mail.outbox[0])
+    assert '<div class="footer">' in html
+    assert "Powered by" in html and "Django Email Learning" in html
+
+
 def test_footer_shows_name_and_social_links_when_enabled(db, course_lesson_content):
     course = course_lesson_content.course
     course.show_organization_footer = True
