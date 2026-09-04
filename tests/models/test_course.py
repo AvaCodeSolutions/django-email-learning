@@ -121,3 +121,22 @@ def test_clean_allows_saving_existing_organization_course_when_disabled(course, 
     course.save()  # must not raise
     course.refresh_from_db()
     assert course.from_email_type == FromEmailType.ORGANIZATION
+
+
+def test_title_rejects_url(course):
+    course.title = "Enroll at https://bit.ly/x"
+    with pytest.raises(ValidationError):
+        course.save()
+
+
+def test_title_rejects_hidden_bidi_characters(course):
+    course.title = "Safe\u202etitle"
+    with pytest.raises(ValidationError):
+        course.save()
+
+
+def test_title_has_no_60_character_limit(course):
+    course.title = "A dependable and pleasantly verbose course title " * 3
+    course.save()  # only Organization.name caps at 60
+    course.refresh_from_db()
+    assert course.title.startswith("A dependable")

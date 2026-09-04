@@ -126,6 +126,26 @@ def test_get_learners_cap_resolver_receives_the_organization(db, settings):
     assert other_org.get_learners_cap() == 0
 
 
+def test_name_rejects_url(db):
+    with pytest.raises(ValidationError):
+        Organization.objects.create(name="Spam https://spam.example")
+
+
+def test_name_rejects_newline(db):
+    with pytest.raises(ValidationError):
+        Organization.objects.create(name="Acme\nInc")
+
+
+def test_name_rejects_value_over_60_characters(db):
+    with pytest.raises(ValidationError):
+        Organization.objects.create(name="A" * 61)
+
+
+def test_name_accepts_ordinary_value_at_the_limit(db):
+    organization = Organization.objects.create(name="A" * 60)
+    assert organization.pk is not None
+
+
 def test_name_does_not_have_to_be_unique(db):
     first = Organization.objects.create(name="Acme Consulting")
     second = Organization.objects.create(name="Acme Consulting")

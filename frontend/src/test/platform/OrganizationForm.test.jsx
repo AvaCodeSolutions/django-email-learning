@@ -15,6 +15,7 @@ const localeMessages = {
   create: 'Create',
   update: 'Update',
   name_required: 'Name is required.',
+  name_max_length_helper_text: 'Name must be 60 characters or fewer.',
   description_required: 'Description is required.',
   description_max_length_helper_text: 'Description must be 1000 characters or fewer.',
   description_char_limit_helper_text: 'COUNT/1000 characters used.',
@@ -102,6 +103,14 @@ describe('OrganizationForm', () => {
 
     await user.type(descriptionField, 'Hello world');
     expect(screen.getByText('11/1000 characters used.')).toBeInTheDocument();
+  });
+
+  it('caps the name field at 60 characters', () => {
+    renderWithProviders(<OrganizationForm {...createProps} />, {
+      appContext: { localeMessages },
+    });
+
+    expect(screen.getByLabelText(/Name/)).toHaveAttribute('maxlength', '60');
   });
 
   it('shows URL validation error for invalid social link URL', async () => {

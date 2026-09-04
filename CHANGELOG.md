@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [Unreleased]
+
+### Added
+
+- **Injection-hardening validation for organization and course names** — `Organization.name` and `Course.title` are rendered verbatim into emails (subject lines, `From` headers, footers), so both now reject values that contain an `http(s)://` URL, newlines/control characters or Unicode line separators, zero-width and bidirectional-formatting characters, or a mix of scripts typical of homoglyph attacks (e.g. a Cyrillic "о" inside a Latin word). Every check runs against the NFKC-normalized form so compatibility look-alikes (`ｈｔｔｐ`) cannot slip past. `Organization.name` additionally caps at 60 characters (migration `0025`; the column shrinks from `max_length=200`). Enforced at the model layer (`full_clean()`), surfaced as `400`s by the platform organization API, and mirrored by a 60-character cap on the organization form's name field.
+
 ## [6.1.0] - 2026-08-31
 
 ### Added
