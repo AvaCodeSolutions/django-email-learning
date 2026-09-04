@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.0.2] - 2026-09-04
+
+### Security
+
+- **`@tiptap` updated to 3.31.3** — Picks up the fix for [GHSA-cp6q-959q-f8rh](https://github.com/advisories/GHSA-cp6q-959q-f8rh) (moderate): `mergeAttributes()` turned an own `__proto__` key into inherited executable DOM attributes, so attribute data reaching the editor could add handlers such as `onerror` to rendered nodes. `@tiptap/core` was pinned at 3.29.2, inside the affected `<= 3.30.3` range. Unlike the earlier `nanoid` bump this is a runtime dependency that **does** ship in the served assets, as part of the lesson content editor bundle. The whole `@tiptap` family moves together because the packages carry exact-match peer dependencies on each other, and the `package.json` floors are raised from `^3.13.0`/`^3.19.0` to `^3.31.3` so a fresh install cannot resolve back to a vulnerable version. `npm audit` on the frontend now reports no vulnerabilities.
+
 ## [7.0.1] - 2026-09-04
 
 ### Fixed
