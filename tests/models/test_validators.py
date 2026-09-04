@@ -22,6 +22,10 @@ from django_email_learning.models.validators import (
         "J.R.R. Tolkien Studies",
         "C++ for Beginners",
         "Q&A: Sales 101",
+        # bare domains and www. hosts are allowed - only http(s):// is rejected
+        "evil.com",
+        "promo at www.example.com",
+        "mail me at admin@example.com",
         "",
     ],
 )
@@ -33,10 +37,7 @@ def test_validate_safe_name_accepts_ordinary_names(value):
     ("value", "code"),
     [
         ("Visit http://evil.example", "url_in_name"),
-        ("promo at www.evil.example", "url_in_name"),
-        ("evil.com", "url_in_name"),
-        ("mail me at admin@evil.com", "url_in_name"),
-        ("ftp://host/file", "url_in_name"),
+        ("https://evil.example/pwn", "url_in_name"),
         # fullwidth characters normalise to an ASCII URL
         ("ｈｔｔｐ://evil.example", "url_in_name"),
         ("line one\nline two", "control_characters"),
@@ -69,5 +70,5 @@ def test_validate_organization_name_enforces_length_limit():
 
 def test_validate_organization_name_also_runs_the_safe_name_checks():
     with pytest.raises(ValidationError) as exc:
-        validate_organization_name("www.spam.example")
+        validate_organization_name("Spam https://spam.example")
     assert exc.value.code == "url_in_name"

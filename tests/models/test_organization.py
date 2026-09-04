@@ -128,7 +128,7 @@ def test_get_learners_cap_resolver_receives_the_organization(db, settings):
 
 def test_name_rejects_url(db):
     with pytest.raises(ValidationError):
-        Organization.objects.create(name="Spam at www.spam.example")
+        Organization.objects.create(name="Spam https://spam.example")
 
 
 def test_name_rejects_newline(db):

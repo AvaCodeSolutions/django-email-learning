@@ -123,8 +123,8 @@ def test_clean_allows_saving_existing_organization_course_when_disabled(course, 
     assert course.from_email_type == FromEmailType.ORGANIZATION
 
 
-def test_title_rejects_url_like_value(course):
-    course.title = "Enroll at bit.ly"
+def test_title_rejects_url(course):
+    course.title = "Enroll at https://bit.ly/x"
     with pytest.raises(ValidationError):
         course.save()
 

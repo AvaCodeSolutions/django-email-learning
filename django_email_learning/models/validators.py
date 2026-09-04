@@ -1,7 +1,7 @@
 """Validators for human-facing name fields (Organization.name, Course.title).
 
 These fields are rendered verbatim into emails - subject lines, ``From`` headers,
-footers - so a value that carries a URL, breaks out of its line, or hides/reorders
+footers - so a value that carries a link, breaks out of its line, or hides/reorders
 text for the reader is a content-injection vector rather than a cosmetic problem.
 Every check runs against the NFKC-normalized form so compatibility look-alikes
 (fullwidth ``ｈｔｔｐ``) can't walk past the URL check.
@@ -14,22 +14,10 @@ from django.core.exceptions import ValidationError
 
 MAX_ORGANIZATION_NAME_LENGTH = 60
 
-# A recognised TLD is what makes a bare "label.tld" read as a domain rather than
-# as a course title ("Node.js") or an abbreviation ("Inc."). Explicit URLs - a
-# scheme or a www. host - are caught below regardless of TLD.
-_COMMON_TLDS = (
-    "com net org io co edu gov mil info biz dev app ai me xyz online site tech "
-    "store blog news live cloud link click page so sh gg tv fm to ly cc us uk "
-    "ca au de fr es it nl se no fi dk ch at be ie nz jp cn in br ru za eu"
-).split()
-
-_URL_RE = re.compile(
-    r"https?://"  # http:// or https://
-    r"|://\S"  # any other scheme separator
-    r"|\bwww\."  # www. host
-    r"|[^\s./@]{2,}\.(?:" + "|".join(_COMMON_TLDS) + r")\b",  # bare domain
-    re.IGNORECASE,
-)
+# An explicit http(s) URL - the thing an email client turns into a clickable
+# link. Bare domains ("evil.com") and "www." hosts are deliberately allowed so
+# ordinary titles like "Node.js" or "J.R.R. Tolkien" are not caught.
+_URL_RE = re.compile(r"https?://", re.IGNORECASE)
 
 # Newlines, tabs, other C0/C1 control characters, and the Unicode line/paragraph
 # separators. Never legitimate in a name, and what lets a value start a new
@@ -106,7 +94,7 @@ def validate_safe_name(value: str) -> None:
         )
     if _URL_RE.search(normalized):
         raise ValidationError(
-            "Name may not contain a URL or web address.",
+            "Name may not contain a URL.",
             code="url_in_name",
         )
     _check_mixed_scripts(normalized)

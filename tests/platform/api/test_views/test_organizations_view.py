@@ -94,7 +94,7 @@ def test_post_organizations_view_rejects_invalid_social_link_platform(superadmin
 
 @pytest.mark.parametrize(
     "name",
-    ["Visit www.spam.example", "Acme\nInc", "A" * 61],
+    ["Visit https://spam.example", "Acme\nInc", "A" * 61],
 )
 def test_post_organizations_view_rejects_unsafe_name(superadmin_client, name):
     response = superadmin_client.post(
@@ -108,7 +108,7 @@ def test_post_organizations_view_rejects_unsafe_name(superadmin_client, name):
 def test_update_organizations_view_rejects_unsafe_name(superadmin_client):
     response = superadmin_client.post(
         update_url(1),
-        data={"name": "evil.com"},
+        data={"name": "http://evil.com"},
         content_type="application/json",
     )
     assert response.status_code == 400
