@@ -6,11 +6,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
-## [6.1.0] - 2026-08-31
+## [Unreleased]
 
 ### Added
 
 - **Injection-hardening validation for organization and course names** — `Organization.name` and `Course.title` are rendered verbatim into emails (subject lines, `From` headers, footers), so both now reject values that contain an `http(s)://` URL, newlines/control characters or Unicode line separators, zero-width and bidirectional-formatting characters, or a mix of scripts typical of homoglyph attacks (e.g. a Cyrillic "о" inside a Latin word). Every check runs against the NFKC-normalized form so compatibility look-alikes (`ｈｔｔｐ`) cannot slip past. `Organization.name` additionally caps at 60 characters (migration `0025`; the column shrinks from `max_length=200`). Enforced at the model layer (`full_clean()`), surfaced as `400`s by the platform organization API, and mirrored by a 60-character cap on the organization form's name field.
+
+## [6.1.0] - 2026-08-31
+
+### Added
 
 - **Per-course organization branding in email footers** — a new **Show organization branding in email footer** toggle on the course form (off by default) adds the organization's logo (when set), name and social links to the footer of every course-scoped email: lessons, quizzes, assignments, both reminder types, assignment reviews, enrollment verification, certificate finalization, and deadline-deactivation notices. Applies to the HTML part of each email only; the plain-text and AMP alternatives are unchanged. Backed by the additive `Course.show_organization_footer` field (migration `0024`, default `False`, no backfill). The social links render as plain text links, shared with newsletter sendouts via `emails/_social_links.html`.
 - Newsletter email footers now render social links as plain text links too. The previous inline-SVG icons rendered blank in Gmail, which strips `<svg>` from HTML email.
