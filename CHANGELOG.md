@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [Unreleased]
+
+### Fixed
+
+- **A stale `active_organization_id` in the session no longer 500s every platform page** — the session value was trusted without checking it still resolved, so once the organization it named was deleted, or the user's membership in it revoked (or a superuser pointed the session at an arbitrary id via `UpdateSessionView`), `BasePlatformView.get_shared_context` raised `Organization.DoesNotExist` on every platform view — the dashboard included — for the rest of that session, with no way out short of clearing cookies. `get_or_set_active_organization` now re-checks the stored id against the user's memberships (against existing organizations, for superusers), discards it when it no longer holds, and resolves a current organization the same way it does on a first visit.
+
 ## [7.0.0] - 2026-09-04
 
 ### Added
@@ -17,6 +23,7 @@ Changes prior to v1.0.0 are available in the [git history](https://github.com/Av
 - **BREAKING: `Organization.name` is capped at 60 characters** — migration `0025` shrinks the column from `varchar(200)` to `varchar(60)`. On PostgreSQL and MySQL the `ALTER` fails if any existing row is longer, so shorten those names **before** upgrading:
   ```python
   from django.db.models.functions import Length
+
   Organization.objects.annotate(n=Length("name")).filter(n__gt=60).values_list("id", "name")
   ```
   SQLite does not enforce the length and will migrate without complaint.

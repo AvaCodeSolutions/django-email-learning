@@ -245,3 +245,79 @@ def test_navbar_component_urls_omit_missing_style_or_script(db, users, monkeypat
     assert response.status_code == 200
     assert response.context["navbarComponentStyleUrls"] == []
     assert response.context["navbarComponentScriptUrls"] == []
+
+
+def _session_organization(client: Client, organization_id) -> None:
+    session = client.session
+    session["active_organization_id"] = organization_id
+    session.save()
+
+
+def test_stale_session_organization_is_replaced_instead_of_raising(db, users):
+    """
+    Regression test: a session pointing at an organization that no longer exists (deleted
+    org, restored database, superuser switching to an arbitrary id) used to reach
+    Organization.objects.get() in get_shared_context and 500 every platform page for the
+    rest of that session. The stale id is dropped and resolved again from the user's
+    memberships instead.
+    """
+    client = Client()
+    client.force_login(users["editor_user"])
+    _session_organization(client, 99999)
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["activeOrganizationId"] == "1"
+    assert client.session["active_organization_id"] == "1"
+
+
+def test_session_organization_the_user_left_is_replaced(db, users):
+    """A revoked membership must not keep rendering that organization's context either."""
+    other_organization = Organization.objects.create(name="Other Organization")
+    client = Client()
+    client.force_login(users["editor_user"])
+    _session_organization(client, other_organization.id)
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["activeOrganizationId"] == "1"
+
+
+def test_unusable_session_organization_value_is_replaced(db, users):
+    """A session written by older code can hold something that isn't a usable primary key."""
+    client = Client()
+    client.force_login(users["editor_user"])
+    _session_organization(client, "not-an-id")
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["activeOrganizationId"] == "1"
+
+
+def test_stale_session_organization_is_replaced_for_superuser(db, users):
+    """Superusers have no memberships to validate against, so they fall back to any org."""
+    client = Client()
+    client.force_login(users["superadmin"])
+    _session_organization(client, 99999)
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["activeOrganizationId"] == "1"
+
+
+def test_valid_session_organization_is_kept(db, users):
+    """The happy path still short-circuits on the session value, untouched."""
+    other_organization = Organization.objects.create(name="Other Organization")
+    OrganizationUser.objects.create(user=users["editor_user"], organization=other_organization, role="editor")
+    client = Client()
+    client.force_login(users["editor_user"])
+    _session_organization(client, other_organization.id)
+
+    response = client.get(get_url())
+
+    assert response.status_code == 200
+    assert response.context["activeOrganizationId"] == other_organization.id

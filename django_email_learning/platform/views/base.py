@@ -199,10 +199,39 @@ class BasePlatformView(TemplateView):
     def get_locale_messages(self) -> Dict[str, str]:
         return {}
 
+    def _can_use_organization(self, organization_id: Any) -> bool:
+        """Whether the user may currently work in the organization with this id.
+
+        Superusers aren't members of anything, so for them any existing organization
+        counts; everyone else needs a live membership, which — being a foreign key —
+        also proves the organization itself still exists.
+        """
+        try:
+            if self.request.user.is_superuser:
+                return Organization.objects.filter(id=organization_id).exists()
+            return OrganizationUser.objects.filter(  # type: ignore[misc]
+                user=self.request.user,
+                organization_id=organization_id,
+            ).exists()
+        except (TypeError, ValueError):
+            # Session contents outlive the code that wrote them, so the stored id isn't
+            # guaranteed to be something the primary key can even be compared against.
+            return False
+
     def get_or_set_active_organization(self) -> str:
         org = self.request.session.get("active_organization_id")
-        if org:
+        if org and self._can_use_organization(org):
             return org
+        if org:
+            # The session value is a hint, not a fact: the organization it names can be
+            # deleted, or the user's membership in it revoked, long after it was written
+            # (and UpdateSessionView lets a superuser point the session at any id at all).
+            # Trusting it blindly meant Organization.objects.get() in get_shared_context
+            # raised DoesNotExist on every platform page for the rest of that session, with
+            # no way back short of clearing cookies, so drop it and resolve again below.
+            logging.info("Discarding stale active_organization_id %r from session", org)
+            del self.request.session["active_organization_id"]
+            org = None
 
         member = self.request.user.memberships.first()  # type: ignore[union-attr]
         logging.debug(f"User memberships: {member}")
