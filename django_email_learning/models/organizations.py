@@ -13,6 +13,7 @@ from django.utils.module_loading import import_string
 from django.utils.text import slugify
 
 from .enums.enrollment_status import EnrollmentStatus
+from .validators import MAX_ORGANIZATION_NAME_LENGTH, validate_organization_name
 
 User = get_user_model()
 
@@ -36,7 +37,7 @@ def domain_wide_email_enabled() -> bool:
 
 
 class Organization(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=MAX_ORGANIZATION_NAME_LENGTH, validators=[validate_organization_name])
     logo = models.ImageField(upload_to="organization_logos/", null=True, blank=True)
     description = models.TextField(null=True, blank=True, validators=[MaxLengthValidator(1000)])
     is_public = models.BooleanField(default=True)

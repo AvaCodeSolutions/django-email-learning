@@ -16,10 +16,11 @@ from django_email_learning.services import jwt_service
 from .enums.enrollment_status import EnrollmentStatus
 from .enums.from_email_type import FromEmailType
 from .organizations import Organization, OrganizationUser, domain_wide_email_enabled
+from .validators import validate_safe_name
 
 
 class Course(models.Model):
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=200, validators=[validate_safe_name])
     slug = models.SlugField(
         max_length=50,
         help_text="A short label for the course, used in URLs or email interactive actions. You can not edit it later.",

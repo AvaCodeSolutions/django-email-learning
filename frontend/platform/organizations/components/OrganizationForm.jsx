@@ -11,6 +11,7 @@ import '@melloware/coloris/dist/coloris.css';
 import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 
 const DEFAULT_BRAND_COLOR = '#4A5EC0';
+const NAME_MAX_LENGTH = 60;
 const DESCRIPTION_MAX_LENGTH = 1000;
 
 const PLATFORM_OPTIONS = [
@@ -114,6 +115,9 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
         if (!name.trim()) {
             setNameHelperText(localeMessages["name_required"]);
             valid = false;
+        } else if (name.trim().length > NAME_MAX_LENGTH) {
+            setNameHelperText(localeMessages["name_max_length_helper_text"]);
+            valid = false;
         } else {
             setNameHelperText("");
         }
@@ -213,7 +217,7 @@ function OrganizationForm({ successCallback, failureCallback, cancelCallback, cr
                     onUploadError={() => setErrorMessage(localeMessages["logo_upload_failed"])}
                 />
             </Box>
-            <RequiredTextField label={localeMessages["name"]} helperText={nameHelperText} fullWidth margin="normal" value={name} onChange={(e) => setName(e.target.value)} disabled={readOnly} />
+            <RequiredTextField label={localeMessages["name"]} helperText={nameHelperText} fullWidth margin="normal" value={name} onChange={(e) => setName(e.target.value)} disabled={readOnly} slotProps={{ htmlInput: { maxLength: NAME_MAX_LENGTH } }} />
             <RequiredTextField
                 label={localeMessages["description"]}
                 helperText={descriptionHelperText || (description.length > DESCRIPTION_MAX_LENGTH

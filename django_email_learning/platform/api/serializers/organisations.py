@@ -2,10 +2,12 @@ import enum
 import re
 from typing import Any, Callable, Optional
 
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.urls import reverse
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from django_email_learning.models import Organization, OrganizationUser, SocialLink
+from django_email_learning.models.validators import validate_organization_name
 from django_email_learning.services.sanitize import strip_html
 from django_email_learning.services.storage_tools import (
     FileDoesNotExistError,
@@ -18,6 +20,17 @@ HEX_COLOR_REGEX = r"^#[0-9A-Fa-f]{6}$"
 def validate_hex_color(value: str) -> str:
     if not re.match(HEX_COLOR_REGEX, value):
         raise ValueError("Invalid hex color, e.g. #4A5EC0.")
+    return value
+
+
+def validate_name(value: str) -> str:
+    """Run the Organization.name model validator at the API layer so a bad name
+    comes back as a 400 rather than surfacing from full_clean() as a 500.
+    """
+    try:
+        validate_organization_name(value)
+    except DjangoValidationError as exc:
+        raise ValueError(" ".join(exc.messages)) from exc
     return value
 
 
@@ -103,6 +116,11 @@ class CreateOrganizationRequest(BaseModel):
     is_public: bool = Field(default=True, examples=[True])
     brand_color: str = Field(default="#4A5EC0", examples=["#4A5EC0"])
 
+    @field_validator("name")
+    @classmethod
+    def check_name(cls, value: str) -> str:
+        return validate_name(value)
+
     @field_validator("description")
     @classmethod
     def strip_html_markup(cls, value: Optional[str]) -> Optional[str]:
@@ -151,6 +169,11 @@ class UpdateOrganizationRequest(BaseModel):
     remove_logo: Optional[bool] = Field(None, examples=[True])
     is_public: Optional[bool] = Field(None, examples=[True])
     brand_color: Optional[str] = Field(None, examples=["#4A5EC0"])
+
+    @field_validator("name")
+    @classmethod
+    def check_name(cls, value: Optional[str]) -> Optional[str]:
+        return validate_name(value) if value is not None else value
 
     @field_validator("description")
     @classmethod
