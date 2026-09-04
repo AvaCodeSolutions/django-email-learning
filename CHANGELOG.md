@@ -6,11 +6,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
-## [Unreleased]
+## [7.0.0] - 2026-09-04
 
 ### Added
 
-- **Injection-hardening validation for organization and course names** — `Organization.name` and `Course.title` are rendered verbatim into emails (subject lines, `From` headers, footers), so both now reject values that contain an `http(s)://` URL, newlines/control characters or Unicode line separators, zero-width and bidirectional-formatting characters, or a mix of scripts typical of homoglyph attacks (e.g. a Cyrillic "о" inside a Latin word). Every check runs against the NFKC-normalized form so compatibility look-alikes (`ｈｔｔｐ`) cannot slip past. `Organization.name` additionally caps at 60 characters (migration `0025`; the column shrinks from `max_length=200`). Enforced at the model layer (`full_clean()`), surfaced as `400`s by the platform organization API, and mirrored by a 60-character cap on the organization form's name field.
+- **Injection-hardening validation for organization and course names** — `Organization.name` and `Course.title` are rendered verbatim into emails (subject lines, `From` headers, footers), so both now reject values that contain an `http(s)://` URL, newlines/control characters or Unicode line separators, zero-width and bidirectional-formatting characters, or a mix of scripts typical of homoglyph attacks (e.g. a Cyrillic "о" inside a Latin word). Every check runs against the NFKC-normalized form so compatibility look-alikes (`ｈｔｔｐ`) cannot slip past. Bare domains (`evil.com`) and `www.` hosts are deliberately allowed, so ordinary titles like `Node.js` stay valid. The shared `validate_safe_name` validator lives in `django_email_learning/models/validators.py` and is reusable for any other free-text field that reaches an email. Enforced at the model layer (`full_clean()`), surfaced as `400`s by the platform organization API, and mirrored by a 60-character cap on the organization form's name field.
+
+### Changed
+
+- **BREAKING: `Organization.name` is capped at 60 characters** — migration `0025` shrinks the column from `varchar(200)` to `varchar(60)`. On PostgreSQL and MySQL the `ALTER` fails if any existing row is longer, so shorten those names **before** upgrading:
+  ```python
+  from django.db.models.functions import Length
+  Organization.objects.annotate(n=Length("name")).filter(n__gt=60).values_list("id", "name")
+  ```
+  SQLite does not enforce the length and will migrate without complaint.
+- **BREAKING: existing organization names and course titles that fail the new validation become un-saveable** — the checks run in `full_clean()`, which both models call from `save()`. Rows already holding an `http(s)://` URL, a newline, a zero-width/bidi character, or mixed scripts are left untouched in the database and still render, but the next save of that object raises `ValidationError` until the name is corrected — including a partial `save(update_fields=[...])` that does not touch the name at all. Audit before upgrading if you allow user-supplied organization names.
 
 ## [6.1.0] - 2026-08-31
 
