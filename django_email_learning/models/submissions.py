@@ -23,6 +23,31 @@ class QuizSubmission(models.Model):
     score = models.IntegerField()
     is_passed = models.BooleanField()
     submitted_at = models.DateTimeField(auto_now_add=True)
+    asked_question_ids = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="IDs of the questions this learner was shown, resolved at grade time.",
+    )
+    selected_answer_ids = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Question ID (as a string, per JSON) to the answer IDs the learner selected.",
+    )
+    # asked_question_ids is the denominator for per-question analytics: a quiz using the
+    # 'random' selection strategy shows every learner a different subset, so the quiz's
+    # current question list is not what this learner saw. A question listed there with no
+    # entry in selected_answer_ids was shown but left unanswered.
+    #
+    # Both fields are nullable and are never backfilled: rows written before 7.1.0 carry no
+    # per-question detail and it cannot be reconstructed - the asked set for a 'random' quiz
+    # only ever existed inside the delivery's (by now expired) JWT. Those rows still count
+    # towards submission totals but are excluded from the per-question statistics.
+
+    def question_response_map(self) -> dict[int, set[int]]:
+        """Captured responses keyed by question ID. Empty for a row written before 7.1.0."""
+        return {
+            int(question_id): set(answer_ids) for question_id, answer_ids in (self.selected_answer_ids or {}).items()
+        }
 
     def clean(self) -> None:
         if self.delivery.course_content.type != CourseContentType.QUIZ:

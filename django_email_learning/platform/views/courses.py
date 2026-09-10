@@ -400,6 +400,40 @@ class CourseView(BasePlatformView):
             "no_feedbacks_yet": _("No feedbacks yet."),
             "unable_to_load_submission_details": _("Unable to load submission details."),
             "course_analytics_tab_info": _("Course analytics are shown below."),
+            "quiz_tab_questions": _("Questions"),
+            "quiz_tab_analytics": _("Analytics"),
+            "quiz_analytics_load_failed": _("Unable to load quiz analytics."),
+            "quiz_analytics_no_data": _(
+                "No quiz submissions have been recorded yet. Statistics appear here once learners start submitting."
+            ),
+            "quiz_analytics_basis": _(
+                "Based on each learner's first attempt only. Later attempts are excluded because a"
+                " non-blocking quiz reveals the correct answers after the first submission."
+            ),
+            "quiz_analytics_legacy_note": _(
+                "LEGACY_COUNT earlier submission(s) were recorded before per-question detail was"
+                " captured and cannot be included."
+            ),
+            "quiz_analytics_shared_warning": _(
+                "This quiz is used by more than one course, so the figures below combine those"
+                " courses' audiences: SHARED_COURSES"
+            ),
+            "quiz_analytics_low_sample": _("Too few responses to show percentages (fewer than MIN_RESPONSES)."),
+            "quiz_analytics_counted": _("First attempts counted"),
+            "quiz_analytics_total_submissions": _("Total submissions"),
+            "quiz_analytics_repeat_attempts": _("Repeat attempts"),
+            "quiz_analytics_asked": _("Asked"),
+            "quiz_analytics_answered": _("Answered"),
+            "quiz_analytics_skipped": _("Skipped"),
+            "quiz_analytics_correct": _("Correct"),
+            "quiz_analytics_correct_rate": _("Correct rate"),
+            "quiz_analytics_chose": _("Chose this"),
+            "quiz_analytics_not_asked": _("Not shown to any learner yet."),
+            "quiz_analytics_multiple_choice": _("Multiple choice"),
+            "quiz_analytics_correct_definition": _(
+                "A question counts as correct only when the learner selected exactly the correct"
+                " options, so this figure is stricter than the partial-credit score learners see."
+            ),
             "unsaved_changes_warning": _("You have unsaved changes. Are you sure you want to leave without saving?"),
             "close_without_saving": _("Close without saving"),
             "required_score_blocking": _(

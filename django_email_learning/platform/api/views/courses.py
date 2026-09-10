@@ -18,6 +18,7 @@ from django_email_learning.models import (
     Course,
     CourseContent,
     CourseContentType,
+    Quiz,
 )
 from django_email_learning.platform.api import serializers
 from django_email_learning.platform.api.embed_snippet import (
@@ -25,6 +26,7 @@ from django_email_learning.platform.api.embed_snippet import (
     build_embed_widget_tag,
 )
 from django_email_learning.public.api.views import embeddable_enrollment_enabled
+from django_email_learning.services import quiz_analytics_service
 from django_email_learning.services.command_models.send_lesson_command import (
     SendLessonCommand,
 )
@@ -470,3 +472,22 @@ class SendLessonToPlatformUser(View):
         except CourseContent.DoesNotExist:
             return JsonResponse({"error": "Lesson not found"}, status=404)
         return JsonResponse({"message": "Email content logged successfully"}, status=200)
+
+
+@method_decorator(accessible_for(roles={"admin", "editor", "instructor", "viewer"}), name="get")
+class QuizAnalyticsView(View):
+    """Per-question statistics for one quiz.
+
+    Scoped by quiz rather than by course content: see
+    ``django_email_learning.services.quiz_analytics_service`` for what that means when the
+    same quiz is attached to more than one content.
+    """
+
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        quiz = Quiz.objects.filter(
+            id=kwargs["quiz_id"],
+            coursecontent__course__organization_id=kwargs["organization_id"],
+        ).first()
+        if not quiz:
+            return JsonResponse({"error": "Quiz not found"}, status=404)
+        return JsonResponse(quiz_analytics_service.build_quiz_analytics(quiz), status=200)

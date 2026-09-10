@@ -26,7 +26,7 @@ from django_email_learning.personalised.api.serializers import (
     QuestionResponse,
     QuizSubmissionRequest,
 )
-from django_email_learning.services import jwt_service
+from django_email_learning.services import jwt_service, quiz_analytics_service
 from django_email_learning.services.email_sender_service import email_sender_service
 from django_email_learning.services.metrics_service import metric_service
 from django_email_learning.services.sanitize import strip_html
@@ -272,8 +272,10 @@ class QuizSubmissionView(View):
             logger.error(f"Quiz submission failed: No quiz found for content delivery ID {delivery_id}.")
             return None, JsonResponse({"error": "No quiz associated with this link"}, status=422)
 
+        asked_question_ids = quiz_analytics_service.resolve_asked_question_ids(quiz, decoded.get("question_ids"))
+
         try:
-            score, passed = cls.calculate_score_and_passed(quiz, answers, decoded.get("question_ids"))
+            score, passed = cls.calculate_score_and_passed(quiz, answers, asked_question_ids)
             logger.info(
                 f"Learner ID {enrollment.learner.id} submitted quiz for Course"
                 f" {enrollment.course.title} with score {score}. Passed: {passed}"
@@ -284,10 +286,12 @@ class QuizSubmissionView(View):
             )
             return None, JsonResponse({"error": str(ve)}, status=422)
 
-        QuizSubmission.objects.create(
+        quiz_analytics_service.record_quiz_submission(
             delivery=delivery,
             score=score,
-            is_passed=passed,
+            passed=passed,
+            responses=response_map,
+            asked_question_ids=asked_question_ids,
         )
         delivery.reminder_state = ContentDelivery.ReminderStatus.NOT_APPLICABLE
 

@@ -6,6 +6,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.1.0] - 2026-09-10
+
+### Added
+
+- **Per-question quiz analytics, with a new "Analytics" tab in the quiz dialog** — until now a `QuizSubmission` stored only a score, so an author could see *that* a quiz was hard but never *which question* was hard. The detail was in hand at grade time and thrown away: `QuizSubmissionRequest` carries the learner's chosen answers, they are fed to `calculate_score_and_passed()`, and the row was then written without them. Two nullable `JSONField`s on `QuizSubmission` now capture it, written through `quiz_analytics_service.record_quiz_submission()` from `QuizSubmissionView.process_quiz_submission` — the single grading path behind both the hosted quiz page and the in-Gmail AMP form.
+  - **The asked set is recorded, not just the answers.** A quiz whose `selection_strategy` is `random` shows each learner a different subset, pinned into the delivery token at send time, so the quiz's current question list is not a valid denominator for "% correct". `asked_question_ids` stores the subset that was actually graded against, falling back to the full question list for an `all` quiz exactly as the grader does. It is not reconstructable after the fact — the subset only ever existed inside the (by then expired) JWT — which is why the capture lands ahead of the UI.
+  - **Statistics are based on each learner's first attempt only.** Learners get up to ten attempts, and a non-blocking quiz hands back the complete answer key (`is_correct` for every option) in its submission response — so any later attempt may have been answered with the answers already on screen, which would make a badly-worded question look easy. Later attempts are still stored and are reported separately as `repeat_attempts`. A question counts as correct only when the learner picked *exactly* the correct options, deliberately stricter than the partial-credit score learners see.
+  - **Low-N samples show counts, never percentages.** Below five first attempts the API returns `null` for every rate rather than leaving the threshold to the client, and the tab renders the raw counts with an explanation.
+  - `GET /api/platform/organizations/<organization_id>/quizzes/<quiz_id>/analytics/` serves the aggregation, readable by every organization role. Analytics are scoped per `Quiz`: `CourseContent.quiz` is a plain `ForeignKey` and the `unique_quiz_per_course` constraint only bars reuse *within* a course, so one quiz shared across two courses pools both audiences. That is reported in `shared_with` and surfaced as a warning in the tab rather than silently merged or silently split.
+  - The frontend is a separate `QuizAnalytics.jsx`, lazily loaded and fetched only once the tab is opened; `QuizForm.jsx` stays pure authoring behind a `Questions` tab that is kept mounted, so switching to Analytics and back does not discard unsaved edits.
+
+### Migrations
+
+- `0026_quizsubmission_asked_question_ids_and_more` adds `asked_question_ids` and `selected_answer_ids` to `QuizSubmission`. Both are nullable and additive, with no data migration: **submissions recorded before this release cannot be backfilled**. They still count towards `total_submissions` and are reported as `legacy_submissions`, but are excluded from per-question statistics.
+
 ## [7.0.4] - 2026-09-10
 
 ### Changed

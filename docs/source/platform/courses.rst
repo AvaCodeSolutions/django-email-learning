@@ -211,6 +211,42 @@ Quiz Configuration
 .. warning::
    **Random Selection Requirements**: When using random question selection, ensure your course has at least 6 questions to provide sufficient variety for different learners and retake scenarios.
 
+Quiz Analytics
+--------------
+
+Opening an existing quiz shows an **Analytics** tab beside the questions, with one card per
+question: how many learners were shown it, how many answered, how many got it right, and how
+the responses spread across the individual options. Use it to find the question everybody
+misses — usually a sign of a badly worded stem or an ambiguous option, not of a hard topic.
+
+A few things worth knowing when reading the numbers:
+
+**Only each learner's first attempt counts.**
+  A non-blocking quiz shows learners the correct answers after they submit, so a retake may
+  have been answered with the answer key already on screen. Counting retakes would make a
+  confusing question look easy. Total submissions and repeat attempts are still reported
+  separately at the top of the tab.
+
+**A question counts as correct only when the learner picked exactly the right options.**
+  This is stricter than the score the learner sees, which awards partial credit per correct
+  option. A multiple-choice question with one of two correct options selected scores points
+  for the learner but is counted as incorrect here.
+
+**Percentages are hidden until at least five learners have answered.**
+  Below that the tab shows raw counts instead. "50% got this wrong" over two responses is
+  noise, not a signal.
+
+**Analytics belong to the quiz, not to the course.**
+  A quiz can only be added once per course, but the same quiz can be used by contents in
+  several courses. When that happens the tab pools those courses' learners and shows a
+  warning naming them.
+
+.. note::
+   Per-question detail is recorded from version 7.1.0 onwards, and submissions made before
+   upgrading cannot be backfilled — the set of questions a learner was shown only ever
+   existed inside their (by then expired) quiz link. Older submissions still appear in the
+   total, and the tab says how many are excluded from the per-question figures.
+
 Customising Course Creation Access
 -----------------------------------
 
