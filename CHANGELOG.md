@@ -6,6 +6,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.0.4] - 2026-09-10
+
+### Changed
+
+- **Dependency maintenance** — eleven Renovate updates. Every one resolves inside an existing version range, so the only manifest edit in the release is the `vitest` floor below; everything else moves in `poetry.lock` and `frontend/package-lock.json` alone.
+  - *Shipped frontend packages*: `dompurify` 3.4.14 → 3.4.15, a hardening release (better DOM-clobbering defence when XML content is involved, plus assorted edge cases) rather than a fix for a published advisory — `npm audit` on the frontend reports no vulnerabilities. `@mui/x-charts` 9.12.0 → 9.13.0, moving `@mui/x-charts-vendor`, `@mui/x-internals` and `@mui/x-internal-gestures` with it.
+  - *Backend*: `pydantic` 2.13.4 → 2.13.5 (with `pydantic-core` 2.46.4 → 2.46.5) is the only runtime dependency of the distribution to move. `django` 6.1 → 6.1.1 and `ruff` 0.16.5 → 0.16.6 sit in the `dev` group; Django 6.1.1 is a bugfix release — an HTML-safe form-media regression where `mark_safe()` strings were treated as asset paths, an `AlterField` regression that rewrote schema for a Python-level `on_delete` change, and a `distinct(*fields)`/`order_by()`/`values()` crash — with no security content.
+  - *Tooling*: **`vitest` 4.1.11 → 5.0.0**, the release's only major and the reason `frontend/package.json` raises its floor from `^4.1.5` to `^5.0.0`. Dev-only, and all 49 frontend test files (408 tests) pass on it unchanged. Alongside it, `eslint` 10.9.1 → 10.10.0, `globals` 17.11.0 → 17.12.0, `eslint-plugin-react-refresh` 0.5.5 → 0.5.6, `@testing-library/user-event` 14.6.6 → 14.6.7 and `sass-embedded` 1.103.1 → 1.104.0.
+
 ## [7.0.3] - 2026-09-10
 
 ### Security
