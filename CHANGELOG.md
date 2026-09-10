@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.0.3] - 2026-09-10
+
+### Security
+
+- **`sqlparse` updated to 0.6.0** — 0.5.4 sits inside the affected range of the five advisories fixed by sqlparse 0.6.0. The most severe is [GHSA-prg7-hcfm-mfcr](https://github.com/advisories/GHSA-prg7-hcfm-mfcr) / CVE-2026-59893 (high, CVSS 7.5): the lexer matched the closing delimiter of a dollar-quoted literal with a backreference, so text carrying many unclosed `$tag$` openers (and, through the same pattern, unclosed multiline comments) drove the regex engine into quadratic CPU consumption. The others are all denial of service too — [GHSA-cfqr-cjx5-5jcm](https://github.com/advisories/GHSA-cfqr-cjx5-5jcm) (quadratic CPU in `format(sql, reindent=True)` on long lists of tuples), CVE-2026-54284 (repeated work when grouping deeply nested or very wide statements), and [GHSA-f2ff-p2ww-7p4p](https://github.com/advisories/GHSA-f2ff-p2ww-7p4p) / CVE-2026-71491 (statements consisting only of comments) — except [GHSA-3496-9g83-7v6x](https://github.com/advisories/GHSA-3496-9g83-7v6x) / CVE-2026-59894, which escapes backslashes in the `python` and `php` output formats so a generated snippet cannot be broken out of its string literal. Only `poetry.lock` moves: sqlparse arrives as a transitive dependency of Django, which this project declares in the `dev` dependency group rather than as a runtime requirement, so the bump covers the development and test environment here and does not reach installs of `django-email-learning` — those resolve sqlparse through the consumer's own Django, which is where it needs to be upgraded. sqlparse 0.6.0 also raises its Python floor from 3.8 to 3.10, well under this project's `>=3.12`.
+
 ## [7.0.2] - 2026-09-04
 
 ### Security
