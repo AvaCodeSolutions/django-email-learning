@@ -107,3 +107,81 @@ def _walk_from(start: CourseContent) -> Optional[CourseContent]:
         if merge_point.is_published:
             return merge_point
         content = merge_point
+
+
+class CoursePath:
+    """One course's shape, loaded once, for counting what is still ahead of a learner.
+
+    `next_content()` answers one step at a time and queries as it goes, which is right for
+    delivering but wrong for asking "how much of this is left" about a page full of
+    enrollments. This holds the same rules in memory so the walk costs no queries at all.
+
+    The projection assumes the learner does not branch again: it follows the track they
+    are on and the merge points beyond it, and steps through a branch point the way an
+    unrouted learner would. So the count changes when they *are* routed again, which is
+    the point - their path really did get longer or shorter.
+    """
+
+    def __init__(self, contents: list[CourseContent], tracks: list[ContentTrack]) -> None:
+        self._tracks = {track.id: track for track in tracks}
+        self._published_by_track: dict[Optional[int], list[CourseContent]] = {}
+        for content in sorted(contents, key=lambda c: c.priority):
+            if content.is_published:
+                self._published_by_track.setdefault(content.track_id, []).append(content)
+        self._by_id = {content.id: content for content in contents}
+
+    @classmethod
+    def for_courses(cls, course_ids: set[int]) -> dict[int, "CoursePath"]:
+        """Two queries for any number of courses."""
+        contents = list(CourseContent.objects.filter(course_id__in=course_ids))
+        tracks = list(ContentTrack.objects.filter(course_id__in=course_ids))
+        return {
+            course_id: cls(
+                [content for content in contents if content.course_id == course_id],
+                [track for track in tracks if track.course_id == course_id],
+            )
+            for course_id in course_ids
+        }
+
+    def content(self, content_id: int) -> Optional[CourseContent]:
+        return self._by_id.get(content_id)
+
+    def first(self) -> Optional[CourseContent]:
+        spine = self._published_by_track.get(None, [])
+        return spine[0] if spine else None
+
+    def _continuation(self, track_id: Optional[int]) -> Optional[CourseContent]:
+        while track_id is not None:
+            track = self._tracks.get(track_id)
+            if track is None:
+                return None
+            if track.merge_into_id:
+                return self._by_id.get(track.merge_into_id)
+            track_id = track.parent_track_id
+        return None
+
+    def remaining_after(self, content: CourseContent) -> int:
+        """How many published contents a learner standing on `content` has still to come."""
+        remaining = 0
+        visited_merge_points: set[int] = set()
+        while True:
+            following = next(
+                (
+                    candidate
+                    for candidate in self._published_by_track.get(content.track_id, [])
+                    if candidate.priority > content.priority
+                ),
+                None,
+            )
+            if following:
+                remaining += 1
+                content = following
+                continue
+
+            merge_point = self._continuation(content.track_id)
+            if merge_point is None or merge_point.id in visited_merge_points:
+                return remaining
+            visited_merge_points.add(merge_point.id)
+            if merge_point.is_published:
+                remaining += 1
+            content = merge_point

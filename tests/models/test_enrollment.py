@@ -256,10 +256,9 @@ def test_bulk_progress_percentages_query_count_is_constant(
     progress via the per-enrollment progress_percentage() issues a fixed number of
     queries per enrollment, so it scaled linearly with enrollment count.
     bulk_progress_percentages must stay at a fixed query count no matter how many
-    enrollments are passed in - one for the per-course spine totals, one for the
-    delivered counts, one for the tracks each enrollment entered. A fourth totals up
-    those tracks' content, and is skipped here because nobody has branched; see
-    test_bulk_progress_percentages_query_count_is_constant_when_branched.
+    enrollments are passed in - one each for the course's content and tracks, which
+    together let every enrollment's remaining path be walked in memory, one for the
+    delivered counts and one for the deliveries themselves.
     """
     enrollments = [
         Enrollment.objects.create(
@@ -270,17 +269,18 @@ def test_bulk_progress_percentages_query_count_is_constant(
         for i in range(5)
     ]
 
-    with django_assert_num_queries(3):
+    with django_assert_num_queries(4):
         Enrollment.bulk_progress_percentages(enrollments)
 
 
 def test_bulk_progress_percentages_query_count_is_constant_when_branched(
     db, course, course_lesson_content, django_assert_num_queries
 ):
-    """The branched shape costs one query more, and still does not scale with enrollments.
+    """Branching costs no extra queries, and still does not scale with enrollments.
 
-    Each learner is measured against their own path, so the count has to stay flat while
-    the number of distinct paths grows - five enrollments across five different tracks.
+    Each learner is measured against their own path, walked in memory from the course
+    shape loaded once - so the count has to stay flat while the number of distinct paths
+    grows. Five enrollments across five different tracks.
     """
     from django_email_learning.models import ContentDelivery, ContentTrack, CourseContent, Lesson
 
