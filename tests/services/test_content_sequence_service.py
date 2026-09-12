@@ -1,6 +1,6 @@
 import pytest
 
-from django_email_learning.models import Course, CourseContent, Lesson
+from django_email_learning.models import ContentTrack, Course, CourseContent, Lesson
 from django_email_learning.services.content_sequence_service import first_content, next_content
 
 
@@ -92,3 +92,142 @@ def test_next_content_ignores_non_contiguous_priorities(lessons):
     last.save()
 
     assert next_content(lessons[2]) == last
+
+
+@pytest.fixture
+def branch(db, course, lessons):
+    """A track branching off the spine, merging back into the last spine content.
+
+    Spine:  1, 2, 3, 4  (the `lessons` fixture)
+    Track:  A, B        merging into spine content 4
+    """
+    track = ContentTrack.objects.create(course=course, name="Remedial path", merge_into=lessons[3])
+    contents = []
+    for priority, title in enumerate(["Track A", "Track B"], start=1):
+        lesson = Lesson.objects.create(title=title, content="...")
+        contents.append(
+            CourseContent.objects.create(
+                course=course,
+                track=track,
+                priority=priority,
+                type="lesson",
+                lesson=lesson,
+                waiting_period=3600,
+                is_published=True,
+            )
+        )
+    return track, contents
+
+
+def test_walk_stays_inside_a_track(branch):
+    _, (track_a, track_b) = branch
+
+    assert next_content(track_a) == track_b
+
+
+def test_track_content_does_not_leak_into_the_spine_walk(branch, lessons):
+    """Spine content must not walk into a branch it shares priorities with."""
+    _, (track_a, _) = branch
+    assert track_a.priority == lessons[0].priority
+
+    assert next_content(lessons[0]) == lessons[1]
+
+
+def test_exhausted_track_continues_at_its_merge_point(branch, lessons):
+    _, (_, track_b) = branch
+
+    assert next_content(track_b) == lessons[3]
+
+
+def test_exhausted_track_steps_over_an_unpublished_merge_point(branch, lessons):
+    lessons[3].is_published = False
+    lessons[3].save()
+    _, (_, track_b) = branch
+
+    assert next_content(track_b) is None
+
+
+def test_track_without_a_merge_point_ends_the_course(branch):
+    track, (_, track_b) = branch
+    track.merge_into = None
+    track.save()
+
+    assert next_content(track_b) is None
+
+
+def test_nested_track_falls_back_to_its_parents_merge_point(db, course, branch, lessons):
+    """A track that branches off a track, with no merge point of its own."""
+    parent_track, _ = branch
+    nested = ContentTrack.objects.create(course=course, name="Nested path", parent_track=parent_track)
+    lesson = Lesson.objects.create(title="Nested", content="...")
+    nested_content = CourseContent.objects.create(
+        course=course,
+        track=nested,
+        priority=1,
+        type="lesson",
+        lesson=lesson,
+        waiting_period=3600,
+        is_published=True,
+    )
+
+    assert next_content(nested_content) == lessons[3]
+
+
+def test_nested_track_prefers_its_own_merge_point(db, course, branch, lessons):
+    parent_track, _ = branch
+    nested = ContentTrack.objects.create(
+        course=course,
+        name="Nested path",
+        parent_track=parent_track,
+        merge_into=lessons[2],
+    )
+    lesson = Lesson.objects.create(title="Nested", content="...")
+    nested_content = CourseContent.objects.create(
+        course=course,
+        track=nested,
+        priority=1,
+        type="lesson",
+        lesson=lesson,
+        waiting_period=3600,
+        is_published=True,
+    )
+
+    assert next_content(nested_content) == lessons[2]
+
+
+def test_a_merge_loop_ends_the_course_instead_of_spinning(db, course, lessons):
+    """A malformed graph must terminate.
+
+    `clean()` refuses to point a merge anywhere but outward, so this shape cannot be
+    authored - it is written here with `.update()`, which skips validation the way a data
+    migration or a raw SQL fix would. The guard exists for rows that arrive that way.
+    """
+    first_track = ContentTrack.objects.create(course=course, name="First")
+    second_track = ContentTrack.objects.create(course=course, name="Second")
+    contents = {}
+    for name, track in (("first", first_track), ("second", second_track)):
+        lesson = Lesson.objects.create(title=name, content="...")
+        contents[name] = CourseContent.objects.create(
+            course=course,
+            track=track,
+            priority=1,
+            type="lesson",
+            lesson=lesson,
+            waiting_period=3600,
+            is_published=False,
+        )
+    # Each track ends by merging into the other's unpublished content, so the walk is
+    # handed straight back to a merge point it has already seen.
+    ContentTrack.objects.filter(pk=first_track.pk).update(merge_into=contents["second"])
+    ContentTrack.objects.filter(pk=second_track.pk).update(merge_into=contents["first"])
+
+    assert next_content(contents["first"]) is None
+
+
+def test_first_content_never_starts_on_a_track(db, course, branch, lessons):
+    """A learner reaches a track by being routed onto it, never by starting there."""
+    for spine_content in lessons:
+        spine_content.is_published = False
+        spine_content.save()
+
+    assert first_content(course) is None
