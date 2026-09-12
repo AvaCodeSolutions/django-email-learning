@@ -257,12 +257,11 @@ class CourseContent(models.Model):
         return super().delete(*args, **kwargs)
 
     def get_next(self) -> Optional["CourseContent"]:
-        next_content = (
-            CourseContent.objects.filter(course=self.course, is_published=True, priority__gt=self.priority)
-            .order_by("priority")
-            .first()
-        )
-        return next_content
+        # Imported here rather than at module level: the service reads CourseContent,
+        # so importing it up top would close an import cycle.
+        from django_email_learning.services import content_sequence_service
+
+        return content_sequence_service.next_content(self)
 
     class Meta:
         constraints = [
