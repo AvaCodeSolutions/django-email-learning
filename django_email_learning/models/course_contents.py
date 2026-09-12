@@ -9,6 +9,7 @@ from django.utils.translation import gettext, ngettext
 
 from .courses import Course
 from .enums.course_content_type import CourseContentType
+from .validators import validate_safe_name
 
 
 class Lesson(models.Model):
@@ -137,8 +138,92 @@ class Assignment(models.Model):
         return self.title
 
 
+class ContentTrack(models.Model):
+    """A named branch of a course: a run of content a learner takes instead of the main spine.
+
+    Content on a track is ordered by `priority` among its own track only. When a learner
+    reaches the end of one, they continue at `merge_into` - the content on an outer track
+    where the paths rejoin - or finish the course if it is unset. `parent_track` lets a
+    track branch again, and the walk climbs it looking for the first merge point.
+    """
+
+    MAX_NESTING_DEPTH = 10
+
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="content_tracks")
+    name = models.CharField(max_length=200, validators=[validate_safe_name])
+    parent_track = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="child_tracks",
+        help_text="The track this one branches off. Empty means it branches off the main spine.",
+    )
+    merge_into = models.ForeignKey(
+        "CourseContent",
+        null=True,
+        blank=True,
+        # Clearing the merge point leaves the track ending the course, which is a
+        # defined outcome. Cascading would delete a learner's content instead.
+        on_delete=models.SET_NULL,
+        related_name="merging_tracks",
+        help_text="Where a learner continues after the last content on this track. Empty ends the course.",
+    )
+
+    class Meta:
+        unique_together = [["course", "name"]]
+
+    def __str__(self) -> str:
+        return f"{self.course.title}: {self.name}"
+
+    def ancestors(self) -> list["ContentTrack"]:
+        """This track's parents, innermost first. Stops at MAX_NESTING_DEPTH."""
+        chain: list[ContentTrack] = []
+        track = self.parent_track
+        while track is not None and len(chain) < self.MAX_NESTING_DEPTH:
+            chain.append(track)
+            track = track.parent_track
+        return chain
+
+    def clean(self) -> None:
+        super().clean()
+        if self.parent_track and self.parent_track.course_id != self.course_id:
+            raise ValidationError({"parent_track": "A parent track must belong to the same course."})
+        if self.merge_into and self.merge_into.course_id != self.course_id:
+            raise ValidationError({"merge_into": "A merge point must belong to the same course."})
+        if self.pk:
+            if self.parent_track_id == self.pk:
+                raise ValidationError({"parent_track": "A track cannot be its own parent."})
+            if any(ancestor.pk == self.pk for ancestor in self.ancestors()):
+                raise ValidationError({"parent_track": "Track nesting cannot form a cycle."})
+            if self.merge_into and self.merge_into.track_id == self.pk:
+                raise ValidationError({"merge_into": "A track cannot merge into its own content."})
+
+    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs) -> tuple[int, dict[str, int]]:  # type: ignore[no-untyped-def]
+        # CourseContent.track is SET_NULL, so deleting a populated track would move its
+        # content onto the main spine, where the priorities it carries may already be
+        # taken. Refuse instead of raising IntegrityError from the cascade.
+        if self.contents.exists():
+            raise ValidationError(
+                gettext("Cannot delete a track that still has content. Move or delete the content first.")
+            )
+        return super().delete(*args, **kwargs)
+
+
 class CourseContent(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    track = models.ForeignKey(
+        ContentTrack,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="contents",
+        help_text="The branch this content belongs to. Empty means the course's main spine.",
+    )
     priority = models.IntegerField()
     type = models.CharField(
         max_length=50,
@@ -279,8 +364,18 @@ class CourseContent(models.Model):
                 condition=models.Q(assignment__isnull=False),
                 name="unique_assignment_per_course",
             ),
+            # Split in two because a single constraint over ("course", "track", "priority")
+            # would stop enforcing anything on the main spine: both backends treat NULL
+            # track values as distinct from one another, so duplicate priorities there
+            # would become legal.
             models.UniqueConstraint(
                 fields=["course", "priority"],
-                name="unique_priority_per_course",
+                condition=models.Q(track__isnull=True),
+                name="unique_priority_per_course_spine",
+            ),
+            models.UniqueConstraint(
+                fields=["course", "track", "priority"],
+                condition=models.Q(track__isnull=False),
+                name="unique_priority_per_track",
             ),
         ]

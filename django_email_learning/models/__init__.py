@@ -3,6 +3,7 @@ from .api_keys import ApiKey, ApiKeyScope, ApiKeyType
 from .course_contents import (
     Answer,
     Assignment,
+    ContentTrack,
     CourseContent,
     Lesson,
     Question,

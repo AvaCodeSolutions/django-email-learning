@@ -8,11 +8,22 @@ Changes prior to v1.0.0 are available in the [git history](https://github.com/Av
 
 ## [Unreleased]
 
+### Added
+
+- **`ContentTrack`, the structure conditional routing will route onto** — a named branch of a course, holding a run of content ordered among itself rather than against the main spine. `CourseContent.track` places content on one; empty, which is every row today, means the main spine. A track continues at its `merge_into` when it runs out, and `parent_track` lets a track branch again, with the walk climbing it for the first merge point a nested track offers.
+  - **Nothing routes onto a track yet, by design.** There is no way to reach one: `first_content()` starts on the spine and only conditional routing, which does not exist, can move a learner off it. `content_sequence_service` understands tracks, so a course that has none — every course — walks exactly as before, and the existing suite passes unmodified.
+  - A malformed graph ends the course rather than looping: `next_content()` stops when handed a merge point it has already seen. The structural rules that make such a graph impossible to author land with routing itself.
+  - `ContentTrack` refuses to delete while it still holds content. `CourseContent.track` is `SET_NULL`, so deleting a populated track would move its content onto the spine, where the priorities it carries may already be taken.
+
 ### Changed
 
 - **The course sequence rule now lives in one place** — `django_email_learning.services.content_sequence_service`. A learner walks a course by ascending `CourseContent.priority`, skipping unpublished content, and that rule was written out three times: in `ContentDelivery.schedule_next_delivery()`, in `Enrollment.schedule_first_content_delivery()` and in `CourseContent.get_next()`. Six call sites consult it — the delivery job, the quiz submission view, the assignment review path, the inactivity job, enrollment activation, and the "up next" teaser in lesson emails — each reaching one of the three copies. `first_content(course)` and `next_content(content)` now answer both questions and the three methods delegate to them.
   - **No behaviour change.** The two "what comes next" queries were character-for-character identical, and the "what comes first" query differs only in dropping the `priority__gt` bound; the extraction is a deduplication, not a rewrite. `CourseContent.get_next()` is kept as a delegating wrapper rather than removed, since it is part of the model's public surface.
   - The motivation is conditional routing: sending a learner down one of several paths based on a quiz result changes what "next" means, and that change has to land in a single function rather than being reapplied to three queries by hand.
+
+### Migrations
+
+- `0027_contenttrack_and_more` creates `ContentTrack` and adds the nullable `CourseContent.track`. It also replaces `unique_priority_per_course` with two partial constraints: `unique_priority_per_course_spine` over `("course", "priority")` where `track` is null, and `unique_priority_per_track` over `("course", "track", "priority")` where it is not. **A single constraint over all three columns would have silently stopped enforcing anything on the main spine** — both supported backends treat null `track` values as distinct from one another, so duplicate priorities on every existing course would have become legal. `nulls_distinct=False` would also have worked, but only on PostgreSQL 15 and later. Additive and reversible, with no data migration.
 
 ## [7.1.0] - 2026-09-10
 
