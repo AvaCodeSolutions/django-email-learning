@@ -120,7 +120,10 @@ class ContentTransitionView(View):
         content = self._content_or_none(kwargs)
         if not content:
             return JsonResponse({"error": "Content not found"}, status=404)
-        transition = content.transitions.filter(id=kwargs["transition_id"]).first()
+        transition_id = kwargs.get("transition_id")
+        if transition_id is None:
+            return JsonResponse({"error": "Transition not found"}, status=404)
+        transition = content.transitions.filter(id=transition_id).first()
         if not transition:
             return JsonResponse({"error": "Transition not found"}, status=404)
         transition.delete()

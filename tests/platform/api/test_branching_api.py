@@ -150,3 +150,9 @@ def test_editor_deletes_a_transition(editor_client, course, spine):
 
     assert response.status_code == 204
     assert not ContentTransition.objects.filter(id=transition.id).exists()
+
+
+def test_deleting_transitions_collection_returns_404(editor_client, spine):
+    response = editor_client.delete(transitions_url(spine["quiz"]))
+
+    assert response.status_code == 404
