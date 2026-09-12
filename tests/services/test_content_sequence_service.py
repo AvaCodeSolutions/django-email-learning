@@ -196,7 +196,12 @@ def test_nested_track_prefers_its_own_merge_point(db, course, branch, lessons):
 
 
 def test_a_merge_loop_ends_the_course_instead_of_spinning(db, course, lessons):
-    """A malformed graph must terminate. Constraint checks land with branching itself."""
+    """A malformed graph must terminate.
+
+    `clean()` refuses to point a merge anywhere but outward, so this shape cannot be
+    authored - it is written here with `.update()`, which skips validation the way a data
+    migration or a raw SQL fix would. The guard exists for rows that arrive that way.
+    """
     first_track = ContentTrack.objects.create(course=course, name="First")
     second_track = ContentTrack.objects.create(course=course, name="Second")
     contents = {}
@@ -213,10 +218,8 @@ def test_a_merge_loop_ends_the_course_instead_of_spinning(db, course, lessons):
         )
     # Each track ends by merging into the other's unpublished content, so the walk is
     # handed straight back to a merge point it has already seen.
-    first_track.merge_into = contents["second"]
-    first_track.save()
-    second_track.merge_into = contents["first"]
-    second_track.save()
+    ContentTrack.objects.filter(pk=first_track.pk).update(merge_into=contents["second"])
+    ContentTrack.objects.filter(pk=second_track.pk).update(merge_into=contents["first"])
 
     assert next_content(contents["first"]) is None
 

@@ -209,6 +209,16 @@ class ContentTrack(models.Model):
                 raise ValidationError({"parent_track": "Track nesting cannot form a cycle."})
             if self.merge_into and self.merge_into.track_id == self.pk:
                 raise ValidationError({"merge_into": "A track cannot merge into its own content."})
+        if self.merge_into and self.merge_into.track_id is not None:
+            # A merge may only move outward: onto the main spine, or onto a track this one
+            # branches off. Nesting depth then strictly decreases every time a track runs
+            # out, which is what makes the walk terminate by construction rather than by
+            # the loop guard in next_content(). A sibling or a nested track would let two
+            # tracks hand a learner back and forth.
+            if self.merge_into.track_id not in {ancestor.pk for ancestor in ancestry}:
+                raise ValidationError(
+                    {"merge_into": gettext("A track can only merge into the main spine or a track it branches off.")}
+                )
         if len(ancestry) >= self.MAX_NESTING_DEPTH:
             raise ValidationError(
                 {

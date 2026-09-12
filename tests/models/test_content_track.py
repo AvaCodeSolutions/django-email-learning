@@ -198,3 +198,47 @@ def test_a_cycle_in_existing_data_is_rejected_on_the_next_save(db, course):
 
     with pytest.raises(ValidationError, match="cycle"):
         ContentTrack.objects.get(pk=innermost.pk).save()
+
+
+def test_a_track_can_merge_into_the_main_spine(db, course, spine_content):
+    track = ContentTrack.objects.create(course=course, name="Path", merge_into=spine_content)
+
+    assert track.merge_into == spine_content
+
+
+def test_a_nested_track_can_merge_into_the_track_it_branches_off(db, course):
+    outer = ContentTrack.objects.create(course=course, name="Outer")
+    outer_content = make_content(course, priority=1, track=outer)
+
+    inner = ContentTrack.objects.create(course=course, name="Inner", parent_track=outer, merge_into=outer_content)
+
+    assert inner.merge_into == outer_content
+
+
+def test_a_track_cannot_merge_into_a_sibling(db, course):
+    sibling = ContentTrack.objects.create(course=course, name="Sibling")
+    sibling_content = make_content(course, priority=1, track=sibling)
+
+    with pytest.raises(ValidationError, match="only merge into the main spine"):
+        ContentTrack.objects.create(course=course, name="Path", merge_into=sibling_content)
+
+
+def test_a_track_cannot_merge_into_a_track_nested_under_it(db, course):
+    outer = ContentTrack.objects.create(course=course, name="Outer")
+    inner = ContentTrack.objects.create(course=course, name="Inner", parent_track=outer)
+    inner_content = make_content(course, priority=1, track=inner)
+
+    outer.merge_into = inner_content
+
+    with pytest.raises(ValidationError, match="only merge into the main spine"):
+        outer.save()
+
+
+def test_a_track_cannot_merge_into_a_grandparents_sibling(db, course):
+    """Only the chain this track actually branches off counts, not every outer track."""
+    outer = ContentTrack.objects.create(course=course, name="Outer")
+    unrelated = ContentTrack.objects.create(course=course, name="Unrelated")
+    unrelated_content = make_content(course, priority=1, track=unrelated)
+
+    with pytest.raises(ValidationError, match="only merge into the main spine"):
+        ContentTrack.objects.create(course=course, name="Inner", parent_track=outer, merge_into=unrelated_content)
