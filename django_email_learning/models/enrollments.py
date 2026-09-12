@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from django_email_learning.services import jwt_service
+from django_email_learning.services import content_sequence_service, jwt_service
 from django_email_learning.services.email_sender_service import email_sender_service
 from django_email_learning.services.metrics_service import metric_service
 from django_email_learning.services.utils import get_private_file_storage, resolve_private_or_public_file_url
@@ -244,7 +244,7 @@ class Enrollment(models.Model):
     def schedule_first_content_delivery(self) -> None:
         from .deliveries import DeliverySchedule
 
-        first_content = CourseContent.objects.filter(course=self.course, is_published=True).order_by("priority").first()
+        first_content = content_sequence_service.first_content(self.course)
         if first_content:
             delivery = self.content_deliveries.create(course_content=first_content)
             scheduled = DeliverySchedule.objects.create(

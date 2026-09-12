@@ -9,7 +9,7 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 
-from django_email_learning.services import jwt_service
+from django_email_learning.services import content_sequence_service, jwt_service
 
 from .course_contents import CourseContent, QuizSelectionStrategy
 from .enrollments import Enrollment
@@ -72,22 +72,14 @@ class ContentDelivery(models.Model):
         Returns the ID of the newly created ContentDelivery if successful, otherwise None.
         """
 
-        next_content = (
-            CourseContent.objects.filter(
-                course=self.course_content.course,
-                is_published=True,
-                priority__gt=self.course_content.priority,
-            )
-            .order_by("priority")
-            .first()
-        )
-        if next_content:
+        following = content_sequence_service.next_content(self.course_content)
+        if following:
             delivery, created = ContentDelivery.objects.get_or_create(
                 enrollment=self.enrollment,
-                course_content=next_content,
+                course_content=following,
             )
             schedule = DeliverySchedule.objects.create(
-                time=timezone.now() + timedelta(seconds=next_content.waiting_period),
+                time=timezone.now() + timedelta(seconds=following.waiting_period),
                 delivery=delivery,
             )
             schedule.generate_link()

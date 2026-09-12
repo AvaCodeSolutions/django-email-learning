@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [Unreleased]
+
+### Changed
+
+- **The course sequence rule now lives in one place** — `django_email_learning.services.content_sequence_service`. A learner walks a course by ascending `CourseContent.priority`, skipping unpublished content, and that rule was written out three times: in `ContentDelivery.schedule_next_delivery()`, in `Enrollment.schedule_first_content_delivery()` and in `CourseContent.get_next()`. Six call sites consult it — the delivery job, the quiz submission view, the assignment review path, the inactivity job, enrollment activation, and the "up next" teaser in lesson emails — each reaching one of the three copies. `first_content(course)` and `next_content(content)` now answer both questions and the three methods delegate to them.
+  - **No behaviour change.** The two "what comes next" queries were character-for-character identical, and the "what comes first" query differs only in dropping the `priority__gt` bound; the extraction is a deduplication, not a rewrite. `CourseContent.get_next()` is kept as a delegating wrapper rather than removed, since it is part of the model's public surface.
+  - The motivation is conditional routing: sending a learner down one of several paths based on a quiz result changes what "next" means, and that change has to land in a single function rather than being reapplied to three queries by hand.
+
 ## [7.1.0] - 2026-09-10
 
 ### Added
