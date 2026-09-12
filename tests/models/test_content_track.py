@@ -142,3 +142,59 @@ def test_deleting_a_course_takes_its_tracks_with_it(db, course):
     course.delete()
 
     assert not ContentTrack.objects.exists()
+
+
+def nest(course, depth, prefix="t"):
+    """A chain of `depth` tracks, each the parent of the next. Returns the innermost."""
+    track = ContentTrack.objects.create(course=course, name=f"{prefix}0")
+    for level in range(1, depth):
+        track = ContentTrack.objects.create(course=course, name=f"{prefix}{level}", parent_track=track)
+    return track
+
+
+def test_nesting_is_allowed_up_to_the_limit(db, course):
+    innermost = nest(course, ContentTrack.MAX_NESTING_DEPTH)
+
+    assert len(innermost.ancestors()) == ContentTrack.MAX_NESTING_DEPTH - 1
+
+
+def test_nesting_past_the_limit_is_rejected(db, course):
+    innermost = nest(course, ContentTrack.MAX_NESTING_DEPTH)
+
+    with pytest.raises(ValidationError, match="nested more than"):
+        ContentTrack.objects.create(course=course, name="one too many", parent_track=innermost)
+
+
+def test_a_cycle_longer_than_the_nesting_limit_cannot_be_built(db, course):
+    """The depth cap is what keeps a cycle from being assembled out of reach of the check.
+
+    Before it existed, a chain could be nested past MAX_NESTING_DEPTH and then closed into
+    a cycle: the check walked only as far as the cap, so it never met the repeated track.
+    """
+    with pytest.raises(ValidationError, match="nested more than"):
+        nest(course, ContentTrack.MAX_NESTING_DEPTH + 5)
+
+
+def test_ancestors_terminates_on_a_cycle_already_in_the_data(db, course):
+    """Validation cannot reach rows written around it, so the walk must not hang on them."""
+    innermost = nest(course, 3)
+    root = ContentTrack.objects.get(name="t0")
+    # .update() skips save(), and with it full_clean() - the only way to get a cycle into
+    # the table, and what a hand-written data migration or a raw SQL fix would do.
+    ContentTrack.objects.filter(pk=root.pk).update(parent_track=innermost)
+
+    # Re-fetched, as production code always does: the in-memory chain still carries the
+    # related objects Django cached when they were created.
+    ancestry = ContentTrack.objects.get(pk=innermost.pk).ancestors()
+
+    assert len({track.pk for track in ancestry}) == len(ancestry)
+    assert innermost.pk in {track.pk for track in ancestry}
+
+
+def test_a_cycle_in_existing_data_is_rejected_on_the_next_save(db, course):
+    innermost = nest(course, 3)
+    root = ContentTrack.objects.get(name="t0")
+    ContentTrack.objects.filter(pk=root.pk).update(parent_track=innermost)
+
+    with pytest.raises(ValidationError, match="cycle"):
+        ContentTrack.objects.get(pk=innermost.pk).save()

@@ -147,6 +147,8 @@ class ContentTrack(models.Model):
     track branch again, and the walk climbs it looking for the first merge point.
     """
 
+    # The longest chain of nested tracks an author may build, counting the track itself.
+    # Enforced in clean(); the walk in ancestors() does not depend on it.
     MAX_NESTING_DEPTH = 10
 
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="content_tracks")
@@ -177,10 +179,18 @@ class ContentTrack(models.Model):
         return f"{self.course.title}: {self.name}"
 
     def ancestors(self) -> list["ContentTrack"]:
-        """This track's parents, innermost first. Stops at MAX_NESTING_DEPTH."""
+        """This track's parents, innermost first.
+
+        Stops when the chain repeats rather than at a fixed depth, so the result is the
+        whole ancestry for valid data and still terminates on data that already holds a
+        cycle. Bounding it by depth instead would silently truncate, which is what makes
+        a depth-bounded cycle check miss any cycle longer than the bound.
+        """
         chain: list[ContentTrack] = []
+        seen: set[int] = set()
         track = self.parent_track
-        while track is not None and len(chain) < self.MAX_NESTING_DEPTH:
+        while track is not None and track.pk not in seen:
+            seen.add(track.pk)
             chain.append(track)
             track = track.parent_track
         return chain
@@ -191,13 +201,21 @@ class ContentTrack(models.Model):
             raise ValidationError({"parent_track": "A parent track must belong to the same course."})
         if self.merge_into and self.merge_into.course_id != self.course_id:
             raise ValidationError({"merge_into": "A merge point must belong to the same course."})
+        ancestry = self.ancestors()
         if self.pk:
             if self.parent_track_id == self.pk:
                 raise ValidationError({"parent_track": "A track cannot be its own parent."})
-            if any(ancestor.pk == self.pk for ancestor in self.ancestors()):
+            if any(ancestor.pk == self.pk for ancestor in ancestry):
                 raise ValidationError({"parent_track": "Track nesting cannot form a cycle."})
             if self.merge_into and self.merge_into.track_id == self.pk:
                 raise ValidationError({"merge_into": "A track cannot merge into its own content."})
+        if len(ancestry) >= self.MAX_NESTING_DEPTH:
+            raise ValidationError(
+                {
+                    "parent_track": gettext("Tracks cannot be nested more than %(limit)d deep.")
+                    % {"limit": self.MAX_NESTING_DEPTH}
+                }
+            )
 
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self.full_clean()
