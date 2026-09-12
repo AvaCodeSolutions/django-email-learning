@@ -20,6 +20,7 @@ from django_email_learning.models import (
     Enrollment,
     EnrollmentStatus,
     Quiz,
+    QuizOutcome,
     QuizSubmission,
 )
 from django_email_learning.personalised.api.serializers import (
@@ -295,7 +296,14 @@ class QuizSubmissionView(View):
         )
         delivery.reminder_state = ContentDelivery.ReminderStatus.NOT_APPLICABLE
 
-        if passed or not quiz.is_blocking:
+        is_branch_point = delivery.course_content.transitions.exists()
+        if is_branch_point:
+            # A quiz carrying routing rules answers with a route, not with a verdict: the
+            # first submission sends the learner wherever their result points, so the retry,
+            # the attempt limit and the two-strikes deactivation below never come into play.
+            # Failing is a destination here, not the end of the enrollment.
+            message = cls._route_after_quiz(delivery, enrollment, score, passed)
+        elif passed or not quiz.is_blocking:
             delivery.valid_until = None  # Invalidate the quiz link immediately after passing
             delivery.save()
             if quiz.is_blocking:
@@ -368,7 +376,7 @@ class QuizSubmissionView(View):
                 "passed": passed,
                 "required_score": quiz.required_score,
                 "message": message,
-                "is_invalidated": quiz.limited_attempts and not passed,
+                "is_invalidated": is_branch_point or (quiz.limited_attempts and not passed),
                 "is_blocking": quiz.is_blocking,
                 "quiz_data": {
                     "id": quiz.id,
@@ -393,6 +401,30 @@ class QuizSubmissionView(View):
             },
             None,
         )
+
+    @classmethod
+    def _route_after_quiz(cls, delivery, enrollment, score: int, passed: bool) -> str:  # type: ignore[no-untyped-def]
+        """Send the learner wherever this quiz's routing rules point, and report it.
+
+        The link is retired either way: the learner has been routed, so there is nothing
+        left for them to retry here. A result no rule claims - a rule set with no default,
+        which validation refuses but old rows may still hold - falls through to the next
+        content in the current track rather than stranding the enrollment.
+        """
+        delivery.valid_until = None
+        delivery.remind_at = None
+        delivery.save()
+        delivery.update_hash()
+
+        if QuizSubmission.objects.filter(delivery=delivery).count() == 1:
+            new_delivery = delivery.schedule_next_delivery(outcome=QuizOutcome(score=score, passed=passed))
+            if not new_delivery:
+                enrollment.graduate()
+            logger.info(
+                f"Learner ID {enrollment.learner.id} routed from branch point "
+                f"{delivery.course_content.id} with score {score} (passed: {passed})."
+            )
+        return _("Your quiz submission has been recorded.")
 
     @staticmethod
     def calculate_score_and_passed(

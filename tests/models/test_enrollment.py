@@ -253,9 +253,11 @@ def test_bulk_progress_percentages_query_count_is_constant(
 ):
     """
     Regression test for the N+1 that made analytics pages slow: computing
-    progress via the per-enrollment progress_percentage() issues 2 queries per
-    enrollment, so it scaled linearly with enrollment count. bulk_progress_percentages
-    must stay at a fixed 2 queries no matter how many enrollments are passed in.
+    progress via the per-enrollment progress_percentage() issues a fixed number of
+    queries per enrollment, so it scaled linearly with enrollment count.
+    bulk_progress_percentages must stay at a fixed query count no matter how many
+    enrollments are passed in - one for the per-course totals, one for the delivered
+    counts, one for which enrollments have branched.
     """
     enrollments = [
         Enrollment.objects.create(
@@ -266,5 +268,5 @@ def test_bulk_progress_percentages_query_count_is_constant(
         for i in range(5)
     ]
 
-    with django_assert_num_queries(2):
+    with django_assert_num_queries(3):
         Enrollment.bulk_progress_percentages(enrollments)

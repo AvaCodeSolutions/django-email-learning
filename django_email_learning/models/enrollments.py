@@ -1,6 +1,7 @@
 import logging
 import random
 from datetime import datetime, timedelta
+from typing import Optional
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -255,7 +256,21 @@ class Enrollment(models.Model):
         else:
             raise ValidationError("No published content available to schedule.")
 
-    def progress_percentage(self, extra_delivered: int = 0) -> int:
+    def has_branched(self) -> bool:
+        """Whether this enrollment has been routed onto a `ContentTrack`."""
+        return self.content_deliveries.filter(course_content__track__isnull=False).exists()
+
+    def progress_percentage(self, extra_delivered: int = 0) -> Optional[int]:
+        """How far through the course this learner is, or None once they have branched.
+
+        The denominator is the course's published content, which is the right total only
+        for a learner walking the main spine: a branched learner is on a path whose length
+        depends on the route they took, so any percentage against the whole course either
+        understates them or claims content they will never be sent. Callers render nothing
+        rather than a number that is wrong - see `has_branched`.
+        """
+        if self.has_branched():
+            return None
         total_content = self.course.coursecontent_set.filter(is_published=True).count()
         if total_content == 0:
             return 0
@@ -272,10 +287,10 @@ class Enrollment(models.Model):
         return progress
 
     @classmethod
-    def bulk_progress_percentages(cls, enrollments: "list[Enrollment]") -> dict[int, int]:
+    def bulk_progress_percentages(cls, enrollments: "list[Enrollment]") -> dict[int, Optional[int]]:
         """
-        Same result as calling progress_percentage() on each enrollment, but in 2
-        queries total instead of 2 queries per enrollment. progress_percentage()
+        Same result as calling progress_percentage() on each enrollment, but in 3
+        queries total instead of 3 queries per enrollment. progress_percentage()
         always hits the DB itself (it doesn't use prefetched querysets), so any
         caller iterating over more than a handful of enrollments should use this
         instead — see AverageProgressView and DownloadLearnerProgressView for the
@@ -307,8 +322,20 @@ class Enrollment(models.Model):
             .values_list("enrollment_id", "count")
         )
 
-        result = {}
+        branched_enrollment_ids = set(
+            ContentDelivery.objects.filter(
+                enrollment_id__in=enrollment_ids,
+                course_content__track__isnull=False,
+            )
+            .values_list("enrollment_id", flat=True)
+            .distinct()
+        )
+
+        result: dict[int, Optional[int]] = {}
         for enrollment in enrollments:
+            if enrollment.id in branched_enrollment_ids:
+                result[enrollment.id] = None
+                continue
             total_content = total_content_by_course.get(enrollment.course_id, 0)
             if not total_content:
                 result[enrollment.id] = 0

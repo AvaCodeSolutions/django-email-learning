@@ -4,6 +4,8 @@ from django.views.defaults import page_not_found
 from django_email_learning.platform.api.views import (
     ApiKeyView,
     CancelEnrollmentView,
+    ContentTrackView,
+    ContentTransitionView,
     CourseContentView,
     CourseView,
     EmbedSnippetView,
@@ -169,6 +171,22 @@ urlpatterns = [
         "organizations/<int:organization_id>/courses/<int:course_id>/enrollments/statistics/",
         EnrollmentsStatisticsView.as_view(),
         name="enrollments_statistics",
+    ),
+    path(
+        "organizations/<int:organization_id>/courses/<int:course_id>/tracks/",
+        ContentTrackView.as_view(),
+        name="content_tracks",
+    ),
+    path(
+        "organizations/<int:organization_id>/courses/<int:course_id>/contents/<int:content_id>/transitions/",
+        ContentTransitionView.as_view(),
+        name="content_transitions",
+    ),
+    path(
+        "organizations/<int:organization_id>/courses/<int:course_id>/contents/<int:content_id>/transitions/"
+        "<int:transition_id>/",
+        ContentTransitionView.as_view(),
+        name="content_transition_detail",
     ),
     path(
         "organizations/<int:organization_id>/quizzes/<int:quiz_id>/analytics/",

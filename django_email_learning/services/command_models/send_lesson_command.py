@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -42,6 +42,9 @@ class SendLessonCommand(AbstractCommand):
             learner__email=self.email,
             status=EnrollmentStatus.ACTIVE,
         ).first()
+        # None once the learner has branched, and the template then renders no bar rather
+        # than a percentage of a course they are no longer walking end to end.
+        progress: Optional[int]
         if not enrollment:
             progress = 0
         else:

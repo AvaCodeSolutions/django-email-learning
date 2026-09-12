@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from django_email_learning.services import content_sequence_service, jwt_service
 
-from .course_contents import CourseContent, QuizSelectionStrategy
+from .course_contents import CourseContent, QuizOutcome, QuizSelectionStrategy
 from .enrollments import Enrollment
 from .enums.delivery_status import DeliveryStatus
 
@@ -66,13 +66,16 @@ class ContentDelivery(models.Model):
         self.hash_value = base64.urlsafe_b64encode(uuid.uuid4().bytes).decode().rstrip("=")
         self.save()
 
-    def schedule_next_delivery(self) -> Optional["ContentDelivery"]:
+    def schedule_next_delivery(self, outcome: Optional[QuizOutcome] = None) -> Optional["ContentDelivery"]:
         """
         Schedules the next content delivery based on the current content's priority.
         Returns the ID of the newly created ContentDelivery if successful, otherwise None.
+
+        `outcome` is what this content produced, and lets the routing rules on it pick a
+        track. Without one only the linear walk applies.
         """
 
-        following = content_sequence_service.next_content(self.course_content)
+        following = content_sequence_service.next_content(self.course_content, outcome=outcome)
         if following:
             delivery, created = ContentDelivery.objects.get_or_create(
                 enrollment=self.enrollment,

@@ -3,6 +3,10 @@ from django_email_learning.platform.api.views.assignments import (
     SubmittedAssignmentDetailView,
     SubmittedAssignmentsView,
 )
+from django_email_learning.platform.api.views.branching import (
+    ContentTrackView,
+    ContentTransitionView,
+)
 from django_email_learning.platform.api.views.courses import (
     CourseContentView,
     CourseCreationMixin,
@@ -108,4 +112,6 @@ __all__ = [
     "RootView",
     "FileView",
     "UpdateSessionView",
+    "ContentTrackView",
+    "ContentTransitionView",
 ]

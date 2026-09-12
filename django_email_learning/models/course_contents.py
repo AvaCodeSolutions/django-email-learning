@@ -1,4 +1,5 @@
 import random
+from dataclasses import dataclass
 from enum import StrEnum
 from typing import Optional
 
@@ -194,6 +195,16 @@ class ContentTrack(models.Model):
             chain.append(track)
             track = track.parent_track
         return chain
+
+    def continuation(self) -> Optional["CourseContent"]:
+        """Where a learner continues once this track runs out, or None to end the course.
+
+        A nested track without a merge point of its own defers to the track it branches off.
+        """
+        for candidate in [self, *self.ancestors()]:
+            if candidate.merge_into_id:
+                return candidate.merge_into
+        return None
 
     def clean(self) -> None:
         super().clean()
@@ -407,3 +418,121 @@ class CourseContent(models.Model):
                 name="unique_priority_per_track",
             ),
         ]
+
+
+@dataclass(frozen=True)
+class QuizOutcome:
+    """What a learner's quiz submission produced, as the routing rules see it."""
+
+    score: int
+    passed: bool
+
+
+class TransitionCondition(StrEnum):
+    PASSED = "passed"
+    FAILED = "failed"
+    SCORE_GTE = "score_gte"
+    SCORE_LT = "score_lt"
+    DEFAULT = "default"
+
+
+QUIZ_CONDITIONS = frozenset(
+    {
+        TransitionCondition.PASSED,
+        TransitionCondition.FAILED,
+        TransitionCondition.SCORE_GTE,
+        TransitionCondition.SCORE_LT,
+    }
+)
+THRESHOLD_CONDITIONS = frozenset({TransitionCondition.SCORE_GTE, TransitionCondition.SCORE_LT})
+
+
+class ContentTransition(models.Model):
+    """A rule routing a learner from one content onto a `ContentTrack`.
+
+    The rules on a content are evaluated in `order` and the first match wins, so a
+    `DEFAULT` rule placed last is the fallback that catches an outcome no earlier rule
+    claimed. Content carrying no rules at all is not a branch point and is walked in
+    plain priority order.
+    """
+
+    source = models.ForeignKey(CourseContent, on_delete=models.CASCADE, related_name="transitions")
+    order = models.IntegerField(help_text="Rules are evaluated low to high and the first match wins.")
+    condition = models.CharField(
+        max_length=50,
+        choices=[(c.value, c.name.replace("_", " ").title()) for c in TransitionCondition],
+    )
+    threshold = models.IntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text="The score this rule compares against. Required for a score condition.",
+    )
+    target = models.ForeignKey(ContentTrack, on_delete=models.CASCADE, related_name="incoming_transitions")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["source", "order"], name="unique_transition_order_per_source"),
+            models.UniqueConstraint(
+                fields=["source"],
+                condition=models.Q(condition=TransitionCondition.DEFAULT.value),
+                name="single_default_transition_per_source",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        comparison = f" {self.threshold}" if self.condition in THRESHOLD_CONDITIONS else ""
+        return f"{self.source.title}: {self.condition}{comparison} -> {self.target.name}"
+
+    def matches(self, outcome: "QuizOutcome") -> bool:
+        if self.condition == TransitionCondition.DEFAULT:
+            return True
+        if self.condition == TransitionCondition.PASSED:
+            return outcome.passed
+        if self.condition == TransitionCondition.FAILED:
+            return not outcome.passed
+        if self.condition == TransitionCondition.SCORE_GTE:
+            return self.threshold is not None and outcome.score >= self.threshold
+        if self.condition == TransitionCondition.SCORE_LT:
+            return self.threshold is not None and outcome.score < self.threshold
+        return False
+
+    def clean(self) -> None:
+        super().clean()
+        if self.condition in THRESHOLD_CONDITIONS and self.threshold is None:
+            raise ValidationError({"threshold": "A score condition needs a threshold to compare against."})
+        if self.condition not in THRESHOLD_CONDITIONS and self.threshold is not None:
+            raise ValidationError({"threshold": "Only a score condition takes a threshold."})
+        if self.condition in QUIZ_CONDITIONS and self.source.type != CourseContentType.QUIZ:
+            raise ValidationError({"condition": "A quiz condition can only be used on quiz content."})
+        if self.target.course_id != self.source.course_id:
+            raise ValidationError({"target": "A target track must belong to the same course as the content."})
+        if self.target_id == self.source.track_id:
+            raise ValidationError({"target": "Content cannot route onto the track it is already on."})
+        self._validate_merge_is_forward()
+
+    def _validate_merge_is_forward(self) -> None:
+        """Refuse a target whose merge point would land back at or before the source.
+
+        Routing a learner onto a track that rejoins ahead of where they branched is the
+        whole point; one that rejoins behind it walks them into the same branch again, and
+        again. Only comparable when the merge lands on the source's own track - priorities
+        are ordered within a track, not across them.
+        """
+        merge_point = self.target.continuation()
+        if merge_point is None or merge_point.track_id != self.source.track_id:
+            return
+        if merge_point.priority <= self.source.priority:
+            raise ValidationError(
+                {
+                    "target": gettext(
+                        "'%(track)s' rejoins the course at or before this content, which would route "
+                        "the learner onto it again."
+                    )
+                    % {"track": self.target.name}
+                }
+            )
+
+    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        self.full_clean()
+        super().save(*args, **kwargs)

@@ -55,10 +55,12 @@
                 {% endif %}
             {% endif %}
             {% endblock %}
+            {% if progress is not None %}
             <span class="progress-label">{% blocktranslate %}<b>Course Progress: {{ progress }}%</b>{% endblocktranslate %}</span>
             <div class="progress-container">
                 <div class="progress-bar" style="width: {{ progress }}%;"></div>
             </div>
+            {% endif %}
         </div>
 
         <p class="email-muted-note">
