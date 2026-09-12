@@ -257,8 +257,7 @@ class CourseContent(models.Model):
         return super().delete(*args, **kwargs)
 
     def get_next(self) -> Optional["CourseContent"]:
-        # Imported here rather than at module level: the service reads CourseContent,
-        # so importing it up top would close an import cycle.
+        # The service reads CourseContent, so a module-level import would cycle.
         from django_email_learning.services import content_sequence_service
 
         return content_sequence_service.next_content(self)
