@@ -51,5 +51,5 @@ class EnrollmentSummaryResponse(BaseModel):
     id: int
     course_title: str
     status: EnrollmentStatus
-    progress: Optional[int] = None
+    progress: int
     certificate_url: str | None = None

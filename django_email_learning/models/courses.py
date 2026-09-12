@@ -56,6 +56,14 @@ class Course(models.Model):
         help_text="Show the organization name and social links in the footer of this course's emails.",
     )
 
+    def has_branching(self) -> bool:
+        """Whether any content in this course routes a learner onto a track.
+
+        A track nothing routes onto is unreachable, so a course holding one mid-authoring
+        is still a straight line and its learners still get a progress percentage.
+        """
+        return self.coursecontent_set.filter(transitions__isnull=False).exists()
+
     def __str__(self) -> str:
         return self.title
 

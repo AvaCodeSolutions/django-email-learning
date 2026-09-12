@@ -160,8 +160,32 @@ def test_routing_onto_a_terminal_track_graduates_the_learner(content_delivery, a
     assert content_delivery.enrollment.status == EnrollmentStatus.COMPLETED
 
 
-def test_a_branched_learner_reports_no_progress(content_delivery, anonymous_client, remedial_track):
-    _, remedial_content, _ = remedial_track
+def test_a_branching_course_shows_its_learners_no_progress(content_delivery, course, remedial_track):
+    """Decided by the course, not the enrollment: this learner has not branched.
+
+    Their percentage would be measured against a total that includes content only the
+    other route reaches, so there is no honest number to show them either.
+    """
+    enrollment = content_delivery.enrollment
+    assert enrollment.learner_progress_percentage() is not None
+
+    ContentTransition.objects.create(
+        source=content_delivery.course_content,
+        order=1,
+        condition=TransitionCondition.DEFAULT,
+        target=remedial_track[0],
+    )
+
+    assert enrollment.has_branched() is False
+    assert enrollment.learner_progress_percentage() is None
+
+
+def test_an_unreachable_track_leaves_progress_alone(content_delivery, course, remedial_track):
+    """A track nothing routes onto is a course still being authored, not a branching one."""
+    assert content_delivery.enrollment.learner_progress_percentage() is not None
+
+
+def test_the_platform_still_reports_progress_for_a_branched_learner(content_delivery, anonymous_client, remedial_track):
     ContentTransition.objects.create(
         source=content_delivery.course_content,
         order=1,
@@ -169,18 +193,53 @@ def test_a_branched_learner_reports_no_progress(content_delivery, anonymous_clie
         target=remedial_track[0],
     )
     enrollment = content_delivery.enrollment
-    assert enrollment.progress_percentage() is not None
 
     submit(anonymous_client, content_delivery)
 
     assert enrollment.has_branched() is True
-    assert enrollment.progress_percentage() is None
-    assert Enrollment.bulk_progress_percentages([enrollment])[enrollment.id] is None
+    assert enrollment.learner_progress_percentage() is None
+    assert isinstance(enrollment.progress_percentage(), int)
+    assert isinstance(Enrollment.bulk_progress_percentages([enrollment])[enrollment.id], int)
+
+
+def test_platform_progress_drops_when_a_learner_is_routed(content_delivery, anonymous_client, remedial_track):
+    """Routing adds the track's content to what this learner owes, so the share falls.
+
+    Deliberate: an operator wants to know that someone who looked three-quarters done is
+    now on a longer path. The learner is shown nothing rather than a number going down.
+    """
+    ContentTransition.objects.create(
+        source=content_delivery.course_content,
+        order=1,
+        condition=TransitionCondition.DEFAULT,
+        target=remedial_track[0],
+    )
+    enrollment = content_delivery.enrollment
+    before = enrollment.progress_percentage()
+
+    submit(anonymous_client, content_delivery)
+
+    after = enrollment.progress_percentage()
+    assert after < before
+    assert Enrollment.bulk_progress_percentages([enrollment])[enrollment.id] == after
+
+
+def test_bulk_and_single_platform_progress_agree(content_delivery, anonymous_client, remedial_track):
+    ContentTransition.objects.create(
+        source=content_delivery.course_content,
+        order=1,
+        condition=TransitionCondition.DEFAULT,
+        target=remedial_track[0],
+    )
+    submit(anonymous_client, content_delivery)
+    enrollment = content_delivery.enrollment
+
+    assert Enrollment.bulk_progress_percentages([enrollment])[enrollment.id] == enrollment.progress_percentage()
 
 
 def test_an_unbranched_learner_still_reports_progress(content_delivery, course):
     enrollment = content_delivery.enrollment
     content_delivery.delivery_schedules.update(status=DeliveryStatus.DELIVERED)
 
-    assert enrollment.progress_percentage() is not None
+    assert enrollment.learner_progress_percentage() is not None
     assert Enrollment.bulk_progress_percentages([enrollment])[enrollment.id] is not None

@@ -203,23 +203,17 @@ class AverageProgressView(View):
                     "course_id": cid,
                     "course_title": enrollment.course.title,
                     "total": 0,
-                    "measured": 0,
                     "sum": 0,
                 }
             course_progress[cid]["total"] += 1
-            progress = progress_by_enrollment[enrollment.id]
-            if progress is not None:
-                # A branched learner has no comparable percentage, so they are left out of
-                # the average while still counting towards active_enrollments.
-                course_progress[cid]["measured"] += 1
-                course_progress[cid]["sum"] += progress
+            course_progress[cid]["sum"] += progress_by_enrollment[enrollment.id]
 
         response = serializers.AverageProgressResponse(
             data=[
                 serializers.AverageProgressItem(
                     course_id=v["course_id"],
                     course_title=v["course_title"],
-                    average_progress=round(v["sum"] / v["measured"], 1) if v["measured"] else 0,
+                    average_progress=round(v["sum"] / v["total"], 1) if v["total"] else 0,
                     active_enrollments=v["total"],
                 )
                 for v in course_progress.values()
@@ -406,7 +400,7 @@ class DownloadLearnerProgressView(View):
                 enrollment.learner.email,
                 enrollment.course.title,
                 enrollment.enrolled_at.date().isoformat(),
-                progress_by_enrollment[enrollment.id] if progress_by_enrollment[enrollment.id] is not None else "",
+                progress_by_enrollment[enrollment.id],
                 enrollment.status,
                 last_delivery_map[enrollment.id].isoformat()  # type: ignore[union-attr]
                 if last_delivery_map.get(enrollment.id)

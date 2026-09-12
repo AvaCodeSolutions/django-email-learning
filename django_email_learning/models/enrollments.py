@@ -260,18 +260,61 @@ class Enrollment(models.Model):
         """Whether this enrollment has been routed onto a `ContentTrack`."""
         return self.content_deliveries.filter(course_content__track__isnull=False).exists()
 
-    def progress_percentage(self, extra_delivered: int = 0) -> Optional[int]:
-        """How far through the course this learner is, or None once they have branched.
+    def entered_track_ids(self) -> set[int]:
+        """The tracks this enrollment has been routed onto."""
+        return set(
+            self.content_deliveries.filter(course_content__track__isnull=False)
+            .values_list("course_content__track_id", flat=True)
+            .distinct()
+        )
 
-        The denominator is the course's published content, which is the right total only
-        for a learner walking the main spine: a branched learner is on a path whose length
-        depends on the route they took, so any percentage against the whole course either
-        understates them or claims content they will never be sent. Callers render nothing
-        rather than a number that is wrong - see `has_branched`.
+    def learner_progress_percentage(self, extra_delivered: int = 0) -> Optional[int]:
+        """Progress as the learner is shown it, or None when the course branches at all.
+
+        A percentage only means "how much of this course is behind you" while every
+        learner walks the same content. Once a course routes anyone, it does not: the
+        length of the path depends on the answers given, so no total is right for
+        everyone, including the learners who happen to take the straight line through it.
+
+        So this is decided by the course, not by the enrollment - every learner on a
+        branching course is shown no percentage, from their first email to their last. A
+        bar that is simply absent reads as a course that does not track progress; one that
+        vanishes halfway through, which is what a per-enrollment rule would produce, reads
+        as a bug.
         """
-        if self.has_branched():
+        if self.course.has_branching():
             return None
-        total_content = self.course.coursecontent_set.filter(is_published=True).count()
+        total_content = self.course.coursecontent_set.filter(is_published=True, track__isnull=True).count()
+        if total_content == 0:
+            return 0
+        delivered_content = (
+            self.content_deliveries.filter(
+                delivery_schedules__status=DeliveryStatus.DELIVERED,
+                course_content__is_published=True,
+                course_content__track__isnull=True,
+            )
+            .distinct()
+            .count()
+        )
+        return int(((delivered_content + extra_delivered) / total_content) * 100)
+
+    def progress_percentage(self) -> int:
+        """Progress as the platform reports it: delivered content over this learner's path.
+
+        The path is the main spine plus the tracks this enrollment has actually entered,
+        so the total grows the moment a learner is routed - and the percentage drops,
+        because content they had not been sent has just been added to what they owe. That
+        is a real thing to know about a learner, which is why it is reported here and not
+        to the learner themselves: "56%, down from 71% when they were routed onto
+        remediation" answers an operator's question. It would only demoralise the person
+        sitting the course. See `learner_progress_percentage` for their side.
+        """
+        entered_tracks = self.entered_track_ids()
+        total_content = (
+            self.course.coursecontent_set.filter(is_published=True)
+            .filter(models.Q(track__isnull=True) | models.Q(track_id__in=entered_tracks))
+            .count()
+        )
         if total_content == 0:
             return 0
         delivered_content = (
@@ -282,15 +325,13 @@ class Enrollment(models.Model):
             .distinct()
             .count()
         )
-
-        progress = int(((delivered_content + extra_delivered) / total_content) * 100)
-        return progress
+        return int((delivered_content / total_content) * 100)
 
     @classmethod
-    def bulk_progress_percentages(cls, enrollments: "list[Enrollment]") -> dict[int, Optional[int]]:
+    def bulk_progress_percentages(cls, enrollments: "list[Enrollment]") -> dict[int, int]:
         """
-        Same result as calling progress_percentage() on each enrollment, but in 3
-        queries total instead of 3 queries per enrollment. progress_percentage()
+        Same result as calling progress_percentage() on each enrollment, but in a fixed
+        number of queries instead of that number per enrollment. progress_percentage()
         always hits the DB itself (it doesn't use prefetched querysets), so any
         caller iterating over more than a handful of enrollments should use this
         instead — see AverageProgressView and DownloadLearnerProgressView for the
@@ -303,8 +344,8 @@ class Enrollment(models.Model):
             return {}
 
         course_ids = {enrollment.course_id for enrollment in enrollments}
-        total_content_by_course = dict(
-            CourseContent.objects.filter(course_id__in=course_ids, is_published=True)
+        spine_total_by_course = dict(
+            CourseContent.objects.filter(course_id__in=course_ids, is_published=True, track__isnull=True)
             .values("course_id")
             .annotate(total=models.Count("id"))
             .values_list("course_id", "total")
@@ -322,21 +363,32 @@ class Enrollment(models.Model):
             .values_list("enrollment_id", "count")
         )
 
-        branched_enrollment_ids = set(
-            ContentDelivery.objects.filter(
-                enrollment_id__in=enrollment_ids,
-                course_content__track__isnull=False,
+        # Each learner's total is the spine plus the tracks they were actually routed
+        # onto, so two learners on the same course can be measured against different
+        # denominators - see progress_percentage().
+        entered = ContentDelivery.objects.filter(
+            enrollment_id__in=enrollment_ids,
+            course_content__track__isnull=False,
+        ).values_list("enrollment_id", "course_content__track_id")
+        tracks_by_enrollment: dict[int, set[int]] = {}
+        for enrollment_id, track_id in entered:
+            tracks_by_enrollment.setdefault(enrollment_id, set()).add(track_id)
+
+        track_totals = dict(
+            CourseContent.objects.filter(
+                track_id__in={track_id for tracks in tracks_by_enrollment.values() for track_id in tracks},
+                is_published=True,
             )
-            .values_list("enrollment_id", flat=True)
-            .distinct()
+            .values("track_id")
+            .annotate(total=models.Count("id"))
+            .values_list("track_id", "total")
         )
 
-        result: dict[int, Optional[int]] = {}
+        result: dict[int, int] = {}
         for enrollment in enrollments:
-            if enrollment.id in branched_enrollment_ids:
-                result[enrollment.id] = None
-                continue
-            total_content = total_content_by_course.get(enrollment.course_id, 0)
+            total_content = spine_total_by_course.get(enrollment.course_id, 0)
+            for track_id in tracks_by_enrollment.get(enrollment.id, set()):
+                total_content += track_totals.get(track_id, 0)
             if not total_content:
                 result[enrollment.id] = 0
                 continue
