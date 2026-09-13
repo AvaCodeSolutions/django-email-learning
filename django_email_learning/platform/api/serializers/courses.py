@@ -362,6 +362,8 @@ class CreateCourseContentRequest(BaseModel):
     priority: int | None = Field(gt=0, examples=[1], default=None)
     waiting_period: WaitingPeriod
     content: LessonCreate | QuizCreate | AssignmentCreate = Field(discriminator="type")
+    # Empty puts the new content on the main spine.
+    track_id: Optional[int] = None
 
     @property
     def required_priority(self) -> int:
@@ -426,6 +428,7 @@ class CreateCourseContentRequest(BaseModel):
 
         course_content = CourseContent.objects.create(
             course=course,
+            track_id=self.track_id,
             priority=self.required_priority,
             waiting_period=self.waiting_period.to_seconds(),
             assignment=assignment,

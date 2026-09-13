@@ -342,3 +342,41 @@ def test_a_viewer_cannot_replace_rules(viewer_client, branching_course):
     response = put_json(viewer_client, transitions_url(branching_course.checkpoint), {"transitions": []})
 
     assert response.status_code == 403
+
+
+def new_lesson_payload(**extra):
+    return {
+        "content": {"type": "lesson", "title": "New lesson", "content": "<p>Body</p>"},
+        "waiting_period": {"period": 1, "type": "days"},
+        **extra,
+    }
+
+
+def test_creating_content_on_a_track_numbers_it_within_that_track(editor_client, branching_course):
+    b = branching_course
+
+    response = post_json(editor_client, contents_url(b.course), new_lesson_payload(track_id=b.remedial.id))
+
+    assert response.status_code == 201
+    created = CourseContent.objects.get(id=response.json()["id"])
+    assert (created.track_id, created.priority) == (b.remedial.id, 3)
+
+
+def test_creating_content_without_a_track_puts_it_at_the_end_of_the_main_spine(editor_client, branching_course):
+    b = branching_course
+
+    response = post_json(editor_client, contents_url(b.course), new_lesson_payload())
+
+    assert response.status_code == 201
+    created = CourseContent.objects.get(id=response.json()["id"])
+    assert (created.track_id, created.priority) == (None, 5)
+
+
+def test_creating_content_on_another_courses_track_is_not_found(editor_client, branching_course, imap_connection):
+    other = Course.objects.create(title="Other", slug="other", imap_connection=imap_connection, organization_id=1)
+    foreign = ContentTrack.objects.create(course=other, name="Foreign")
+
+    response = post_json(editor_client, contents_url(branching_course.course), new_lesson_payload(track_id=foreign.id))
+
+    assert response.status_code == 404
+    assert not Lesson.objects.filter(title="New lesson").exists()

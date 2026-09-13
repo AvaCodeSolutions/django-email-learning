@@ -474,7 +474,9 @@ function Course() {
                             courseId={courseId}
                             lessonId={content.lesson.id}
                             initialWaitingPeriod={content.waiting_period}
-                            contentId={content.id} /></Suspense>);
+                            contentId={content.id}
+                            tracks={courseStructure.tracks}
+                            initialTrackId={content.track_id} /></Suspense>);
             } else if (content.type == 'quiz') {
                 console.log("Opening quiz editor for content:", content);
                 setDialogOpen(true);
@@ -495,6 +497,8 @@ function Course() {
                                 initialReminderIntervalDays={content.quiz.reminder_interval_days}
                                 initialIsBranchPoint={content.is_branch_point}
                                 onBranchingChange={refreshContents}
+                                tracks={courseStructure.tracks}
+                                initialTrackId={content.track_id}
                                  /></Suspense>);
             } else if (content.type == 'assignment') {
                 console.log("Opening assignment editor for content:", content);
@@ -514,6 +518,8 @@ function Course() {
                                 initialRequiresFileSubmission={content.assignment.requires_file_submission}
                                 initialReminderIntervalDays={content.assignment.reminder_interval_days}
                                 initialWaitingPeriod={content.waiting_period}
+                                tracks={courseStructure.tracks}
+                                initialTrackId={content.track_id}
                                 /></Suspense>);
             }
         }
@@ -779,20 +785,23 @@ function Course() {
                                     header={localeMessages["new_lesson"]}
                                     cancelCallback={() => setDialogOpen(false)}
                                     successCallback={() => setContentLoaded(false)}
-                                    courseId={courseId} /></Suspense>);
+                                    courseId={courseId}
+                                    tracks={courseStructure.tracks} /></Suspense>);
                                 setDialogOpen(true);}}>{localeMessages["add_lesson"]}</Button>
                             <Button variant="contained" startIcon={<BallotIcon />} sx={{ marginBottom: {xs: 1, md: 2}, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
                                 setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><QuizForm
                                     cancelCallback={() => setDialogOpen(false)}
                                     successCallback={resetDialog}
-                                    courseId={courseId} /></Suspense>);
+                                    courseId={courseId}
+                                    tracks={courseStructure.tracks} /></Suspense>);
                                 setDialogOpen(true);}}>{localeMessages["add_quiz"]}</Button>
                             <Button variant="contained" startIcon={<AssignmentIcon />} sx={{ marginBottom: 2, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
                                 setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><AssignmentForm
                                     header={localeMessages["new_assignment"]}
                                     cancelCallback={() => setDialogOpen(false)}
                                     successCallback={resetDialog}
-                                    courseId={courseId} /></Suspense>);
+                                    courseId={courseId}
+                                    tracks={courseStructure.tracks} /></Suspense>);
                                 setDialogOpen(true);}}>{localeMessages["add_assignment"]}</Button>
                             {canEditBranching && <Button variant="outlined" startIcon={<AddRoadIcon />} sx={{ marginBottom: 2, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => openTrackForm(null)}>{localeMessages["add_track"] || 'Add Track'}</Button>}
                             {customComponent && <CustomComponentSlot html={customComponent.html} display={customComponent.container_display} />}

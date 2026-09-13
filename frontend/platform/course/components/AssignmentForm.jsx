@@ -21,6 +21,8 @@ import RequiredTextField from '../../../src/components/RequiredTextField';
 import { useAppContext } from '../../../src/render';
 import apiClient from '../../../src/apiClient.js';
 import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
+import TrackSelect from './TrackSelect.jsx';
+import { errorMessageFrom, fromTrackValue, toTrackValue } from './branching.js';
 
 const AssignmentForm = ({
     cancelCallback,
@@ -37,6 +39,8 @@ const AssignmentForm = ({
     initialReminderIntervalDays,
     initialWaitingPeriod,
     header,
+    tracks = [],
+    initialTrackId = null,
 }) => {
     const { localeMessages, apiBaseUrl: rawApiBaseUrl } = useAppContext();
     const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
@@ -71,6 +75,8 @@ const AssignmentForm = ({
     const [reminderIntervalDays, setReminderIntervalDays] = useState(initialReminderIntervalValue);
     const [waitingPeriod, setWaitingPeriod] = useState(initialWaitingPeriodValue);
     const [waitingPeriodUnit, setWaitingPeriodUnit] = useState(initialWaitingPeriodUnit);
+    const [trackId, setTrackId] = useState(toTrackValue(initialTrackId));
+    const [savedTrackId, setSavedTrackId] = useState(toTrackValue(initialTrackId));
 
     const [titleHelperText, setTitleHelperText] = useState('');
     const [descriptionHelperText, setDescriptionHelperText] = useState('');
@@ -104,7 +110,8 @@ const AssignmentForm = ({
         requiresTextSubmission !== savedSnapshot.requiresTextSubmission ||
         requiresFileSubmission !== savedSnapshot.requiresFileSubmission ||
         String(waitingPeriod) !== savedSnapshot.waitingPeriod ||
-        waitingPeriodUnit !== savedSnapshot.waitingPeriodUnit;
+        waitingPeriodUnit !== savedSnapshot.waitingPeriodUnit ||
+        trackId !== savedTrackId;
 
     useEffect(() => {
         if (!successMessage) return;
@@ -167,11 +174,13 @@ const AssignmentForm = ({
             return {
                 content: assignmentPayload,
                 waiting_period: { period: waitingPeriod, type: waitingPeriodUnit },
+                ...(trackId !== '' ? { track_id: fromTrackValue(trackId) } : {}),
             };
         }
         return {
             assignment: assignmentPayload,
             waiting_period: { period: waitingPeriod, type: waitingPeriodUnit },
+            ...(trackId !== savedTrackId ? { track_id: fromTrackValue(trackId) } : {}),
         };
     };
 
@@ -190,9 +199,9 @@ const AssignmentForm = ({
                 setSuccessMessage(localeMessages['assignment_saved_success']);
                 successCallback?.();
             })
-            .catch(() => {
+            .catch((error) => {
                 setSuccessMessage('');
-                setErrorMessage(localeMessages['save_failed']);
+                setErrorMessage(errorMessageFrom(error, localeMessages['save_failed']));
             });
     };
 
@@ -209,12 +218,13 @@ const AssignmentForm = ({
         )
             .then(() => {
                 setErrorMessage('');
+                setSavedTrackId(trackId);
                 setSuccessMessage(localeMessages['assignment_saved_success']);
                 successCallback?.();
             })
-            .catch(() => {
+            .catch((error) => {
                 setSuccessMessage('');
-                setErrorMessage(localeMessages['save_failed']);
+                setErrorMessage(errorMessageFrom(error, localeMessages['save_failed']));
             });
     };
 
@@ -333,6 +343,12 @@ const AssignmentForm = ({
                             </Box>
                         </Tooltip>
                     </Grid>
+
+                    {tracks.length > 0 && (
+                        <Grid size={{ xs: 12 }}>
+                            <TrackSelect tracks={tracks} value={trackId} onChange={setTrackId} />
+                        </Grid>
+                    )}
 
                     {/* Deadline */}
                     <Grid size={{ xs: 12, md: 6 }}>

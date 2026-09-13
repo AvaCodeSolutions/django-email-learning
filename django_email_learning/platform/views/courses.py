@@ -463,6 +463,11 @@ class CourseView(BasePlatformView):
             "branching_load_failed": _("Could not load the routing rules."),
             "rule_threshold_required": _("A score rule needs a score between 0 and 100."),
             "save_track": _("Save Track"),
+            "content_track": _("Track"),
+            "content_track_help": _(
+                "Main path content reaches every learner. Content on a track only reaches learners a routing rule"
+                " sends there."
+            ),
             "quiz_analytics_load_failed": _("Unable to load quiz analytics."),
             "quiz_analytics_no_data": _(
                 "No quiz submissions have been recorded yet. Statistics appear here once learners start submitting."

@@ -110,10 +110,15 @@ class CourseContentView(View):
         try:
             serializer = serializers.CreateCourseContentRequest.model_validate(payload)
             course = Course.objects.get(id=kwargs["course_id"], organization_id=kwargs["organization_id"])
+            if (
+                serializer.track_id is not None
+                and not ContentTrack.objects.filter(id=serializer.track_id, course=course).exists()
+            ):
+                return JsonResponse({"error": "Track not found"}, status=404)
             if serializer.priority is None:
-                # Set priority to max existing priority + 1
+                # After the last content on the track it joins: priorities are ordered per track.
                 max_priority = (
-                    CourseContent.objects.filter(course_id=course.id)
+                    CourseContent.objects.filter(course_id=course.id, track_id=serializer.track_id)
                     .aggregate(max_priority=models.Max("priority"))
                     .get("max_priority")
                 )

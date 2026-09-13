@@ -8,8 +8,10 @@ import ContentEditor from '../../../src/components/ContentEditor.jsx';
 import { useAppContext } from '../../../src/render.jsx';
 import apiClient from '../../../src/apiClient.js';
 import { sanitizeEndpointUrl, sanitizeImageUrl, sanitizeUrl } from '../../../src/sanitizeUrl.js';
+import TrackSelect from './TrackSelect.jsx';
+import { errorMessageFrom, fromTrackValue, toTrackValue } from './branching.js';
 
-function LessonForm({ header, initialTitle, initialContent, cancelCallback, successCallback, courseId, lessonId, initialWaitingPeriod, contentId }) {
+function LessonForm({ header, initialTitle, initialContent, cancelCallback, successCallback, courseId, lessonId, initialWaitingPeriod, contentId, tracks = [], initialTrackId = null }) {
     const initialWaitingPeriodValue = initialWaitingPeriod ? initialWaitingPeriod.period : 1;
     const initialWaitingPeriodUnit = initialWaitingPeriod ? initialWaitingPeriod.type : "days";
     const [lessonIdentifier, setLessonIdentifier] = useState(lessonId);
@@ -18,6 +20,7 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
     const [content, setContent] = useState(initialContent || "");
     const [waitingPeriod, setWaitingPeriod] = useState(initialWaitingPeriodValue);
     const [waitingPeriodUnit, setWaitingPeriodUnit] = useState(initialWaitingPeriodUnit);
+    const [trackId, setTrackId] = useState(toTrackValue(initialTrackId));
     const [titleHelperText, setTitleHelperText] = useState("");
     const [contentHelperText, setContentHelperText] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
@@ -33,6 +36,7 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
         content: initialContent || "",
         waitingPeriod: String(initialWaitingPeriodValue),
         waitingPeriodUnit: initialWaitingPeriodUnit,
+        trackId: toTrackValue(initialTrackId),
     });
     const [confirmCloseDialogOpen, setConfirmCloseDialogOpen] = useState(false);
 
@@ -46,7 +50,8 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
         title !== savedSnapshot.title
         || content !== savedSnapshot.content
         || String(waitingPeriod) !== savedSnapshot.waitingPeriod
-        || waitingPeriodUnit !== savedSnapshot.waitingPeriodUnit;
+        || waitingPeriodUnit !== savedSnapshot.waitingPeriodUnit
+        || trackId !== savedSnapshot.trackId;
 
     useEffect(() => {
         if (!successMessage) {
@@ -89,6 +94,7 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
                 type: 'lesson'
             },
             waiting_period: {"period": waitingPeriod, "type": waitingPeriodUnit},
+            ...(trackId !== '' ? { track_id: fromTrackValue(trackId) } : {}),
         })
         .then((data) => {
             console.log('Lesson created successfully:', data);
@@ -101,13 +107,14 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
                 content,
                 waitingPeriod: String(waitingPeriod),
                 waitingPeriodUnit,
+                trackId,
             });
             successCallback?.();
         })
         .catch((error) => {
             console.error('Error creating lesson:', error);
             setSuccessMessage("");
-            setErrorMessage(localeMessages["save_failed"] || "Unable to save lesson content. Please try again.");
+            setErrorMessage(errorMessageFrom(error, localeMessages["save_failed"] || "Unable to save lesson content. Please try again."));
         });
     }
 
@@ -125,6 +132,7 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
                 content: content,
             },
             waiting_period: {"period": waitingPeriod, "type": waitingPeriodUnit},
+            ...(trackId !== savedSnapshot.trackId ? { track_id: fromTrackValue(trackId) } : {}),
         })
         .then(() => {
             console.log('Lesson updated successfully');
@@ -135,13 +143,14 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
                 content,
                 waitingPeriod: String(waitingPeriod),
                 waitingPeriodUnit,
+                trackId,
             });
             successCallback?.();
         })
         .catch((error) => {
             console.error('Error updating lesson:', error);
             setSuccessMessage("");
-            setErrorMessage(localeMessages["save_failed"] || "Unable to save lesson content. Please try again.");
+            setErrorMessage(errorMessageFrom(error, localeMessages["save_failed"] || "Unable to save lesson content. Please try again."));
         });
     }
 
@@ -403,6 +412,11 @@ function LessonForm({ header, initialTitle, initialContent, cancelCallback, succ
             <MenuItem value="hours">{localeMessages["hours"]}</MenuItem>
         </Select>
         </Tooltip>
+        {tracks.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+                <TrackSelect tracks={tracks} value={trackId} onChange={(value) => { setTrackId(value); setSuccessMessage(""); }} disabled={userRole === 'viewer'} />
+            </Box>
+        )}
         <Box sx={{ mt: 2, textAlign: 'right', position: 'sticky', bottom: 0, p: 1, pt: 2, backgroundColor: 'background.default', borderTop: '1px solid', borderColor: 'divider', zIndex: 2, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mr: 'auto' }}>
             {successMessage && (

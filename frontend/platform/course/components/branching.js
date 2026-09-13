@@ -131,3 +131,7 @@ export function buildContentTree(contents, tracks = [], transitions = []) {
     }
     return rows;
 }
+
+// A select holds '' for the main path; the API holds null.
+export const toTrackValue = (trackId) => (trackId == null ? '' : trackId);
+export const fromTrackValue = (value) => (value === '' ? null : Number(value));

@@ -6,11 +6,13 @@ import QuestionForm from './QuestionForm';
 import { useAppContext } from '../../../src/render';
 import apiClient from '../../../src/apiClient.js';
 import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
+import TrackSelect from './TrackSelect.jsx';
+import { errorMessageFrom, fromTrackValue, toTrackValue } from './branching.js';
 
 const QuizAnalytics = lazy(() => import('./QuizAnalytics.jsx'));
 const QuizBranching = lazy(() => import('./QuizBranching.jsx'));
 
-const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod, initialStrategy, initialDeadlineDays, initialLimitedAttempts, initialIsBlocking, initialReminderIntervalDays, initialIsBranchPoint = false, onBranchingChange }) => {
+const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod, initialStrategy, initialDeadlineDays, initialLimitedAttempts, initialIsBlocking, initialReminderIntervalDays, initialIsBranchPoint = false, onBranchingChange, tracks = [], initialTrackId = null }) => {
     const questionIdRef = useRef(0);
     const createQuestionId = () => {
         questionIdRef.current += 1;
@@ -20,6 +22,8 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     const [activeTab, setActiveTab] = useState('questions');
     const [branchingVisited, setBranchingVisited] = useState(false);
     const [isBranchPoint, setIsBranchPoint] = useState(Boolean(initialIsBranchPoint));
+    const [trackId, setTrackId] = useState(toTrackValue(initialTrackId));
+    const [savedTrackId, setSavedTrackId] = useState(toTrackValue(initialTrackId));
     const [showQuestionField, setShowQuestionField] = useState(false);
     const [newQuestion, setNewQuestion] = useState("");
     const [questions, setQuestions] = useState(() => (initialQuestions || []).map((question) => ({
@@ -83,7 +87,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     }
 
     const hasUnsavedChanges = () => {
-        if (!compareQuestions(questions, initialQuestions || []) || title !== initialTitle || requiredScore !== initialRequiredScoreValue || selectionStrategy !== initialStrategy || isBlocking !== initialIsBlockingValue || (isBlocking && limitedAttempts !== initialLimitedAttemptsValue) || deadlineDays !== initialDeadlineDays || hasDeadline !== initialHasDeadline || hasReminderInterval !== initialReminderEnabled || reminderIntervalDays !== initialReminderIntervalValue || waitingPeriod !== (initialWaitingPeriod ? initialWaitingPeriod.period : 1) || waitingPeriodUnit !== (initialWaitingPeriod ? initialWaitingPeriod.type : "days")) {
+        if (!compareQuestions(questions, initialQuestions || []) || title !== initialTitle || requiredScore !== initialRequiredScoreValue || selectionStrategy !== initialStrategy || isBlocking !== initialIsBlockingValue || (isBlocking && limitedAttempts !== initialLimitedAttemptsValue) || deadlineDays !== initialDeadlineDays || hasDeadline !== initialHasDeadline || hasReminderInterval !== initialReminderEnabled || reminderIntervalDays !== initialReminderIntervalValue || waitingPeriod !== (initialWaitingPeriod ? initialWaitingPeriod.period : 1) || waitingPeriodUnit !== (initialWaitingPeriod ? initialWaitingPeriod.type : "days") || trackId !== savedTrackId) {
             console.log(questions, initialQuestions, title, initialTitle, requiredScore, initialRequiredScoreValue, selectionStrategy, initialStrategy, isBlocking, initialIsBlockingValue, limitedAttempts, initialLimitedAttemptsValue, deadlineDays, initialDeadlineDays, hasReminderInterval, initialReminderEnabled, reminderIntervalDays, initialReminderIntervalValue, waitingPeriod, (initialWaitingPeriod ? initialWaitingPeriod.period : 1), waitingPeriodUnit, (initialWaitingPeriod ? initialWaitingPeriod.type : "days"));
             return true;
         }
@@ -136,13 +140,14 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             waiting_period: {
                 period: waitingPeriod,
                 type: waitingPeriodUnit
-            }
+            },
+            ...(trackId !== '' ? { track_id: fromTrackValue(trackId) } : {}),
         })
         .then(() => {
             successCallback();
         })
         .catch(error => {
-            setErrorMessage(localeMessages["error_creating_quiz"]);
+            setErrorMessage(errorMessageFrom(error, localeMessages["error_creating_quiz"]));
             console.error('Error creating quiz:', error);
         });
 
@@ -239,13 +244,15 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             waiting_period: {
                 period: waitingPeriod,
                 type: waitingPeriodUnit
-            }
+            },
+            ...(trackId !== savedTrackId ? { track_id: fromTrackValue(trackId) } : {}),
         })
         .then(() => {
+            setSavedTrackId(trackId);
             successCallback();
         })
         .catch(error => {
-            setErrorMessage(localeMessages["error_updating_quiz"]);
+            setErrorMessage(errorMessageFrom(error, localeMessages["error_updating_quiz"]));
             console.error('Error updating quiz:', error);
         });
     }
@@ -452,6 +459,12 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                                 </Box>
                             </Tooltip>
                         </Grid>
+
+                        {tracks.length > 0 && (
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <TrackSelect tracks={tracks} value={trackId} onChange={setTrackId} disabled={userRole === 'viewer'} sx={{ width: '100%' }} />
+                            </Grid>
+                        )}
 
                         {/* Row 2: Deadline and Reminder Interval */}
                         <Grid size={{ xs: 12, md: 6 }}>
