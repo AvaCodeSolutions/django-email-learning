@@ -1,174 +1,212 @@
-import { useMemo } from 'react';
-import { Box, Chip, Paper, Typography } from '@mui/material';
+import { useEffect, useMemo, useRef } from 'react';
+import { Background, Controls, Handle, MarkerType, Position, ReactFlow } from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+import { Box, Chip, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import AltRouteIcon from '@mui/icons-material/AltRoute';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import BallotOutlinedIcon from '@mui/icons-material/BallotOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import FlagIcon from '@mui/icons-material/Flag';
-import SubdirectoryArrowRightIcon from '@mui/icons-material/SubdirectoryArrowRight';
 import { useAppContext } from '../../../src/render.jsx';
-import { buildRouteTree, conditionLabel } from './branching.js';
+import { conditionLabel } from './branching.js';
+import { buildFlowGraph } from './flowGraph.js';
+import { NODE_HEIGHT, NODE_WIDTH, layoutFlow } from './flowLayout.js';
 
 const TYPE_ICONS = { lesson: DescriptionOutlinedIcon, quiz: BallotOutlinedIcon, assignment: AssignmentOutlinedIcon };
 
-const Connector = () => (
-    <Box aria-hidden="true" sx={{ width: '2px', height: 14, mx: 'auto', backgroundColor: 'divider' }} />
-);
+// Tracks are told apart by colour; each node also names its track, so the palette can repeat.
+const TRACK_COLORS = ['#7e57c2', '#00897b', '#ef6c00', '#1e88e5', '#d81b60', '#6d4c41'];
 
-const Marker = ({ icon: Icon, children }) => (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
-        <Icon fontSize="small" />
-        <Typography variant="caption">{children}</Typography>
-    </Box>
-);
+const HIDDEN_HANDLE = { opacity: 0, pointerEvents: 'none' };
 
-const ContentNode = ({ node, onContentClick }) => {
+function ContentNode({ data }) {
     const { localeMessages } = useAppContext();
-    const Icon = TYPE_ICONS[node.content.type] || DescriptionOutlinedIcon;
-    const published = node.content.is_published !== false;
+    const Icon = TYPE_ICONS[data.content.type] || DescriptionOutlinedIcon;
+    const published = data.content.is_published !== false;
     const notPublished = localeMessages['not_published'] || 'Not published';
     return (
-        <Paper
-            component="button"
-            type="button"
-            variant="outlined"
-            aria-label={published ? node.content.title : `${node.content.title} (${notPublished})`}
-            onClick={() => onContentClick?.(node.content.id)}
-            sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                width: '100%',
+        <Box
+            role="button"
+            tabIndex={0}
+            aria-label={published ? data.content.title : `${data.content.title} (${notPublished})`}
+            onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    data.onOpen?.();
+                }
+            }}
+            sx={(theme) => ({
+                width: NODE_WIDTH,
+                minHeight: NODE_HEIGHT,
+                boxSizing: 'border-box',
                 px: 1.5,
                 py: 1,
-                textAlign: 'start',
-                font: 'inherit',
+                borderRadius: 1,
                 cursor: 'pointer',
                 backgroundColor: 'background.paper',
+                border: '1px solid',
                 borderStyle: published ? 'solid' : 'dashed',
-                borderColor: node.isBranchPoint ? 'primary.main' : 'divider',
-                '&:hover, &:focus-visible': { borderColor: 'primary.main' },
-            }}
+                borderColor: data.isBranchPoint ? 'primary.main' : 'divider',
+                borderInlineStartWidth: 4,
+                borderInlineStartStyle: 'solid',
+                borderInlineStartColor: data.color ?? theme.palette.text.disabled,
+                '&:hover, &:focus-visible': { borderColor: 'primary.main', outline: 'none' },
+            })}
         >
-            <Icon fontSize="small" sx={{ color: 'text.secondary', flexShrink: 0 }} />
-            <Typography component="span" variant="body2" sx={{ flex: 1, minWidth: 0, overflowWrap: 'anywhere', color: published ? 'text.primary' : 'text.secondary' }}>
-                {node.content.title}
-            </Typography>
-            {!published && <Chip size="small" variant="outlined" label={notPublished} />}
-            {node.isBranchPoint && <AltRouteIcon fontSize="small" sx={{ color: 'primary.main', flexShrink: 0 }} />}
-        </Paper>
-    );
-};
-
-const RouteLane = ({ route, onContentClick }) => {
-    const { localeMessages } = useAppContext();
-    return (
-        <Box
-            role="group"
-            aria-label={route.track.name}
-            sx={{
-                flex: '1 1 240px',
-                minWidth: 220,
-                p: 1.5,
-                borderRadius: 1,
-                backgroundColor: 'action.hover',
-                borderInlineStart: (theme) => `3px solid ${theme.palette.primary.main}`,
-            }}
-        >
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.75, mb: 1 }}>
-                {route.rules.map((rule) => (
-                    <Chip key={rule.id} size="small" color="primary" variant="outlined" label={conditionLabel(rule, localeMessages)} />
-                ))}
-                <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>{route.track.name}</Typography>
-            </Box>
-            {route.alsoFrom.length > 0 && (
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                    {(localeMessages['also_reached_from'] || 'Also reached from: SOURCES').replace('SOURCES', route.alsoFrom.map((content) => content.title).join(', '))}
+            <Handle type="target" position={Position.Top} isConnectable={false} style={HIDDEN_HANDLE} />
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.75 }}>
+                <Icon fontSize="small" sx={{ color: 'text.secondary', mt: '1px', flexShrink: 0 }} />
+                <Typography
+                    component="span"
+                    variant="body2"
+                    sx={{ flex: 1, minWidth: 0, fontWeight: 500, color: published ? 'text.primary' : 'text.secondary', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+                >
+                    {data.content.title}
                 </Typography>
-            )}
-            <Lane nodes={route.nodes} onContentClick={onContentClick} />
-            <Box sx={{ mt: 1 }}>
-                {route.mergeContent ? (
-                    <Marker icon={SubdirectoryArrowRightIcon}>
-                        {(localeMessages['rejoins_at'] || 'Rejoins at TITLE').replace('TITLE', route.mergeContent.title)}
-                    </Marker>
-                ) : (
-                    <Marker icon={FlagIcon}>{localeMessages['ends_the_course'] || 'Ends the course'}</Marker>
+                {data.isBranchPoint && <AltRouteIcon fontSize="small" sx={{ color: 'primary.main', flexShrink: 0 }} />}
+            </Box>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                <Typography variant="caption" sx={{ color: data.color ?? 'text.secondary', fontWeight: data.track ? 600 : 400 }}>
+                    {data.track ? data.track.name : (localeMessages['main_path'] || 'Main path')}
+                </Typography>
+                {!published && <Chip size="small" variant="outlined" label={notPublished} sx={{ height: 18, fontSize: '0.65rem' }} />}
+                {data.unreached && (
+                    <Chip size="small" color="warning" variant="outlined" label={localeMessages['map_unreached'] || 'No rule routes here'} sx={{ height: 18, fontSize: '0.65rem' }} />
                 )}
             </Box>
-        </Box>
-    );
-};
-
-const Routes = ({ node, onContentClick }) => {
-    const { localeMessages } = useAppContext();
-    // Without an otherwise rule, a result no rule claims leaves the learner on this path.
-    const catchesEverything = node.rules.some((rule) => rule.condition === 'default');
-    return (
-        <Box sx={{ mt: 1.5 }}>
-            <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start', flexWrap: { xs: 'wrap', md: 'nowrap' } }}>
-                {node.routes.map((route) => (
-                    <RouteLane key={route.track.id} route={route} onContentClick={onContentClick} />
-                ))}
-            </Box>
-            {!catchesEverything && (
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1, textAlign: 'center' }}>
-                    {localeMessages['map_no_match'] || 'If no rule matches, the learner continues below.'}
-                </Typography>
-            )}
-        </Box>
-    );
-};
-
-function Lane({ nodes, onContentClick }) {
-    return (
-        <Box>
-            {nodes.map((node, index) => (
-                <Box key={node.content.id}>
-                    {index > 0 && <Connector />}
-                    <ContentNode node={node} onContentClick={onContentClick} />
-                    {node.routes.length > 0 && <Routes node={node} onContentClick={onContentClick} />}
-                </Box>
-            ))}
+            <Handle type="source" position={Position.Bottom} isConnectable={false} style={HIDDEN_HANDLE} />
         </Box>
     );
 }
 
+function EndNode() {
+    const { localeMessages } = useAppContext();
+    return (
+        <Box
+            sx={{
+                width: NODE_WIDTH,
+                minHeight: 44,
+                boxSizing: 'border-box',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 0.75,
+                borderRadius: 5,
+                border: '1px solid',
+                borderColor: 'divider',
+                backgroundColor: 'action.hover',
+                color: 'text.secondary',
+            }}
+        >
+            <Handle type="target" position={Position.Top} isConnectable={false} style={HIDDEN_HANDLE} />
+            <FlagIcon fontSize="small" />
+            <Typography variant="body2">{localeMessages['map_course_complete'] || 'Course complete'}</Typography>
+        </Box>
+    );
+}
+
+const NODE_TYPES = { content: ContentNode, end: EndNode };
+
+function styleEdge(edge, { theme, localeMessages, trackColors }) {
+    const { kind, track, rules } = edge.data;
+    const neutral = theme.palette.text.secondary;
+    const trackColor = track ? trackColors.get(track.id) ?? neutral : neutral;
+    const labelled = (label, color) => ({
+        label,
+        labelStyle: { fill: color, fontWeight: 600, fontSize: 12 },
+        labelBgStyle: { fill: theme.palette.background.paper },
+        labelBgPadding: [6, 3],
+        labelBgBorderRadius: 4,
+    });
+
+    const byKind = {
+        route: {
+            color: trackColor,
+            style: { strokeWidth: 2 },
+            ...labelled((rules || []).map((rule) => conditionLabel(rule, localeMessages)).join(' · '), trackColor),
+        },
+        otherwise: { color: neutral, ...labelled(localeMessages['map_otherwise'] || 'Otherwise', neutral) },
+        unsubmitted: {
+            color: theme.palette.text.disabled,
+            style: { strokeDasharray: '6 4' },
+            ...labelled(localeMessages['map_not_submitted'] || 'If not submitted', theme.palette.text.disabled),
+        },
+        rejoin: { color: trackColor, style: { strokeDasharray: '6 4' } },
+        ends: { color: trackColor, style: { strokeDasharray: '6 4' } },
+        next: { color: trackColor },
+    };
+    const { color, style = {}, ...rest } = byKind[kind] || byKind.next;
+    return {
+        ...edge,
+        type: 'smoothstep',
+        style: { stroke: color, strokeWidth: 1.5, ...style },
+        markerEnd: { type: MarkerType.ArrowClosed, color },
+        ...rest,
+    };
+}
+
 /**
- * A read-only picture of the course, top to bottom: the main path, and at each branch point
- * the tracks its rules route onto, side by side, each ending where it rejoins. Clicking a node
- * opens it like a row of the content table does.
+ * A read-only map of the course: every content as a node and every move a learner can make as
+ * an arrow - down the path, onto a track a rule selects, and back to where a track rejoins.
+ * Clicking a node opens the content, as a row of the content table does.
  */
 const CourseMap = ({ contents = [], tracks = [], transitions = [], onContentClick }) => {
     const { localeMessages } = useAppContext();
-    const tree = useMemo(() => buildRouteTree(contents, tracks, transitions), [contents, tracks, transitions]);
+    const theme = useTheme();
+    // Read through a ref so a new callback from the parent does not lay the graph out again.
+    const openRef = useRef(onContentClick);
+    useEffect(() => {
+        openRef.current = onContentClick;
+    });
+
+    const { nodes, edges } = useMemo(() => {
+        const trackColors = new Map(tracks.map((track, index) => [track.id, TRACK_COLORS[index % TRACK_COLORS.length]]));
+        const graph = buildFlowGraph(contents, tracks, transitions);
+        const positioned = layoutFlow(graph.nodes, graph.edges).map((node) => (node.type === 'content'
+            ? {
+                ...node,
+                data: {
+                    ...node.data,
+                    color: node.data.track ? trackColors.get(node.data.track.id) : null,
+                    onOpen: () => openRef.current?.(node.data.content.id),
+                },
+            }
+            : node));
+        return {
+            nodes: positioned,
+            edges: graph.edges.map((edge) => styleEdge(edge, { theme, localeMessages, trackColors })),
+        };
+    }, [contents, tracks, transitions, theme, localeMessages]);
 
     return (
-        <Box role="region" aria-label={localeMessages['course_view_map'] || 'Map'} sx={{ overflowX: 'auto', px: { xs: 1, md: 2 }, pb: 2 }}>
-            <Box sx={{ maxWidth: 1040, mx: 'auto' }}>
-                <Lane nodes={tree.spine} onContentClick={onContentClick} />
-                {tree.orphans.length > 0 && (
-                    <>
-                        <Connector />
-                        <Lane nodes={tree.orphans} onContentClick={onContentClick} />
-                    </>
-                )}
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1.5 }}>
-                    <Marker icon={FlagIcon}>{localeMessages['map_course_complete'] || 'Course complete'}</Marker>
-                </Box>
-                {tree.unrouted.length > 0 && (
-                    <Box sx={{ mt: 4 }}>
-                        <Typography variant="overline" color="text.secondary">
-                            {localeMessages['unrouted_tracks'] || 'Tracks no rule routes onto yet'}
-                        </Typography>
-                        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                            {tree.unrouted.map((route) => (
-                                <RouteLane key={route.track.id} route={route} onContentClick={onContentClick} />
-                            ))}
-                        </Box>
-                    </Box>
-                )}
-            </Box>
+        <Box
+            role="region"
+            aria-label={localeMessages['course_view_map'] || 'Map'}
+            sx={{ height: { xs: 480, md: 640 }, mx: { xs: 0, md: 1 }, border: '1px solid', borderColor: 'divider', borderRadius: { xs: 0, sm: 2 }, overflow: 'hidden' }}
+        >
+            <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                nodeTypes={NODE_TYPES}
+                colorMode={theme.palette.mode}
+                fitView
+                fitViewOptions={{ padding: 0.15 }}
+                minZoom={0.2}
+                nodesDraggable={false}
+                nodesConnectable={false}
+                nodesFocusable={false}
+                edgesFocusable={false}
+                elementsSelectable={false}
+                onNodeClick={(_, node) => {
+                    if (node.type === 'content') {
+                        openRef.current?.(node.data.content.id);
+                    }
+                }}
+            >
+                <Background gap={20} />
+                <Controls showInteractive={false} />
+            </ReactFlow>
         </Box>
     );
 };

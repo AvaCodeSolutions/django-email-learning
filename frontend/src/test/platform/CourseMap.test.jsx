@@ -1,21 +1,49 @@
-import { describe, it, expect, vi } from 'vitest';
-import { screen, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { fireEvent, screen } from '@testing-library/react';
 import { renderWithProviders } from '../test-utils';
 import CourseMap from '../../../platform/course/components/CourseMap.jsx';
 
 vi.mock('../../render.jsx');
 
+// React Flow measures nodes and observes resizes, neither of which jsdom implements.
+beforeAll(() => {
+    global.ResizeObserver = class {
+        constructor(callback) {
+            this.callback = callback;
+        }
+        observe(target) {
+            // The pan/zoom setup reads the viewport's size straight off the entry.
+            const width = target.offsetWidth || 960;
+            const height = target.offsetHeight || 640;
+            this.callback([{
+                target,
+                contentRect: { width, height, top: 0, left: 0, right: width, bottom: height, x: 0, y: 0 },
+                borderBoxSize: [{ inlineSize: width, blockSize: height }],
+                contentBoxSize: [{ inlineSize: width, blockSize: height }],
+            }]);
+        }
+        unobserve() {}
+        disconnect() {}
+    };
+    global.DOMMatrixReadOnly = class {
+        constructor(transform) {
+            const scale = transform?.match(/scale\(([\d.]+)\)/)?.[1];
+            this.m22 = scale !== undefined ? Number(scale) : 1;
+        }
+    };
+    Object.defineProperties(global.HTMLElement.prototype, {
+        offsetHeight: { configurable: true, get() { return parseFloat(this.style.height) || 72; } },
+        offsetWidth: { configurable: true, get() { return parseFloat(this.style.width) || 240; } },
+    });
+    global.SVGElement.prototype.getBBox = () => ({ x: 0, y: 0, width: 40, height: 16 });
+});
+
 const localeMessages = {
-    branch_condition_failed: 'If failed',
-    branch_condition_default: 'Otherwise',
-    rejoins_at: 'Rejoins at TITLE',
-    ends_the_course: 'Ends the course',
-    map_no_match: 'If no rule matches, the learner continues below.',
-    map_course_complete: 'Course complete',
+    main_path: 'Main path',
     not_published: 'Not published',
+    map_unreached: 'No rule routes here',
+    map_course_complete: 'Course complete',
     course_view_map: 'Map',
-    unrouted_tracks: 'Tracks no rule routes onto yet',
 };
 
 const contents = [
@@ -37,58 +65,32 @@ function renderMap(props = {}) {
 }
 
 describe('CourseMap', () => {
-    it('draws a lane for the track a branch point routes onto', () => {
+    it('draws every content, naming the track it is on', () => {
         renderMap();
 
-        const lane = screen.getByRole('group', { name: 'Remedial' });
-        expect(within(lane).getByText('If failed')).toBeInTheDocument();
-        expect(within(lane).getByRole('button', { name: 'Remedial lesson' })).toBeInTheDocument();
-        expect(within(lane).getByText('Rejoins at Wrap up')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Intro' })).toBeInTheDocument();
+        expect(screen.getByText('Intro')).toBeInTheDocument();
+        expect(screen.getByText('Remedial lesson')).toBeInTheDocument();
+        expect(screen.getByText('Remedial')).toBeInTheDocument();
         expect(screen.getByText('Course complete')).toBeInTheDocument();
     });
 
-    it('says the learner continues down this path when no rule matches', () => {
-        renderMap();
+    it('marks unpublished content and tracks no rule reaches', () => {
+        renderMap({ transitions: [] });
 
-        expect(screen.getByText('If no rule matches, the learner continues below.')).toBeInTheDocument();
+        expect(screen.getByText('Not published')).toBeInTheDocument();
+        expect(screen.getByText('No rule routes here')).toBeInTheDocument();
     });
 
-    it('drops that note once an otherwise rule catches every result', () => {
-        const advanced = { id: 8, name: 'Advanced', parent_track_id: null, merge_into_id: 3 };
-        renderMap({
-            tracks: [remedial, advanced],
-            transitions: [failedRule, { id: 2, source_id: 2, order: 2, condition: 'default', threshold: null, target_id: 8 }],
-        });
-
-        expect(screen.getByRole('group', { name: 'Advanced' })).toBeInTheDocument();
-        expect(screen.queryByText('If no rule matches, the learner continues below.')).not.toBeInTheDocument();
-    });
-
-    it('marks content that is not published', () => {
-        renderMap();
-
-        expect(screen.getByRole('button', { name: 'Wrap up (Not published)' })).toBeInTheDocument();
-    });
-
-    it('opens content when its node is clicked', async () => {
-        const user = userEvent.setup();
+    it('opens content from its node, by pointer or keyboard', () => {
         const onContentClick = renderMap();
 
-        await user.click(screen.getByRole('button', { name: 'Remedial lesson' }));
+        fireEvent.click(screen.getByText('Remedial lesson'));
+        const introNode = screen.getByText('Intro').closest('[role="button"]');
+        expect(introNode).not.toBeNull();
+        expect(introNode).toHaveAttribute('aria-label', 'Intro');
+        fireEvent.keyDown(introNode, { key: 'Enter' });
 
         expect(onContentClick).toHaveBeenCalledWith(10);
-    });
-
-    it('keeps tracks no rule reaches on the map', () => {
-        renderMap({
-            contents: [...contents, { id: 20, title: 'Draft lesson', type: 'lesson', track_id: 9, is_published: true }],
-            tracks: [remedial, { id: 9, name: 'Draft', parent_track_id: null, merge_into_id: null }],
-        });
-
-        expect(screen.getByText('Tracks no rule routes onto yet')).toBeInTheDocument();
-        const lane = screen.getByRole('group', { name: 'Draft' });
-        expect(within(lane).getByRole('button', { name: 'Draft lesson' })).toBeInTheDocument();
-        expect(within(lane).getByText('Ends the course')).toBeInTheDocument();
+        expect(onContentClick).toHaveBeenCalledWith(1);
     });
 });
