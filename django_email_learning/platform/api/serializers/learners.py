@@ -140,6 +140,56 @@ def _next_delivery(enrollment: Enrollment) -> NextDeliveryResponse | None:
     )
 
 
+class PathStepResponse(BaseModel):
+    """One content on the route a learner has taken through a course."""
+
+    course_content_id: int
+    title: str
+    type: str
+    track_id: int | None = None
+    track_name: str | None = None
+    status: str
+
+
+def learner_path(enrollment: Enrollment) -> list[PathStepResponse]:
+    """Every content `enrollment` has been sent or scheduled, in the order it reached them.
+
+    A delivery is created as the learner reaches each content, so delivery order is the route
+    they took - including the tracks a routing rule sent them down.
+    """
+    steps = []
+    deliveries = (
+        enrollment.content_deliveries.select_related(  # type: ignore[attr-defined]
+            "course_content__track",
+            "course_content__lesson",
+            "course_content__quiz",
+            "course_content__assignment",
+        )
+        .prefetch_related("delivery_schedules")
+        .order_by("id")
+    )
+    for delivery in deliveries:
+        statuses = {schedule.status for schedule in delivery.delivery_schedules.all()}
+        if DeliveryStatus.DELIVERED in statuses:
+            status = "delivered"
+        elif statuses & {DeliveryStatus.SCHEDULED, DeliveryStatus.PROCESSING}:
+            status = "scheduled"
+        else:
+            status = "not_sent"
+        content = delivery.course_content
+        steps.append(
+            PathStepResponse(
+                course_content_id=content.id,
+                title=content.title,
+                type=content.type,
+                track_id=content.track_id,
+                track_name=content.track.name if content.track else None,
+                status=status,
+            )
+        )
+    return steps
+
+
 class EnrollmentResponse(BaseModel):
     id: int
     learner: LearnerResponse
@@ -147,6 +197,8 @@ class EnrollmentResponse(BaseModel):
     status: EnrollmentStatus
     events: list[Event]
     next_delivery: NextDeliveryResponse | None = None
+    path: list[PathStepResponse] = []
+    has_branching: bool = False
 
     @staticmethod
     def from_django_model(enrollment: Enrollment) -> "EnrollmentResponse":

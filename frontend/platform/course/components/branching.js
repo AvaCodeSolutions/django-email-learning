@@ -2,9 +2,9 @@
  * Course branching, as the authoring UI sees it.
  *
  * The contents listing returns three flat lists - contents, tracks and routing rules.
- * `buildContentTree` turns them into the rows the content table renders: each track sits
- * directly under the content that routes onto it, framed by a header naming the rule and a
- * footer naming where the learner rejoins.
+ * `buildRouteTree` nests them: each track under the content that routes onto it. The course
+ * map draws that tree directly; `buildContentTree` flattens it into the rows of the content
+ * table, so both views always agree on where a track sits.
  */
 
 export const TRANSITION_CONDITIONS = ['passed', 'failed', 'score_gte', 'score_lt', 'default'];
@@ -35,19 +35,19 @@ export function errorMessageFrom(error, fallback) {
 }
 
 /**
- * The rows of the content table, in display order.
+ * The course as a tree of routes.
  *
- * - `{ kind: 'content', content, depth, isBranchPoint }`
- * - `{ kind: 'branch', track, rules, alsoFrom, depth }` - opens a track; `rules` are the ones on
- *   the content above that route here, `alsoFrom` the other contents that route here too
- * - `{ kind: 'rejoin', track, mergeContent, depth }` - closes it; `mergeContent` is null when
- *   the track ends the course
- * - `{ kind: 'unrouted', depth }` - heads the tracks no rule reaches, so they stay editable
+ * - `spine` - the main path's contents, each `{ content, isBranchPoint, rules, routes }`
+ * - a route is `{ track, rules, alsoFrom, nodes, mergeContent }`: `rules` are the ones on the
+ *   content above that route here, `alsoFrom` the other contents that route here too, `nodes`
+ *   the track's contents, `mergeContent` where it rejoins (null when it ends the course)
+ * - `unrouted` - routes for tracks no rule reaches, so they stay visible and editable
+ * - `orphans` - contents on a track the listing did not return, rather than dropping them
  *
  * A track appears once, under the first content that routes onto it. Contents keep the order
  * of the list passed in, which is what lets a drag show its new position before it is saved.
  */
-export function buildContentTree(contents, tracks = [], transitions = []) {
+export function buildRouteTree(contents, tracks = [], transitions = []) {
     const contentsByTrack = new Map();
     for (const content of contents) {
         const trackId = content.track_id ?? null;
@@ -72,30 +72,26 @@ export function buildContentTree(contents, tracks = [], transitions = []) {
         sourcesByTarget.get(rule.target_id).add(rule.source_id);
     }
 
-    const rows = [];
     const placed = new Set();
 
-    const placeTrack = (track, rules, sourceId, depth) => {
+    const routeFor = (track, rules, sourceId) => {
         placed.add(track.id);
-        const alsoFrom = [...(sourcesByTarget.get(track.id) || [])]
-            .filter((id) => id !== sourceId)
-            .map((id) => contentById.get(id))
-            .filter(Boolean);
-        rows.push({ kind: 'branch', key: `branch-${track.id}`, track, rules, alsoFrom, depth });
-        walk(track.id, depth);
-        rows.push({
-            kind: 'rejoin',
-            key: `rejoin-${track.id}`,
+        return {
             track,
+            rules,
+            alsoFrom: [...(sourcesByTarget.get(track.id) || [])]
+                .filter((id) => id !== sourceId)
+                .map((id) => contentById.get(id))
+                .filter(Boolean),
+            nodes: nodesOn(track.id),
             mergeContent: track.merge_into_id != null ? contentById.get(track.merge_into_id) ?? null : null,
-            depth,
-        });
+        };
     };
 
-    function walk(trackId, depth) {
-        for (const content of contentsByTrack.get(trackId) || []) {
+    function nodesOn(trackId) {
+        return (contentsByTrack.get(trackId) || []).map((content) => {
             const rules = rulesBySource.get(content.id) || [];
-            rows.push({ kind: 'content', key: `content-${content.id}`, content, depth, isBranchPoint: rules.length > 0 });
+            const routes = [];
             const targets = [];
             for (const rule of rules) {
                 if (!targets.includes(rule.target_id)) {
@@ -105,30 +101,64 @@ export function buildContentTree(contents, tracks = [], transitions = []) {
             for (const targetId of targets) {
                 const track = trackById.get(targetId);
                 if (track && !placed.has(targetId)) {
-                    placeTrack(track, rules.filter((rule) => rule.target_id === targetId), content.id, depth + 1);
+                    routes.push(routeFor(track, rules.filter((rule) => rule.target_id === targetId), content.id));
                 }
             }
+            return { content, isBranchPoint: rules.length > 0, rules, routes };
+        });
+    }
+
+    const spine = nodesOn(null);
+
+    const unrouted = [];
+    for (const track of tracks.filter((candidate) => !placed.has(candidate.id)).sort((a, b) => a.id - b.id)) {
+        if (!placed.has(track.id)) {
+            unrouted.push(routeFor(track, [], null));
         }
     }
 
-    walk(null, 0);
+    const orphans = [...contentsByTrack.keys()]
+        .filter((trackId) => trackId !== null && !trackById.has(trackId))
+        .flatMap((trackId) => nodesOn(trackId));
 
-    const unrouted = tracks.filter((track) => !placed.has(track.id)).sort((a, b) => a.id - b.id);
-    if (unrouted.length > 0) {
-        rows.push({ kind: 'unrouted', key: 'unrouted', depth: 0 });
-        for (const track of unrouted) {
-            if (!placed.has(track.id)) {
-                placeTrack(track, [], null, 1);
+    return { spine, unrouted, orphans };
+}
+
+/**
+ * The rows of the content table, in display order.
+ *
+ * - `{ kind: 'content', content, depth, isBranchPoint }`
+ * - `{ kind: 'branch', track, rules, alsoFrom, depth }` - opens a track
+ * - `{ kind: 'rejoin', track, mergeContent, depth }` - closes it
+ * - `{ kind: 'unrouted', depth }` - heads the tracks no rule reaches
+ */
+export function buildContentTree(contents, tracks = [], transitions = []) {
+    const { spine, unrouted, orphans } = buildRouteTree(contents, tracks, transitions);
+    const rows = [];
+
+    const pushRoute = (route, depth) => {
+        rows.push({ kind: 'branch', key: `branch-${route.track.id}`, track: route.track, rules: route.rules, alsoFrom: route.alsoFrom, depth });
+        pushNodes(route.nodes, depth);
+        rows.push({ kind: 'rejoin', key: `rejoin-${route.track.id}`, track: route.track, mergeContent: route.mergeContent, depth });
+    };
+
+    function pushNodes(nodes, depth) {
+        for (const node of nodes) {
+            rows.push({ kind: 'content', key: `content-${node.content.id}`, content: node.content, depth, isBranchPoint: node.isBranchPoint });
+            for (const route of node.routes) {
+                pushRoute(route, depth + 1);
             }
         }
     }
 
-    // Content on a track the listing did not return would otherwise vanish from the table.
-    for (const trackId of contentsByTrack.keys()) {
-        if (trackId !== null && !trackById.has(trackId)) {
-            walk(trackId, 0);
+    pushNodes(spine, 0);
+    if (unrouted.length > 0) {
+        rows.push({ kind: 'unrouted', key: 'unrouted', depth: 0 });
+        for (const route of unrouted) {
+            pushRoute(route, 1);
         }
     }
+    pushNodes(orphans, 0);
     return rows;
 }
 

@@ -22,6 +22,7 @@ import render, { useAppContext } from '../../src/render.jsx';
 import { lazy, Suspense } from "react";
 import apiClient from '../../src/apiClient.js';
 import { sanitizeEndpointUrl, sanitizeImageUrl } from '../../src/sanitizeUrl.js';
+import LearnerPath from './components/LearnerPath.jsx';
 
 const EnrollentList = lazy(() => import("./components/EnrollmentList.jsx"));
 const NextDelivery = lazy(() => import("./components/NextDelivery.jsx"));
@@ -112,6 +113,7 @@ function Learners() {
               />
             </Suspense>
           </Box>
+          {data.has_branching && <LearnerPath path={data.path} />}
           <Box sx={{ px: 2 }}>
           <Timeline>
             {data.events.map((event, index) => (

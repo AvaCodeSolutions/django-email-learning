@@ -463,6 +463,21 @@ class CourseView(BasePlatformView):
             "branching_load_failed": _("Could not load the routing rules."),
             "rule_threshold_required": _("A score rule needs a score between 0 and 100."),
             "save_track": _("Save Track"),
+            "course_view_table": _("Table"),
+            "course_view_map": _("Map"),
+            "map_no_match": _("If no rule matches, the learner continues below."),
+            "map_course_complete": _("Course complete"),
+            "not_published": _("Not published"),
+            "track_breakdown_title": _("Tracks"),
+            "track_breakdown_help": _(
+                "Learners are routed onto a track by a rule, and finish it by moving on past it"
+                " or completing the course."
+            ),
+            "track_routed": _("Routed onto it"),
+            "track_finished": _("Finished"),
+            "track_still_on": _("Still on it"),
+            "track_left": _("Left the course"),
+            "track_breakdown_load_failed": _("Could not load the track numbers."),
             "content_track": _("Track"),
             "content_track_help": _(
                 "Main path content reaches every learner. Content on a track only reaches learners a routing rule"

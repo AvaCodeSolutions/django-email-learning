@@ -87,3 +87,17 @@ class EmailOpenRateItem(BaseModel):
 
 class EmailOpenRateResponse(BaseModel):
     data: list[EmailOpenRateItem]
+
+
+class TrackBreakdownItem(BaseModel):
+    track_id: int
+    name: str
+    parent_track_id: int | None = None
+    routed: int
+    finished: int
+    still_on_track: int
+    left_course: int
+
+
+class TrackBreakdownResponse(BaseModel):
+    data: list[TrackBreakdownItem]
