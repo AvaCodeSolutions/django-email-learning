@@ -444,12 +444,14 @@ class UpdateCourseContentRequest(BaseModel):
     quiz: Optional[UpdateQuiz] = None
     assignment: Optional[AssignmentUpdate] = None
     is_published: Optional[bool] = None
+    # Present-but-null moves the content back to the main spine, so this is read through
+    # model_fields_set rather than compared against None.
+    track_id: Optional[int] = None
 
     model_config = ConfigDict(extra="forbid")
 
     @model_validator(mode="after")
     def check_at_least_one(self) -> "UpdateCourseContentRequest":
-        # Check if all fields are None
         fields = [
             self.priority,
             self.waiting_period,
@@ -458,10 +460,10 @@ class UpdateCourseContentRequest(BaseModel):
             self.assignment,
             self.is_published,
         ]
-        if not any(f is not None for f in fields):
+        if not any(f is not None for f in fields) and "track_id" not in self.model_fields_set:
             raise ValueError(
                 "At least one of 'priority', 'waiting_period', 'lesson', 'quiz',"
-                " 'assignment', or 'is_published' must be provided."
+                " 'assignment', 'is_published', or 'track_id' must be provided."
             )
         return self
 
@@ -475,6 +477,8 @@ class CourseContentResponse(BaseModel):
     quiz: Optional[QuizResponse] = None
     assignment: Optional[AssignmentResponse] = None
     is_published: bool
+    track_id: Optional[int] = None
+    is_branch_point: bool = False
 
     @field_serializer("waiting_period")
     def serialize_waiting_period(self, waiting_period: int) -> dict:
@@ -490,6 +494,7 @@ class CourseContentSummaryResponse(BaseModel):
     waiting_period: int
     is_published: bool
     type: str
+    track_id: Optional[int] = None
     limited_attempts: Optional[bool] = None
     is_blocking: Optional[bool] = None
 

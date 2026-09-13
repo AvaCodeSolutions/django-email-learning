@@ -88,3 +88,44 @@ describe('QuizForm tabs', () => {
         expect(screen.getByLabelText(/Quiz Title/)).toHaveValue('Edited title');
     });
 });
+
+describe('QuizForm branching', () => {
+    const branchingMessages = {
+        ...localeMessages,
+        quiz_tab_branching: 'Branching',
+        limited_attempts: 'Limited Attempts',
+        limited_attempts_tooltip: 'Learners get two attempts.',
+        branch_point_attempts_note: 'The first submission decides the route.',
+    };
+
+    function renderQuizForm(props = {}) {
+        window.localStorage.setItem('activeOrganizationId', '1');
+        return renderWithProviders(
+            <QuizForm cancelCallback={vi.fn()} successCallback={vi.fn()} courseId={5} {...props} />,
+            { appContext: { ...appContext, localeMessages: branchingMessages } }
+        );
+    }
+
+    it('offers a Branching tab when editing, not while creating', () => {
+        const { unmount } = renderQuizForm();
+        expect(screen.queryByRole('tab', { name: 'Branching' })).not.toBeInTheDocument();
+        unmount();
+
+        renderQuizForm({ quizId: 7, contentId: 3, initialTitle: 'Sample Quiz' });
+        expect(screen.getByRole('tab', { name: 'Branching' })).toBeInTheDocument();
+    });
+
+    it('disables limited attempts on a branch point and says why', () => {
+        renderQuizForm({ quizId: 7, contentId: 3, initialTitle: 'Sample Quiz', initialIsBlocking: true, initialIsBranchPoint: true });
+
+        expect(screen.getByLabelText('Limited Attempts')).toBeDisabled();
+        expect(screen.getByText('The first submission decides the route.')).toBeInTheDocument();
+    });
+
+    it('leaves limited attempts alone on a quiz that does not branch', () => {
+        renderQuizForm({ quizId: 7, contentId: 3, initialTitle: 'Sample Quiz', initialIsBlocking: true });
+
+        expect(screen.getByLabelText('Limited Attempts')).not.toBeDisabled();
+        expect(screen.getByText('Learners get two attempts.')).toBeInTheDocument();
+    });
+});

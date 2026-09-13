@@ -8,8 +8,9 @@ import apiClient from '../../../src/apiClient.js';
 import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 
 const QuizAnalytics = lazy(() => import('./QuizAnalytics.jsx'));
+const QuizBranching = lazy(() => import('./QuizBranching.jsx'));
 
-const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod, initialStrategy, initialDeadlineDays, initialLimitedAttempts, initialIsBlocking, initialReminderIntervalDays }) => {
+const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod, initialStrategy, initialDeadlineDays, initialLimitedAttempts, initialIsBlocking, initialReminderIntervalDays, initialIsBranchPoint = false, onBranchingChange }) => {
     const questionIdRef = useRef(0);
     const createQuestionId = () => {
         questionIdRef.current += 1;
@@ -17,6 +18,8 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     };
 
     const [activeTab, setActiveTab] = useState('questions');
+    const [branchingVisited, setBranchingVisited] = useState(false);
+    const [isBranchPoint, setIsBranchPoint] = useState(Boolean(initialIsBranchPoint));
     const [showQuestionField, setShowQuestionField] = useState(false);
     const [newQuestion, setNewQuestion] = useState("");
     const [questions, setQuestions] = useState(() => (initialQuestions || []).map((question) => ({
@@ -319,10 +322,16 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             {quizId && (
                 <Tabs
                     value={activeTab}
-                    onChange={(_, value) => setActiveTab(value)}
+                    onChange={(_, value) => {
+                        setActiveTab(value);
+                        if (value === 'branching') {
+                            setBranchingVisited(true);
+                        }
+                    }}
                     sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
                 >
                     <Tab value="questions" label={localeMessages["quiz_tab_questions"]} />
+                    <Tab value="branching" label={localeMessages["quiz_tab_branching"]} />
                     <Tab value="analytics" label={localeMessages["quiz_tab_analytics"]} />
                 </Tabs>
             )}
@@ -575,13 +584,13 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                                         <Switch
                                             checked={limitedAttempts}
                                             onChange={(e) => setLimitedAttempts(e.target.checked)}
-                                            disabled={userRole === 'viewer'}
+                                            disabled={userRole === 'viewer' || isBranchPoint}
                                         />
                                     }
                                     label={localeMessages["limited_attempts"]}
                                 />
                                 <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mt: 0.5 }}>
-                                    {localeMessages["limited_attempts_tooltip"]}
+                                    {isBranchPoint ? localeMessages["branch_point_attempts_note"] : localeMessages["limited_attempts_tooltip"]}
                                 </Typography>
                             </Box>
                         </Grid>}
@@ -597,6 +606,27 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                     </Button>}
                 </Box>
             </Box>
+            {/* Mounted on first visit and kept mounted after, like Questions: rule edits survive a
+                tab switch, and nothing is fetched until the tab is opened. */}
+            {quizId && branchingVisited && (
+                <Box role="tabpanel" sx={{ display: activeTab === 'branching' ? 'block' : 'none' }}>
+                    <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
+                        <QuizBranching
+                            courseId={courseId}
+                            contentId={contentId}
+                            onChange={(ruleCount) => {
+                                setIsBranchPoint(ruleCount > 0);
+                                onBranchingChange?.();
+                            }}
+                        />
+                    </Suspense>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', position: 'sticky', bottom: 0, backgroundColor: 'background.paper', py: 2, zIndex: 99 }}>
+                        <Button variant="outlined" sx={{ mr: 1, boxShadow: 'none' }} onClick={cancel}>
+                            {localeMessages["back"]}
+                        </Button>
+                    </Box>
+                </Box>
+            )}
             {quizId && activeTab === 'analytics' && (
                 <Box role="tabpanel">
                     <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>

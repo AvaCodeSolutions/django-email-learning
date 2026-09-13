@@ -302,6 +302,10 @@ class CourseContent(models.Model):
         return None
 
     @property
+    def is_branch_point(self) -> bool:
+        return self.transitions.exists()
+
+    @property
     def title(self) -> str:
         if self.type == CourseContentType.LESSON and self.lesson:
             return self.lesson.title

@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Optional
 
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -15,6 +16,8 @@ from pydantic import ValidationError
 from django_email_learning.decorators import accessible_for
 from django_email_learning.error_responses import log_and_conflict_response
 from django_email_learning.models import (
+    ContentTrack,
+    ContentTransition,
     Course,
     CourseContent,
     CourseContentType,
@@ -25,6 +28,7 @@ from django_email_learning.platform.api.embed_snippet import (
     build_embed_script_tag,
     build_embed_widget_tag,
 )
+from django_email_learning.platform.api.serializers import branching as branching_serializers
 from django_email_learning.public.api.views import embeddable_enrollment_enabled
 from django_email_learning.services import quiz_analytics_service
 from django_email_learning.services.command_models.send_lesson_command import (
@@ -134,7 +138,22 @@ class CourseContentView(View):
             response_list = []
             for content in course_contents:
                 response_list.append(serializers.CourseContentSummaryResponse.model_validate(content).model_dump())
-            return JsonResponse({"course_contents": response_list}, status=200)
+            tracks = course.content_tracks.order_by("id")
+            transitions = ContentTransition.objects.filter(source__course=course).order_by("source_id", "order")
+            return JsonResponse(
+                {
+                    "course_contents": response_list,
+                    "tracks": [
+                        branching_serializers.ContentTrackResponse.model_validate(track).model_dump()
+                        for track in tracks
+                    ],
+                    "transitions": [
+                        branching_serializers.ContentTransitionResponse.model_validate(transition).model_dump()
+                        for transition in transitions
+                    ],
+                },
+                status=200,
+            )
         except Course.DoesNotExist:
             return JsonResponse({"error": "Course not found"}, status=404)
 
@@ -147,6 +166,15 @@ class ReorderCourseContentView(View):
             serializer = serializers.ReorderCourseContentsRequest.model_validate(payload)
             course = Course.objects.get(id=kwargs["course_id"], organization_id=kwargs["organization_id"])
             course_contents = {content.id: content for content in course.coursecontent_set.all()}
+            # Priorities are ordered within a track, so a list spanning two tracks has no
+            # single numbering to apply.
+            scopes = {
+                course_contents[content_id].track_id
+                for content_id in serializer.ordered_content_ids
+                if content_id in course_contents
+            }
+            if len(scopes) > 1:
+                raise ValueError("Content can only be reordered within one track at a time.")
 
             with transaction.atomic():
                 # Collect valid contents and set temporary negative priorities to avoid conflicts
@@ -167,10 +195,14 @@ class ReorderCourseContentView(View):
 
                     # Final bulk update with correct priorities
                     CourseContent.objects.bulk_update(contents_to_update, ["priority"])
+                    course.validate_branching()
 
             return JsonResponse({"message": "Course contents reordered successfully"}, status=200)
         except Course.DoesNotExist:
             return JsonResponse({"error": "Course not found"}, status=404)
+        except DjangoValidationError as e:
+            # A new order that moves a merge point to or before its branch point.
+            return JsonResponse({"error": "; ".join(e.messages)}, status=409)
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
         except ValueError as e:
@@ -238,6 +270,9 @@ class SingleCourseContentView(View):
             )
         except CourseContent.DoesNotExist:
             return JsonResponse({"error": "Course content not found"}, status=404)
+        except DjangoValidationError as e:
+            # A move or edit the model or the course's routing rules refuse.
+            return JsonResponse({"error": "; ".join(e.messages)}, status=409)
         except ValidationError as e:
             return JsonResponse({"error": e.json()}, status=400)
         except ValueError as e:
@@ -245,6 +280,22 @@ class SingleCourseContentView(View):
             return JsonResponse({"error": str(e)}, status=409)
         except IntegrityError as e:
             return log_and_conflict_response(logger, e, "Saving course data")
+
+    @staticmethod
+    def _move_to_track(course_content: CourseContent, track_id: Optional[int]) -> None:
+        """Put `course_content` at the end of `track_id`, or of the main spine when None."""
+        if track_id == course_content.track_id:
+            return
+        if (
+            track_id is not None
+            and not ContentTrack.objects.filter(id=track_id, course_id=course_content.course_id).exists()
+        ):
+            raise ValueError("Track not found in this course.")
+        highest = CourseContent.objects.filter(course_id=course_content.course_id, track_id=track_id).aggregate(
+            highest=models.Max("priority")
+        )["highest"]
+        course_content.track_id = track_id
+        course_content.priority = (highest or 0) + 1
 
     @transaction.atomic
     def _update_course_content_atomic(
@@ -262,6 +313,9 @@ class SingleCourseContentView(View):
             course_content.priority = serializer.priority
         if serializer.waiting_period is not None:
             course_content.waiting_period = serializer.waiting_period.to_seconds()
+        moves_track = "track_id" in serializer.model_fields_set
+        if moves_track:
+            self._move_to_track(course_content, serializer.track_id)
 
         if serializer.is_published is not None:
             course_content.is_published = serializer.is_published
@@ -340,6 +394,8 @@ class SingleCourseContentView(View):
             quiz.save()
 
         course_content.save()
+        if moves_track:
+            course_content.course.validate_branching()
         return JsonResponse(
             serializers.CourseContentResponse.model_validate(course_content).model_dump(),
             status=200,

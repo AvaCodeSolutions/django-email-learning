@@ -402,6 +402,67 @@ class CourseView(BasePlatformView):
             "course_analytics_tab_info": _("Course analytics are shown below."),
             "quiz_tab_questions": _("Questions"),
             "quiz_tab_analytics": _("Analytics"),
+            "quiz_tab_branching": _("Branching"),
+            "add_track": _("Add Track"),
+            "new_track": _("New Track"),
+            "edit_track": _("Edit Track"),
+            "delete_track": _("Delete Track"),
+            "track_name": _("Track name"),
+            "track_name_required": _("A track needs a name."),
+            "track_branches_off": _("Branches off"),
+            "track_rejoins_at": _("Rejoins the course at"),
+            "track_form_help": _(
+                "A track is a separate path through the course. Learners reach it through a routing rule"
+                " on a quiz, and continue at the rejoin point once they have finished it."
+            ),
+            "main_path": _("Main path"),
+            "ends_the_course": _("Ends the course"),
+            "rejoins_at": _("Rejoins at TITLE"),
+            "move_to_track": _("Move to"),
+            "unrouted_tracks": _("Tracks no rule routes onto yet"),
+            "also_reached_from": _("Also reached from: SOURCES"),
+            "branch_condition_passed": _("If passed"),
+            "branch_condition_failed": _("If failed"),
+            "branch_condition_score_gte": _("If score ≥ THRESHOLD"),
+            "branch_condition_score_lt": _("If score < THRESHOLD"),
+            "branch_condition_default": _("Otherwise"),
+            "condition_passed": _("Passed"),
+            "condition_failed": _("Failed"),
+            "condition_score_gte": _("Score at least"),
+            "condition_score_lt": _("Score below"),
+            "condition_default": _("Otherwise"),
+            "branching_rules_help": _(
+                "Rules are checked from top to bottom and the first match decides where the learner goes."
+                " If no rule matches, the learner continues on their current path."
+            ),
+            "branching_no_tracks": _(
+                "This course has no tracks yet. Add a track from the course content page, then come back"
+                " to route learners onto it."
+            ),
+            "add_rule": _("Add rule"),
+            "save_rules": _("Save rules"),
+            "rules_saved": _("Routing rules saved."),
+            "rules_save_failed": _("Could not save the routing rules."),
+            "rule_condition": _("When"),
+            "rule_threshold": _("Score"),
+            "rule_target": _("Send to"),
+            "move_rule_up": _("Move rule up"),
+            "move_rule_down": _("Move rule down"),
+            "remove_rule": _("Remove rule"),
+            "branch_point_attempts_note": _(
+                "This quiz routes learners by their result: the first submission decides the route, so"
+                " attempts are not limited and there is no retry."
+            ),
+            "track_save_failed": _("Could not save the track."),
+            "track_delete_confirm": _(
+                "Delete the track TRACK? It must be empty first, and any rules routing onto it are removed too."
+            ),
+            "track_delete_failed": _("Could not delete the track."),
+            "content_move_failed": _("Could not move the content."),
+            "content_reorder_failed": _("Could not reorder the content."),
+            "branching_load_failed": _("Could not load the routing rules."),
+            "rule_threshold_required": _("A score rule needs a score between 0 and 100."),
+            "save_track": _("Save Track"),
             "quiz_analytics_load_failed": _("Unable to load quiz analytics."),
             "quiz_analytics_no_data": _(
                 "No quiz submissions have been recorded yet. Statistics appear here once learners start submitting."
