@@ -84,4 +84,81 @@ describe('layoutFlow', () => {
 
         expect(nodes.find((node) => node.id === 'track-9')).toBeUndefined();
     });
+
+    it('never overlaps two track boxes, even when tracks only add content and rejoin at the next step', () => {
+        // Spine: Intro(1), Checkpoint(2), Wrap up(3), Review(4), Final(5).
+        // Checkpoint routes onto A (three lessons) and B (one lesson), both rejoining at Wrap up - the
+        // very next main-path content, so nothing is skipped. Review routes onto C, rejoining at Final.
+        // D is nested in A, routed from A's first lesson and rejoining at A's second.
+        const spine = [lesson(1, 'Intro'), quiz(2, 'Checkpoint'), lesson(3, 'Wrap up'), quiz(4, 'Review'), lesson(5, 'Final')];
+        const onTracks = [
+            quiz(10, 'A1', 7), lesson(11, 'A2', 7), lesson(12, 'A3', 7),
+            lesson(13, 'B1', 8),
+            lesson(14, 'C1', 9), lesson(15, 'C2', 9),
+            lesson(17, 'D1', 16),
+        ];
+        const tracks = [
+            { id: 7, name: 'A', parent_track_id: null, merge_into_id: 3 },
+            { id: 8, name: 'B', parent_track_id: null, merge_into_id: 3 },
+            { id: 9, name: 'C', parent_track_id: null, merge_into_id: 5 },
+            { id: 16, name: 'D', parent_track_id: 7, merge_into_id: 11 },
+        ];
+        const nodes = layout([...spine, ...onTracks], tracks, [rule(1, 2, 7), rule(2, 2, 8), rule(3, 4, 9), rule(4, 10, 16)]);
+
+        const groups = nodes.filter((node) => node.type === 'track');
+        const ancestry = (node) => {
+            const chain = [];
+            let current = node;
+            while (current.parentId) {
+                chain.push(current.parentId);
+                current = nodes.find((candidate) => candidate.id === current.parentId);
+            }
+            return chain;
+        };
+        for (const a of groups) {
+            for (const b of groups) {
+                if (a.id >= b.id || ancestry(a).includes(b.id) || ancestry(b).includes(a.id)) {
+                    continue;
+                }
+                expect(overlaps(boxOf(nodes, a.id), boxOf(nodes, b.id)), `${a.id} overlaps ${b.id}`).toBe(false);
+            }
+        }
+        for (const id of ['content-1', 'content-2', 'content-3', 'content-4', 'content-5', 'end']) {
+            for (const group of groups) {
+                expect(overlaps(boxOf(nodes, id), boxOf(nodes, group.id)), `${id} is inside ${group.id}`).toBe(false);
+            }
+        }
+    });
+
+    it('keeps the main path in one straight column, clear of every track', () => {
+        const nodes = layout(contents, [remedial], [rule(1, 2, 7)]);
+        const spineX = ['content-1', 'content-2', 'content-4', 'content-3', 'end'].map((id) => boxOf(nodes, id).x);
+
+        expect(new Set(spineX).size).toBe(1);
+        expect(boxOf(nodes, 'track-7').x).toBeGreaterThan(spineX[0] + NODE_WIDTH);
+    });
+
+    it('lets a later track reuse a column once an earlier track has rejoined', () => {
+        // Spine: 1, Checkpoint(2), 3, Review(4), 5. A (10, 11) branches at 2 and rejoins at 3;
+        // C (14) branches at 4 and rejoins at 5, well below where A ends.
+        const nodes = layout(
+            [lesson(1, 'Intro'), quiz(2, 'Checkpoint'), lesson(3, 'Wrap up'), quiz(4, 'Review'), lesson(5, 'Final'), lesson(10, 'A1', 7), lesson(11, 'A2', 7), lesson(14, 'C1', 9)],
+            [{ id: 7, name: 'A', parent_track_id: null, merge_into_id: 3 }, { id: 9, name: 'C', parent_track_id: null, merge_into_id: 5 }],
+            [rule(1, 2, 7), rule(2, 4, 9)],
+        );
+
+        expect(boxOf(nodes, 'track-9').x).toBe(boxOf(nodes, 'track-7').x);
+        expect(overlaps(boxOf(nodes, 'track-7'), boxOf(nodes, 'track-9'))).toBe(false);
+    });
+
+    it('puts tracks from the same branch point side by side, with room between their boxes', () => {
+        const nodes = layout(
+            [lesson(1, 'Intro'), quiz(2, 'Checkpoint'), lesson(3, 'Wrap up'), lesson(10, 'A1', 7), lesson(11, 'A2', 7), lesson(13, 'B1', 8)],
+            [{ id: 7, name: 'A', parent_track_id: null, merge_into_id: 3 }, { id: 8, name: 'B', parent_track_id: null, merge_into_id: 3 }],
+            [rule(1, 2, 7), rule(2, 2, 8)],
+        );
+        const [left, right] = [boxOf(nodes, 'track-7'), boxOf(nodes, 'track-8')].sort((a, b) => a.x - b.x);
+
+        expect(right.x - (left.x + left.width)).toBeGreaterThanOrEqual(48);
+    });
 });
