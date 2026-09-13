@@ -298,4 +298,9 @@ class EmbedScriptView(View):
             return HttpResponse(status=404)
         response = HttpResponse(build_embed_script_js(), content_type="application/javascript")
         response["Cache-Control"] = "public, max-age=3600"
+        # Third-party pages may fetch this in CORS mode - a type="module"
+        # import (which bundlers like Astro emit for a plain <script src>), a
+        # crossorigin attribute, or an SRI hash - and the browser refuses the
+        # script without this header. It is public and credential-free.
+        response["Access-Control-Allow-Origin"] = "*"
         return response
