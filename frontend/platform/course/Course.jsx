@@ -532,7 +532,8 @@ function Course() {
             apiClient.post(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/reorder/`, {
                 ordered_content_ids: event.new_order
             }).then(() => {
-                console.log('Contents reordered successfully');
+                // The map and the content forms draw from the loaded structure, which still has the old order.
+                refreshContents();
             })
             .catch(error => {
                 console.error('Error reordering contents:', error);
@@ -545,6 +546,14 @@ function Course() {
             setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><DeleteContentForm content={event.content} onDelete={deletContent} onCancel={() => {setDialogOpen(false); setDialogMaxWidth('lg');}} /></Suspense>);
             setDialogMaxWidth('sm');
             setDialogOpen(true);
+        }
+        if (event.type === 'content_published') {
+            setCourseStructure((current) => ({
+                ...current,
+                contents: current.contents.map((content) => (
+                    content.id === event.content_id ? { ...content, is_published: event.is_published } : content
+                )),
+            }));
         }
         if (event.type === 'content_moved') {
             apiClient.post(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${event.content_id}/`, { track_id: event.track_id })

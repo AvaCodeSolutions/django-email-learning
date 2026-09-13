@@ -196,6 +196,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
         })
             .then(() => {
                 console.log('Publish status toggled successfully');
+                eventHandler({ type: 'content_published', content_id: contentId, is_published: is_published });
                 // Update the local state to reflect the change
                 setContentList(contentList.map(content => {
                     if (content.id === contentId) {
