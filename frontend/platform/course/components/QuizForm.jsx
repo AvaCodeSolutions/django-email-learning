@@ -6,10 +6,13 @@ import QuestionForm from './QuestionForm';
 import { useAppContext } from '../../../src/render';
 import apiClient from '../../../src/apiClient.js';
 import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
+import TrackSelect from './TrackSelect.jsx';
+import { errorMessageFrom, fromTrackValue, toTrackValue } from './branching.js';
 
 const QuizAnalytics = lazy(() => import('./QuizAnalytics.jsx'));
+const QuizBranching = lazy(() => import('./QuizBranching.jsx'));
 
-const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod, initialStrategy, initialDeadlineDays, initialLimitedAttempts, initialIsBlocking, initialReminderIntervalDays }) => {
+const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId, initialRequiredScore, initialTitle, initialQuestions, initialWaitingPeriod, initialStrategy, initialDeadlineDays, initialLimitedAttempts, initialIsBlocking, initialReminderIntervalDays, initialIsBranchPoint = false, onBranchingChange, tracks = [], initialTrackId = null }) => {
     const questionIdRef = useRef(0);
     const createQuestionId = () => {
         questionIdRef.current += 1;
@@ -17,6 +20,10 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     };
 
     const [activeTab, setActiveTab] = useState('questions');
+    const [branchingVisited, setBranchingVisited] = useState(false);
+    const [isBranchPoint, setIsBranchPoint] = useState(Boolean(initialIsBranchPoint));
+    const [trackId, setTrackId] = useState(toTrackValue(initialTrackId));
+    const [savedTrackId, setSavedTrackId] = useState(toTrackValue(initialTrackId));
     const [showQuestionField, setShowQuestionField] = useState(false);
     const [newQuestion, setNewQuestion] = useState("");
     const [questions, setQuestions] = useState(() => (initialQuestions || []).map((question) => ({
@@ -80,7 +87,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
     }
 
     const hasUnsavedChanges = () => {
-        if (!compareQuestions(questions, initialQuestions || []) || title !== initialTitle || requiredScore !== initialRequiredScoreValue || selectionStrategy !== initialStrategy || isBlocking !== initialIsBlockingValue || (isBlocking && limitedAttempts !== initialLimitedAttemptsValue) || deadlineDays !== initialDeadlineDays || hasDeadline !== initialHasDeadline || hasReminderInterval !== initialReminderEnabled || reminderIntervalDays !== initialReminderIntervalValue || waitingPeriod !== (initialWaitingPeriod ? initialWaitingPeriod.period : 1) || waitingPeriodUnit !== (initialWaitingPeriod ? initialWaitingPeriod.type : "days")) {
+        if (!compareQuestions(questions, initialQuestions || []) || title !== initialTitle || requiredScore !== initialRequiredScoreValue || selectionStrategy !== initialStrategy || isBlocking !== initialIsBlockingValue || (isBlocking && limitedAttempts !== initialLimitedAttemptsValue) || deadlineDays !== initialDeadlineDays || hasDeadline !== initialHasDeadline || hasReminderInterval !== initialReminderEnabled || reminderIntervalDays !== initialReminderIntervalValue || waitingPeriod !== (initialWaitingPeriod ? initialWaitingPeriod.period : 1) || waitingPeriodUnit !== (initialWaitingPeriod ? initialWaitingPeriod.type : "days") || trackId !== savedTrackId) {
             console.log(questions, initialQuestions, title, initialTitle, requiredScore, initialRequiredScoreValue, selectionStrategy, initialStrategy, isBlocking, initialIsBlockingValue, limitedAttempts, initialLimitedAttemptsValue, deadlineDays, initialDeadlineDays, hasReminderInterval, initialReminderEnabled, reminderIntervalDays, initialReminderIntervalValue, waitingPeriod, (initialWaitingPeriod ? initialWaitingPeriod.period : 1), waitingPeriodUnit, (initialWaitingPeriod ? initialWaitingPeriod.type : "days"));
             return true;
         }
@@ -133,13 +140,14 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             waiting_period: {
                 period: waitingPeriod,
                 type: waitingPeriodUnit
-            }
+            },
+            ...(trackId !== '' ? { track_id: fromTrackValue(trackId) } : {}),
         })
         .then(() => {
             successCallback();
         })
         .catch(error => {
-            setErrorMessage(localeMessages["error_creating_quiz"]);
+            setErrorMessage(errorMessageFrom(error, localeMessages["error_creating_quiz"]));
             console.error('Error creating quiz:', error);
         });
 
@@ -236,13 +244,15 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             waiting_period: {
                 period: waitingPeriod,
                 type: waitingPeriodUnit
-            }
+            },
+            ...(trackId !== savedTrackId ? { track_id: fromTrackValue(trackId) } : {}),
         })
         .then(() => {
+            setSavedTrackId(trackId);
             successCallback();
         })
         .catch(error => {
-            setErrorMessage(localeMessages["error_updating_quiz"]);
+            setErrorMessage(errorMessageFrom(error, localeMessages["error_updating_quiz"]));
             console.error('Error updating quiz:', error);
         });
     }
@@ -319,10 +329,16 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
             {quizId && (
                 <Tabs
                     value={activeTab}
-                    onChange={(_, value) => setActiveTab(value)}
+                    onChange={(_, value) => {
+                        setActiveTab(value);
+                        if (value === 'branching') {
+                            setBranchingVisited(true);
+                        }
+                    }}
                     sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
                 >
                     <Tab value="questions" label={localeMessages["quiz_tab_questions"]} />
+                    <Tab value="branching" label={localeMessages["quiz_tab_branching"]} />
                     <Tab value="analytics" label={localeMessages["quiz_tab_analytics"]} />
                 </Tabs>
             )}
@@ -443,6 +459,12 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                                 </Box>
                             </Tooltip>
                         </Grid>
+
+                        {tracks.length > 0 && (
+                            <Grid size={{ xs: 12, md: 6 }}>
+                                <TrackSelect tracks={tracks} value={trackId} onChange={setTrackId} disabled={userRole === 'viewer'} fullWidth />
+                            </Grid>
+                        )}
 
                         {/* Row 2: Deadline and Reminder Interval */}
                         <Grid size={{ xs: 12, md: 6 }}>
@@ -575,13 +597,13 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                                         <Switch
                                             checked={limitedAttempts}
                                             onChange={(e) => setLimitedAttempts(e.target.checked)}
-                                            disabled={userRole === 'viewer'}
+                                            disabled={userRole === 'viewer' || isBranchPoint}
                                         />
                                     }
                                     label={localeMessages["limited_attempts"]}
                                 />
                                 <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mt: 0.5 }}>
-                                    {localeMessages["limited_attempts_tooltip"]}
+                                    {isBranchPoint ? localeMessages["branch_point_attempts_note"] : localeMessages["limited_attempts_tooltip"]}
                                 </Typography>
                             </Box>
                         </Grid>}
@@ -597,6 +619,27 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
                     </Button>}
                 </Box>
             </Box>
+            {/* Mounted on first visit and kept mounted after, like Questions: rule edits survive a
+                tab switch, and nothing is fetched until the tab is opened. */}
+            {quizId && branchingVisited && (
+                <Box role="tabpanel" sx={{ display: activeTab === 'branching' ? 'block' : 'none' }}>
+                    <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
+                        <QuizBranching
+                            courseId={courseId}
+                            contentId={contentId}
+                            onChange={(ruleCount) => {
+                                setIsBranchPoint(ruleCount > 0);
+                                onBranchingChange?.();
+                            }}
+                        />
+                    </Suspense>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', position: 'sticky', bottom: 0, backgroundColor: 'background.paper', py: 2, zIndex: 99 }}>
+                        <Button variant="outlined" sx={{ mr: 1, boxShadow: 'none' }} onClick={cancel}>
+                            {localeMessages["back"]}
+                        </Button>
+                    </Box>
+                </Box>
+            )}
             {quizId && activeTab === 'analytics' && (
                 <Box role="tabpanel">
                     <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>

@@ -13,6 +13,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import PublicIcon from '@mui/icons-material/Public';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CodeIcon from '@mui/icons-material/Code';
+import AddRoadIcon from '@mui/icons-material/AddRoad';
 import { useState, useEffect, memo } from 'react';
 import { Box, Grid, Button, Dialog, DialogTitle, DialogContent, DialogActions, LinearProgress, Typography, Alert, Tabs, Tab, Badge, Link, IconButton, Tooltip, Switch, FormControlLabel, TextField, InputAdornment, GlobalStyles } from '@mui/material'
 import { useTheme } from '@mui/material/styles';
@@ -27,6 +28,7 @@ import '@melloware/coloris/dist/coloris.css';
 import EmbedCodeBlock from '../../src/components/EmbedCodeBlock.jsx';
 import { sanitizeComponentHtml } from '../../src/sanitizeHtml.js';
 import { sanitizeEndpointUrl, sanitizeUrl } from '../../src/sanitizeUrl.js';
+import { errorMessageFrom } from './components/branching.js';
 
 const CustomComponentSlot = memo(function CustomComponentSlot({ html, display }) {
   return (
@@ -42,6 +44,7 @@ const QuizForm = lazy(() => import("./components/QuizForm.jsx"));
 const LessonForm = lazy(() => import("./components/LessonForm.jsx"));
 const AssignmentForm = lazy(() => import("./components/AssignmentForm.jsx"));
 const DeleteContentForm = lazy(() => import("./components/DeleteContentForm.jsx"));
+const TrackForm = lazy(() => import("./components/TrackForm.jsx"));
 const EnableCourseSwitchPopup = lazy(() => import("../courses/components/EnableCourseSwitchPopup.jsx"));
 const CourseForm = lazy(() => import("../courses/components/CourseForm.jsx"));
 
@@ -76,6 +79,7 @@ function Course() {
     const [isWeeklyStatsLoading, setIsWeeklyStatsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('content');
     const [pendingAssignmentsCount, setPendingAssignmentsCount] = useState(0);
+    const [courseStructure, setCourseStructure] = useState({ contents: [], tracks: [] });
 
     const [pageSuccessMessage, setPageSuccessMessage] = useState('');
     const [pageErrorMessage, setPageErrorMessage] = useState('');
@@ -115,6 +119,7 @@ function Course() {
     const hasEnrollmentsChartData = !!(enrollmentsPieData && totalEnrollments > 0);
     const hasWeeklyChartData = !!(weeklyStats && weeklyStats.some((stat) => stat.count > 0));
     const canSeeSubmittedAssignments = Boolean(isInstructor);
+    const canEditBranching = userRole === 'admin' || userRole === 'editor';
 
 
     const resetDialog = () => {
@@ -397,10 +402,61 @@ function Course() {
         setDialogOpen(false);
     }
 
+    const refreshContents = () => setContentLoaded(false);
+
+    const showPageError = (message) => {
+        setPageErrorMessage(message);
+        setTimeout(() => setPageErrorMessage(''), 8000);
+    }
+
+    const closeSmallDialog = () => {
+        setDialogOpen(false);
+        setDialogMaxWidth('lg');
+    }
+
+    const openTrackForm = (track) => {
+        setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><TrackForm
+            courseId={courseId}
+            track={track}
+            tracks={courseStructure.tracks}
+            contents={courseStructure.contents}
+            cancelCallback={closeSmallDialog}
+            successCallback={() => { closeSmallDialog(); refreshContents(); }}
+        /></Suspense>);
+        setDialogMaxWidth('sm');
+        setDialogOpen(true);
+    }
+
+    const deleteTrack = (track) => {
+        closeSmallDialog();
+        apiClient.del(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/tracks/${track.id}/`)
+            .then(() => refreshContents())
+            .catch((error) => {
+                console.error('Error deleting track:', error);
+                showPageError(errorMessageFrom(error, localeMessages["track_delete_failed"]));
+            });
+    }
+
+    const confirmDeleteTrack = (track) => {
+        setDialogContent(
+            <Box sx={{ p: 3 }}>
+                <Typography variant="h2" sx={{ fontSize: '1.25rem', mb: 2 }}>{localeMessages["delete_track"] || 'Delete Track'}</Typography>
+                <Typography sx={{ mb: 3 }}>{(localeMessages["track_delete_confirm"] || 'Delete the track TRACK?').replace('TRACK', track.name)}</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                    <Button variant="outlined" onClick={closeSmallDialog}>{localeMessages["cancel"]}</Button>
+                    <Button variant="contained" color="error" onClick={() => deleteTrack(track)}>{localeMessages["delete"]}</Button>
+                </Box>
+            </Box>
+        );
+        setDialogMaxWidth('sm');
+        setDialogOpen(true);
+    }
+
     const tableEventHandler = async (event) => {
         console.log("Event triggered from ContentTable", event);
         if (event.type === 'content_loaded') {
             setContentLoaded(true);
+            setCourseStructure({ contents: event.data.course_contents || [], tracks: event.data.tracks || [] });
         }
         if (event.type === 'content_clicked') {
             setDialogOpen(false);
@@ -418,7 +474,9 @@ function Course() {
                             courseId={courseId}
                             lessonId={content.lesson.id}
                             initialWaitingPeriod={content.waiting_period}
-                            contentId={content.id} /></Suspense>);
+                            contentId={content.id}
+                            tracks={courseStructure.tracks}
+                            initialTrackId={content.track_id} /></Suspense>);
             } else if (content.type == 'quiz') {
                 console.log("Opening quiz editor for content:", content);
                 setDialogOpen(true);
@@ -437,6 +495,10 @@ function Course() {
                                 initialLimitedAttempts={content.quiz.limited_attempts}
                                 initialIsBlocking={content.quiz.is_blocking}
                                 initialReminderIntervalDays={content.quiz.reminder_interval_days}
+                                initialIsBranchPoint={content.is_branch_point}
+                                onBranchingChange={refreshContents}
+                                tracks={courseStructure.tracks}
+                                initialTrackId={content.track_id}
                                  /></Suspense>);
             } else if (content.type == 'assignment') {
                 console.log("Opening assignment editor for content:", content);
@@ -456,6 +518,8 @@ function Course() {
                                 initialRequiresFileSubmission={content.assignment.requires_file_submission}
                                 initialReminderIntervalDays={content.assignment.reminder_interval_days}
                                 initialWaitingPeriod={content.waiting_period}
+                                tracks={courseStructure.tracks}
+                                initialTrackId={content.track_id}
                                 /></Suspense>);
             }
         }
@@ -466,12 +530,31 @@ function Course() {
             }).then(() => {
                 console.log('Contents reordered successfully');
             })
-            .catch(error => console.error('Error reordering contents:', error));
+            .catch(error => {
+                console.error('Error reordering contents:', error);
+                // The table already shows the new order, so reload the one the server kept.
+                showPageError(errorMessageFrom(error, localeMessages["content_reorder_failed"]));
+                refreshContents();
+            });
         }
         if (event.type === 'delete_content') {
             setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><DeleteContentForm content={event.content} onDelete={deletContent} onCancel={() => {setDialogOpen(false); setDialogMaxWidth('lg');}} /></Suspense>);
             setDialogMaxWidth('sm');
             setDialogOpen(true);
+        }
+        if (event.type === 'content_moved') {
+            apiClient.post(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${event.content_id}/`, { track_id: event.track_id })
+                .then(() => refreshContents())
+                .catch((error) => {
+                    console.error('Error moving content:', error);
+                    showPageError(errorMessageFrom(error, localeMessages["content_move_failed"]));
+                });
+        }
+        if (event.type === 'edit_track') {
+            openTrackForm(event.track);
+        }
+        if (event.type === 'delete_track') {
+            confirmDeleteTrack(event.track);
         }
     }
 
@@ -697,26 +780,30 @@ function Course() {
                     {activeTab === 'content' && (
                         <>
                             <Box sx={{ px: 1, display: 'flex', flexDirection: {xs:'column', md: 'row'}, flexWrap: { md: 'wrap' }, alignItems: { xs: 'stretch', md: 'flex-start' }, pb: 2, width: '100%', '& > .MuiButton-root': { flex: { md: '0 0 auto' } } }}>
-                                {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon />} sx={{ marginBottom: {xs: 1, md: 2}, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
+                                {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon />} disabled={!contentLoaded} sx={{ marginBottom: {xs: 1, md: 2}, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
                                 setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><LessonForm
                                     header={localeMessages["new_lesson"]}
                                     cancelCallback={() => setDialogOpen(false)}
                                     successCallback={() => setContentLoaded(false)}
-                                    courseId={courseId} /></Suspense>);
+                                    courseId={courseId}
+                                    tracks={courseStructure.tracks} /></Suspense>);
                                 setDialogOpen(true);}}>{localeMessages["add_lesson"]}</Button>
-                            <Button variant="contained" startIcon={<BallotIcon />} sx={{ marginBottom: {xs: 1, md: 2}, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
+                            <Button variant="contained" startIcon={<BallotIcon />} disabled={!contentLoaded} sx={{ marginBottom: {xs: 1, md: 2}, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
                                 setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><QuizForm
                                     cancelCallback={() => setDialogOpen(false)}
                                     successCallback={resetDialog}
-                                    courseId={courseId} /></Suspense>);
+                                    courseId={courseId}
+                                    tracks={courseStructure.tracks} /></Suspense>);
                                 setDialogOpen(true);}}>{localeMessages["add_quiz"]}</Button>
-                            <Button variant="contained" startIcon={<AssignmentIcon />} sx={{ marginBottom: 2, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
+                            <Button variant="contained" startIcon={<AssignmentIcon />} disabled={!contentLoaded} sx={{ marginBottom: 2, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
                                 setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><AssignmentForm
                                     header={localeMessages["new_assignment"]}
                                     cancelCallback={() => setDialogOpen(false)}
                                     successCallback={resetDialog}
-                                    courseId={courseId} /></Suspense>);
+                                    courseId={courseId}
+                                    tracks={courseStructure.tracks} /></Suspense>);
                                 setDialogOpen(true);}}>{localeMessages["add_assignment"]}</Button>
+                            {canEditBranching && <Button variant="outlined" startIcon={<AddRoadIcon />} disabled={!contentLoaded} sx={{ marginBottom: 2, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => openTrackForm(null)}>{localeMessages["add_track"] || 'Add Track'}</Button>}
                             {customComponent && <CustomComponentSlot html={customComponent.html} display={customComponent.container_display} />}
                             {userRole === 'admin' && <Box sx={{ marginInlineStart: { xs: 0, md: 'auto' }, alignSelf: { xs: 'stretch', md: 'flex-start' } }}><EnrollMenu successCallback={handleEnrollMenuSuccess} courseEnabled={courseEnabled} /></Box>}
                             </> }

@@ -99,3 +99,85 @@ describe('ContentTable', () => {
     );
   });
 });
+
+describe('ContentTable branching', () => {
+  const branchingMessages = {
+    ...localeMessages,
+    rejoins_at: 'Rejoins at TITLE',
+    ends_the_course: 'Ends the course',
+    branch_condition_failed: 'If failed',
+    move_to_track: 'Move to',
+    main_path: 'Main path',
+    edit_track: 'Edit Track',
+    delete_track: 'Delete Track',
+    quiz_tab_branching: 'Branching',
+  };
+
+  const structure = {
+    course_contents: [
+      { id: 1, title: 'Intro', type: 'lesson', track_id: null, waiting_period: null, is_published: true },
+      { id: 10, title: 'Remedial lesson', type: 'lesson', track_id: 7, waiting_period: null, is_published: true },
+      { id: 2, title: 'Checkpoint', type: 'quiz', track_id: null, waiting_period: null, is_published: true, is_blocking: true, limited_attempts: true },
+      { id: 3, title: 'Wrap up', type: 'lesson', track_id: null, waiting_period: null, is_published: true },
+    ],
+    tracks: [{ id: 7, name: 'Remedial', parent_track_id: null, merge_into_id: 3 }],
+    transitions: [{ id: 1, source_id: 2, order: 1, condition: 'failed', threshold: null, target_id: 7 }],
+  };
+
+  const renderTable = (role = 'editor', eventHandler = vi.fn()) => {
+    global.fetch.mockResolvedValue({ ok: true, json: () => Promise.resolve(structure) });
+    renderWithProviders(
+      <ContentTable courseId="5" eventHandler={eventHandler} />,
+      { appContext: { localeMessages: branchingMessages, userRole: role } }
+    );
+    return eventHandler;
+  };
+
+  it('renders a track under the quiz that routes onto it', async () => {
+    renderTable();
+    await screen.findByText('Remedial lesson');
+
+    const rowTexts = screen.getAllByRole('row').map((row) => row.textContent);
+    const position = (text) => rowTexts.findIndex((rowText) => rowText.includes(text));
+    expect(position('Checkpoint')).toBeLessThan(position('If failed'));
+    expect(position('If failed')).toBeLessThan(position('Remedial lesson'));
+    expect(position('Remedial lesson')).toBeLessThan(position('Rejoins at Wrap up'));
+  });
+
+  it('marks a branch point instead of showing its attempt limit', async () => {
+    renderTable();
+    await screen.findByText('Remedial lesson');
+
+    expect(screen.queryByText('2 Attempts')).not.toBeInTheDocument();
+    expect(screen.getByText('Branching')).toBeInTheDocument();
+  });
+
+  it('moves content onto a track from the row menu', async () => {
+    const user = userEvent.setup();
+    const eventHandler = renderTable();
+    await screen.findByText('Remedial lesson');
+
+    await user.click(screen.getAllByRole('button', { name: 'Move to: Intro' })[0]);
+    await user.click(screen.getByRole('menuitem', { name: 'Remedial' }));
+
+    expect(eventHandler).toHaveBeenCalledWith({ type: 'content_moved', content_id: 1, track_id: 7 });
+  });
+
+  it('opens a track for editing from its header', async () => {
+    const user = userEvent.setup();
+    const eventHandler = renderTable();
+    await screen.findByText('Remedial lesson');
+
+    await user.click(screen.getByRole('button', { name: 'Edit Track: Remedial' }));
+
+    expect(eventHandler).toHaveBeenCalledWith(expect.objectContaining({ type: 'edit_track', track: expect.objectContaining({ id: 7 }) }));
+  });
+
+  it('hides the authoring controls from a viewer', async () => {
+    renderTable('viewer');
+    await screen.findByText('Remedial lesson');
+
+    expect(screen.queryByRole('button', { name: 'Edit Track: Remedial' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Move to: Intro' })).not.toBeInTheDocument();
+  });
+});

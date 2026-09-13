@@ -250,6 +250,14 @@ class ContentTrack(models.Model):
             raise ValidationError(
                 gettext("Cannot delete a track that still has content. Move or delete the content first.")
             )
+        if self.child_tracks.exists():
+            raise ValidationError(
+                gettext("Cannot delete a track that still has nested tracks. Delete or move them first.")
+            )
+        if self.incoming_transitions.exists():
+            raise ValidationError(
+                gettext("Cannot delete a track that routing rules still point to. Remove or retarget the rules first.")
+            )
         return super().delete(*args, **kwargs)
 
 
@@ -300,6 +308,10 @@ class CourseContent(models.Model):
         elif self.type == CourseContentType.ASSIGNMENT and self.assignment:
             return self.assignment.reminder_interval_days
         return None
+
+    @property
+    def is_branch_point(self) -> bool:
+        return self.transitions.exists()
 
     @property
     def title(self) -> str:

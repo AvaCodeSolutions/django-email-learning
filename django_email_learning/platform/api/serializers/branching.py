@@ -42,3 +42,15 @@ class CreateContentTransitionRequest(BaseModel):
     condition: TransitionCondition
     threshold: Optional[int] = Field(default=None, ge=0, le=100)
     target_id: int
+
+
+class TransitionRule(BaseModel):
+    condition: TransitionCondition
+    threshold: Optional[int] = Field(default=None, ge=0, le=100)
+    target_id: int
+
+
+class ReplaceContentTransitionsRequest(BaseModel):
+    """The whole rule set for one content, in evaluation order."""
+
+    transitions: list[TransitionRule]

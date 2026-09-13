@@ -46,6 +46,10 @@ const localeMessages = {
   type: 'Type',
   published: 'Published',
   actions: 'Actions',
+  add_lesson: 'Add Lesson',
+  add_quiz: 'Add Quiz',
+  add_assignment: 'Add Assignment',
+  add_track: 'Add Track',
 };
 
 const baseAppContext = {
@@ -145,6 +149,35 @@ describe('Course', () => {
       appContext: { ...baseAppContext, courseEnabled: true },
     });
     expect(screen.getByText(localeMessages.total_enrollments)).toBeInTheDocument();
+  });
+
+  it('keeps the authoring buttons disabled until the content structure loads', async () => {
+    let resolveContents;
+    const contentsPromise = new Promise((resolve) => {
+      resolveContents = resolve;
+    });
+    global.fetch.mockImplementation((url) => {
+      if (url.includes('/contents')) {
+        return contentsPromise;
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+
+    renderWithProviders(<Course />, {
+      appContext: { ...baseAppContext, courseEnabled: true },
+    });
+
+    expect(screen.getByRole('button', { name: 'Add Lesson' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Add Quiz' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Add Assignment' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Add Track' })).toBeDisabled();
+
+    resolveContents({ ok: true, json: () => Promise.resolve({ course_contents: [], tracks: [], transitions: [] }) });
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add Lesson' })).toBeEnabled());
+    expect(screen.getByRole('button', { name: 'Add Quiz' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Add Assignment' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Add Track' })).toBeEnabled();
   });
 
   describe('"Add to your site" embed button', () => {
