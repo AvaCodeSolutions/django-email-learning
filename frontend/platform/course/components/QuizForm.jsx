@@ -462,7 +462,7 @@ const QuizForm = ({cancelCallback, successCallback, courseId, quizId, contentId,
 
                         {tracks.length > 0 && (
                             <Grid size={{ xs: 12, md: 6 }}>
-                                <TrackSelect tracks={tracks} value={trackId} onChange={setTrackId} disabled={userRole === 'viewer'} sx={{ width: '100%' }} />
+                                <TrackSelect tracks={tracks} value={trackId} onChange={setTrackId} disabled={userRole === 'viewer'} fullWidth />
                             </Grid>
                         )}
 

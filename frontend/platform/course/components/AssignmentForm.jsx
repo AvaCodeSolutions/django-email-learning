@@ -345,8 +345,8 @@ const AssignmentForm = ({
                     </Grid>
 
                     {tracks.length > 0 && (
-                        <Grid size={{ xs: 12 }}>
-                            <TrackSelect tracks={tracks} value={trackId} onChange={setTrackId} />
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <TrackSelect tracks={tracks} value={trackId} onChange={setTrackId} fullWidth />
                         </Grid>
                     )}
 
