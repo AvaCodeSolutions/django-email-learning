@@ -1,6 +1,14 @@
 import pytest
 
-from django_email_learning.models import ContentTrack, Course, CourseContent, Lesson
+from django_email_learning.models import (
+    ContentTrack,
+    ContentTransition,
+    Course,
+    CourseContent,
+    Lesson,
+    QuizOutcome,
+    TransitionCondition,
+)
 from django_email_learning.services.content_sequence_service import first_content, next_content
 
 
@@ -231,3 +239,114 @@ def test_first_content_never_starts_on_a_track(db, course, branch, lessons):
         spine_content.save()
 
     assert first_content(course) is None
+
+
+@pytest.fixture
+def branch_point(db, course, lessons, quiz):
+    """A quiz at spine priority 5, after the four lessons the `lessons` fixture publishes."""
+    return CourseContent.objects.create(
+        course=course, priority=5, type="quiz", quiz=quiz, waiting_period=60, is_published=True
+    )
+
+
+@pytest.fixture
+def after_branch(db, course, branch_point):
+    """Spine content at priority 6, where a track branching at the quiz can rejoin."""
+    lesson = Lesson.objects.create(title="Wrap up", content="...")
+    return CourseContent.objects.create(
+        course=course, priority=6, type="lesson", lesson=lesson, waiting_period=60, is_published=True
+    )
+
+
+def track_with_contents(course, name, count, merge_into=None, published=True):
+    track = ContentTrack.objects.create(course=course, name=name, merge_into=merge_into)
+    contents = []
+    for priority in range(1, count + 1):
+        lesson = Lesson.objects.create(title=f"{name} {priority}", content="...")
+        contents.append(
+            CourseContent.objects.create(
+                course=course,
+                track=track,
+                priority=priority,
+                type="lesson",
+                lesson=lesson,
+                waiting_period=60,
+                is_published=published,
+            )
+        )
+    return track, contents
+
+
+def test_an_outcome_routes_onto_the_matching_track(db, course, branch_point):
+    passed_track, passed_contents = track_with_contents(course, "Advanced", 2)
+    failed_track, failed_contents = track_with_contents(course, "Remedial", 2)
+    ContentTransition.objects.create(
+        source=branch_point, order=1, condition=TransitionCondition.PASSED, target=passed_track
+    )
+    ContentTransition.objects.create(
+        source=branch_point, order=2, condition=TransitionCondition.FAILED, target=failed_track
+    )
+
+    assert next_content(branch_point, outcome=QuizOutcome(score=90, passed=True)) == passed_contents[0]
+    assert next_content(branch_point, outcome=QuizOutcome(score=10, passed=False)) == failed_contents[0]
+
+
+def test_the_first_matching_rule_wins(db, course, branch_point):
+    high, high_contents = track_with_contents(course, "High", 1)
+    any_score, any_contents = track_with_contents(course, "Any", 1)
+    ContentTransition.objects.create(
+        source=branch_point, order=1, condition=TransitionCondition.SCORE_GTE, threshold=80, target=high
+    )
+    ContentTransition.objects.create(
+        source=branch_point, order=2, condition=TransitionCondition.DEFAULT, target=any_score
+    )
+
+    assert next_content(branch_point, outcome=QuizOutcome(score=95, passed=True)) == high_contents[0]
+    assert next_content(branch_point, outcome=QuizOutcome(score=20, passed=False)) == any_contents[0]
+
+
+def test_an_unmatched_outcome_falls_through_to_the_linear_walk(db, course, branch_point, after_branch):
+    """A rule set with no default leaves the learner on their current track."""
+    high, _ = track_with_contents(course, "High", 1)
+    ContentTransition.objects.create(
+        source=branch_point, order=1, condition=TransitionCondition.SCORE_GTE, threshold=80, target=high
+    )
+
+    assert next_content(branch_point, outcome=QuizOutcome(score=10, passed=False)) == after_branch
+
+
+def test_content_without_rules_ignores_an_outcome(db, lessons):
+    assert next_content(lessons[0], outcome=QuizOutcome(score=90, passed=True)) == lessons[1]
+
+
+def test_rules_are_ignored_without_an_outcome(db, course, branch_point, after_branch):
+    """A deadline passing or the inactivity job stepping along must not route anyone."""
+    high, _ = track_with_contents(course, "High", 1)
+    ContentTransition.objects.create(source=branch_point, order=1, condition=TransitionCondition.DEFAULT, target=high)
+
+    assert next_content(branch_point) == after_branch
+
+
+def test_routing_skips_unpublished_content_at_the_head_of_a_track(db, course, branch_point):
+    track, contents = track_with_contents(course, "Advanced", 3)
+    contents[0].is_published = False
+    contents[0].save()
+    ContentTransition.objects.create(source=branch_point, order=1, condition=TransitionCondition.DEFAULT, target=track)
+
+    assert next_content(branch_point, outcome=QuizOutcome(score=90, passed=True)) == contents[1]
+
+
+def test_routing_onto_an_empty_track_lands_on_its_merge_point(db, course, branch_point, after_branch):
+    empty = ContentTrack.objects.create(course=course, name="Empty", merge_into=after_branch)
+    ContentTransition.objects.create(source=branch_point, order=1, condition=TransitionCondition.DEFAULT, target=empty)
+
+    assert next_content(branch_point, outcome=QuizOutcome(score=90, passed=True)) == after_branch
+
+
+def test_routing_onto_a_terminal_track_ends_the_course(db, course, branch_point):
+    terminal = ContentTrack.objects.create(course=course, name="Terminal")
+    ContentTransition.objects.create(
+        source=branch_point, order=1, condition=TransitionCondition.DEFAULT, target=terminal
+    )
+
+    assert next_content(branch_point, outcome=QuizOutcome(score=10, passed=False)) is None

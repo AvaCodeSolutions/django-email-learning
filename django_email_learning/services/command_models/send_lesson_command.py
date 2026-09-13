@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
@@ -42,10 +42,13 @@ class SendLessonCommand(AbstractCommand):
             learner__email=self.email,
             status=EnrollmentStatus.ACTIVE,
         ).first()
+        # None on a branching course, where the template renders no bar rather than a
+        # percentage of a path not every learner walks.
+        progress: Optional[int]
         if not enrollment:
             progress = 0
         else:
-            progress = enrollment.progress_percentage(extra_delivered=1)
+            progress = enrollment.learner_progress_percentage(extra_delivered=1)
         next_content = content.get_next()
 
         conf = settings.DJANGO_EMAIL_LEARNING

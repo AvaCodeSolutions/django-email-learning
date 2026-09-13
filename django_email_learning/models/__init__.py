@@ -4,11 +4,14 @@ from .course_contents import (
     Answer,
     Assignment,
     ContentTrack,
+    ContentTransition,
     CourseContent,
     Lesson,
     Question,
     Quiz,
+    QuizOutcome,
     QuizSelectionStrategy,
+    TransitionCondition,
 )
 from .courses import Course, CourseInstructor, ExternalReference
 from .deliveries import ContentDelivery, DeliverySchedule

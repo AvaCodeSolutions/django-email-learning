@@ -253,9 +253,12 @@ def test_bulk_progress_percentages_query_count_is_constant(
 ):
     """
     Regression test for the N+1 that made analytics pages slow: computing
-    progress via the per-enrollment progress_percentage() issues 2 queries per
-    enrollment, so it scaled linearly with enrollment count. bulk_progress_percentages
-    must stay at a fixed 2 queries no matter how many enrollments are passed in.
+    progress via the per-enrollment progress_percentage() issues a fixed number of
+    queries per enrollment, so it scaled linearly with enrollment count.
+    bulk_progress_percentages must stay at a fixed query count no matter how many
+    enrollments are passed in - one each for the course's content and tracks, which
+    together let every enrollment's remaining path be walked in memory, one for the
+    delivered counts and one for the deliveries themselves.
     """
     enrollments = [
         Enrollment.objects.create(
@@ -266,5 +269,40 @@ def test_bulk_progress_percentages_query_count_is_constant(
         for i in range(5)
     ]
 
-    with django_assert_num_queries(2):
+    with django_assert_num_queries(4):
+        Enrollment.bulk_progress_percentages(enrollments)
+
+
+def test_bulk_progress_percentages_query_count_is_constant_when_branched(
+    db, course, course_lesson_content, django_assert_num_queries
+):
+    """Branching costs no extra queries, and still does not scale with enrollments.
+
+    Each learner is measured against their own path, walked in memory from the course
+    shape loaded once - so the count has to stay flat while the number of distinct paths
+    grows. Five enrollments across five different tracks.
+    """
+    from django_email_learning.models import ContentDelivery, ContentTrack, CourseContent, Lesson
+
+    enrollments = []
+    for i in range(5):
+        track = ContentTrack.objects.create(course=course, name=f"Track {i}")
+        on_track = CourseContent.objects.create(
+            course=course,
+            track=track,
+            priority=1,
+            type="lesson",
+            lesson=Lesson.objects.create(title=f"Track {i} lesson", content="..."),
+            waiting_period=60,
+            is_published=True,
+        )
+        enrollment = Enrollment.objects.create(
+            learner=Learner.objects.create(email=f"branched{i}@example.com", organization_id=1),
+            course=course,
+            status=EnrollmentStatus.ACTIVE,
+        )
+        ContentDelivery.objects.create(enrollment=enrollment, course_content=on_track)
+        enrollments.append(enrollment)
+
+    with django_assert_num_queries(4):
         Enrollment.bulk_progress_percentages(enrollments)

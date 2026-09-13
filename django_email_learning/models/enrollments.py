@@ -1,6 +1,7 @@
 import logging
 import random
 from datetime import datetime, timedelta
+from typing import Optional
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -16,7 +17,6 @@ from django_email_learning.services.email_sender_service import email_sender_ser
 from django_email_learning.services.metrics_service import metric_service
 from django_email_learning.services.utils import get_private_file_storage, resolve_private_or_public_file_url
 
-from .course_contents import CourseContent
 from .courses import Course
 from .enums.deactivation_reason import DeactivationReason
 from .enums.delivery_status import DeliveryStatus
@@ -255,8 +255,80 @@ class Enrollment(models.Model):
         else:
             raise ValidationError("No published content available to schedule.")
 
-    def progress_percentage(self, extra_delivered: int = 0) -> int:
-        total_content = self.course.coursecontent_set.filter(is_published=True).count()
+    def has_branched(self) -> bool:
+        """Whether this enrollment has been routed onto a `ContentTrack`."""
+        return self.content_deliveries.filter(course_content__track__isnull=False).exists()
+
+    def entered_track_ids(self) -> set[int]:
+        """The tracks this enrollment has been routed onto."""
+        return set(
+            self.content_deliveries.filter(course_content__track__isnull=False)
+            .values_list("course_content__track_id", flat=True)
+            .distinct()
+        )
+
+    def learner_progress_percentage(self, extra_delivered: int = 0) -> Optional[int]:
+        """Progress as the learner is shown it, or None when the course branches at all.
+
+        A percentage only means "how much of this course is behind you" while every
+        learner walks the same content. Once a course routes anyone, it does not: the
+        length of the path depends on the answers given, so no total is right for
+        everyone, including the learners who happen to take the straight line through it.
+
+        So this is decided by the course, not by the enrollment - every learner on a
+        branching course is shown no percentage, from their first email to their last. A
+        bar that is simply absent reads as a course that does not track progress; one that
+        vanishes halfway through, which is what a per-enrollment rule would produce, reads
+        as a bug.
+        """
+        if self.course.has_branching():
+            return None
+        total_content = self.course.coursecontent_set.filter(is_published=True, track__isnull=True).count()
+        if total_content == 0:
+            return 0
+        delivered_content = (
+            self.content_deliveries.filter(
+                delivery_schedules__status=DeliveryStatus.DELIVERED,
+                course_content__is_published=True,
+                course_content__track__isnull=True,
+            )
+            .distinct()
+            .count()
+        )
+        return int(((delivered_content + extra_delivered) / total_content) * 100)
+
+    def progress_percentage(self) -> int:
+        """Progress as the platform reports it: delivered content over this learner's path.
+
+        The path is what this learner has actually been sent plus what is still ahead of
+        them, projected from where they stand on the assumption that they do not branch
+        again. Counting the whole course instead would charge a branched learner for the
+        content their route skipped, and they would finish at 75% - or lower still off a
+        track that ends the course early.
+
+        It moves when they are routed, because their path genuinely changes length: down
+        onto a longer remedial track, up through a shortcut past content they no longer
+        need. That is a real thing to know about a learner, which is why it is reported
+        here and not to the learner themselves - "56%, down from 71% when they were routed
+        onto remediation" answers an operator's question and would only demoralise the
+        person sitting the course. See `learner_progress_percentage` for their side.
+        """
+        from django_email_learning.services.content_sequence_service import CoursePath
+
+        path = CoursePath.for_courses({self.course_id})[self.course_id]
+        reached = list(
+            self.content_deliveries.filter(course_content__is_published=True)
+            .order_by("id")
+            .values_list("course_content_id", flat=True)
+        )
+        furthest = self.content_deliveries.order_by("-id").first()
+
+        if furthest is None:
+            first = path.first()
+            total_content = 0 if first is None else 1 + path.remaining_after(first)
+        else:
+            total_content = len(set(reached)) + path.remaining_after(furthest.course_content)
+
         if total_content == 0:
             return 0
         delivered_content = (
@@ -267,20 +339,24 @@ class Enrollment(models.Model):
             .distinct()
             .count()
         )
-
-        progress = int(((delivered_content + extra_delivered) / total_content) * 100)
-        return progress
+        return int((delivered_content / total_content) * 100)
 
     @classmethod
     def bulk_progress_percentages(cls, enrollments: "list[Enrollment]") -> dict[int, int]:
         """
-        Same result as calling progress_percentage() on each enrollment, but in 2
-        queries total instead of 2 queries per enrollment. progress_percentage()
+        Same result as calling progress_percentage() on each enrollment, but in a fixed
+        number of queries instead of that number per enrollment. progress_percentage()
         always hits the DB itself (it doesn't use prefetched querysets), so any
         caller iterating over more than a handful of enrollments should use this
         instead — see AverageProgressView and DownloadLearnerProgressView for the
         intended usage.
+
+        Each learner is measured against their own path, so the per-enrollment walk is
+        unavoidable - but `CoursePath` holds the course's shape in memory, so it costs
+        CPU over a few dozen contents rather than a query.
         """
+        from django_email_learning.services.content_sequence_service import CoursePath
+
         from .deliveries import ContentDelivery
 
         enrollments = list(enrollments)
@@ -288,12 +364,7 @@ class Enrollment(models.Model):
             return {}
 
         course_ids = {enrollment.course_id for enrollment in enrollments}
-        total_content_by_course = dict(
-            CourseContent.objects.filter(course_id__in=course_ids, is_published=True)
-            .values("course_id")
-            .annotate(total=models.Count("id"))
-            .values_list("course_id", "total")
-        )
+        paths = CoursePath.for_courses(course_ids)
 
         enrollment_ids = [enrollment.id for enrollment in enrollments]
         delivered_by_enrollment = dict(
@@ -307,14 +378,34 @@ class Enrollment(models.Model):
             .values_list("enrollment_id", "count")
         )
 
-        result = {}
+        reached: dict[int, set[int]] = {}
+        furthest_content_id: dict[int, int] = {}
+        for enrollment_id, content_id, is_published in (
+            ContentDelivery.objects.filter(enrollment_id__in=enrollment_ids)
+            .order_by("id")
+            .values_list("enrollment_id", "course_content_id", "course_content__is_published")
+        ):
+            # Ordered by id, so the last row for an enrollment is where it stands now.
+            furthest_content_id[enrollment_id] = content_id
+            if is_published:
+                reached.setdefault(enrollment_id, set()).add(content_id)
+
+        result: dict[int, int] = {}
         for enrollment in enrollments:
-            total_content = total_content_by_course.get(enrollment.course_id, 0)
+            path = paths[enrollment.course_id]
+            standing_on_id = furthest_content_id.get(enrollment.id)
+            if standing_on_id is None:
+                first = path.first()
+                total_content = 0 if first is None else 1 + path.remaining_after(first)
+            else:
+                standing_on = path.content(standing_on_id)
+                total_content = len(reached.get(enrollment.id, set()))
+                if standing_on is not None:
+                    total_content += path.remaining_after(standing_on)
             if not total_content:
                 result[enrollment.id] = 0
                 continue
-            delivered_content = delivered_by_enrollment.get(enrollment.id, 0)
-            result[enrollment.id] = int((delivered_content / total_content) * 100)
+            result[enrollment.id] = int((delivered_by_enrollment.get(enrollment.id, 0) / total_content) * 100)
         return result
 
 
