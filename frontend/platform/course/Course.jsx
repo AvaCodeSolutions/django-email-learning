@@ -831,6 +831,7 @@ function Course() {
                                         tracks={courseStructure.tracks}
                                         transitions={courseStructure.transitions}
                                         onContentClick={(contentId) => tableEventHandler({ type: 'content_clicked', content_id: contentId })}
+                                        onTrackClick={canEditBranching ? openTrackForm : undefined}
                                     />
                                 </Suspense>
                             )}

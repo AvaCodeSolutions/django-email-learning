@@ -120,7 +120,30 @@ function TrackGroupNode({ data }) {
         >
             <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
                 <AltRouteIcon sx={{ fontSize: 16, color: data.color }} />
-                <Typography variant="caption" sx={{ fontWeight: 700, color: data.color }}>{data.track.name}</Typography>
+                {data.onOpen ? (
+                    <Typography
+                        component="button"
+                        type="button"
+                        variant="caption"
+                        className="nodrag nopan"
+                        aria-label={`${localeMessages['edit_track'] || 'Edit Track'}: ${data.track.name}`}
+                        onClick={data.onOpen}
+                        sx={{
+                            pointerEvents: 'auto',
+                            p: 0,
+                            border: 0,
+                            background: 'none',
+                            cursor: 'pointer',
+                            fontWeight: 700,
+                            color: data.color,
+                            '&:hover, &:focus-visible': { textDecoration: 'underline', outline: 'none' },
+                        }}
+                    >
+                        {data.track.name}
+                    </Typography>
+                ) : (
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: data.color }}>{data.track.name}</Typography>
+                )}
                 {data.unreached && (
                     <Chip size="small" color="warning" variant="outlined" label={localeMessages['map_unreached'] || 'No rule routes here'} sx={{ height: 18, fontSize: '0.65rem' }} />
                 )}
@@ -172,24 +195,35 @@ function styleEdge(edge, { theme, localeMessages, trackColors }) {
 /**
  * A read-only map of the course: every content as a node and every move a learner can make as
  * an arrow - down the path, onto a track a rule selects, and back to where a track rejoins. Each
- * track is a box around its content, so anything outside every box is on the main path.
+ * track is a box around its content, so anything outside every box is on the main path. When
+ * `onTrackClick` is given, a track's name opens that track too.
  * Clicking a node opens the content, as a row of the content table does.
  */
-const CourseMap = ({ contents = [], tracks = [], transitions = [], onContentClick }) => {
+const CourseMap = ({ contents = [], tracks = [], transitions = [], onContentClick, onTrackClick }) => {
     const { localeMessages } = useAppContext();
     const theme = useTheme();
-    // Read through a ref so a new callback from the parent does not lay the graph out again.
+    // Read through refs so a new callback from the parent does not lay the graph out again.
     const openRef = useRef(onContentClick);
+    const openTrackRef = useRef(onTrackClick);
     useEffect(() => {
         openRef.current = onContentClick;
+        openTrackRef.current = onTrackClick;
     });
+    const canOpenTracks = Boolean(onTrackClick);
 
     const { nodes, edges } = useMemo(() => {
         const trackColors = new Map(tracks.map((track, index) => [track.id, TRACK_COLORS[index % TRACK_COLORS.length]]));
         const graph = buildFlowGraph(contents, tracks, transitions);
         const positioned = layoutFlow(graph.nodes, graph.edges, graph.groups).map((node) => {
             if (node.type === 'track') {
-                return { ...node, data: { ...node.data, color: trackColors.get(node.data.track.id) } };
+                return {
+                    ...node,
+                    data: {
+                        ...node.data,
+                        color: trackColors.get(node.data.track.id),
+                        onOpen: canOpenTracks ? () => openTrackRef.current?.(node.data.track) : undefined,
+                    },
+                };
             }
             if (node.type === 'content') {
                 return {
@@ -207,7 +241,7 @@ const CourseMap = ({ contents = [], tracks = [], transitions = [], onContentClic
             nodes: positioned,
             edges: graph.edges.map((edge) => styleEdge(edge, { theme, localeMessages, trackColors })),
         };
-    }, [contents, tracks, transitions, theme, localeMessages]);
+    }, [contents, tracks, transitions, theme, localeMessages, canOpenTracks]);
 
     return (
         <Box

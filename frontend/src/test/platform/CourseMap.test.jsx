@@ -44,6 +44,7 @@ const localeMessages = {
     map_unreached: 'No rule routes here',
     map_course_complete: 'Course complete',
     course_view_map: 'Map',
+    edit_track: 'Edit Track',
 };
 
 const contents = [
@@ -92,5 +93,23 @@ describe('CourseMap', () => {
 
         expect(onContentClick).toHaveBeenCalledWith(10);
         expect(onContentClick).toHaveBeenCalledWith(1);
+    });
+
+    it('opens a track for editing from its name', () => {
+        const onTrackClick = vi.fn();
+        renderMap({ onTrackClick });
+
+        const trackName = screen.getByText('Remedial').closest('button');
+        expect(trackName).not.toBeNull();
+        expect(trackName).toHaveAttribute('aria-label', 'Edit Track: Remedial');
+        fireEvent.click(trackName);
+
+        expect(onTrackClick).toHaveBeenCalledWith(expect.objectContaining({ id: 7, name: 'Remedial' }));
+    });
+
+    it('shows the track name as plain text when tracks cannot be edited', () => {
+        renderMap();
+
+        expect(screen.getByText('Remedial').closest('button')).toBeNull();
     });
 });
