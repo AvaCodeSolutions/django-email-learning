@@ -230,3 +230,27 @@ function packBands(bands, startColumn) {
     }
     return offsets;
 }
+
+/** The area the laid-out map covers at 100% zoom. Nested nodes sit inside their top-level box. */
+export function layoutBounds(nodes) {
+    const topLevel = nodes.filter((node) => !node.parentId);
+    if (topLevel.length === 0) {
+        return { width: 0, height: 0 };
+    }
+    const left = Math.min(...topLevel.map((node) => node.position.x));
+    const top = Math.min(...topLevel.map((node) => node.position.y));
+    const right = Math.max(...topLevel.map((node) => node.position.x + (node.width ?? NODE_WIDTH)));
+    const bottom = Math.max(...topLevel.map((node) => node.position.y + (node.height ?? NODE_HEIGHT)));
+    return { width: right - left, height: bottom - top };
+}
+
+/**
+ * How tall the map should be to show `bounds` at 100% zoom, kept within `min` and `max`.
+ *
+ * React Flow's fit leaves `padding` around the content as a share of its size, so the map needs
+ * that much more height than the content itself.
+ */
+export function mapHeight(bounds, { min, max, padding = 0 }) {
+    const needed = Math.ceil(bounds.height * (1 + padding));
+    return Math.min(max, Math.max(min, needed));
+}

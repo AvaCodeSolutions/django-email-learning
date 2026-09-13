@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildFlowGraph } from '../../../platform/course/components/flowGraph.js';
-import { NODE_HEIGHT, NODE_WIDTH, layoutFlow } from '../../../platform/course/components/flowLayout.js';
+import { NODE_HEIGHT, NODE_WIDTH, layoutBounds, layoutFlow, mapHeight } from '../../../platform/course/components/flowLayout.js';
 
 const lesson = (id, title, trackId = null) => ({ id, title, type: 'lesson', track_id: trackId, is_published: true });
 const quiz = (id, title, trackId = null) => ({ ...lesson(id, title, trackId), type: 'quiz' });
@@ -160,5 +160,40 @@ describe('layoutFlow', () => {
         const [left, right] = [boxOf(nodes, 'track-7'), boxOf(nodes, 'track-8')].sort((a, b) => a.x - b.x);
 
         expect(right.x - (left.x + left.width)).toBeGreaterThanOrEqual(48);
+    });
+});
+
+describe('layoutBounds', () => {
+    it('covers every top-level node, nested content included through its box', () => {
+        const nodes = layout(contents, [remedial], [rule(1, 2, 7)]);
+        const bounds = layoutBounds(nodes);
+        const topLevel = nodes.filter((node) => !node.parentId).map((node) => boxOf(nodes, node.id));
+
+        expect(bounds.height).toBe(Math.max(...topLevel.map((box) => box.y + box.height)) - Math.min(...topLevel.map((box) => box.y)));
+        expect(bounds.width).toBeGreaterThan(NODE_WIDTH);
+        for (const id of ['content-10', 'content-11']) {
+            const box = boxOf(nodes, id);
+            expect(box.y + box.height).toBeLessThanOrEqual(Math.min(...topLevel.map((b) => b.y)) + bounds.height);
+        }
+    });
+
+    it('is empty for no nodes', () => {
+        expect(layoutBounds([])).toEqual({ width: 0, height: 0 });
+    });
+});
+
+describe('mapHeight', () => {
+    const range = { min: 640, max: 1280, padding: 0.15 };
+
+    it('keeps the base height for a short course', () => {
+        expect(mapHeight({ width: 500, height: 300 }, range)).toBe(640);
+    });
+
+    it('grows to show a longer course at full size, fit padding included', () => {
+        expect(mapHeight({ width: 500, height: 800 }, range)).toBe(920);
+    });
+
+    it('stops at the maximum for a very long course', () => {
+        expect(mapHeight({ width: 500, height: 4000 }, range)).toBe(1280);
     });
 });

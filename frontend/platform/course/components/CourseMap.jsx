@@ -11,7 +11,7 @@ import FlagIcon from '@mui/icons-material/Flag';
 import { useAppContext } from '../../../src/render.jsx';
 import { conditionLabel } from './branching.js';
 import { buildFlowGraph } from './flowGraph.js';
-import { NODE_HEIGHT, NODE_WIDTH, layoutFlow } from './flowLayout.js';
+import { NODE_HEIGHT, NODE_WIDTH, layoutBounds, layoutFlow, mapHeight } from './flowLayout.js';
 
 const TYPE_ICONS = { lesson: DescriptionOutlinedIcon, quiz: BallotOutlinedIcon, assignment: AssignmentOutlinedIcon };
 
@@ -19,6 +19,11 @@ const TYPE_ICONS = { lesson: DescriptionOutlinedIcon, quiz: BallotOutlinedIcon, 
 const TRACK_COLORS = ['#7e57c2', '#00897b', '#ef6c00', '#1e88e5', '#d81b60', '#6d4c41'];
 
 const HIDDEN_HANDLE = { opacity: 0, pointerEvents: 'none' };
+
+const FIT_PADDING = 0.15;
+// The map grows with the course, from its base height up to twice that, so the boxes can stay
+// at 100% instead of being zoomed out to fit a fixed frame. Past the maximum it zooms out as before.
+const HEIGHT_RANGE = { xs: { min: 480, max: 960 }, md: { min: 640, max: 1280 } };
 
 function ContentNode({ data }) {
     const { localeMessages } = useAppContext();
@@ -211,7 +216,7 @@ const CourseMap = ({ contents = [], tracks = [], transitions = [], onContentClic
     });
     const canOpenTracks = Boolean(onTrackClick);
 
-    const { nodes, edges } = useMemo(() => {
+    const { nodes, edges, bounds } = useMemo(() => {
         const trackColors = new Map(tracks.map((track, index) => [track.id, TRACK_COLORS[index % TRACK_COLORS.length]]));
         const graph = buildFlowGraph(contents, tracks, transitions);
         const positioned = layoutFlow(graph.nodes, graph.edges, graph.groups).map((node) => {
@@ -240,6 +245,7 @@ const CourseMap = ({ contents = [], tracks = [], transitions = [], onContentClic
         return {
             nodes: positioned,
             edges: graph.edges.map((edge) => styleEdge(edge, { theme, localeMessages, trackColors })),
+            bounds: layoutBounds(positioned),
         };
     }, [contents, tracks, transitions, theme, localeMessages, canOpenTracks]);
 
@@ -247,15 +253,22 @@ const CourseMap = ({ contents = [], tracks = [], transitions = [], onContentClic
         <Box
             role="region"
             aria-label={localeMessages['course_view_map'] || 'Map'}
-            sx={{ height: { xs: 480, md: 640 }, mx: { xs: 0, md: 1 }, border: '1px solid', borderColor: 'divider', borderRadius: { xs: 0, sm: 2 }, overflow: 'hidden' }}
+            sx={{
+                height: {
+                    xs: mapHeight(bounds, { ...HEIGHT_RANGE.xs, padding: FIT_PADDING }),
+                    md: mapHeight(bounds, { ...HEIGHT_RANGE.md, padding: FIT_PADDING }),
+                },
+                mx: { xs: 0, md: 1 }, border: '1px solid', borderColor: 'divider', borderRadius: { xs: 0, sm: 2 }, overflow: 'hidden' }}
         >
             <ReactFlow
+                // Fit again when the course's shape changes size, not only on the first render.
+                key={`${Math.round(bounds.width)}x${Math.round(bounds.height)}`}
                 nodes={nodes}
                 edges={edges}
                 nodeTypes={NODE_TYPES}
                 colorMode={theme.palette.mode}
                 fitView
-                fitViewOptions={{ padding: 0.15 }}
+                fitViewOptions={{ padding: FIT_PADDING, maxZoom: 1 }}
                 minZoom={0.2}
                 nodesDraggable={false}
                 nodesConnectable={false}
