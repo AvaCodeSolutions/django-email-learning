@@ -6,11 +6,15 @@ from .course_contents import (
     ContentTrack,
     ContentTransition,
     CourseContent,
+    DecisionOption,
+    DecisionOutcome,
+    DecisionPoint,
     Lesson,
     Question,
     Quiz,
     QuizOutcome,
     QuizSelectionStrategy,
+    RoutingOutcome,
     TransitionCondition,
 )
 from .courses import Course, CourseInstructor, ExternalReference
@@ -31,4 +35,4 @@ from .organizations import (
     SocialLink,
     domain_wide_email_enabled,
 )
-from .submissions import AssignmentFeedback, AssignmentSubmission, QuizSubmission
+from .submissions import AssignmentFeedback, AssignmentSubmission, DecisionResponse, QuizSubmission

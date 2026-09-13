@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from django_email_learning.services import content_sequence_service, jwt_service
 
-from .course_contents import CourseContent, QuizOutcome, QuizSelectionStrategy
+from .course_contents import CourseContent, QuizSelectionStrategy, RoutingOutcome
 from .enrollments import Enrollment
 from .enums.delivery_status import DeliveryStatus
 
@@ -66,7 +66,7 @@ class ContentDelivery(models.Model):
         self.hash_value = base64.urlsafe_b64encode(uuid.uuid4().bytes).decode().rstrip("=")
         self.save()
 
-    def schedule_next_delivery(self, outcome: Optional[QuizOutcome] = None) -> Optional["ContentDelivery"]:
+    def schedule_next_delivery(self, outcome: Optional[RoutingOutcome] = None) -> Optional["ContentDelivery"]:
         """
         Schedules the next content delivery based on the current content's priority.
         Returns the ID of the newly created ContentDelivery if successful, otherwise None.
@@ -103,7 +103,7 @@ class ContentDelivery(models.Model):
         return True
 
     def calculate_remind_at(self) -> Optional[datetime]:
-        if self.course_content.quiz or self.course_content.assignment:
+        if self.course_content.quiz or self.course_content.assignment or self.course_content.decision:
             if self.course_content.deadline_days and self.course_content.deadline_days > 0:
                 if self.course_content.deadline_days > 1:
                     return timezone.now() + timedelta(days=self.course_content.deadline_days - 1)
@@ -206,6 +206,13 @@ class DeliverySchedule(models.Model):
             token = jwt_service.generate_jwt(payload=payload, exp=exp)
             assignment_path = reverse("django_email_learning:personalised:assignment_public_view")
             link = f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{assignment_path}?token={token}"
+            self.link = link
+            self.save()
+            return link
+        elif self.delivery.course_content.decision:
+            token = jwt_service.generate_jwt(payload=payload, exp=exp)
+            decision_path = reverse("django_email_learning:personalised:decision_public_view")
+            link = f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{decision_path}?token={token}"
             self.link = link
             self.save()
             return link

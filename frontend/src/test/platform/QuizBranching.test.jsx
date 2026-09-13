@@ -98,8 +98,8 @@ describe('QuizBranching', () => {
         const [url, options] = putCall();
         expect(url).toBe('/api/organizations/1/courses/5/contents/3/transitions/');
         expect(JSON.parse(options.body).transitions).toEqual([
-            { condition: 'passed', threshold: null, target_id: 8 },
-            { condition: 'failed', threshold: null, target_id: 7 },
+            { condition: 'passed', threshold: null, option_id: null, target_id: 8 },
+            { condition: 'failed', threshold: null, option_id: null, target_id: 7 },
         ]);
         expect(onChange).toHaveBeenCalledWith(2);
     });
@@ -168,5 +168,43 @@ describe('QuizBranching', () => {
         await waitFor(() => expect(within(rules[0]).getByRole('combobox', { name: 'When' })).toHaveAttribute('aria-disabled', 'true'));
         expect(screen.queryByRole('button', { name: 'Add rule' })).not.toBeInTheDocument();
         expect(screen.queryByRole('button', { name: 'Save rules' })).not.toBeInTheDocument();
+    });
+});
+
+describe('QuizBranching on a decision point', () => {
+    const options = [{ id: 11, text: 'Basics' }, { id: 12, text: 'Deeper dive' }];
+    const renderDecisionRules = () => {
+        window.localStorage.setItem('activeOrganizationId', '1');
+        renderWithProviders(
+            <QuizBranching courseId={5} contentId={3} options={options} />,
+            { appContext: { apiBaseUrl: '/api', userRole: 'editor', localeMessages: { ...localeMessages, condition_option_selected: 'Answered', rule_option: 'Answer' } } },
+        );
+    };
+
+    it('offers only answer rules and an otherwise rule', async () => {
+        mockApi();
+        const user = userEvent.setup();
+        renderDecisionRules();
+
+        await user.click(await screen.findByRole('button', { name: 'Add rule' }));
+        await user.click(within(screen.getByTestId('routing-rule')).getByRole('combobox', { name: 'When' }));
+
+        expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual(['Answered', 'Otherwise']);
+    });
+
+    it('saves the answer each rule matches', async () => {
+        mockApi();
+        const user = userEvent.setup();
+        renderDecisionRules();
+
+        await user.click(await screen.findByRole('button', { name: 'Add rule' }));
+        await user.click(within(screen.getByTestId('routing-rule')).getByRole('combobox', { name: 'Answer' }));
+        await user.click(screen.getByRole('option', { name: 'Deeper dive' }));
+        await user.click(screen.getByRole('button', { name: 'Save rules' }));
+
+        await waitFor(() => expect(putCall()).toBeDefined());
+        expect(JSON.parse(putCall()[1].body).transitions).toEqual([
+            { condition: 'option_selected', threshold: null, option_id: 12, target_id: 7 },
+        ]);
     });
 });

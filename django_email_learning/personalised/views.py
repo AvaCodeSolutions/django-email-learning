@@ -21,7 +21,7 @@ from django_email_learning.models import (
     EnrollmentStatus,
     Organization,
 )
-from django_email_learning.personalised.serializers import PublicQuizSerializer
+from django_email_learning.personalised.serializers import PublicDecisionSerializer, PublicQuizSerializer
 from django_email_learning.services import jwt_service
 from django_email_learning.services.command_models.unsubscribe_command import (
     UnsubscribeCommand,
@@ -237,6 +237,81 @@ class AssignmentPublicView(BaseTemplateView):
                 title=_("Error"),
                 status_code=410,
             )
+
+
+class DecisionPublicView(BaseTemplateView):
+    template_name = "personalised/decision_public.html"
+
+    def get(self, request, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
+        token_and_decoded = self.get_token_and_decoded_token(request)
+        if isinstance(token_and_decoded, HttpResponse):
+            return token_and_decoded
+
+        token, decoded_token = token_and_decoded
+        try:
+            delivery = ContentDelivery.objects.get(
+                id=decoded_token["delivery_id"],
+                hash_value=decoded_token["delivery_hash"],
+            )
+        except ContentDelivery.DoesNotExist as e:
+            # Answering retires the link, so a delivery that exists under another hash was answered.
+            if ContentDelivery.objects.filter(id=decoded_token.get("delivery_id")).exists():  # type: ignore[misc]
+                return self.render_to_response(
+                    context={
+                        "appContext": {
+                            "errorMessage": _("This question has already been answered, so the link no longer works."),
+                            "localeMessages": {"error": _("Error")},
+                        }
+                        | self.get_app_context(),
+                        "page_title": _("Already Answered"),
+                    },
+                    status=410,
+                )
+            return self.error_response(
+                message=_("An error occurred while retrieving the question"),
+                exception=e,
+                title=_("Error"),
+                status_code=410,
+            )
+
+        if delivery.enrollment.status != EnrollmentStatus.ACTIVE:
+            return self.error_response(
+                message=_("This question is no longer valid."),
+                exception=ValueError("Enrollment is not active"),
+                title=_("Invalid Question"),
+            )
+        decision = delivery.course_content.decision
+        if not decision:
+            return self.error_response(
+                message=_("There is no question associated with this link."),
+                exception=None,
+                title=_("Invalid Question"),
+            )
+        if not delivery.course_content.is_published:
+            return self.error_response(
+                message=_("There is no valid question associated with this link."),
+                exception=ValueError("Decision is not published"),
+                title=_("Invalid Question"),
+            )
+        return self.render_to_response(
+            context={
+                "appContext": {
+                    "decision": PublicDecisionSerializer.model_validate(decision).model_dump(),
+                    "token": token,
+                    "csrfToken": request.META.get("CSRF_COOKIE", ""),
+                    "apiEndpoint": reverse("django_email_learning:api_personalised:decision_submission"),
+                    "localeMessages": {
+                        "choose_an_answer": _("Choose one answer"),
+                        "submit": _("Submit"),
+                        "submission_error": _("Your answer could not be recorded. Please try again later."),
+                        "close_window_message": _("You can now close this window!"),
+                        "error": _("Error"),
+                    },
+                }
+                | self.get_app_context(),
+                "page_title": decision.title,
+            }
+        )
 
 
 class QuizPublicView(BaseTemplateView):

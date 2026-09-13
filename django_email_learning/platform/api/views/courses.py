@@ -21,6 +21,7 @@ from django_email_learning.models import (
     Course,
     CourseContent,
     CourseContentType,
+    DecisionPoint,
     Quiz,
 )
 from django_email_learning.platform.api import serializers
@@ -29,6 +30,7 @@ from django_email_learning.platform.api.embed_snippet import (
     build_embed_widget_tag,
 )
 from django_email_learning.platform.api.serializers import branching as branching_serializers
+from django_email_learning.platform.api.serializers.decisions import DecisionUpdate
 from django_email_learning.public.api.views import embeddable_enrollment_enabled
 from django_email_learning.services import quiz_analytics_service
 from django_email_learning.services.command_models.send_lesson_command import (
@@ -144,7 +146,11 @@ class CourseContentView(View):
             for content in course_contents:
                 response_list.append(serializers.CourseContentSummaryResponse.model_validate(content).model_dump())
             tracks = course.content_tracks.order_by("id")
-            transitions = ContentTransition.objects.filter(source__course=course).order_by("source_id", "order")
+            transitions = (
+                ContentTransition.objects.filter(source__course=course)
+                .select_related("option")
+                .order_by("source_id", "order")
+            )
             return JsonResponse(
                 {
                     "course_contents": response_list,
@@ -287,6 +293,38 @@ class SingleCourseContentView(View):
             return log_and_conflict_response(logger, e, "Saving course data")
 
     @staticmethod
+    def _update_decision(decision: DecisionPoint, update: DecisionUpdate) -> None:
+        if update.title is not None:
+            decision.title = update.title
+        if update.prompt is not None:
+            decision.prompt = update.prompt
+        if update.deadline_days is not None:
+            decision.deadline_days = update.deadline_days
+        if "reminder_interval_days" in update.model_fields_set:
+            decision.reminder_interval_days = update.reminder_interval_days or 0
+        decision.full_clean()
+        decision.save()
+        if update.options is None:
+            return
+        kept: list[int] = []
+        for order, option_data in enumerate(update.options, start=1):
+            if option_data.id is not None:
+                option = decision.options.filter(id=option_data.id).first()
+                if option is None:
+                    raise ValueError("An answer being updated does not belong to this decision.")
+                option.text = option_data.text
+                option.order = order
+                option.save()
+            else:
+                option = decision.options.create(text=option_data.text, order=order)
+            kept.append(option.id)
+        removed = decision.options.exclude(id__in=kept)
+        if removed.filter(responses__isnull=False).exists():
+            raise ValueError("An answer learners have already chosen cannot be removed.")
+        # Rules on a removed answer could never match again, so they go with it.
+        removed.delete()
+
+    @staticmethod
     def _move_to_track(course_content: CourseContent, track_id: Optional[int]) -> None:
         """Put `course_content` at the end of `track_id`, or of the main spine when None."""
         if track_id == course_content.track_id:
@@ -351,6 +389,9 @@ class SingleCourseContentView(View):
             if assignment_serializer.reminder_interval_days is not None:
                 assignment.reminder_interval_days = assignment_serializer.reminder_interval_days
             assignment.save()
+
+        if serializer.decision is not None and course_content.decision is not None:
+            self._update_decision(course_content.decision, serializer.decision)
 
         if serializer.quiz is not None and course_content.quiz is not None:
             quiz_serializer = serializer.quiz

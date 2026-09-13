@@ -8,13 +8,20 @@
  */
 
 export const TRANSITION_CONDITIONS = ['passed', 'failed', 'score_gte', 'score_lt', 'default'];
+export const DECISION_TRANSITION_CONDITIONS = ['option_selected', 'default'];
 export const THRESHOLD_CONDITIONS = new Set(['score_gte', 'score_lt']);
+export const OPTION_CONDITIONS = new Set(['option_selected']);
 
 export function conditionLabel(rule, localeMessages) {
     const template = localeMessages[`branch_condition_${rule.condition}`] || rule.condition;
-    return THRESHOLD_CONDITIONS.has(rule.condition)
-        ? template.replace('THRESHOLD', String(rule.threshold))
-        : template;
+    if (THRESHOLD_CONDITIONS.has(rule.condition)) {
+        return template.replace('THRESHOLD', String(rule.threshold));
+    }
+    if (OPTION_CONDITIONS.has(rule.condition)) {
+        // A replacer function, so an answer containing `$&` is shown as written.
+        return template.replace('OPTION', () => rule.option_text ?? '');
+    }
+    return template;
 }
 
 /**

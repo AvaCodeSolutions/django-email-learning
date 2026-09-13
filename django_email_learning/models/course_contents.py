@@ -139,6 +139,46 @@ class Assignment(models.Model):
         return self.title
 
 
+class DecisionPoint(models.Model):
+    """A one-question choice put to a learner, with no right answer.
+
+    The option a learner picks is what the routing rules on its content match, so a course can
+    send learners down different tracks by what they say rather than by how they score.
+    """
+
+    title = models.CharField(max_length=500)
+    prompt = models.TextField()
+    deadline_days = models.IntegerField(
+        default=0,
+        help_text="Time limit to answer in days. 0 indicates no deadline.",
+        validators=[MinValueValidator(0)],
+    )
+    reminder_interval_days = models.IntegerField(
+        help_text=(
+            "For decisions without a deadline (deadline_days = 0), send a reminder email every N days "
+            "until the learner answers, up to 3 reminders. 0 or empty means no reminders."
+        ),
+        validators=[MinValueValidator(0)],
+        blank=True,
+        null=True,
+    )
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class DecisionOption(models.Model):
+    decision = models.ForeignKey(DecisionPoint, on_delete=models.CASCADE, related_name="options")
+    text = models.CharField(max_length=500)
+    order = models.IntegerField()
+
+    class Meta:
+        ordering = ["order", "id"]
+
+    def __str__(self) -> str:
+        return self.text
+
+
 class ContentTrack(models.Model):
     """A named branch of a course: a run of content a learner takes instead of the main spine.
 
@@ -279,6 +319,7 @@ class CourseContent(models.Model):
     lesson = models.ForeignKey(Lesson, null=True, blank=True, on_delete=models.CASCADE)
     quiz = models.ForeignKey(Quiz, null=True, blank=True, on_delete=models.CASCADE)
     assignment = models.ForeignKey(Assignment, null=True, blank=True, on_delete=models.CASCADE)
+    decision = models.ForeignKey(DecisionPoint, null=True, blank=True, on_delete=models.CASCADE)
     waiting_period = models.IntegerField(
         help_text="Waiting period in seconds after previous content is sent or submited."
     )
@@ -291,6 +332,8 @@ class CourseContent(models.Model):
             return f"{self.priority} - Quiz: {self.quiz.title}"
         elif self.type == CourseContentType.ASSIGNMENT and self.assignment:
             return f"{self.priority} - Assignment: {self.assignment.title}"
+        elif self.type == CourseContentType.DECISION and self.decision:
+            return f"{self.priority} - Decision: {self.decision.title}"
         return f"{self.course.title} content #{self.priority}"
 
     @property
@@ -299,6 +342,8 @@ class CourseContent(models.Model):
             return self.quiz.deadline_days
         elif self.type == CourseContentType.ASSIGNMENT and self.assignment:
             return self.assignment.deadline_days
+        elif self.type == CourseContentType.DECISION and self.decision:
+            return self.decision.deadline_days
         return None
 
     @property
@@ -307,6 +352,8 @@ class CourseContent(models.Model):
             return self.quiz.reminder_interval_days
         elif self.type == CourseContentType.ASSIGNMENT and self.assignment:
             return self.assignment.reminder_interval_days
+        elif self.type == CourseContentType.DECISION and self.decision:
+            return self.decision.reminder_interval_days
         return None
 
     @property
@@ -321,6 +368,8 @@ class CourseContent(models.Model):
             return self.quiz.title
         elif self.type == CourseContentType.ASSIGNMENT and self.assignment:
             return self.assignment.title
+        elif self.type == CourseContentType.DECISION and self.decision:
+            return self.decision.title
         return "Untitled Content"
 
     @property
@@ -335,6 +384,10 @@ class CourseContent(models.Model):
             return self.quiz.is_blocking
         elif self.type == CourseContentType.ASSIGNMENT and self.assignment:
             return self.assignment.is_blocking
+        elif self.type == CourseContentType.DECISION and self.decision:
+            # A decision has no wrong answer to fail on, so a missed deadline moves the learner on
+            # rather than ending the enrollment.
+            return False
         return None
 
     def human_readable_waiting_period(self) -> str:
@@ -359,12 +412,16 @@ class CourseContent(models.Model):
             raise ValidationError("Quiz must be provided for quiz content.")
         if self.type == CourseContentType.ASSIGNMENT and not self.assignment:
             raise ValidationError("Assignment must be provided for assignment content.")
+        if self.type == CourseContentType.DECISION and not self.decision:
+            raise ValidationError("Decision must be provided for decision content.")
         if self.type == CourseContentType.LESSON and self.lesson:
             self.lesson.full_clean()
         elif self.type == CourseContentType.QUIZ and self.quiz:
             self.quiz.full_clean()
         elif self.type == CourseContentType.ASSIGNMENT and self.assignment:
             self.assignment.full_clean()
+        elif self.type == CourseContentType.DECISION and self.decision:
+            self.decision.full_clean()
 
     def full_clean(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self._validate_content()
@@ -415,6 +472,11 @@ class CourseContent(models.Model):
                 condition=models.Q(assignment__isnull=False),
                 name="unique_assignment_per_course",
             ),
+            models.UniqueConstraint(
+                fields=["course", "decision"],
+                condition=models.Q(decision__isnull=False),
+                name="unique_decision_per_course",
+            ),
             # Split in two because a single constraint over ("course", "track", "priority")
             # would stop enforcing anything on the main spine: both backends treat NULL
             # track values as distinct from one another, so duplicate priorities there
@@ -440,12 +502,23 @@ class QuizOutcome:
     passed: bool
 
 
+@dataclass(frozen=True)
+class DecisionOutcome:
+    """The option a learner chose on a decision point, as the routing rules see it."""
+
+    option_id: int
+
+
+RoutingOutcome = QuizOutcome | DecisionOutcome
+
+
 class TransitionCondition(StrEnum):
     PASSED = "passed"
     FAILED = "failed"
     SCORE_GTE = "score_gte"
     SCORE_LT = "score_lt"
     DEFAULT = "default"
+    OPTION_SELECTED = "option_selected"
 
 
 QUIZ_CONDITIONS = frozenset(
@@ -457,6 +530,7 @@ QUIZ_CONDITIONS = frozenset(
     }
 )
 THRESHOLD_CONDITIONS = frozenset({TransitionCondition.SCORE_GTE, TransitionCondition.SCORE_LT})
+DECISION_CONDITIONS = frozenset({TransitionCondition.OPTION_SELECTED})
 
 
 class ContentTransition(models.Model):
@@ -480,6 +554,15 @@ class ContentTransition(models.Model):
         validators=[MinValueValidator(0), MaxValueValidator(100)],
         help_text="The score this rule compares against. Required for a score condition.",
     )
+    option = models.ForeignKey(
+        DecisionOption,
+        null=True,
+        blank=True,
+        # A rule on an option that no longer exists could never match.
+        on_delete=models.CASCADE,
+        related_name="transitions",
+        help_text="The option this rule matches. Required for an option condition.",
+    )
     target = models.ForeignKey(ContentTrack, on_delete=models.CASCADE, related_name="incoming_transitions")
 
     class Meta:
@@ -493,12 +576,23 @@ class ContentTransition(models.Model):
         ]
 
     def __str__(self) -> str:
-        comparison = f" {self.threshold}" if self.condition in THRESHOLD_CONDITIONS else ""
+        if self.condition in THRESHOLD_CONDITIONS:
+            comparison = f" {self.threshold}"
+        elif self.condition in DECISION_CONDITIONS and self.option is not None:
+            comparison = f" {self.option.text}"
+        else:
+            comparison = ""
         return f"{self.source.title}: {self.condition}{comparison} -> {self.target.name}"
 
-    def matches(self, outcome: "QuizOutcome") -> bool:
+    @property
+    def option_text(self) -> Optional[str]:
+        return self.option.text if self.option is not None else None
+
+    def matches(self, outcome: RoutingOutcome) -> bool:
         if self.condition == TransitionCondition.DEFAULT:
             return True
+        if isinstance(outcome, DecisionOutcome):
+            return self.condition == TransitionCondition.OPTION_SELECTED and self.option_id == outcome.option_id
         if self.condition == TransitionCondition.PASSED:
             return outcome.passed
         if self.condition == TransitionCondition.FAILED:
@@ -517,6 +611,15 @@ class ContentTransition(models.Model):
             raise ValidationError({"threshold": "Only a score condition takes a threshold."})
         if self.condition in QUIZ_CONDITIONS and self.source.type != CourseContentType.QUIZ:
             raise ValidationError({"condition": "A quiz condition can only be used on quiz content."})
+        if self.condition in DECISION_CONDITIONS:
+            if self.source.type != CourseContentType.DECISION:
+                raise ValidationError({"condition": "An answer condition can only be used on a decision point."})
+            if self.option is None:
+                raise ValidationError({"option": "An answer condition needs the answer it matches."})
+            if self.option.decision_id != self.source.decision_id:
+                raise ValidationError({"option": "The answer must belong to this decision point."})
+        elif self.option_id is not None:
+            raise ValidationError({"option": "Only an answer condition takes an answer."})
         if self.target.course_id != self.source.course_id:
             raise ValidationError({"target": "A target track must belong to the same course as the content."})
         if self.target_id == self.source.track_id:

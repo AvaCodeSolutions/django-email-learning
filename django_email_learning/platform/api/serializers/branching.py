@@ -35,6 +35,8 @@ class ContentTransitionResponse(BaseModel):
     condition: TransitionCondition
     threshold: Optional[int] = None
     target_id: int
+    option_id: Optional[int] = None
+    option_text: Optional[str] = None
 
 
 class CreateContentTransitionRequest(BaseModel):
@@ -42,12 +44,14 @@ class CreateContentTransitionRequest(BaseModel):
     condition: TransitionCondition
     threshold: Optional[int] = Field(default=None, ge=0, le=100)
     target_id: int
+    option_id: Optional[int] = None
 
 
 class TransitionRule(BaseModel):
     condition: TransitionCondition
     threshold: Optional[int] = Field(default=None, ge=0, le=100)
     target_id: int
+    option_id: Optional[int] = None
 
 
 class ReplaceContentTransitionsRequest(BaseModel):

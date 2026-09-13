@@ -36,3 +36,23 @@ class PublicQuizSerializer(BaseModel):
     @field_serializer("questions")
     def serialize_questions(self, questions: Any) -> list[dict]:
         return [PublicQuestionSerializer.model_validate(question).model_dump() for question in questions.all()]
+
+
+class PublicDecisionOptionSerializer(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    text: str
+
+
+class PublicDecisionSerializer(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    title: str
+    prompt: str
+    options: Any
+
+    @field_serializer("options")
+    def serialize_options(self, options: Any) -> list[dict]:
+        return [PublicDecisionOptionSerializer.model_validate(option).model_dump() for option in options.all()]

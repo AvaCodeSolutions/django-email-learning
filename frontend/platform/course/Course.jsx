@@ -15,6 +15,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CodeIcon from '@mui/icons-material/Code';
 import AddRoadIcon from '@mui/icons-material/AddRoad';
 import AltRouteIcon from '@mui/icons-material/AltRoute';
+import CallSplitIcon from '@mui/icons-material/CallSplit';
 import { useState, useEffect, memo } from 'react';
 import { Box, Grid, Button, Dialog, DialogTitle, DialogContent, DialogActions, LinearProgress, Typography, Alert, Tabs, Tab, Badge, Link, IconButton, Tooltip, Switch, FormControlLabel, TextField, InputAdornment, GlobalStyles, ToggleButton, ToggleButtonGroup } from '@mui/material'
 import { useTheme } from '@mui/material/styles';
@@ -44,6 +45,7 @@ const CustomComponentSlot = memo(function CustomComponentSlot({ html, display })
 const QuizForm = lazy(() => import("./components/QuizForm.jsx"));
 const LessonForm = lazy(() => import("./components/LessonForm.jsx"));
 const AssignmentForm = lazy(() => import("./components/AssignmentForm.jsx"));
+const DecisionForm = lazy(() => import("./components/DecisionForm.jsx"));
 const DeleteContentForm = lazy(() => import("./components/DeleteContentForm.jsx"));
 const TrackForm = lazy(() => import("./components/TrackForm.jsx"));
 const CourseMap = lazy(() => import("./components/CourseMap.jsx"));
@@ -525,6 +527,24 @@ function Course() {
                                 tracks={courseStructure.tracks}
                                 initialTrackId={content.track_id}
                                 /></Suspense>);
+            } else if (content.type == 'decision') {
+                setDialogOpen(true);
+                setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><DecisionForm
+                                header={localeMessages["update_decision"]}
+                                cancelCallback={() => setDialogOpen(false)}
+                                successCallback={resetDialog}
+                                onBranchingChange={refreshContents}
+                                courseId={courseId}
+                                contentId={content.id}
+                                initialTitle={content.decision.title}
+                                initialPrompt={content.decision.prompt}
+                                initialOptions={content.decision.options}
+                                initialDeadlineDays={content.decision.deadline_days}
+                                initialReminderIntervalDays={content.decision.reminder_interval_days}
+                                initialWaitingPeriod={content.waiting_period}
+                                tracks={courseStructure.tracks}
+                                initialTrackId={content.track_id}
+                                /></Suspense>);
             }
         }
         if (event.type === 'content_reordered') {
@@ -816,6 +836,14 @@ function Course() {
                                     courseId={courseId}
                                     tracks={courseStructure.tracks} /></Suspense>);
                                 setDialogOpen(true);}}>{localeMessages["add_assignment"]}</Button>
+                            <Button variant="contained" startIcon={<CallSplitIcon />} disabled={!contentLoaded} sx={{ marginBottom: 2, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
+                                setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><DecisionForm
+                                    header={localeMessages["new_decision"]}
+                                    cancelCallback={() => setDialogOpen(false)}
+                                    successCallback={resetDialog}
+                                    courseId={courseId}
+                                    tracks={courseStructure.tracks} /></Suspense>);
+                                setDialogOpen(true);}}>{localeMessages["add_decision"] || 'Add Decision'}</Button>
                             {canEditBranching && <Button variant="outlined" startIcon={<AddRoadIcon />} disabled={!contentLoaded} sx={{ marginBottom: 2, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => openTrackForm(null)}>{localeMessages["add_track"] || 'Add Track'}</Button>}
                             {customComponent && <CustomComponentSlot html={customComponent.html} display={customComponent.container_display} />}
                             {userRole === 'admin' && <Box sx={{ marginInlineStart: { xs: 0, md: 'auto' }, alignSelf: { xs: 'stretch', md: 'flex-start' } }}><EnrollMenu successCallback={handleEnrollMenuSuccess} courseEnabled={courseEnabled} /></Box>}

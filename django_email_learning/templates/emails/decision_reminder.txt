@@ -1,0 +1,14 @@
+{% load i18n %}
+{% load tz %}
+{{ decision.title }}
+
+{% translate "Hello there," %}
+
+{% translate "This is a reminder that a question is waiting for your answer." %}{% if deadline_time %}{% blocktranslate with deadline=deadline_time|timezone:"UTC"|date:"Y-m-d H:i e" %} The link is valid until {{ deadline }}.{% endblocktranslate %}{% endif %}
+
+{{ decision.prompt }}
+
+{% translate "Please click the link below to answer:" %}
+{{ link }}
+
+{% translate "Unsubscribe link:" %} {{ unsubscribe_link }}

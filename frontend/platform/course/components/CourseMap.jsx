@@ -6,6 +6,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import AltRouteIcon from '@mui/icons-material/AltRoute';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import BallotOutlinedIcon from '@mui/icons-material/BallotOutlined';
+import CallSplitOutlinedIcon from '@mui/icons-material/CallSplitOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import FlagIcon from '@mui/icons-material/Flag';
 import { useAppContext } from '../../../src/render.jsx';
@@ -13,7 +14,7 @@ import { conditionLabel } from './branching.js';
 import { buildFlowGraph } from './flowGraph.js';
 import { NODE_HEIGHT, NODE_WIDTH, layoutBounds, layoutFlow, mapHeight } from './flowLayout.js';
 
-const TYPE_ICONS = { lesson: DescriptionOutlinedIcon, quiz: BallotOutlinedIcon, assignment: AssignmentOutlinedIcon };
+const TYPE_ICONS = { lesson: DescriptionOutlinedIcon, quiz: BallotOutlinedIcon, assignment: AssignmentOutlinedIcon, decision: CallSplitOutlinedIcon };
 
 // Tracks are told apart by colour; each track's box also carries its name, so the palette can repeat.
 const TRACK_COLORS = ['#7e57c2', '#00897b', '#ef6c00', '#1e88e5', '#d81b60', '#6d4c41'];

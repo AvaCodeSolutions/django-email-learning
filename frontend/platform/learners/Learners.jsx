@@ -9,6 +9,7 @@ import HowToRegIcon from '@mui/icons-material/HowToReg';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import BallotIcon from '@mui/icons-material/Ballot';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import CallSplitIcon from '@mui/icons-material/CallSplit';
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import AssignmentReturnedIcon from '@mui/icons-material/AssignmentReturned';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
@@ -68,6 +69,7 @@ function Learners() {
     'content_sent_lesson': {icon: <LibraryBooksIcon />, color: "#00acc1", title: localeMessages["lesson_sent"]},
     'content_sent_quiz': {icon: <BallotIcon />, color: "#26a69a", title: localeMessages["quiz_sent"]},
     'content_sent_assignment': {icon: <AssignmentIcon />, color: "#336eb7", title: localeMessages["assignment_sent"]},
+    'content_sent_decision': {icon: <CallSplitIcon />, color: "#5c6bc0", title: localeMessages["decision_sent"]},
     'quiz_submitted': {icon: <AssignmentReturnedIcon />, color: "#26a69a", title: localeMessages["quiz_submitted"]},
     'course_completed': {icon: <SchoolIcon />, color: "#0097a7", title: localeMessages["course_completed"]},
     'deactivated': {icon: <BackspaceIcon />, color: "#b71c1c", title: localeMessages["learner_deactivated"]},
