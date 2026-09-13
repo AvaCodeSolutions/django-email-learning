@@ -10,6 +10,7 @@ from django_email_learning.analytics import serializers
 from django_email_learning.analytics.views import _content_delivery_qs, _course_ids, _json
 from django_email_learning.decorators import is_an_organization_member
 from django_email_learning.models import ContentTrack, Enrollment, EnrollmentStatus
+from django_email_learning.models.enums.delivery_status import DeliveryStatus
 
 
 @method_decorator(is_an_organization_member(), name="get")
@@ -45,11 +46,16 @@ class TrackBreakdownView(View):
             return False
 
         routes: dict[int, list[int | None]] = defaultdict(list)
-        for enrollment_id, track_id in (
+        seen_deliveries: set[int] = set()
+        for delivery_id, enrollment_id, track_id in (
             _content_delivery_qs(organization_id, [course_id])
+            .filter(delivery_schedules__status=DeliveryStatus.DELIVERED)
             .order_by("id")
-            .values_list("enrollment_id", "course_content__track_id")
+            .values_list("id", "enrollment_id", "course_content__track_id")
         ):
+            if delivery_id in seen_deliveries:
+                continue
+            seen_deliveries.add(delivery_id)
             routes[enrollment_id].append(track_id)
         statuses = dict(Enrollment.objects.filter(id__in=routes.keys()).values_list("id", "status"))
 

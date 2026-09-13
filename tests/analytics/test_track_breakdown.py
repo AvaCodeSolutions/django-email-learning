@@ -127,3 +127,17 @@ def test_completing_the_course_from_a_track_counts_as_finishing_it(editor_client
     )
 
     assert outcome(rows_for(editor_client, b.course)["Remedial"]) == (1, 1, 0, 0)
+
+
+def test_scheduled_content_does_not_count_as_routed_or_finished(editor_client, branched_course):
+    b = branched_course
+    enrollment = Enrollment.objects.create(
+        learner=Learner.objects.create(email="scheduled@example.com", organization_id=1),
+        course=b.course,
+        status=EnrollmentStatus.ACTIVE,
+    )
+    routed_delivery = ContentDelivery.objects.create(enrollment=enrollment, course_content=b.remedial_lesson)
+    ContentDelivery.objects.create(enrollment=enrollment, course_content=b.wrap_up)
+    DeliverySchedule.objects.create(delivery=routed_delivery, status=DeliveryStatus.DELIVERED)
+
+    assert outcome(rows_for(editor_client, b.course)["Remedial"]) == (1, 0, 1, 0)
