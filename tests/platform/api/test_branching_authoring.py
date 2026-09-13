@@ -253,6 +253,38 @@ def test_an_empty_track_is_deleted(editor_client, branching_course):
     assert not ContentTrack.objects.filter(id=empty.id).exists()
 
 
+def test_a_track_with_nested_tracks_cannot_be_deleted(editor_client, branching_course):
+    parent = ContentTrack.objects.create(course=branching_course.course, name="Parent")
+    child = ContentTrack.objects.create(course=branching_course.course, name="Child", parent_track=parent)
+
+    response = editor_client.delete(track_url(parent))
+
+    assert response.status_code == 409
+    assert "nested tracks" in response.json()["error"]
+    assert ContentTrack.objects.filter(id=parent.id).exists()
+    assert ContentTrack.objects.filter(id=child.id).exists()
+
+
+def test_a_track_targeted_by_a_rule_cannot_be_deleted(editor_client, branching_course):
+    empty = ContentTrack.objects.create(
+        course=branching_course.course,
+        name="Empty",
+        merge_into=branching_course.spine4,
+    )
+    ContentTransition.objects.create(
+        source=branching_course.checkpoint,
+        order=2,
+        condition=TransitionCondition.DEFAULT,
+        target=empty,
+    )
+
+    response = editor_client.delete(track_url(empty))
+
+    assert response.status_code == 409
+    assert "routing rules still point to" in response.json()["error"]
+    assert ContentTrack.objects.filter(id=empty.id).exists()
+
+
 def test_a_viewer_cannot_change_a_track(viewer_client, branching_course):
     response = post_json(viewer_client, track_url(branching_course.remedial), {"name": "Nope"})
 

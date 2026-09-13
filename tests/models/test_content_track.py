@@ -1,7 +1,15 @@
 import pytest
 from django.core.exceptions import ValidationError
 
-from django_email_learning.models import ContentTrack, Course, CourseContent, Lesson
+from django_email_learning.models import (
+    ContentTrack,
+    ContentTransition,
+    Course,
+    CourseContent,
+    Lesson,
+    Quiz,
+    TransitionCondition,
+)
 
 
 @pytest.fixture
@@ -134,6 +142,42 @@ def test_an_empty_track_can_be_deleted(db, course):
     track.delete()
 
     assert not ContentTrack.objects.filter(pk=track.pk).exists()
+
+
+def test_a_track_with_nested_tracks_cannot_be_deleted(db, course):
+    parent = ContentTrack.objects.create(course=course, name="Parent")
+    child = ContentTrack.objects.create(course=course, name="Child", parent_track=parent)
+
+    with pytest.raises(ValidationError, match="nested tracks"):
+        parent.delete()
+
+    assert ContentTrack.objects.filter(pk=parent.pk).exists()
+    assert ContentTrack.objects.filter(pk=child.pk).exists()
+
+
+def test_a_track_targeted_by_a_rule_cannot_be_deleted(db, course):
+    make_content(course, priority=1)
+    wrap_up = make_content(course, priority=3, title="Wrap up")
+    quiz_content = CourseContent.objects.create(
+        course=course,
+        priority=2,
+        type="quiz",
+        quiz=Quiz.objects.create(title="Checkpoint", required_score=70, selection_strategy="all", deadline_days=0),
+        waiting_period=3600,
+        is_published=True,
+    )
+    track = ContentTrack.objects.create(course=course, name="Path", merge_into=wrap_up)
+    ContentTransition.objects.create(
+        source=quiz_content,
+        order=1,
+        condition=TransitionCondition.FAILED,
+        target=track,
+    )
+
+    with pytest.raises(ValidationError, match="routing rules still point to"):
+        track.delete()
+
+    assert ContentTrack.objects.filter(pk=track.pk).exists()
 
 
 def test_deleting_a_course_takes_its_tracks_with_it(db, course):

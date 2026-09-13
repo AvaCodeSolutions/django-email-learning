@@ -780,7 +780,7 @@ function Course() {
                     {activeTab === 'content' && (
                         <>
                             <Box sx={{ px: 1, display: 'flex', flexDirection: {xs:'column', md: 'row'}, flexWrap: { md: 'wrap' }, alignItems: { xs: 'stretch', md: 'flex-start' }, pb: 2, width: '100%', '& > .MuiButton-root': { flex: { md: '0 0 auto' } } }}>
-                                {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon />} sx={{ marginBottom: {xs: 1, md: 2}, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
+                                {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon />} disabled={!contentLoaded} sx={{ marginBottom: {xs: 1, md: 2}, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
                                 setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><LessonForm
                                     header={localeMessages["new_lesson"]}
                                     cancelCallback={() => setDialogOpen(false)}
@@ -788,14 +788,14 @@ function Course() {
                                     courseId={courseId}
                                     tracks={courseStructure.tracks} /></Suspense>);
                                 setDialogOpen(true);}}>{localeMessages["add_lesson"]}</Button>
-                            <Button variant="contained" startIcon={<BallotIcon />} sx={{ marginBottom: {xs: 1, md: 2}, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
+                            <Button variant="contained" startIcon={<BallotIcon />} disabled={!contentLoaded} sx={{ marginBottom: {xs: 1, md: 2}, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
                                 setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><QuizForm
                                     cancelCallback={() => setDialogOpen(false)}
                                     successCallback={resetDialog}
                                     courseId={courseId}
                                     tracks={courseStructure.tracks} /></Suspense>);
                                 setDialogOpen(true);}}>{localeMessages["add_quiz"]}</Button>
-                            <Button variant="contained" startIcon={<AssignmentIcon />} sx={{ marginBottom: 2, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
+                            <Button variant="contained" startIcon={<AssignmentIcon />} disabled={!contentLoaded} sx={{ marginBottom: 2, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
                                 setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><AssignmentForm
                                     header={localeMessages["new_assignment"]}
                                     cancelCallback={() => setDialogOpen(false)}
@@ -803,7 +803,7 @@ function Course() {
                                     courseId={courseId}
                                     tracks={courseStructure.tracks} /></Suspense>);
                                 setDialogOpen(true);}}>{localeMessages["add_assignment"]}</Button>
-                            {canEditBranching && <Button variant="outlined" startIcon={<AddRoadIcon />} sx={{ marginBottom: 2, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => openTrackForm(null)}>{localeMessages["add_track"] || 'Add Track'}</Button>}
+                            {canEditBranching && <Button variant="outlined" startIcon={<AddRoadIcon />} disabled={!contentLoaded} sx={{ marginBottom: 2, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => openTrackForm(null)}>{localeMessages["add_track"] || 'Add Track'}</Button>}
                             {customComponent && <CustomComponentSlot html={customComponent.html} display={customComponent.container_display} />}
                             {userRole === 'admin' && <Box sx={{ marginInlineStart: { xs: 0, md: 'auto' }, alignSelf: { xs: 'stretch', md: 'flex-start' } }}><EnrollMenu successCallback={handleEnrollMenuSuccess} courseEnabled={courseEnabled} /></Box>}
                             </> }
