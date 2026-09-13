@@ -46,16 +46,13 @@ class TrackBreakdownView(View):
             return False
 
         routes: dict[int, list[int | None]] = defaultdict(list)
-        seen_deliveries: set[int] = set()
-        for delivery_id, enrollment_id, track_id in (
+        for _, enrollment_id, track_id in (
             _content_delivery_qs(organization_id, [course_id])
             .filter(delivery_schedules__status=DeliveryStatus.DELIVERED)
             .order_by("id")
             .values_list("id", "enrollment_id", "course_content__track_id")
+            .distinct()
         ):
-            if delivery_id in seen_deliveries:
-                continue
-            seen_deliveries.add(delivery_id)
             routes[enrollment_id].append(track_id)
         statuses = dict(Enrollment.objects.filter(id__in=routes.keys()).values_list("id", "status"))
 
