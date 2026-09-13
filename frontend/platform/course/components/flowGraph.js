@@ -14,10 +14,13 @@
  *   to route by, since rules are ignored then
  * - `rejoin` - from the last content on a track to where it continues
  * - `ends` - from the last content on a track that ends the course
+ *
+ * `groups` has one entry per track, so the map can draw a track as a box around its content.
  */
 
 export const END_NODE_ID = 'end';
 export const contentNodeId = (contentId) => `content-${contentId}`;
+export const trackGroupId = (trackId) => `track-${trackId}`;
 
 const trackOf = (content) => content.track_id ?? null;
 
@@ -125,5 +128,7 @@ export function buildFlowGraph(contents, tracks = [], transitions = []) {
         });
     }
 
-    return { nodes, edges };
+    const groups = tracks.map((track) => ({ id: trackGroupId(track.id), track, unreached: !routedTracks.has(track.id) }));
+
+    return { nodes, edges, groups };
 }

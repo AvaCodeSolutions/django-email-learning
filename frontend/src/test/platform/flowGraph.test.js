@@ -77,4 +77,11 @@ describe('buildFlowGraph', () => {
 
         expect(arrows(graph)).toEqual(['content-1>content-2:next', 'content-2>content-3:next', `content-3>${END_NODE_ID}:next`]);
     });
+
+    it('describes each track as a group, noting the ones no rule reaches', () => {
+        const draft = { id: 9, name: 'Draft', parent_track_id: null, merge_into_id: null };
+        const graph = buildFlowGraph(contents, [remedial, draft], [rule(1, 2, 7)]);
+
+        expect(graph.groups.map((group) => [group.id, group.unreached])).toEqual([['track-7', false], ['track-9', true]]);
+    });
 });

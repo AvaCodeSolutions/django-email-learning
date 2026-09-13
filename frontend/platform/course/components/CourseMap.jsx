@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Background, Controls, Handle, MarkerType, Position, ReactFlow } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Box, Chip, Typography } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import AltRouteIcon from '@mui/icons-material/AltRoute';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import BallotOutlinedIcon from '@mui/icons-material/BallotOutlined';
@@ -15,7 +15,7 @@ import { NODE_HEIGHT, NODE_WIDTH, layoutFlow } from './flowLayout.js';
 
 const TYPE_ICONS = { lesson: DescriptionOutlinedIcon, quiz: BallotOutlinedIcon, assignment: AssignmentOutlinedIcon };
 
-// Tracks are told apart by colour; each node also names its track, so the palette can repeat.
+// Tracks are told apart by colour; each track's box also carries its name, so the palette can repeat.
 const TRACK_COLORS = ['#7e57c2', '#00897b', '#ef6c00', '#1e88e5', '#d81b60', '#6d4c41'];
 
 const HIDDEN_HANDLE = { opacity: 0, pointerEvents: 'none' };
@@ -66,15 +66,11 @@ function ContentNode({ data }) {
                 </Typography>
                 {data.isBranchPoint && <AltRouteIcon fontSize="small" sx={{ color: 'primary.main', flexShrink: 0 }} />}
             </Box>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                <Typography variant="caption" sx={{ color: data.color ?? 'text.secondary', fontWeight: data.track ? 600 : 400 }}>
-                    {data.track ? data.track.name : (localeMessages['main_path'] || 'Main path')}
-                </Typography>
-                {!published && <Chip size="small" variant="outlined" label={notPublished} sx={{ height: 18, fontSize: '0.65rem' }} />}
-                {data.unreached && (
-                    <Chip size="small" color="warning" variant="outlined" label={localeMessages['map_unreached'] || 'No rule routes here'} sx={{ height: 18, fontSize: '0.65rem' }} />
-                )}
-            </Box>
+            {!published && (
+                <Box sx={{ mt: 0.5 }}>
+                    <Chip size="small" variant="outlined" label={notPublished} sx={{ height: 18, fontSize: '0.65rem' }} />
+                </Box>
+            )}
             <Handle type="source" position={Position.Bottom} isConnectable={false} style={HIDDEN_HANDLE} />
         </Box>
     );
@@ -106,7 +102,34 @@ function EndNode() {
     );
 }
 
-const NODE_TYPES = { content: ContentNode, end: EndNode };
+function TrackGroupNode({ data }) {
+    const { localeMessages } = useAppContext();
+    return (
+        <Box
+            sx={(theme) => ({
+                width: '100%',
+                height: '100%',
+                boxSizing: 'border-box',
+                borderRadius: 2,
+                border: `1.5px dashed ${data.color}`,
+                backgroundColor: alpha(data.color, theme.palette.mode === 'dark' ? 0.14 : 0.07),
+                px: 1.25,
+                py: 0.75,
+                pointerEvents: 'none',
+            })}
+        >
+            <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
+                <AltRouteIcon sx={{ fontSize: 16, color: data.color }} />
+                <Typography variant="caption" sx={{ fontWeight: 700, color: data.color }}>{data.track.name}</Typography>
+                {data.unreached && (
+                    <Chip size="small" color="warning" variant="outlined" label={localeMessages['map_unreached'] || 'No rule routes here'} sx={{ height: 18, fontSize: '0.65rem' }} />
+                )}
+            </Box>
+        </Box>
+    );
+}
+
+const NODE_TYPES = { content: ContentNode, end: EndNode, track: TrackGroupNode };
 
 function styleEdge(edge, { theme, localeMessages, trackColors }) {
     const { kind, track, rules } = edge.data;
@@ -148,7 +171,8 @@ function styleEdge(edge, { theme, localeMessages, trackColors }) {
 
 /**
  * A read-only map of the course: every content as a node and every move a learner can make as
- * an arrow - down the path, onto a track a rule selects, and back to where a track rejoins.
+ * an arrow - down the path, onto a track a rule selects, and back to where a track rejoins. Each
+ * track is a box around its content, so anything outside every box is on the main path.
  * Clicking a node opens the content, as a row of the content table does.
  */
 const CourseMap = ({ contents = [], tracks = [], transitions = [], onContentClick }) => {
@@ -163,16 +187,22 @@ const CourseMap = ({ contents = [], tracks = [], transitions = [], onContentClic
     const { nodes, edges } = useMemo(() => {
         const trackColors = new Map(tracks.map((track, index) => [track.id, TRACK_COLORS[index % TRACK_COLORS.length]]));
         const graph = buildFlowGraph(contents, tracks, transitions);
-        const positioned = layoutFlow(graph.nodes, graph.edges).map((node) => (node.type === 'content'
-            ? {
-                ...node,
-                data: {
-                    ...node.data,
-                    color: node.data.track ? trackColors.get(node.data.track.id) : null,
-                    onOpen: () => openRef.current?.(node.data.content.id),
-                },
+        const positioned = layoutFlow(graph.nodes, graph.edges, graph.groups).map((node) => {
+            if (node.type === 'track') {
+                return { ...node, data: { ...node.data, color: trackColors.get(node.data.track.id) } };
             }
-            : node));
+            if (node.type === 'content') {
+                return {
+                    ...node,
+                    data: {
+                        ...node.data,
+                        color: node.data.track ? trackColors.get(node.data.track.id) : null,
+                        onOpen: () => openRef.current?.(node.data.content.id),
+                    },
+                };
+            }
+            return node;
+        });
         return {
             nodes: positioned,
             edges: graph.edges.map((edge) => styleEdge(edge, { theme, localeMessages, trackColors })),
