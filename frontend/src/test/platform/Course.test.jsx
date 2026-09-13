@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../test-utils';
 import Course from '../../../platform/course/Course';
@@ -560,6 +560,38 @@ describe('Course', () => {
       await user.click(within(dialog).getByRole('button', { name: 'Delete' }));
 
       expect(await screen.findByRole('alert')).toHaveTextContent(localeMessages.content_delete_failed);
+    });
+  });
+
+  describe('keeping the loaded course structure current', () => {
+    it('reloads the content once a reorder is saved, so the map sees the new order', async () => {
+      const contents = [
+        { id: 1, title: 'First lesson', type: 'lesson', waiting_period: null, is_published: true, track_id: null },
+        { id: 2, title: 'Second lesson', type: 'lesson', waiting_period: null, is_published: true, track_id: null },
+      ];
+      global.fetch.mockImplementation((url) => {
+        if (url.includes('/contents/reorder/')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ message: 'ok' }) });
+        }
+        if (url.includes('/contents')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: contents, tracks: [], transitions: [] }) });
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      });
+      const contentLoads = () => global.fetch.mock.calls.filter(
+        ([url, options]) => url.includes('/contents') && !url.includes('/reorder/') && (options?.method ?? 'GET') === 'GET',
+      ).length;
+
+      renderWithProviders(<Course />, { appContext: { ...baseAppContext, courseEnabled: true } });
+      await screen.findByText('Second lesson');
+      const loadsBefore = contentLoads();
+
+      fireEvent.mouseDown(screen.getAllByTestId('DragIndicatorIcon')[0]);
+      fireEvent.mouseOver(screen.getByText('Second lesson').closest('tr'));
+      fireEvent.pointerUp(window);
+
+      await waitFor(() => expect(global.fetch.mock.calls.some(([url]) => url.includes('/contents/reorder/'))).toBe(true));
+      await waitFor(() => expect(contentLoads()).toBeGreaterThan(loadsBefore));
     });
   });
 });

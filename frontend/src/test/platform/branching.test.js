@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildContentTree, conditionLabel, errorMessageFrom } from '../../../platform/course/components/branching.js';
+import { buildContentTree, buildRouteTree, conditionLabel, errorMessageFrom } from '../../../platform/course/components/branching.js';
 
 const lesson = (id, title, trackId = null) => ({ id, title, type: 'lesson', track_id: trackId, is_published: true });
 const quiz = (id, title, trackId = null) => ({ ...lesson(id, title, trackId), type: 'quiz' });
@@ -104,5 +104,22 @@ describe('errorMessageFrom', () => {
 
     it('falls back when there is no body', () => {
         expect(errorMessageFrom(new Error('network'), 'Fallback')).toBe('Fallback');
+    });
+});
+
+describe('buildRouteTree', () => {
+    it('nests each track under the content that routes onto it', () => {
+        const contents = [lesson(1, 'Intro'), lesson(10, 'Remedial 1', 7), quiz(2, 'Checkpoint'), lesson(3, 'Wrap up')];
+        const tracks = [{ id: 7, name: 'Remedial', parent_track_id: null, merge_into_id: 3 }];
+
+        const tree = buildRouteTree(contents, tracks, [rule(1, 2, 7)]);
+
+        expect(tree.spine.map((node) => node.content.id)).toEqual([1, 2, 3]);
+        const [route] = tree.spine[1].routes;
+        expect(route.track.name).toBe('Remedial');
+        expect(route.nodes.map((node) => node.content.id)).toEqual([10]);
+        expect(route.mergeContent.id).toBe(3);
+        expect(tree.unrouted).toEqual([]);
+        expect(tree.orphans).toEqual([]);
     });
 });

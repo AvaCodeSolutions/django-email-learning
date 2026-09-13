@@ -14,8 +14,9 @@ import PublicIcon from '@mui/icons-material/Public';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CodeIcon from '@mui/icons-material/Code';
 import AddRoadIcon from '@mui/icons-material/AddRoad';
+import AltRouteIcon from '@mui/icons-material/AltRoute';
 import { useState, useEffect, memo } from 'react';
-import { Box, Grid, Button, Dialog, DialogTitle, DialogContent, DialogActions, LinearProgress, Typography, Alert, Tabs, Tab, Badge, Link, IconButton, Tooltip, Switch, FormControlLabel, TextField, InputAdornment, GlobalStyles } from '@mui/material'
+import { Box, Grid, Button, Dialog, DialogTitle, DialogContent, DialogActions, LinearProgress, Typography, Alert, Tabs, Tab, Badge, Link, IconButton, Tooltip, Switch, FormControlLabel, TextField, InputAdornment, GlobalStyles, ToggleButton, ToggleButtonGroup } from '@mui/material'
 import { useTheme } from '@mui/material/styles';
 import ContentTable from './components/ContentTable.jsx';
 import SubmittedAssignmentsSection from './components/SubmittedAssignmentsSection.jsx';
@@ -45,6 +46,8 @@ const LessonForm = lazy(() => import("./components/LessonForm.jsx"));
 const AssignmentForm = lazy(() => import("./components/AssignmentForm.jsx"));
 const DeleteContentForm = lazy(() => import("./components/DeleteContentForm.jsx"));
 const TrackForm = lazy(() => import("./components/TrackForm.jsx"));
+const CourseMap = lazy(() => import("./components/CourseMap.jsx"));
+const TrackAnalytics = lazy(() => import("./components/TrackAnalytics.jsx"));
 const EnableCourseSwitchPopup = lazy(() => import("../courses/components/EnableCourseSwitchPopup.jsx"));
 const CourseForm = lazy(() => import("../courses/components/CourseForm.jsx"));
 
@@ -79,7 +82,8 @@ function Course() {
     const [isWeeklyStatsLoading, setIsWeeklyStatsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('content');
     const [pendingAssignmentsCount, setPendingAssignmentsCount] = useState(0);
-    const [courseStructure, setCourseStructure] = useState({ contents: [], tracks: [] });
+    const [courseStructure, setCourseStructure] = useState({ contents: [], tracks: [], transitions: [] });
+    const [contentView, setContentView] = useState('table');
 
     const [pageSuccessMessage, setPageSuccessMessage] = useState('');
     const [pageErrorMessage, setPageErrorMessage] = useState('');
@@ -456,7 +460,7 @@ function Course() {
         console.log("Event triggered from ContentTable", event);
         if (event.type === 'content_loaded') {
             setContentLoaded(true);
-            setCourseStructure({ contents: event.data.course_contents || [], tracks: event.data.tracks || [] });
+            setCourseStructure({ contents: event.data.course_contents || [], tracks: event.data.tracks || [], transitions: event.data.transitions || [] });
         }
         if (event.type === 'content_clicked') {
             setDialogOpen(false);
@@ -528,7 +532,8 @@ function Course() {
             apiClient.post(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/reorder/`, {
                 ordered_content_ids: event.new_order
             }).then(() => {
-                console.log('Contents reordered successfully');
+                // The map and the content forms draw from the loaded structure, which still has the old order.
+                refreshContents();
             })
             .catch(error => {
                 console.error('Error reordering contents:', error);
@@ -541,6 +546,14 @@ function Course() {
             setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><DeleteContentForm content={event.content} onDelete={deletContent} onCancel={() => {setDialogOpen(false); setDialogMaxWidth('lg');}} /></Suspense>);
             setDialogMaxWidth('sm');
             setDialogOpen(true);
+        }
+        if (event.type === 'content_published') {
+            setCourseStructure((current) => ({
+                ...current,
+                contents: current.contents.map((content) => (
+                    content.id === event.content_id ? { ...content, is_published: event.is_published } : content
+                )),
+            }));
         }
         if (event.type === 'content_moved') {
             apiClient.post(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${event.content_id}/`, { track_id: event.track_id })
@@ -808,7 +821,29 @@ function Course() {
                             {userRole === 'admin' && <Box sx={{ marginInlineStart: { xs: 0, md: 'auto' }, alignSelf: { xs: 'stretch', md: 'flex-start' } }}><EnrollMenu successCallback={handleEnrollMenuSuccess} courseEnabled={courseEnabled} /></Box>}
                             </> }
                             </Box>
-                            <ContentTable courseId={courseId} loaded={contentLoaded} eventHandler={(event) => tableEventHandler(event)} />
+                            {courseStructure.tracks.length > 0 && (
+                                <Box sx={{ px: 1, pb: 1.5, display: 'flex', justifyContent: 'flex-end' }}>
+                                    <ToggleButtonGroup size="small" exclusive value={contentView} onChange={(_, value) => value && setContentView(value)}>
+                                        <ToggleButton value="table"><ViewListIcon fontSize="small" sx={{ marginInlineEnd: 0.5 }} />{localeMessages["course_view_table"] || 'Table'}</ToggleButton>
+                                        <ToggleButton value="map"><AltRouteIcon fontSize="small" sx={{ marginInlineEnd: 0.5 }} />{localeMessages["course_view_map"] || 'Map'}</ToggleButton>
+                                    </ToggleButtonGroup>
+                                </Box>
+                            )}
+                            {/* The table stays mounted under the map: it loads and refreshes the course structure the map draws. */}
+                            <Box sx={{ display: contentView === 'map' && courseStructure.tracks.length > 0 ? 'none' : 'block' }}>
+                                <ContentTable courseId={courseId} loaded={contentLoaded} eventHandler={(event) => tableEventHandler(event)} />
+                            </Box>
+                            {contentView === 'map' && courseStructure.tracks.length > 0 && (
+                                <Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}>
+                                    <CourseMap
+                                        contents={courseStructure.contents}
+                                        tracks={courseStructure.tracks}
+                                        transitions={courseStructure.transitions}
+                                        onContentClick={(contentId) => tableEventHandler({ type: 'content_clicked', content_id: contentId })}
+                                        onTrackClick={canEditBranching ? openTrackForm : undefined}
+                                    />
+                                </Suspense>
+                            )}
                         </>
                     )}
 
@@ -829,6 +864,11 @@ function Course() {
                             hasWeeklyChartData={hasWeeklyChartData}
                             weeklyStats={weeklyStats}
                         />
+                    )}
+                    {activeTab === 'analytics' && (
+                        <Suspense fallback={null}>
+                            <TrackAnalytics courseId={courseId} />
+                        </Suspense>
                     )}
 
                     {activeTab === 'course_info' && (

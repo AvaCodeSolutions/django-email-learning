@@ -1,5 +1,6 @@
 from django.urls import path
 
+from django_email_learning.analytics.tracks import TrackBreakdownView
 from django_email_learning.analytics.views import (
     AverageProgressView,
     CompletionFunnelView,
@@ -73,5 +74,10 @@ urlpatterns = [
         f"{BASE}downloads/completion-summary/",
         DownloadCompletionSummaryView.as_view(),
         name="download_completion_summary",
+    ),
+    path(
+        f"{BASE}track-breakdown/",
+        TrackBreakdownView.as_view(),
+        name="track_breakdown",
     ),
 ]

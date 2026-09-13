@@ -26,6 +26,7 @@ from django_email_learning.models import (
 )
 from django_email_learning.platform.api import serializers
 from django_email_learning.platform.api.pagniated_api_mixin import PaginatedApiMixin
+from django_email_learning.platform.api.serializers.learners import learner_path
 from django_email_learning.services.command_models.enroll_command import EnrollCommand
 from django_email_learning.services.command_models.exceptions.blocked_email_error import (
     BlockedEmailError,
@@ -204,10 +205,10 @@ class EnrollmentView(View):
             enrollment = Enrollment.objects.get(
                 id=kwargs["enrollment_id"], course__organization_id=kwargs["organization_id"]
             )
-            return JsonResponse(
-                serializers.EnrollmentResponse.from_django_model(enrollment).model_dump(),
-                status=200,
-            )
+            response = serializers.EnrollmentResponse.from_django_model(enrollment)
+            response.path = learner_path(enrollment)
+            response.has_branching = enrollment.course.has_branching()
+            return JsonResponse(response.model_dump(), status=200)
         except Enrollment.DoesNotExist:
             return JsonResponse({"error": "Enrollment not found"}, status=404)
         except ValidationError as e:

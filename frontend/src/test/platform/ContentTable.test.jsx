@@ -181,3 +181,25 @@ describe('ContentTable branching', () => {
     expect(screen.queryByRole('button', { name: 'Move to: Intro' })).not.toBeInTheDocument();
   });
 });
+
+describe('ContentTable publishing', () => {
+  it('tells the page once a publish toggle is saved', async () => {
+    global.fetch.mockImplementation((url, options) => {
+      if (options?.method === 'POST') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: sampleContents }) });
+    });
+    const eventHandler = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <ContentTable courseId="5" eventHandler={eventHandler} />,
+      { appContext: { localeMessages, userRole: 'editor' } }
+    );
+    await screen.findByText('First Quiz');
+
+    await user.click(screen.getAllByLabelText('Published: First Quiz')[0]);
+
+    await waitFor(() => expect(eventHandler).toHaveBeenCalledWith({ type: 'content_published', content_id: '2', is_published: true }));
+  });
+});
