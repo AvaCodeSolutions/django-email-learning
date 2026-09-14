@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createTheme } from '@mui/material/styles';
-import { styleEdge } from '../../../platform/course/components/flowEdgeStyle.js';
+import { Position } from '@xyflow/react';
+import { REJOIN_TURN, rejoinPath, styleEdge } from '../../../platform/course/components/flowEdgeStyle.js';
 
 const theme = createTheme();
 const remedial = { id: 7, name: 'Remedial' };
@@ -39,5 +40,28 @@ describe('styleEdge', () => {
 
         expect(styleEdge(rejoin(undefined), context).style.strokeDasharray).toBe('6 4');
         expect(styleEdge(rejoin(true), context).style.strokeDasharray).toBeUndefined();
+    });
+
+    it('draws the arrows leaving a track with the rejoin line, and the rest as plain steps', () => {
+        const edge = (kind) => ({ id: kind, source: 'a', target: 'b', data: { kind, track: remedial } });
+
+        expect(styleEdge(edge('rejoin'), context).type).toBe('rejoin');
+        expect(styleEdge(edge('ends'), context).type).toBe('rejoin');
+        expect(styleEdge(edge('next'), context).type).toBe('smoothstep');
+        expect(styleEdge(route(false), context).type).toBe('smoothstep');
+    });
+});
+
+describe('rejoinPath', () => {
+    it('turns across just above the content it continues at, however far below that is', () => {
+        const horizontalRunY = (sourceY, targetY) => {
+            const path = rejoinPath({ sourceX: 600, sourceY, sourcePosition: Position.Bottom, targetX: 120, targetY, targetPosition: Position.Top });
+            const ys = [...path.matchAll(/[ML]\s*([-\d.]+)[ ,]([-\d.]+)/g)].map((match) => Number(match[2]));
+            return ys;
+        };
+
+        // One row down and four rows down: the line reaches the same height before it turns.
+        expect(horizontalRunY(100, 244)).toContain(244 - REJOIN_TURN);
+        expect(horizontalRunY(100, 676)).toContain(676 - REJOIN_TURN);
     });
 });
