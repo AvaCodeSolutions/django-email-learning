@@ -313,9 +313,9 @@ class Enrollment(models.Model):
         onto remediation" answers an operator's question and would only demoralise the
         person sitting the course. See `learner_progress_percentage` for their side.
         """
-        from django_email_learning.services.content_sequence_service import CoursePath
+        from django_email_learning.services.course_graph import CourseGraph
 
-        path = CoursePath.for_courses({self.course_id})[self.course_id]
+        graph = CourseGraph(self.course_id)
         reached = list(
             self.content_deliveries.filter(course_content__is_published=True)
             .order_by("id")
@@ -324,10 +324,10 @@ class Enrollment(models.Model):
         furthest = self.content_deliveries.order_by("-id").first()
 
         if furthest is None:
-            first = path.first()
-            total_content = 0 if first is None else 1 + path.remaining_after(first)
+            first = content_sequence_service.first_in(graph)
+            total_content = 0 if first is None else 1 + content_sequence_service.remaining_after(graph, first)
         else:
-            total_content = len(set(reached)) + path.remaining_after(furthest.course_content)
+            total_content = len(set(reached)) + content_sequence_service.remaining_after(graph, furthest.course_content)
 
         if total_content == 0:
             return 0
@@ -352,10 +352,10 @@ class Enrollment(models.Model):
         intended usage.
 
         Each learner is measured against their own path, so the per-enrollment walk is
-        unavoidable - but `CoursePath` holds the course's shape in memory, so it costs
+        unavoidable - but `CourseGraph` holds the course's shape in memory, so it costs
         CPU over a few dozen contents rather than a query.
         """
-        from django_email_learning.services.content_sequence_service import CoursePath
+        from django_email_learning.services.course_graph import CourseGraph
 
         from .deliveries import ContentDelivery
 
@@ -364,7 +364,7 @@ class Enrollment(models.Model):
             return {}
 
         course_ids = {enrollment.course_id for enrollment in enrollments}
-        paths = CoursePath.for_courses(course_ids)
+        graphs = CourseGraph.for_courses(course_ids)
 
         enrollment_ids = [enrollment.id for enrollment in enrollments]
         delivered_by_enrollment = dict(
@@ -392,16 +392,16 @@ class Enrollment(models.Model):
 
         result: dict[int, int] = {}
         for enrollment in enrollments:
-            path = paths[enrollment.course_id]
+            graph = graphs[enrollment.course_id]
             standing_on_id = furthest_content_id.get(enrollment.id)
             if standing_on_id is None:
-                first = path.first()
-                total_content = 0 if first is None else 1 + path.remaining_after(first)
+                first = content_sequence_service.first_in(graph)
+                total_content = 0 if first is None else 1 + content_sequence_service.remaining_after(graph, first)
             else:
-                standing_on = path.content(standing_on_id)
+                standing_on = graph.content(standing_on_id)
                 total_content = len(reached.get(enrollment.id, set()))
                 if standing_on is not None:
-                    total_content += path.remaining_after(standing_on)
+                    total_content += content_sequence_service.remaining_after(graph, standing_on)
             if not total_content:
                 result[enrollment.id] = 0
                 continue

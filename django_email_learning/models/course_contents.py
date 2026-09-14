@@ -189,7 +189,7 @@ class ContentTrack(models.Model):
     """
 
     # The longest chain of nested tracks an author may build, counting the track itself.
-    # Enforced in clean(); the walk in ancestors() does not depend on it.
+    # Enforced in clean(); the walk in CourseGraph.ancestors() does not depend on it.
     MAX_NESTING_DEPTH = 10
 
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="content_tracks")
@@ -219,64 +219,12 @@ class ContentTrack(models.Model):
     def __str__(self) -> str:
         return f"{self.course.title}: {self.name}"
 
-    def ancestors(self) -> list["ContentTrack"]:
-        """This track's parents, innermost first.
-
-        Stops when the chain repeats rather than at a fixed depth, so the result is the
-        whole ancestry for valid data and still terminates on data that already holds a
-        cycle. Bounding it by depth instead would silently truncate, which is what makes
-        a depth-bounded cycle check miss any cycle longer than the bound.
-        """
-        chain: list[ContentTrack] = []
-        seen: set[int] = set()
-        track = self.parent_track
-        while track is not None and track.pk not in seen:
-            seen.add(track.pk)
-            chain.append(track)
-            track = track.parent_track
-        return chain
-
-    def continuation(self) -> Optional["CourseContent"]:
-        """Where a learner continues once this track runs out, or None to end the course.
-
-        A nested track without a merge point of its own defers to the track it branches off.
-        """
-        for candidate in [self, *self.ancestors()]:
-            if candidate.merge_into_id:
-                return candidate.merge_into
-        return None
-
     def clean(self) -> None:
         super().clean()
-        if self.parent_track and self.parent_track.course_id != self.course_id:
-            raise ValidationError({"parent_track": "A parent track must belong to the same course."})
-        if self.merge_into and self.merge_into.course_id != self.course_id:
-            raise ValidationError({"merge_into": "A merge point must belong to the same course."})
-        ancestry = self.ancestors()
-        if self.pk:
-            if self.parent_track_id == self.pk:
-                raise ValidationError({"parent_track": "A track cannot be its own parent."})
-            if any(ancestor.pk == self.pk for ancestor in ancestry):
-                raise ValidationError({"parent_track": "Track nesting cannot form a cycle."})
-            if self.merge_into and self.merge_into.track_id == self.pk:
-                raise ValidationError({"merge_into": "A track cannot merge into its own content."})
-        if self.merge_into and self.merge_into.track_id is not None:
-            # A merge may only move outward: onto the main spine, or onto a track this one
-            # branches off. Nesting depth then strictly decreases every time a track runs
-            # out, which is what makes the walk terminate by construction rather than by
-            # the loop guard in next_content(). A sibling or a nested track would let two
-            # tracks hand a learner back and forth.
-            if self.merge_into.track_id not in {ancestor.pk for ancestor in ancestry}:
-                raise ValidationError(
-                    {"merge_into": gettext("A track can only merge into the main spine or a track it branches off.")}
-                )
-        if len(ancestry) >= self.MAX_NESTING_DEPTH:
-            raise ValidationError(
-                {
-                    "parent_track": gettext("Tracks cannot be nested more than %(limit)d deep.")
-                    % {"limit": self.MAX_NESTING_DEPTH}
-                }
-            )
+        # The graph reads this module's models, so a module-level import would cycle.
+        from django_email_learning.services.course_graph import CourseGraph
+
+        CourseGraph(self.course_id).check_track(self)
 
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self.full_clean()
@@ -620,33 +568,10 @@ class ContentTransition(models.Model):
                 raise ValidationError({"option": "The answer must belong to this decision point."})
         elif self.option_id is not None:
             raise ValidationError({"option": "Only an answer condition takes an answer."})
-        if self.target.course_id != self.source.course_id:
-            raise ValidationError({"target": "A target track must belong to the same course as the content."})
-        if self.target_id == self.source.track_id:
-            raise ValidationError({"target": "Content cannot route onto the track it is already on."})
-        self._validate_merge_is_forward()
+        # The graph reads this module's models, so a module-level import would cycle.
+        from django_email_learning.services.course_graph import CourseGraph
 
-    def _validate_merge_is_forward(self) -> None:
-        """Refuse a target whose merge point would land back at or before the source.
-
-        Routing a learner onto a track that rejoins ahead of where they branched is the
-        whole point; one that rejoins behind it walks them into the same branch again, and
-        again. Only comparable when the merge lands on the source's own track - priorities
-        are ordered within a track, not across them.
-        """
-        merge_point = self.target.continuation()
-        if merge_point is None or merge_point.track_id != self.source.track_id:
-            return
-        if merge_point.priority <= self.source.priority:
-            raise ValidationError(
-                {
-                    "target": gettext(
-                        "'%(track)s' rejoins the course at or before this content, which would route "
-                        "the learner onto it again."
-                    )
-                    % {"track": self.target.name}
-                }
-            )
+        CourseGraph(self.source.course_id).check_transition(self, self.source)
 
     def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self.full_clean()
