@@ -1,6 +1,24 @@
-import { MarkerType } from '@xyflow/react';
+import { MarkerType, getSmoothStepPath } from '@xyflow/react';
 import { conditionLabel } from './branching.js';
 
+// How far above the content it continues at an arrow leaving a track turns towards it. Less than the
+// smallest gap between rows, so the turn stays below the content before - it can only meet the path
+// into the content it rejoins, never look attached to the content ahead of that.
+export const REJOIN_TURN = 28;
+
+/** The line of an arrow leaving a track: down its own column, then across just above where it continues. */
+export function rejoinPath({ sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition }) {
+    const [path] = getSmoothStepPath({
+        sourceX,
+        sourceY,
+        sourcePosition,
+        targetX,
+        targetY,
+        targetPosition,
+        centerY: Math.max(sourceY, targetY - REJOIN_TURN),
+    });
+    return path;
+}
 /** How the flow view draws an edge from `buildFlowGraph`: its colour, dashes and label, by kind. */
 export function styleEdge(edge, { theme, localeMessages, trackColors }) {
     const { kind, track, rules, inactive, taken } = edge.data;
@@ -38,7 +56,7 @@ export function styleEdge(edge, { theme, localeMessages, trackColors }) {
     const takenStyle = taken ? { strokeDasharray: undefined } : {};
     return {
         ...edge,
-        type: 'smoothstep',
+        type: kind === 'rejoin' ? 'rejoin' : 'smoothstep',
         style: { stroke: color, strokeWidth: 1.5, ...style, ...inactiveStyle, ...takenStyle },
         markerEnd: { type: MarkerType.ArrowClosed, color },
         ...rest,
