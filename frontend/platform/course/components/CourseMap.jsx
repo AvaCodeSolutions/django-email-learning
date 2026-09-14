@@ -167,7 +167,6 @@ function RejoinEdge({ id, style, markerEnd, ...position }) {
 }
 
 const EDGE_TYPES = { rejoin: RejoinEdge };
-
 /**
  * A read-only map of the course: every content as a node and every move a learner can make as
  * an arrow - down the path, onto a track a rule selects, and back to where a track rejoins. Each

@@ -46,22 +46,25 @@ describe('styleEdge', () => {
         const edge = (kind) => ({ id: kind, source: 'a', target: 'b', data: { kind, track: remedial } });
 
         expect(styleEdge(edge('rejoin'), context).type).toBe('rejoin');
-        expect(styleEdge(edge('ends'), context).type).toBe('rejoin');
+        expect(styleEdge(edge('ends'), context).type).toBe('smoothstep');
         expect(styleEdge(edge('next'), context).type).toBe('smoothstep');
         expect(styleEdge(route(false), context).type).toBe('smoothstep');
     });
 });
 
 describe('rejoinPath', () => {
-    it('turns across just above the content it continues at, however far below that is', () => {
-        const horizontalRunY = (sourceY, targetY) => {
-            const path = rejoinPath({ sourceX: 600, sourceY, sourcePosition: Position.Bottom, targetX: 120, targetY, targetPosition: Position.Top });
-            const ys = [...path.matchAll(/[ML]\s*([-\d.]+)[ ,]([-\d.]+)/g)].map((match) => Number(match[2]));
-            return ys;
-        };
+    const horizontalRunY = (sourceY, targetY) => {
+        const path = rejoinPath({ sourceX: 600, sourceY, sourcePosition: Position.Bottom, targetX: 120, targetY, targetPosition: Position.Top });
+        return [...path.matchAll(/[ML]\s*([-\d.]+)[ ,]([-\d.]+)/g)].map((match) => Number(match[2]));
+    };
 
+    it('turns across just above the content it continues at, however far below that is', () => {
         // One row down and four rows down: the line reaches the same height before it turns.
         expect(horizontalRunY(100, 244)).toContain(244 - REJOIN_TURN);
         expect(horizontalRunY(100, 676)).toContain(676 - REJOIN_TURN);
+    });
+
+    it('never bends upward before turning towards a nearby rejoin', () => {
+        expect(horizontalRunY(220, 244)).toContain(220);
     });
 });

@@ -21,6 +21,7 @@ Key Features
 ------------
 
 * **Course Orchestration:** Easily define a sequence of lessons, quizzes, and assignments.
+* **Conditional Branching:** Send learners down separate tracks by their quiz results, or by the answer they pick on a decision point.
 * **Email-First Delivery:** Lessons are delivered via automated email triggers based on learner progress.
 * **Enrollment Pages:** Built-in public pages for learner registration.
 * **Progress Tracking:** Real-time analytics on lesson sent, quiz completions, and learner bottlenecks.

@@ -100,17 +100,23 @@ Content Types
 **Quizzes**
   Interactive assessments that test learner comprehension and progress, with automatic scoring and progress tracking.
 
+**Decision Points**
+  A single question with two or more answers and no right answer. The answer a learner picks can send them down a different track of the course — see :doc:`branching`.
+
 Content Management Actions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Adding Content**
   - Click **"Add Lesson"** to create educational content
   - Click **"Add Quiz"** to create assessments
+  - Click **"Add Decision"** to ask learners a question whose answer routes them
+  - Click **"Add Track"** to create a separate path through the course — see :doc:`branching`
   - Each piece of content can be scheduled for delayed delivery
 
 **Organizing Content**
   - Use drag-and-drop interface to reorder content
   - Content order determines delivery sequence
+  - On a course with tracks, content is reordered within one track at a time
   - Consider learning progression and difficulty curve
 
 **Scheduling Delivery**
@@ -207,6 +213,7 @@ Quiz Configuration
 
 .. note::
    **Quiz Attempts**: Learners have up to 2 attempts to pass each quiz. If they fail both attempts, their enrollment is automatically deactivated to maintain course quality standards.
+   A quiz with routing rules is the exception: its first submission decides where the learner goes, with no retry and no deactivation — see :doc:`branching`.
 
 .. warning::
    **Random Selection Requirements**: When using random question selection, ensure your course has at least 6 questions to provide sufficient variety for different learners and retake scenarios.

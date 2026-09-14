@@ -15,11 +15,10 @@ export function rejoinPath({ sourceX, sourceY, sourcePosition, targetX, targetY,
         targetX,
         targetY,
         targetPosition,
-        centerY: targetY - REJOIN_TURN,
+        centerY: Math.max(sourceY, targetY - REJOIN_TURN),
     });
     return path;
 }
-
 /** How the flow view draws an edge from `buildFlowGraph`: its colour, dashes and label, by kind. */
 export function styleEdge(edge, { theme, localeMessages, trackColors }) {
     const { kind, track, rules, inactive, taken } = edge.data;
@@ -57,7 +56,7 @@ export function styleEdge(edge, { theme, localeMessages, trackColors }) {
     const takenStyle = taken ? { strokeDasharray: undefined } : {};
     return {
         ...edge,
-        type: kind === 'rejoin' || kind === 'ends' ? 'rejoin' : 'smoothstep',
+        type: kind === 'rejoin' ? 'rejoin' : 'smoothstep',
         style: { stroke: color, strokeWidth: 1.5, ...style, ...inactiveStyle, ...takenStyle },
         markerEnd: { type: MarkerType.ArrowClosed, color },
         ...rest,

@@ -21,6 +21,7 @@ Django Email Learning documentation
 
    platform/organizations
    platform/courses
+   platform/branching
    platform/learners
    platform/newsletters
    platform/api_keys
