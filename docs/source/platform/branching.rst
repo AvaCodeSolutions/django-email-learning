@@ -23,6 +23,10 @@ The course is still a sequence. Branching adds three things to it:
 Organization admins and editors can create and edit tracks and routing rules. Other roles can see
 them, but not change them.
 
+.. image:: docs/images/branching-flow-view.png
+   :alt: Flow view of a course with branching
+   :align: center
+
 .. SCREENSHOT PLACEHOLDER
    File: docs/images/branching-flow-view.png
    Show: the Flow view of a course with a quiz routing onto a remedial track and a decision
