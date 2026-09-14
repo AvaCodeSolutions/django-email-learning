@@ -98,7 +98,11 @@ def remaining_after(graph: CourseGraph, content: CourseContent) -> int:
 
 def _route(source: CourseContent, outcome: RoutingOutcome) -> object:
     """The content the routing rules on `source` select, or `_NO_ROUTE` if none apply."""
-    for rule in source.transitions.select_related("target").order_by("order"):
+    for rule in (
+        source.transitions.select_related("target")
+        .only("order", "condition", "threshold", "option_id", "target_id", "target__course_id")
+        .order_by("order")
+    ):
         if rule.matches(outcome):
             return _enter(rule.target)
     return _NO_ROUTE
@@ -106,7 +110,11 @@ def _route(source: CourseContent, outcome: RoutingOutcome) -> object:
 
 def _enter(track: ContentTrack) -> Optional[CourseContent]:
     """The first published content on `track`, or where it continues if it has none."""
-    entry = CourseContent.objects.filter(track=track, is_published=True).order_by("priority").first()
+    entry = (
+        CourseContent.objects.filter(course_id=track.course_id, track=track, is_published=True)
+        .order_by("priority")
+        .first()
+    )
     if entry:
         return entry
     graph = CourseGraph(track.course_id)
