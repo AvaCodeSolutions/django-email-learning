@@ -1,0 +1,34 @@
+{% extends "emails/base.html" %}
+{% load i18n %}
+{% load tz %}
+
+{% block content %}
+    <h2 class="email-title">{% blocktranslate with decision_title=decision.title %}Reminder: {{ decision_title }}{% endblocktranslate %}</h2>
+
+    <p class="email-paragraph">{% translate "Hello there," %}</p>
+
+    <div class="email-panel reminder-panel border-brand">
+        <p class="email-paragraph" style="margin-bottom: 10px;">{% translate "This is a friendly reminder that a question is waiting for your answer." %}</p>
+
+        {% if deadline_time %}
+            <p class="email-paragraph" style="margin-bottom: 0;">
+                {% blocktranslate %}The link is valid until:{% endblocktranslate %}
+                <br>
+                <span class="deadline-chip">{{ deadline_time|timezone:"UTC"|date:"Y-m-d H:i e" }}</span>
+            </p>
+        {% endif %}
+    </div>
+
+    <p class="email-paragraph">{{ decision.prompt|linebreaksbr }}</p>
+
+    <div class="email-cta-wrap quiz-cta-wrap">
+        <a href="{{ link }}" class="email-cta quiz-cta bg-brand">
+            {% translate "Answer" %}
+        </a>
+    </div>
+    <p class="cta-hint">{% translate "This secure link opens the question directly." %}</p>
+
+    <p class="email-muted-note">
+        {% blocktranslate %}If you wish to unsubscribe from this course, please <a href="{{ unsubscribe_link }}" class="color-brand" style="text-decoration: none;">click here</a>{% endblocktranslate %}.
+    </p>
+{% endblock %}

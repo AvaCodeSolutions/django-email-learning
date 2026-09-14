@@ -6,6 +6,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import BallotOutlinedIcon from '@mui/icons-material/BallotOutlined';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
+import CallSplitOutlinedIcon from '@mui/icons-material/CallSplitOutlined';
 import AltRouteIcon from '@mui/icons-material/AltRoute';
 import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove';
 import FlagIcon from '@mui/icons-material/Flag';
@@ -20,6 +21,12 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useAppContext } from '../../../src/render.jsx';
 import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 import { buildContentTree, conditionLabel } from './branching.js';
+
+const TYPE_ICONS = { lesson: DescriptionOutlinedIcon, quiz: BallotOutlinedIcon, assignment: AssignmentOutlinedIcon, decision: CallSplitOutlinedIcon };
+const TypeIcon = ({ type, ...props }) => {
+    const Icon = TYPE_ICONS[type] || AssignmentOutlinedIcon;
+    return <Icon {...props} />;
+};
 
 const trackOf = (content) => content.track_id ?? null;
 
@@ -313,7 +320,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                     onClick={() => {let event = {type: 'content_clicked', content_id: content.id}; eventHandler(event);}}
                     sx={(theme) => ({ cursor: 'pointer', color: theme.palette.mode === 'dark' ? theme.palette.link?.main ?? theme.palette.primary.light : theme.palette.primary.dark, display: { xs: 'block', sm: 'inline-flex' }, alignItems: 'center', gap: 0.5, '&:hover': { opacity: 0.8 }, '&:hover .edit-icon': { opacity: 1 } })}>
                     <Box component="span" sx={{ display: { xs: 'inline-flex', sm: 'none' }, alignItems: 'center', gap: 0.4, color: 'text.secondary', fontWeight: 500, verticalAlign: 'middle', mr: 0.5 }}>
-                        {content.type === 'lesson' ? <DescriptionOutlinedIcon sx={{ fontSize: '0.95rem' }} /> : content.type === 'quiz' ? <BallotOutlinedIcon sx={{ fontSize: '0.95rem' }} /> : <AssignmentOutlinedIcon sx={{ fontSize: '0.95rem' }} />}
+                        <TypeIcon type={content.type} sx={{ fontSize: '0.95rem' }} />
                         {localeMessages[content.type]}:
                     </Box>
                     <Box component="span" sx={{ display: { xs: 'inline', sm: 'inline-flex' }, alignItems: 'center', gap: 0.5 }}>
@@ -364,7 +371,7 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
                     <Chip
                         size="small"
-                        icon={content.type === 'lesson' ? <DescriptionOutlinedIcon /> : content.type === 'quiz' ? <BallotOutlinedIcon /> : <AssignmentOutlinedIcon />}
+                        icon={<TypeIcon type={content.type} />}
                         label={localeMessages[content.type]}
                         variant="outlined"
                         sx={(theme) => ({ fontSize: '0.75rem', color: theme.palette.mode === 'dark' ? theme.palette.text.primary : undefined, borderColor: theme.palette.mode === 'dark' ? theme.palette.text.secondary : undefined })}

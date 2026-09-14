@@ -18,3 +18,8 @@ class QuizSubmissionRequest(BaseModel):
                 raise ValueError(f"Duplicate question ID found: {response.id}")
             question_ids.append(response.id)
         return v
+
+
+class DecisionSubmissionRequest(BaseModel):
+    token: str
+    option_id: int

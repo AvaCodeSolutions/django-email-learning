@@ -10,6 +10,8 @@ from django_email_learning.models import (
     CourseContent,
     CourseContentType,
     CourseInstructor,
+    DecisionOption,
+    DecisionPoint,
     FromEmailType,
     ImapConnection,
     Lesson,
@@ -27,6 +29,11 @@ from django_email_learning.platform.api.serializers.assignments import (
 )
 from django_email_learning.platform.api.serializers.common import (
     InstructorResponse,
+)
+from django_email_learning.platform.api.serializers.decisions import (
+    DecisionCreate,
+    DecisionPointResponse,
+    DecisionUpdate,
 )
 from django_email_learning.platform.api.serializers.lessons import (
     LessonCreate,
@@ -361,7 +368,7 @@ class CourseResponse(BaseModel):
 class CreateCourseContentRequest(BaseModel):
     priority: int | None = Field(gt=0, examples=[1], default=None)
     waiting_period: WaitingPeriod
-    content: LessonCreate | QuizCreate | AssignmentCreate = Field(discriminator="type")
+    content: LessonCreate | QuizCreate | AssignmentCreate | DecisionCreate = Field(discriminator="type")
     # Empty puts the new content on the main spine.
     track_id: Optional[int] = None
 
@@ -376,6 +383,7 @@ class CreateCourseContentRequest(BaseModel):
         lesson = None
         quiz = None
         assignment = None
+        decision = None
         if isinstance(self.content, LessonCreate):
             lesson = Lesson(
                 title=self.content.title,
@@ -426,6 +434,18 @@ class CreateCourseContentRequest(BaseModel):
                     answer.save()
             content_type = CourseContentType.QUIZ
 
+        elif isinstance(self.content, DecisionCreate):
+            decision = DecisionPoint(
+                title=self.content.title,
+                prompt=self.content.prompt,
+                deadline_days=self.content.deadline_days,
+                reminder_interval_days=self.content.reminder_interval_days,
+            )
+            decision.save()
+            for order, option in enumerate(self.content.options, start=1):
+                DecisionOption.objects.create(decision=decision, text=option.text, order=order)
+            content_type = CourseContentType.DECISION
+
         course_content = CourseContent.objects.create(
             course=course,
             track_id=self.track_id,
@@ -434,6 +454,7 @@ class CreateCourseContentRequest(BaseModel):
             assignment=assignment,
             lesson=lesson,
             quiz=quiz,
+            decision=decision,
             type=content_type,
         )
 
@@ -446,6 +467,7 @@ class UpdateCourseContentRequest(BaseModel):
     lesson: Optional[LessonUpdate] = None
     quiz: Optional[UpdateQuiz] = None
     assignment: Optional[AssignmentUpdate] = None
+    decision: Optional[DecisionUpdate] = None
     is_published: Optional[bool] = None
     # Present-but-null moves the content back to the main spine, so this is read through
     # model_fields_set rather than compared against None.
@@ -461,12 +483,13 @@ class UpdateCourseContentRequest(BaseModel):
             self.lesson,
             self.quiz,
             self.assignment,
+            self.decision,
             self.is_published,
         ]
         if not any(f is not None for f in fields) and "track_id" not in self.model_fields_set:
             raise ValueError(
                 "At least one of 'priority', 'waiting_period', 'lesson', 'quiz',"
-                " 'assignment', 'is_published', or 'track_id' must be provided."
+                " 'assignment', 'decision', 'is_published', or 'track_id' must be provided."
             )
         return self
 
@@ -479,6 +502,7 @@ class CourseContentResponse(BaseModel):
     lesson: Optional[LessonResponse] = None
     quiz: Optional[QuizResponse] = None
     assignment: Optional[AssignmentResponse] = None
+    decision: Optional[DecisionPointResponse] = None
     is_published: bool
     track_id: Optional[int] = None
     is_branch_point: bool = False

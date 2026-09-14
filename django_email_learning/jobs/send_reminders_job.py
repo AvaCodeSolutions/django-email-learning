@@ -15,6 +15,10 @@ from django_email_learning.ports.task_queue_protocol import TaskQueueProtocol
 from django_email_learning.services.command_models.send_assignment_reminder_command import (
     SendAssignmentReminderCommand,
 )
+from django_email_learning.services.command_models.send_decision_command import DecisionNotFoundError
+from django_email_learning.services.command_models.send_decision_reminder_command import (
+    SendDecisionReminderCommand,
+)
 from django_email_learning.services.command_models.send_quiz_reminder_command import (
     QuizNotFoundError,
     SendQuizReminderCommand,
@@ -85,6 +89,10 @@ class SendRemindersJob:
                 command = SendAssignmentReminderCommand(  # type: ignore[assignment]
                     delivery_schedule=delivery_schedule,
                 )
+            elif delivery_schedule.delivery.course_content.decision:
+                command = SendDecisionReminderCommand(  # type: ignore[assignment]
+                    delivery_schedule=delivery_schedule,
+                )
             else:
                 logger.error(
                     f"Delivery with ID {delivery_schedule.delivery.id} has no associated quiz or assignment. "
@@ -97,6 +105,13 @@ class SendRemindersJob:
             # `command.execute()` calls `delivery.record_reminder_sent()` on a
             # successful send, which advances `reminder_state` (to SENT, or back
             # to PENDING for deadline-less content that still has nudges left).
+        except DecisionNotFoundError as e:
+            logger.error(
+                f"Decision not found for CourseContent ID {delivery_schedule.delivery.course_content.id}: {str(e)}. "
+                f"Marking reminder as not applicable."
+            )
+            delivery_schedule.delivery.reminder_state = ContentDelivery.ReminderStatus.NOT_APPLICABLE
+            delivery_schedule.delivery.save()
         except QuizNotFoundError as e:
             logger.error(
                 f"Quiz not found for CourseContent ID {delivery_schedule.delivery.course_content.id}: {str(e)}. "

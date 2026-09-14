@@ -19,7 +19,14 @@ from django.views import View
 from pydantic import ValidationError
 
 from django_email_learning.decorators import accessible_for
-from django_email_learning.models import ContentTrack, ContentTransition, Course, CourseContent, TransitionCondition
+from django_email_learning.models import (
+    ContentTrack,
+    ContentTransition,
+    Course,
+    CourseContent,
+    DecisionOption,
+    TransitionCondition,
+)
 from django_email_learning.platform.api.serializers import branching as serializers
 
 
@@ -140,7 +147,7 @@ class ContentTransitionView(View):
         content = self._content_or_none(kwargs)
         if not content:
             return JsonResponse({"error": "Content not found"}, status=404)
-        transitions = content.transitions.order_by("order")
+        transitions = content.transitions.select_related("option").order_by("order")
         return JsonResponse(
             {
                 "transitions": [
@@ -160,12 +167,18 @@ class ContentTransitionView(View):
             target = ContentTrack.objects.filter(id=payload.target_id, course_id=content.course_id).first()
             if not target:
                 return JsonResponse({"error": "Target track not found"}, status=404)
+            option = None
+            if payload.option_id is not None:
+                option = DecisionOption.objects.filter(id=payload.option_id, decision_id=content.decision_id).first()
+                if not option:
+                    return JsonResponse({"error": "Answer not found"}, status=404)
             transition = ContentTransition(
                 source=content,
                 order=payload.order,
                 condition=payload.condition.value,
                 threshold=payload.threshold,
                 target=target,
+                option=option,
             )
             transition.save()
             return JsonResponse(
@@ -200,6 +213,13 @@ class ContentTransitionView(View):
         }
         if any(rule.target_id not in targets for rule in rules):
             return JsonResponse({"error": "Target track not found"}, status=404)
+        wanted_options = {rule.option_id for rule in rules if rule.option_id is not None}
+        options = {
+            option.id: option
+            for option in DecisionOption.objects.filter(decision_id=content.decision_id, id__in=wanted_options)
+        }
+        if len(options) != len(wanted_options):
+            return JsonResponse({"error": "Answer not found"}, status=404)
 
         try:
             with transaction.atomic():
@@ -212,6 +232,7 @@ class ContentTransitionView(View):
                         condition=rule.condition.value,
                         threshold=rule.threshold,
                         target=targets[rule.target_id],
+                        option=options.get(rule.option_id) if rule.option_id is not None else None,
                     )
                     transition.save()
                     saved.append(transition)

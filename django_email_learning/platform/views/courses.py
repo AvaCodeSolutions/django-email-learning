@@ -255,11 +255,13 @@ class CourseView(BasePlatformView):
             "title": _("Title"),
             "add_quiz": _("Add Quiz"),
             "add_assignment": _("Add Assignment"),
+            "add_decision": _("Add Decision"),
             "send_lesson_to_yourself": _("Send it to yourself"),
             "add_lesson": _("Add Lesson"),
             "lesson": _("Lesson"),
             "quiz": _("Quiz"),
             "assignment": _("Assignment"),
+            "decision": _("Decision"),
             "add": _("Add"),
             "new_lesson": _("New Lesson"),
             "update_lesson": _("Update Lesson"),
@@ -316,6 +318,27 @@ class CourseView(BasePlatformView):
             "assignment_title": _("Assignment Title"),
             "new_assignment": _("New Assignment"),
             "update_assignment": _("Update Assignment"),
+            "new_decision": _("New Decision"),
+            "update_decision": _("Update Decision"),
+            "decision_prompt": _("Question"),
+            "decision_prompt_help": _("What learners are asked. Each answer can send them down a different track."),
+            "decision_options": _("Answers"),
+            "decision_option_label": _("Answer %(number)s"),
+            "decision_add_option": _("Add answer"),
+            "decision_remove_option": _("Remove answer"),
+            "decision_move_option_up": _("Move answer up"),
+            "decision_move_option_down": _("Move answer down"),
+            "save_decision": _("Save Decision"),
+            "decision_settings": _("Decision Settings"),
+            "decision_tab_question": _("Question"),
+            "decision_title_required": _("A decision needs a title."),
+            "decision_prompt_required": _("A decision needs a question."),
+            "decision_options_required": _("A decision needs at least two answers, and none of them can be empty."),
+            "decision_save_failed": _("Could not save the decision."),
+            "decision_branching_help": _(
+                "Send learners down a track by the answer they pick. Rules are checked in order; the first that "
+                "matches wins. Without rules, every learner continues to the next content."
+            ),
             "assignment_submission_required": _(
                 "At least one type of submission is required for the assignment."
                 " Please enable text submission, file submission, or both."
@@ -426,11 +449,15 @@ class CourseView(BasePlatformView):
             "branch_condition_score_gte": _("If score ≥ THRESHOLD"),
             "branch_condition_score_lt": _("If score < THRESHOLD"),
             "branch_condition_default": _("Otherwise"),
+            "branch_condition_option_selected": _('If answered "OPTION"'),
             "condition_passed": _("Passed"),
             "condition_failed": _("Failed"),
             "condition_score_gte": _("Score at least"),
             "condition_score_lt": _("Score below"),
             "condition_default": _("Otherwise"),
+            "condition_option_selected": _("Answered"),
+            "rule_option": _("Answer"),
+            "rule_option_required": _("Choose which answer each rule matches."),
             "branching_rules_help": _(
                 "Rules are checked from top to bottom and the first match decides where the learner goes."
                 " If no rule matches, the learner continues on their current path."
@@ -464,7 +491,7 @@ class CourseView(BasePlatformView):
             "rule_threshold_required": _("A score rule needs a score between 0 and 100."),
             "save_track": _("Save Track"),
             "course_view_table": _("Table"),
-            "course_view_map": _("Map"),
+            "course_view_flow": _("Flow"),
             "map_otherwise": _("Otherwise"),
             "map_not_submitted": _("If not submitted"),
             "map_unreached": _("No rule routes here"),

@@ -12,7 +12,7 @@ from django_email_learning.services.utils import (
     mask_email,
 )
 
-from .course_contents import Assignment
+from .course_contents import Assignment, DecisionOption
 from .deliveries import ContentDelivery
 from .enums.course_content_type import CourseContentType
 from .organizations import OrganizationUser
@@ -176,3 +176,31 @@ class AssignmentFeedback(models.Model):
 
     def __str__(self) -> str:
         return f"Feedback for {self.submission}"
+
+
+class DecisionResponse(models.Model):
+    """The answer a learner gave on a decision point. One per delivery: the first answer routes."""
+
+    delivery = models.OneToOneField(ContentDelivery, on_delete=models.CASCADE, related_name="decision_response")
+    option = models.ForeignKey(
+        DecisionOption,
+        # An answer learners have chosen stays, so the record of what they chose stays true.
+        on_delete=models.PROTECT,
+        related_name="responses",
+    )
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    def clean(self) -> None:
+        super().clean()
+        decision_id = self.delivery.course_content.decision_id
+        if decision_id is None or self.option.decision_id != decision_id:
+            raise ValidationError("The answer must belong to this delivery's decision point.")
+
+    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return (
+            f"{self.option.decision.title} | {mask_email(self.delivery.enrollment.learner.email)} | {self.option.text}"
+        )

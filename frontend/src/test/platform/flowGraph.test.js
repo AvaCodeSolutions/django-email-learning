@@ -32,6 +32,32 @@ describe('buildFlowGraph', () => {
         const route = graph.edges.find((edge) => edge.data.kind === 'route');
         expect(route.data.rules.map((r) => r.condition)).toEqual(['failed']);
         expect(route.data.track.name).toBe('Remedial');
+        expect(route.data.inactive).toBe(false);
+    });
+
+    it('marks the routes out of unpublished content inactive, and draws its next step over them', () => {
+        const draftCheckpoint = { ...quiz(2, 'Checkpoint'), is_published: false };
+        const graph = buildFlowGraph([lesson(1, 'Intro'), lesson(10, 'Remedial 1', 7), draftCheckpoint, lesson(3, 'Wrap up')], [remedial], [rule(1, 2, 7)]);
+
+        expect(arrows(graph)).toEqual([
+            'content-1>content-2:next',
+            'content-10>content-3:rejoin',
+            'content-2>content-10:route',
+            'content-2>content-3:next',
+            `content-3>${END_NODE_ID}:next`,
+        ]);
+        expect(graph.edges.find((edge) => edge.data.kind === 'route').data.inactive).toBe(true);
+        expect(graph.edges.find((edge) => edge.id === 'content-2-next').data.taken).toBe(true);
+    });
+
+    it('marks the step off a track past unpublished content as taken', () => {
+        const extra = { id: 8, name: 'Extra', parent_track_id: 7, merge_into_id: null };
+        const draftChoice = { ...lesson(11, 'Pick again', 7, false), type: 'decision' };
+        const graph = buildFlowGraph([lesson(10, 'Remedial 1', 7), draftChoice, lesson(12, 'Extra help', 8), lesson(3, 'Wrap up')], [remedial, extra], [rule(2, 11, 8, 'option_selected')]);
+
+        const step = graph.edges.find((edge) => edge.id === 'content-11-next');
+        expect([step.target, step.data.kind, step.data.taken]).toEqual(['content-3', 'rejoin', true]);
+        expect(graph.edges.find((edge) => edge.id === 'content-10-next').data.taken).toBeUndefined();
     });
 
     it('marks the fall-through behind an otherwise rule as taken only without a result', () => {

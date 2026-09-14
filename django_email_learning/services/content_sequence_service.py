@@ -19,7 +19,7 @@ caller's job.
 
 from typing import Optional
 
-from django_email_learning.models.course_contents import ContentTrack, CourseContent, QuizOutcome
+from django_email_learning.models.course_contents import ContentTrack, CourseContent, RoutingOutcome
 from django_email_learning.models.courses import Course
 
 # Told apart from a genuine `None`, which means "routed, and the route ends the course".
@@ -37,7 +37,7 @@ def first_content(course: Course) -> Optional[CourseContent]:
     )
 
 
-def next_content(current: CourseContent, outcome: Optional[QuizOutcome] = None) -> Optional[CourseContent]:
+def next_content(current: CourseContent, outcome: Optional[RoutingOutcome] = None) -> Optional[CourseContent]:
     """The content that follows `current`, or None if the course ends there.
 
     `outcome` is what `current` produced, and is what the routing rules on it are
@@ -55,7 +55,7 @@ def next_content(current: CourseContent, outcome: Optional[QuizOutcome] = None) 
     return _walk_from(current)
 
 
-def _route(source: CourseContent, outcome: QuizOutcome) -> object:
+def _route(source: CourseContent, outcome: RoutingOutcome) -> object:
     """The content the routing rules on `source` select, or `_NO_ROUTE` if none apply."""
     transitions = list(source.transitions.select_related("target").order_by("order"))
     for transition in transitions:

@@ -86,6 +86,11 @@ describe('conditionLabel', () => {
     it('uses the plain label for a rule without a threshold', () => {
         expect(conditionLabel({ condition: 'failed', threshold: null }, localeMessages)).toBe('If failed');
     });
+
+    it('names the answer of an answer rule, exactly as written', () => {
+        const labels = { branch_condition_option_selected: 'If answered "OPTION"' };
+        expect(conditionLabel({ condition: 'option_selected', option_text: 'Save $& later' }, labels)).toBe('If answered "Save $& later"');
+    });
 });
 
 describe('errorMessageFrom', () => {

@@ -30,6 +30,7 @@ class Learners(BasePlatformView):
             "lesson_sent": _("Lesson Sent"),
             "quiz_sent": _("Quiz Sent"),
             "assignment_sent": _("Assignment Sent"),
+            "decision_sent": _("Decision Sent"),
             "quiz_submitted": _("Quiz Submitted"),
             "assignment_submitted": _("Assignment Submitted"),
             "assignment_reviewed": _("Assignment Reviewed"),

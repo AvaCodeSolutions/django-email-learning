@@ -22,6 +22,10 @@ from django_email_learning.services.command_models.send_assignment_command impor
     AssignmentNotFoundError,
     SendAssignmentCommand,
 )
+from django_email_learning.services.command_models.send_decision_command import (
+    DecisionNotFoundError,
+    SendDecisionCommand,
+)
 from django_email_learning.services.command_models.send_lesson_command import (
     LessonNotFoundError,
     SendLessonCommand,
@@ -247,6 +251,14 @@ class DeliverContentsJob:
                     f"Quiz content delivered for DeliverySchedule ID {delivery_schedule.id}. "
                     "Next content scheduling is deferred until quiz completion."
                 )
+        elif course_content.type == CourseContentType.DECISION:
+            is_delivered = self.send_decision_content(delivery_schedule)
+            # Like a quiz, the next content waits for the learner's answer, which picks the route.
+            if is_delivered:
+                logger.info(
+                    f"Decision content delivered for DeliverySchedule ID {delivery_schedule.id}. "
+                    "Next content scheduling is deferred until the learner answers."
+                )
         elif course_content.type == CourseContentType.ASSIGNMENT and course_content.assignment is not None:
             is_delivered = self.send_assignment_content(delivery_schedule)
 
@@ -339,6 +351,38 @@ class DeliverContentsJob:
             delivery_schedule.save()
         except Exception as e:
             logger.exception(f"Failed to send quiz content for DeliverySchedule ID {delivery_schedule.id}: {str(e)}")
+            self.handle_failed_delivery(delivery_schedule)
+        return False
+
+    def send_decision_content(self, delivery_schedule: DeliverySchedule) -> bool:
+        if not delivery_schedule.delivery.course_content.decision:
+            delivery_schedule.status = DeliveryStatus.CANCELED
+            delivery_schedule.save()
+            logger.error(
+                f"DeliverySchedule ID {delivery_schedule.id} has no associated decision. Canceling the delivery."
+            )
+            return False
+
+        try:
+            if not delivery_schedule.link:
+                delivery_schedule.link = delivery_schedule.generate_link()
+                delivery_schedule.save()
+            SendDecisionCommand(
+                content_id=delivery_schedule.delivery.course_content.id,
+                email=delivery_schedule.delivery.enrollment.learner.email,
+                link=delivery_schedule.link,
+            ).execute()
+            delivery_schedule.status = DeliveryStatus.DELIVERED
+            delivery_schedule.save()
+            return True
+        except DecisionNotFoundError:
+            logger.error(f"Decision for DeliverySchedule ID {delivery_schedule.id} not found. Canceling the delivery.")
+            delivery_schedule.status = DeliveryStatus.CANCELED
+            delivery_schedule.save()
+        except Exception as e:
+            logger.exception(
+                f"Failed to send decision content for DeliverySchedule ID {delivery_schedule.id}: {str(e)}"
+            )
             self.handle_failed_delivery(delivery_schedule)
         return False
 

@@ -43,7 +43,7 @@ const localeMessages = {
     not_published: 'Not published',
     map_unreached: 'No rule routes here',
     map_course_complete: 'Course complete',
-    course_view_map: 'Map',
+    course_view_flow: 'Flow',
     edit_track: 'Edit Track',
 };
 
@@ -73,6 +73,13 @@ describe('CourseMap', () => {
         expect(screen.getByText('Remedial lesson')).toBeInTheDocument();
         expect(screen.getByText('Remedial')).toBeInTheDocument();
         expect(screen.getByText('Course complete')).toBeInTheDocument();
+    });
+
+    it('fades unpublished content', () => {
+        renderMap();
+
+        expect(screen.getByText('Wrap up').closest('[role="button"]')).toHaveStyle({ opacity: '0.7' });
+        expect(screen.getByText('Intro').closest('[role="button"]')).toHaveStyle({ opacity: '1' });
     });
 
     it('marks unpublished content and tracks no rule reaches', () => {

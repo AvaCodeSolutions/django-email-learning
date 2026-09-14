@@ -1,0 +1,13 @@
+{% load i18n %}
+{{ decision.title }}
+
+{% translate "Hello there," %}
+
+{% translate "We have a question for you, and your answer shapes what comes next in the course." %}{% if decision.deadline_days > 0 %}{% blocktranslate with deadline_days=decision.deadline_days %} Please answer within {{ deadline_days }} days.{% endblocktranslate %}{% endif %}
+
+{{ decision.prompt }}
+
+{% translate "Please click the link below to answer:" %}
+{{ link }}
+
+{% translate "Unsubscribe link:" %} {{ unsubscribe_link }}

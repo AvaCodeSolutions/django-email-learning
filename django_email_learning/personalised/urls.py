@@ -4,6 +4,7 @@ from django_email_learning.personalised.views import (
     AssignmentPublicView,
     CertificateFormView,
     CertificateView,
+    DecisionPublicView,
     QuizPublicView,
     TrackOpenView,
     UnsubscribeView,
@@ -15,6 +16,7 @@ app_name = "django_email_learning"
 urlpatterns = [
     path("quiz/", QuizPublicView.as_view(), name="quiz_public_view"),
     path("assignment/", AssignmentPublicView.as_view(), name="assignment_public_view"),
+    path("decision/", DecisionPublicView.as_view(), name="decision_public_view"),
     path("verify-enrollment/", VerifyEnrollmentView.as_view(), name="verify_enrollment"),
     path("certificate-form/", CertificateFormView.as_view(), name="certificate_form"),
     path(

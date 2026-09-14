@@ -7,26 +7,37 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { useAppContext } from '../../../src/render';
 import apiClient from '../../../src/apiClient.js';
 import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
-import { THRESHOLD_CONDITIONS, TRANSITION_CONDITIONS, errorMessageFrom } from './branching.js';
+import {
+    DECISION_TRANSITION_CONDITIONS,
+    OPTION_CONDITIONS,
+    THRESHOLD_CONDITIONS,
+    TRANSITION_CONDITIONS,
+    errorMessageFrom,
+} from './branching.js';
 
 const toEditable = (transitions) => transitions.map((rule) => ({
     condition: rule.condition,
     threshold: rule.threshold ?? '',
+    option_id: rule.option_id ?? '',
     target_id: rule.target_id,
 }));
 
 /**
- * The routing rules on one quiz, edited as a list and saved as a whole.
+ * The routing rules on one quiz or decision point, edited as a list and saved as a whole.
  *
  * The server replaces the full set on save, so rules can be reordered freely here - the order
- * is what decides which rule matches first.
+ * is what decides which rule matches first. Given `options`, the rules are a decision point's:
+ * they match the answer a learner picked rather than their score.
  */
-const QuizBranching = ({ courseId, contentId, onChange }) => {
+const QuizBranching = ({ courseId, contentId, onChange, options = null, helpText }) => {
     const { localeMessages, userRole, apiBaseUrl: rawApiBaseUrl } = useAppContext();
     const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const organizationId = localStorage.getItem('activeOrganizationId');
     const courseUrl = `${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}`;
     const canEdit = userRole === 'admin' || userRole === 'editor';
+    const isDecision = options !== null;
+    const conditions = isDecision ? DECISION_TRANSITION_CONDITIONS : TRANSITION_CONDITIONS;
+    const firstOptionId = options?.[0]?.id ?? '';
 
     const [loading, setLoading] = useState(true);
     const [tracks, setTracks] = useState([]);
@@ -65,12 +76,17 @@ const QuizBranching = ({ courseId, contentId, onChange }) => {
             next.threshold = THRESHOLD_CONDITIONS.has(changes.condition)
                 ? (rule.threshold === '' ? 50 : rule.threshold)
                 : '';
+            next.option_id = OPTION_CONDITIONS.has(changes.condition)
+                ? (rule.option_id === '' ? firstOptionId : rule.option_id)
+                : '';
         }
         return next;
     }));
 
     const addRule = () => edit((current) => {
-        const rule = { condition: 'failed', threshold: '', target_id: tracks[0].id };
+        const rule = isDecision
+            ? { condition: 'option_selected', threshold: '', option_id: firstOptionId, target_id: tracks[0].id }
+            : { condition: 'failed', threshold: '', option_id: '', target_id: tracks[0].id };
         // An otherwise rule matches everything, so anything after it could never match.
         const last = current[current.length - 1];
         if (last && last.condition === 'default') {
@@ -100,11 +116,16 @@ const QuizBranching = ({ courseId, contentId, onChange }) => {
             setErrorMessage(localeMessages['rule_threshold_required'] || 'A score rule needs a score between 0 and 100.');
             return;
         }
+        if (rules.some((rule) => OPTION_CONDITIONS.has(rule.condition) && rule.option_id === '')) {
+            setErrorMessage(localeMessages['rule_option_required'] || 'Choose which answer each rule matches.');
+            return;
+        }
         setSaving(true);
         apiClient.put(`${courseUrl}/contents/${contentId}/transitions/`, {
             transitions: rules.map((rule) => ({
                 condition: rule.condition,
                 threshold: THRESHOLD_CONDITIONS.has(rule.condition) ? Number(rule.threshold) : null,
+                option_id: OPTION_CONDITIONS.has(rule.condition) ? Number(rule.option_id) : null,
                 target_id: Number(rule.target_id),
             })),
         })
@@ -125,11 +146,13 @@ const QuizBranching = ({ courseId, contentId, onChange }) => {
         return <Box sx={{ p: 2 }}><LinearProgress /></Box>;
     }
 
+    const help = helpText ?? localeMessages['branching_rules_help'];
+
     return (
         <Box>
-            {localeMessages['branching_rules_help'] && (
+            {help && (
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {localeMessages['branching_rules_help']}
+                    {help}
                 </Typography>
             )}
             {errorMessage && <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert>}
@@ -154,7 +177,7 @@ const QuizBranching = ({ courseId, contentId, onChange }) => {
                                 disabled={!canEdit}
                                 sx={{ minWidth: 170 }}
                             >
-                                {TRANSITION_CONDITIONS.map((condition) => (
+                                {conditions.map((condition) => (
                                     <MenuItem key={condition} value={condition}>
                                         {localeMessages[`condition_${condition}`] || condition}
                                     </MenuItem>
@@ -172,6 +195,22 @@ const QuizBranching = ({ courseId, contentId, onChange }) => {
                                     slotProps={{ htmlInput: { min: 0, max: 100 } }}
                                     sx={{ width: 100 }}
                                 />
+                            )}
+                            {isDecision && OPTION_CONDITIONS.has(rule.condition) && (
+                                <TextField
+                                    select
+                                    size="small"
+                                    id={`rule-option-${index}`}
+                                    label={localeMessages['rule_option'] || 'Answer'}
+                                    value={rule.option_id}
+                                    onChange={(event) => updateRule(index, { option_id: event.target.value })}
+                                    disabled={!canEdit}
+                                    sx={{ minWidth: 200 }}
+                                >
+                                    {options.map((option) => (
+                                        <MenuItem key={option.id} value={option.id}>{option.text}</MenuItem>
+                                    ))}
+                                </TextField>
                             )}
                             <TextField
                                 select
