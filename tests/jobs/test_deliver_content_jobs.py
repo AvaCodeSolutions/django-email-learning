@@ -294,3 +294,27 @@ def test_deliver_contents_job_does_not_emit_start_or_finish_metrics_when_already
 
     metric_started_spy.assert_not_called()
     metric_finished_spy.assert_not_called()
+
+
+@pytest.mark.parametrize("delivery_fails", [False, True])
+def test_worker_releases_the_db_connection_once_the_delivery_is_done(delivery_fails):
+    job = DeliverContentsJob()
+    calls = []
+
+    def process_delivery(_):
+        calls.append("delivery")
+        if delivery_fails:
+            raise RuntimeError("boom")
+
+    with (
+        patch.object(deliver_contents_job_module, "close_old_connections", side_effect=lambda: calls.append("close")),
+        patch.object(job, "process_delivery", side_effect=process_delivery),
+        patch.object(job, "block_delivery"),
+    ):
+        if delivery_fails:
+            with pytest.raises(RuntimeError):
+                job._worker(DeliverySchedule())
+        else:
+            job._worker(DeliverySchedule())
+
+    assert calls == ["close", "delivery", "close"]

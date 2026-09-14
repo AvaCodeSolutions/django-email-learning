@@ -46,3 +46,9 @@ class ThreadPoolJobExecutor:
                 job_execution.finished_at = timezone.now()
                 job_execution.save()
                 metric_service.job_execution_failed(job_name=job_name)
+        finally:
+            # No request_finished signal fires in this thread, so nothing else
+            # releases the connection. Left open, the idle thread keeps it checked
+            # out of Django's connection pool until it happens to run another job,
+            # starving the request threads of the same process.
+            close_old_connections()

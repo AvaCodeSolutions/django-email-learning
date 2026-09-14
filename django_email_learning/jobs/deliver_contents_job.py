@@ -154,6 +154,11 @@ class DeliverContentsJob:
         except Exception as e:
             self.block_delivery(delivery_schedule, e)
             raise
+        finally:
+            # Release it when the delivery ends, not when this thread next picks
+            # one up: an idle worker otherwise holds a pooled connection that the
+            # other workers and the job's own thread are waiting on.
+            close_old_connections()
 
     def requeue_stale_claims(self) -> int:
         """Return schedules whose claim was never completed to the queue.

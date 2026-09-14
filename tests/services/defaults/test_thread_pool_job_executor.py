@@ -63,3 +63,31 @@ def test_submit_marks_job_failed_when_dispatch_fails_before_run_job_starts() -> 
 
     assert job_execution.status == JobStatus.FAILED.value
     assert job_execution.error == "'unregistered_job'"
+
+
+@pytest.mark.parametrize("job_raises", [False, True])
+def test_run_releases_the_db_connection_once_the_job_is_done(job_raises: bool) -> None:
+    """The thread outlives the job and no request_finished signal fires in it, so
+    unless _run closes the connection itself, the idle thread keeps it checked out
+    of Django's connection pool."""
+    job_execution = JobExecution.objects.create(job_name="recording_job", status=JobStatus.RUNNING.value)
+    calls: list[str] = []
+
+    def run_job(_: JobExecution) -> None:
+        calls.append("job")
+        if job_raises:
+            raise RuntimeError("boom")
+
+    job_class = mock.Mock()
+    job_class.return_value._run_job.side_effect = run_job
+
+    with (
+        mock.patch(
+            "django_email_learning.services.defaults.thread_pool_job_executor.close_old_connections",
+            side_effect=lambda: calls.append("close"),
+        ),
+        mock.patch.dict("django_email_learning.jobs.registry.JOB_REGISTRY", {"recording_job": job_class}),
+    ):
+        ThreadPoolJobExecutor()._run(job_name="recording_job", job_execution_id=job_execution.id)
+
+    assert calls == ["close", "job", "close"]
