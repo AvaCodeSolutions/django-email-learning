@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [Unreleased]
+
+### Fixed
+
+- **Job threads no longer hold a database connection while idle.** `ThreadPoolJobExecutor` and the `DELIVERY_WORKERS` threads of `DeliverContentsJob` closed their connection only at the start of their next task, so between tasks each idle thread kept one checked out. With Django's connection pool (`OPTIONS["pool"]`) that starved the other threads of the same process — the request threads, when jobs are triggered over HTTP — until they failed with `PoolTimeout: couldn't get a connection`. Both now release the connection when the task ends, whether it succeeded or raised.
+
 ## [7.2.0] - 2026-09-14
 
 ### Added
