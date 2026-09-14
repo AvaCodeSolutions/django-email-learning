@@ -35,6 +35,10 @@ Clicking on any learner's email address opens a detailed view providing comprehe
    :align: center
 
 
+**Branching Courses**
+  On a course with routing rules, the enrollment view also shows **Path taken** — the content the learner has been sent or is scheduled to receive, grouped by track — and learners are not shown a progress percentage. The progress shown here is measured against the learner's own route, so it can go down when they are routed onto a longer track. See :doc:`branching` for details.
+
+
 Sending the Next Content Immediately
 ------------------------------------
 
