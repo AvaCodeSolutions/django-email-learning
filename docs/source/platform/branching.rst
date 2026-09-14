@@ -23,15 +23,6 @@ The course is still a sequence. Branching adds three things to it:
 Organization admins and editors can create and edit tracks and routing rules. Other roles can see
 them, but not change them.
 
-.. image:: docs/images/branching-flow-view.png
-   :alt: Flow view of a course with branching
-   :align: center
-
-.. SCREENSHOT PLACEHOLDER
-   File: docs/images/branching-flow-view.png
-   Show: the Flow view of a course with a quiz routing onto a remedial track and a decision
-   point routing onto another track, so the tinted track boxes and labelled arrows are visible.
-
 Tracks
 ------
 
@@ -58,11 +49,6 @@ On the course content page, click **Add Track** and fill in:
   The choices are limited to content on the main path and on the tracks this track branches off —
   a track can only rejoin somewhere outward from where it sits. A nested track that ends without a
   rejoin point continues wherever its parent track rejoins.
-
-.. SCREENSHOT PLACEHOLDER
-   File: docs/images/add-track-form.png
-   Show: the Add Track form with a track name, "Branches off" set to Main path, and a rejoin
-   point selected.
 
 A track has to rejoin the course *after* the content that routes onto it. Rejoining at or before
 that content would send learners onto the same track again, so a routing rule, a move, a reorder
@@ -104,10 +90,10 @@ Each track is listed directly under the content that routes onto it, indented:
 - Tracks no routing rule reaches yet are listed at the bottom under **Tracks no rule routes onto
   yet**, so you can still edit them while you set up the rules.
 
-.. SCREENSHOT PLACEHOLDER
-   File: docs/images/content-table-tracks.png
-   Show: the content table of a branching course, with a track header ("If failed"), the
-   indented track content, and the "Rejoins at" row.
+
+.. image:: ../../images/content-table-tracks.png
+   :alt: The content table of a branching course with track headers and indented content and rejoin rows
+   :align: center
 
 Routing Rules
 -------------
@@ -118,10 +104,9 @@ to its **Branching** tab (the tab lists the course's tracks, so create at least 
 Each rule has a **When** condition and a **Send to** track. Use **Add rule** to add one, the arrows
 to change their order, and **Save rules** to save the whole set at once.
 
-.. SCREENSHOT PLACEHOLDER
-   File: docs/images/quiz-branching-tab.png
-   Show: the Branching tab of a quiz with two rules, e.g. "Failed → Remedial" and
-   "Score at least 90 → Advanced".
+.. image:: ../../images/quiz-branching-tab.png
+   :alt: The Branching tab of a quiz with two rules, e.g. "Failed → Remedial" and "Score at least 90 → Advanced"
+   :align: center
 
 How Rules Are Checked
 ~~~~~~~~~~~~~~~~~~~~~
@@ -220,9 +205,10 @@ On the course content page, click **Add Decision** and fill in:
 Click **Save Decision**. Once saved, the decision point's **Branching** tab is where you add rules
 such as **Answered** *"Advanced"* → **Advanced track**.
 
-.. SCREENSHOT PLACEHOLDER
-   File: docs/images/add-decision-form.png
-   Show: the New Decision form with a question and three answers.
+
+.. image:: ../../images/decision-form.png
+   :alt: The New Decision form with a question and three answers
+   :align: center
 
 Editing Answers
 ~~~~~~~~~~~~~~~
@@ -252,13 +238,6 @@ given on the page, for example — the email shows why and links to the page. Gm
 emails from sending domains
 `registered with Google <https://developers.google.com/workspace/gmail/ampemail/register>`_.
 
-.. SCREENSHOT PLACEHOLDER
-   File: docs/images/decision-email.png
-   Show: the decision point email as a learner receives it, with the question and the Answer button.
-
-.. SCREENSHOT PLACEHOLDER
-   File: docs/images/decision-answer-page.png
-   Show: the answer page with the question, the answers as radio buttons, and the Submit button.
 
 The Flow View
 -------------
@@ -267,10 +246,11 @@ Once a course has at least one track, the course content page shows a **Table / 
 Flow view draws the whole course as a diagram, so you can check where every rule sends learners at a
 glance. It is read-only: build and edit the course in the table.
 
-.. SCREENSHOT PLACEHOLDER
-   File: docs/images/course-flow-view.png
-   Show: the Flow view with a branch point, a labelled route onto a track, a track box, the
-   dashed rejoin arrow, and the Course complete node.
+
+.. image:: ../../images/branching-flow-view.png
+   :alt: The Flow view with a branch point, a labelled route onto a track, a track box, the dashed rejoin arrow, and the Course complete node
+   :align: center
+
 
 Reading the Flow View
 ~~~~~~~~~~~~~~~~~~~~~
@@ -314,10 +294,6 @@ On the **Learners** page, the enrollment view of a branching course includes **P
 content the learner has been sent or is scheduled to receive, in order, grouped by the track it is on
 and marked **Sent**, **Scheduled** or **Not sent**.
 
-.. SCREENSHOT PLACEHOLDER
-   File: docs/images/learner-path-taken.png
-   Show: the enrollment view of a learner who was routed onto a track, with the Path taken section.
-
 Progress
 ~~~~~~~~
 
@@ -357,10 +333,6 @@ The course's **Analytics** tab includes a **Tracks** table with a row for each t
 
 Content on a track nested inside counts as the same track, since a learner who branches again is still
 on it. The table is not shown for a course without tracks.
-
-.. SCREENSHOT PLACEHOLDER
-   File: docs/images/track-analytics.png
-   Show: the Tracks table on a course's Analytics tab.
 
 API Reference
 -------------
