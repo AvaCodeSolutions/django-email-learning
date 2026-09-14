@@ -8,6 +8,12 @@ Changes prior to v1.0.0 are available in the [git history](https://github.com/Av
 
 ## [Unreleased]
 
+### Changed
+
+- **Branching reads a course's structure in a fixed number of queries.** The new `django_email_learning.services.course_graph.CourseGraph` holds one course's contents, tracks and routing rules, each read in a single query the first time something needs it and discarded with the request or job that built it — nothing is cached between requests, so every process reads the same rows. The walk to the next content, where a track rejoins, a track's ancestry and `Course.validate_branching()` are all answered from it, so their cost no longer grows with how deeply tracks nest or how many tracks and rules a course holds: re-checking a course is three queries, a step on a course that does not branch stays one, and leaving the innermost of ten nested tracks is two.
+  - `ContentTrack.clean()` and `ContentTransition.clean()` run their checks against other rows through the same graph, so each rule on where a track may branch and rejoin is written once. `Course.validate_branching()` re-checks those rules; checks on a row's own fields still run when that row is saved.
+  - `ContentTrack.ancestors()` and `ContentTrack.continuation()` become `CourseGraph.ancestors(track)` and `CourseGraph.continuation(track)`, and `CoursePath` gives way to `CourseGraph.for_courses()` with `content_sequence_service.first_in(graph)` and `remaining_after(graph, content)` — one walk now serves both delivery and progress.
+
 ### Fixed
 
 - **The embed script can now be loaded in CORS mode.** `del-enroll-form.js` was served without `Access-Control-Allow-Origin`, so any page fetching it in CORS mode had it blocked and the widgets never rendered. That covers a `type="module"` import, a `crossorigin` attribute or an SRI hash — and Astro, for one, turns a plain `<script src>` into a module import unless it is marked `is:inline`. The script is generic and credential-free, so it is now served with `Access-Control-Allow-Origin: *`.
