@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { Background, Controls, Handle, MarkerType, Position, ReactFlow } from '@xyflow/react';
+import { Background, Controls, Handle, Position, ReactFlow } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Box, Chip, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
@@ -10,7 +10,7 @@ import CallSplitOutlinedIcon from '@mui/icons-material/CallSplitOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import FlagIcon from '@mui/icons-material/Flag';
 import { useAppContext } from '../../../src/render.jsx';
-import { conditionLabel } from './branching.js';
+import { styleEdge } from './flowEdgeStyle.js';
 import { buildFlowGraph } from './flowGraph.js';
 import { NODE_HEIGHT, NODE_WIDTH, layoutBounds, layoutFlow, mapHeight } from './flowLayout.js';
 
@@ -50,6 +50,8 @@ function ContentNode({ data }) {
                 py: 1,
                 borderRadius: 1,
                 cursor: 'pointer',
+                // Unpublished content is never sent; fading it keeps it editable without reading as part of the course.
+                opacity: published ? 1 : 0.7,
                 backgroundColor: 'background.paper',
                 border: '1px solid',
                 borderStyle: published ? 'solid' : 'dashed',
@@ -159,44 +161,6 @@ function TrackGroupNode({ data }) {
 }
 
 const NODE_TYPES = { content: ContentNode, end: EndNode, track: TrackGroupNode };
-
-function styleEdge(edge, { theme, localeMessages, trackColors }) {
-    const { kind, track, rules } = edge.data;
-    const neutral = theme.palette.text.secondary;
-    const trackColor = track ? trackColors.get(track.id) ?? neutral : neutral;
-    const labelled = (label, color) => ({
-        label,
-        labelStyle: { fill: color, fontWeight: 600, fontSize: 12 },
-        labelBgStyle: { fill: theme.palette.background.paper },
-        labelBgPadding: [6, 3],
-        labelBgBorderRadius: 4,
-    });
-
-    const byKind = {
-        route: {
-            color: trackColor,
-            style: { strokeWidth: 2 },
-            ...labelled((rules || []).map((rule) => conditionLabel(rule, localeMessages)).join(' · '), trackColor),
-        },
-        otherwise: { color: neutral, ...labelled(localeMessages['map_otherwise'] || 'Otherwise', neutral) },
-        unsubmitted: {
-            color: theme.palette.text.disabled,
-            style: { strokeDasharray: '6 4' },
-            ...labelled(localeMessages['map_not_submitted'] || 'If not submitted', theme.palette.text.disabled),
-        },
-        rejoin: { color: trackColor, style: { strokeDasharray: '6 4' } },
-        ends: { color: trackColor, style: { strokeDasharray: '6 4' } },
-        next: { color: trackColor },
-    };
-    const { color, style = {}, ...rest } = byKind[kind] || byKind.next;
-    return {
-        ...edge,
-        type: 'smoothstep',
-        style: { stroke: color, strokeWidth: 1.5, ...style },
-        markerEnd: { type: MarkerType.ArrowClosed, color },
-        ...rest,
-    };
-}
 
 /**
  * A read-only map of the course: every content as a node and every move a learner can make as

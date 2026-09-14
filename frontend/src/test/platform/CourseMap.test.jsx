@@ -75,6 +75,13 @@ describe('CourseMap', () => {
         expect(screen.getByText('Course complete')).toBeInTheDocument();
     });
 
+    it('fades unpublished content', () => {
+        renderMap();
+
+        expect(screen.getByText('Wrap up').closest('[role="button"]')).toHaveStyle({ opacity: '0.7' });
+        expect(screen.getByText('Intro').closest('[role="button"]')).toHaveStyle({ opacity: '1' });
+    });
+
     it('marks unpublished content and tracks no rule reaches', () => {
         renderMap({ transitions: [] });
 

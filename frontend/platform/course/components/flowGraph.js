@@ -15,6 +15,9 @@
  * - `rejoin` - from the last content on a track to where it continues
  * - `ends` - from the last content on a track that ends the course
  *
+ * Unpublished content is never sent, so its rules never route anyone: a route out of it is
+ * marked `inactive`, and its plain next step is drawn as the ordinary move every learner makes.
+ *
  * `groups` has one entry per track, so the map can draw a track as a box around its content.
  */
 
@@ -97,11 +100,14 @@ export function buildFlowGraph(contents, tracks = [], transitions = []) {
         const track = trackFor(content);
         const { target: next, leavesTrack } = successorOf(content);
         const rules = rulesBySource.get(content.id) || [];
+        const published = content.is_published !== false;
 
-        if (rules.length === 0) {
+        if (rules.length === 0 || !published) {
             const kind = !leavesTrack ? 'next' : next === END_NODE_ID ? 'ends' : 'rejoin';
             edges.push({ id: `${source}-next`, source, target: next, data: { kind, track } });
-            continue;
+            if (rules.length === 0) {
+                continue;
+            }
         }
 
         const targets = [];
@@ -115,10 +121,18 @@ export function buildFlowGraph(contents, tracks = [], transitions = []) {
                 id: `${source}-route-${trackId}`,
                 source,
                 target: entryOf(trackId),
-                data: { kind: 'route', track: trackById.get(trackId), rules: rules.filter((rule) => rule.target_id === trackId) },
+                data: {
+                    kind: 'route',
+                    track: trackById.get(trackId),
+                    rules: rules.filter((rule) => rule.target_id === trackId),
+                    inactive: !published,
+                },
             });
         }
 
+        if (!published) {
+            continue;
+        }
         const catchesEverything = rules.some((rule) => rule.condition === 'default');
         edges.push({
             id: `${source}-fallthrough`,
