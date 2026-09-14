@@ -43,7 +43,7 @@ const localeMessages = {
     not_published: 'Not published',
     map_unreached: 'No rule routes here',
     map_course_complete: 'Course complete',
-    course_view_map: 'Map',
+    course_view_flow: 'Flow',
     edit_track: 'Edit Track',
 };
 

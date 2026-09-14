@@ -24,8 +24,10 @@ from django_email_learning.models import (
     TransitionCondition,
 )
 from django_email_learning.services import jwt_service
+from django_email_learning.services.email_sender_service import email_sender_service
 
 URL = reverse("django_email_learning:api_personalised:decision_submission")
+AMP_URL = reverse("django_email_learning:api_personalised:decision_amp_submission")
 
 
 def make_decision_content(course, priority=1):
@@ -181,6 +183,64 @@ def test_an_inactive_enrollment_cannot_answer(decision_delivery, anonymous_clien
 
 def test_an_invalid_token_is_refused(decision_delivery, anonymous_client):
     response = answer(anonymous_client, "not-a-token", decision_delivery.basics.id)
+
+    assert response.status_code == 400
+    assert not DecisionResponse.objects.exists()
+
+
+def answer_in_email(client, settings, data, source_origin=None):
+    return client.post(
+        f"{AMP_URL}?__amp_source_origin={source_origin or email_sender_service.from_email}",
+        data=data,
+        HTTP_ORIGIN=settings.CSRF_TRUSTED_ORIGINS[0],
+    )
+
+
+def test_answering_in_the_email_routes_like_the_page(decision_delivery, anonymous_client, settings):
+    d = decision_delivery
+    route_on_deeper_dive(d)
+
+    response = answer_in_email(
+        anonymous_client, settings, {"token": token_for(d.delivery), "option_id": d.deeper_dive.id}
+    )
+
+    assert response.status_code == 200
+    assert response["AMP-Access-Control-Allow-Source-Origin"] == email_sender_service.from_email
+    assert DecisionResponse.objects.get(delivery=d.delivery).option == d.deeper_dive
+    assert scheduled_after(d.delivery).get().course_content == d.deeper_lesson
+
+
+def test_the_email_form_says_when_the_page_was_answered_first(decision_delivery, anonymous_client, settings):
+    d = decision_delivery
+    token = token_for(d.delivery)
+    answer(anonymous_client, token, d.basics.id)
+
+    response = answer_in_email(anonymous_client, settings, {"token": token, "option_id": d.deeper_dive.id})
+
+    # The AMP headers are what let the form show the reason instead of a generic failure.
+    assert response.status_code == 410
+    assert response["AMP-Access-Control-Allow-Source-Origin"] == email_sender_service.from_email
+    assert "already been answered" in response.json()["error"]
+    assert DecisionResponse.objects.get(delivery=d.delivery).option == d.basics
+
+
+def test_the_email_form_needs_a_chosen_answer(decision_delivery, anonymous_client, settings):
+    response = answer_in_email(anonymous_client, settings, {"token": token_for(decision_delivery.delivery)})
+
+    assert response.status_code == 400
+    assert response["AMP-Access-Control-Allow-Source-Origin"] == email_sender_service.from_email
+    assert not DecisionResponse.objects.exists()
+
+
+def test_an_email_answer_from_an_untrusted_sender_is_refused(decision_delivery, anonymous_client, settings):
+    d = decision_delivery
+
+    response = answer_in_email(
+        anonymous_client,
+        settings,
+        {"token": token_for(d.delivery), "option_id": d.basics.id},
+        source_origin="attacker@evil.example.com",
+    )
 
     assert response.status_code == 400
     assert not DecisionResponse.objects.exists()

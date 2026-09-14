@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 from django.core import mail
+from django.urls import reverse
 from django.utils import timezone
 
 from django_email_learning.jobs.deactivate_inactive_enrollments_job import DeactivateInactiveEnrollmentsJob
@@ -20,6 +21,7 @@ from django_email_learning.models import (
     EnrollmentStatus,
     Lesson,
 )
+from django_email_learning.services import jwt_service
 from django_email_learning.services.command_models.send_decision_command import SendDecisionCommand
 from django_email_learning.services.command_models.send_decision_reminder_command import (
     SendDecisionReminderCommand,
@@ -143,3 +145,33 @@ def test_a_missed_decision_deadline_moves_the_learner_on_instead_of_deactivating
     assert delivery.enrollment.status == EnrollmentStatus.ACTIVE
     moved_on_to = ContentDelivery.objects.filter(enrollment=delivery.enrollment).exclude(id=delivery.id).get()
     assert moved_on_to.course_content.title == "Wrap up"
+
+
+def send_decision_with_amp(decision_schedule, settings, amp_enabled):
+    settings.DJANGO_EMAIL_LEARNING = {**settings.DJANGO_EMAIL_LEARNING, "AMP_ENABLED": amp_enabled}
+    delivery = decision_schedule.delivery
+    token = jwt_service.generate_jwt({"delivery_id": delivery.id, "delivery_hash": delivery.hash_value})
+    SendDecisionCommand(
+        content_id=delivery.course_content.id,
+        email=delivery.enrollment.learner.email,
+        link=f"https://example.com/decision/?token={token}",
+    ).execute()
+    return mail.outbox[0], token
+
+
+def test_with_amp_enabled_the_decision_email_can_be_answered_inside_it(decision_schedule, settings):
+    message, token = send_decision_with_amp(decision_schedule, settings, amp_enabled=True)
+
+    assert [mimetype for _, mimetype in message.alternatives] == ["text/html", "text/x-amp-html"]
+    amp = message.alternatives[1][0]
+    assert reverse("django_email_learning:api_personalised:decision_amp_submission") in amp
+    assert f'value="{token}"' in amp
+    for option in decision_schedule.delivery.course_content.decision.options.all():
+        assert f'name="option_id" value="{option.id}"' in amp
+        assert option.text in amp
+
+
+def test_without_amp_the_decision_email_has_no_amp_part(decision_schedule, settings):
+    message, _ = send_decision_with_amp(decision_schedule, settings, amp_enabled=False)
+
+    assert [mimetype for _, mimetype in message.alternatives] == ["text/html"]

@@ -491,7 +491,7 @@ class CourseView(BasePlatformView):
             "rule_threshold_required": _("A score rule needs a score between 0 and 100."),
             "save_track": _("Save Track"),
             "course_view_table": _("Table"),
-            "course_view_map": _("Map"),
+            "course_view_flow": _("Flow"),
             "map_otherwise": _("Otherwise"),
             "map_not_submitted": _("If not submitted"),
             "map_unreached": _("No rule routes here"),

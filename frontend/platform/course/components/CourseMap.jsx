@@ -253,7 +253,7 @@ const CourseMap = ({ contents = [], tracks = [], transitions = [], onContentClic
     return (
         <Box
             role="region"
-            aria-label={localeMessages['course_view_map'] || 'Map'}
+            aria-label={localeMessages['course_view_flow'] || 'Flow'}
             sx={{
                 height: {
                     xs: mapHeight(bounds, { ...HEIGHT_RANGE.xs, padding: FIT_PADDING }),

@@ -853,7 +853,7 @@ function Course() {
                                 <Box sx={{ px: 1, pb: 1.5, display: 'flex', justifyContent: 'flex-end' }}>
                                     <ToggleButtonGroup size="small" exclusive value={contentView} onChange={(_, value) => value && setContentView(value)}>
                                         <ToggleButton value="table"><ViewListIcon fontSize="small" sx={{ marginInlineEnd: 0.5 }} />{localeMessages["course_view_table"] || 'Table'}</ToggleButton>
-                                        <ToggleButton value="map"><AltRouteIcon fontSize="small" sx={{ marginInlineEnd: 0.5 }} />{localeMessages["course_view_map"] || 'Map'}</ToggleButton>
+                                        <ToggleButton value="map"><AltRouteIcon fontSize="small" sx={{ marginInlineEnd: 0.5 }} />{localeMessages["course_view_flow"] || 'Flow'}</ToggleButton>
                                     </ToggleButtonGroup>
                                 </Box>
                             )}

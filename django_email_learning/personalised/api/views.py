@@ -480,8 +480,13 @@ class QuizSubmissionView(View):
         return score, passed
 
 
-@method_decorator(csrf_exempt, name="dispatch")
-class AmpQuizSubmissionView(View):
+class AmpSubmissionView(View):
+    """An endpoint an AMP email form posts to.
+
+    A submission is accepted only from a trusted sender and origin, and a response reaches the
+    form only when it carries the AMP CORS headers.
+    """
+
     @staticmethod
     def _set_amp_headers(response: JsonResponse, source_origin: str, request_origin: str) -> JsonResponse:
         response["AMP-Email-Allow-Sender"] = source_origin
@@ -499,7 +504,9 @@ class AmpQuizSubmissionView(View):
             request_origin=request_origin,
         )
 
-    def post(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
+    @staticmethod
+    def _amp_origins(request) -> tuple[str, str] | JsonResponse:  # type: ignore[no-untyped-def]
+        """The trusted sender and request origin, or the response refusing the submission."""
         source_origin = request.GET.get("__amp_source_origin") or request.headers.get("AMP-Email-Sender")
         if not source_origin or not _is_trusted_amp_sender(urllib.parse.unquote(source_origin)):
             return JsonResponse(
@@ -526,6 +533,16 @@ class AmpQuizSubmissionView(View):
                 {"error": _("Invalid origin. Untrusted source.")},
                 status=400,
             )
+        return source_origin, normalized_origin
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class AmpQuizSubmissionView(AmpSubmissionView):
+    def post(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
+        origins = self._amp_origins(request)
+        if isinstance(origins, JsonResponse):
+            return origins
+        source_origin, normalized_origin = origins
 
         token = request.POST.get("token")
         if not token:
@@ -657,21 +674,27 @@ class DecisionSubmissionView(View):
             serializer = DecisionSubmissionRequest.model_validate(json.loads(request.body))
         except ValidationError as ve:
             return JsonResponse({"error": ve.errors()}, status=400)
+        return self.process_decision_submission(token=serializer.token, option_id=serializer.option_id)
 
+    @staticmethod
+    def process_decision_submission(token: str, option_id: int) -> JsonResponse:
         try:
-            decoded = jwt_service.decode_jwt(token=serializer.token)
+            decoded = jwt_service.decode_jwt(token=token)
         except jwt_service.InvalidTokenException:
             return JsonResponse({"error": _("The link is not valid.")}, status=400)
         except jwt_service.ExpiredTokenException:
             return JsonResponse({"error": _("The link has expired.")}, status=410)
 
+        delivery_id = decoded.get("delivery_id")
+        if delivery_id is None:
+            return JsonResponse({"error": _("The link is not valid.")}, status=400)
         delivery = (
-            ContentDelivery.objects.filter(id=decoded.get("delivery_id"), hash_value=decoded.get("delivery_hash"))
+            ContentDelivery.objects.filter(id=delivery_id, hash_value=decoded.get("delivery_hash"))
             .select_related("course_content__decision", "enrollment__learner")
             .first()
         )
         if delivery is None:
-            if ContentDelivery.objects.filter(id=decoded.get("delivery_id")).exists():
+            if ContentDelivery.objects.filter(id=delivery_id).exists():
                 return JsonResponse({"error": _("This question has already been answered.")}, status=410)
             return JsonResponse({"error": _("The link is not valid.")}, status=422)
 
@@ -681,7 +704,7 @@ class DecisionSubmissionView(View):
         decision = delivery.course_content.decision
         if decision is None:
             return JsonResponse({"error": _("There is no question associated with this link.")}, status=422)
-        option = decision.options.filter(id=serializer.option_id).first()
+        option = decision.options.filter(id=option_id).first()
         if option is None:
             return JsonResponse({"error": _("That answer is not one of the options.")}, status=400)
 
@@ -701,3 +724,35 @@ class DecisionSubmissionView(View):
 
         logger.info(f"Learner ID {enrollment.learner.id} answered decision {decision.id} with option {option.id}.")
         return JsonResponse({"message": _("Thanks, your answer has been recorded.")}, status=200)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class AmpDecisionSubmissionView(AmpSubmissionView):
+    """The in-email form of a decision point, answered through the same path as the page."""
+
+    def post(self, request, *args, **kwargs):  # type: ignore[no-untyped-def]
+        origins = self._amp_origins(request)
+        if isinstance(origins, JsonResponse):
+            return origins
+        source_origin, request_origin = origins
+
+        token = request.POST.get("token")
+        if not token:
+            return self._amp_json_response(
+                {"error": _("Token is required.")},
+                status=400,
+                source_origin=source_origin,
+                request_origin=request_origin,
+            )
+        try:
+            option_id = int(request.POST.get("option_id", ""))
+        except ValueError:
+            return self._amp_json_response(
+                {"error": _("Choose one answer.")},
+                status=400,
+                source_origin=source_origin,
+                request_origin=request_origin,
+            )
+
+        response = DecisionSubmissionView.process_decision_submission(token=token, option_id=option_id)
+        return self._set_amp_headers(response, source_origin=source_origin, request_origin=request_origin)

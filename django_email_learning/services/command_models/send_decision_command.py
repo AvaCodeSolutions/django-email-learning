@@ -38,9 +38,14 @@ class SendDecisionCommand(AbstractCommand):
             if delivery
             else None
         )
+        token = self.link.split("token=")[-1].split("&")[0] if "token=" in self.link else None
         context = {
             "decision": decision,
             "link": self.link,
+            "token": token,
+            "amp_action_url": (
+                f"{conf['SITE_BASE_URL']}{reverse('django_email_learning:api_personalised:decision_amp_submission')}"
+            ),
             "unsubscribe_link": content.course.generate_unsubscribe_link(self.email),
             "track_open_url": track_open_url,
             **email_sender_service.organization_footer_context(content.course),
@@ -52,4 +57,7 @@ class SendDecisionCommand(AbstractCommand):
             to=[self.email],
         )
         email_message.attach_alternative(render_to_string("emails/decision.html", context), "text/html")
+        # The in-email form can only answer with the token the link carries.
+        if conf.get("AMP_ENABLED") and token:
+            email_message.attach_alternative(render_to_string("emails/decision_amp.html", context), "text/x-amp-html")
         email_sender_service.send(email_message)

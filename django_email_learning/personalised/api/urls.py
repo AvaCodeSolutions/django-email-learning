@@ -1,6 +1,7 @@
 from django.urls import path
 
 from django_email_learning.personalised.api.views import (
+    AmpDecisionSubmissionView,
     AmpQuizSubmissionView,
     AssignmentSubmissionView,
     DecisionSubmissionView,
@@ -15,6 +16,7 @@ urlpatterns = [
     path("quizzes/", QuizSubmissionView.as_view(), name="quiz_submission"),
     path("quizzes/amp/", AmpQuizSubmissionView.as_view(), name="quiz_amp_submission"),
     path("decisions/", DecisionSubmissionView.as_view(), name="decision_submission"),
+    path("decisions/amp/", AmpDecisionSubmissionView.as_view(), name="decision_amp_submission"),
     path(
         "assignments/",
         AssignmentSubmissionView.as_view(),
