@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { Background, Controls, Handle, Position, ReactFlow } from '@xyflow/react';
+import { BaseEdge, Background, Controls, Handle, Position, ReactFlow } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Box, Chip, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
@@ -10,7 +10,7 @@ import CallSplitOutlinedIcon from '@mui/icons-material/CallSplitOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import FlagIcon from '@mui/icons-material/Flag';
 import { useAppContext } from '../../../src/render.jsx';
-import { styleEdge } from './flowEdgeStyle.js';
+import { rejoinPath, styleEdge } from './flowEdgeStyle.js';
 import { buildFlowGraph } from './flowGraph.js';
 import { NODE_HEIGHT, NODE_WIDTH, layoutBounds, layoutFlow, mapHeight } from './flowLayout.js';
 
@@ -162,6 +162,12 @@ function TrackGroupNode({ data }) {
 
 const NODE_TYPES = { content: ContentNode, end: EndNode, track: TrackGroupNode };
 
+function RejoinEdge({ id, style, markerEnd, ...position }) {
+    return <BaseEdge id={id} path={rejoinPath(position)} style={style} markerEnd={markerEnd} />;
+}
+
+const EDGE_TYPES = { rejoin: RejoinEdge };
+
 /**
  * A read-only map of the course: every content as a node and every move a learner can make as
  * an arrow - down the path, onto a track a rule selects, and back to where a track rejoins. Each
@@ -231,6 +237,7 @@ const CourseMap = ({ contents = [], tracks = [], transitions = [], onContentClic
                 nodes={nodes}
                 edges={edges}
                 nodeTypes={NODE_TYPES}
+                edgeTypes={EDGE_TYPES}
                 colorMode={theme.palette.mode}
                 fitView
                 fitViewOptions={{ padding: FIT_PADDING, maxZoom: 1 }}
