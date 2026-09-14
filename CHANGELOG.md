@@ -31,6 +31,11 @@ Changes prior to v1.0.0 are available in the [git history](https://github.com/Av
 - **Course content is reordered within one track at a time.** The reorder endpoint refuses a list spanning two tracks and rolls back with a 409 when the new order would break routing; the content table sends the new order once, on drop.
 - **The course sequence rule lives in one place**, `content_sequence_service` (`first_content()` and `next_content()`), used by the delivery job, the quiz and assignment paths, the inactivity job, enrollment activation and the "up next" teaser in lesson emails. No behaviour change for courses without routing rules.
 
+### Fixed
+
+- **The embed script can now be loaded in CORS mode.** `del-enroll-form.js` was served without `Access-Control-Allow-Origin`, so any page fetching it in CORS mode had it blocked and the widgets never rendered. That covers a `type="module"` import, a `crossorigin` attribute or an SRI hash — and Astro, for one, turns a plain `<script src>` into a module import unless it is marked `is:inline`. The script is generic and credential-free, so it is now served with `Access-Control-Allow-Origin: *`.
+- **Embed endpoint errors are readable cross-origin.** A request with an unknown embed token got its 404 without CORS headers, so the widget saw an opaque network failure rather than the response. `PublicCorsMixin` now wraps the token check, and a preflight answers `204` without resolving the token, so it reveals nothing about which tokens are valid. With `EMBEDDABLE_ENROLLMENT_ENABLED` off, a preflight still gets the same `404` as any other request.
+
 ### Migrations
 
 - `0027_contenttrack_and_more` creates `ContentTrack` and adds the nullable `CourseContent.track`. It replaces `unique_priority_per_course` with `unique_priority_per_course_spine` for the main path and `unique_priority_per_track` for tracks, because a single constraint over all three columns would have stopped enforcing anything on the main path: both supported backends treat null tracks as distinct.

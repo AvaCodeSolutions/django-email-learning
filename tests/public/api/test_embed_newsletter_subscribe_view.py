@@ -171,3 +171,36 @@ def test_embed_subscribe_rate_limits_by_token_isolated_per_organization(db, anon
         content_type="application/json",
     )
     assert other_response.status_code == 200
+
+
+def test_embed_subscribe_invalid_token_response_is_readable_cross_origin(anonymous_client, db, settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "EMBEDDABLE_ENROLLMENT_ENABLED": True,
+    }
+
+    response = anonymous_client.post(
+        embed_subscribe_url("not-a-real-token"),
+        data={"email": "user@example.com", "newsletter_ids": [1]},
+        content_type="application/json",
+        HTTP_ORIGIN="https://example.org",
+    )
+
+    assert response.status_code == 404
+    assert response["Access-Control-Allow-Origin"] == "*"
+
+
+def test_embed_subscribe_preflight_with_invalid_token_succeeds(anonymous_client, settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "EMBEDDABLE_ENROLLMENT_ENABLED": True,
+    }
+
+    response = anonymous_client.options(
+        embed_subscribe_url("not-a-real-token"),
+        HTTP_ORIGIN="https://example.org",
+        HTTP_ACCESS_CONTROL_REQUEST_METHOD="POST",
+    )
+
+    assert response.status_code == 204
+    assert response["Access-Control-Allow-Origin"] == "*"
