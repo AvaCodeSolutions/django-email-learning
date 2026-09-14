@@ -100,7 +100,7 @@ def _route(source: CourseContent, outcome: RoutingOutcome) -> object:
     """The content the routing rules on `source` select, or `_NO_ROUTE` if none apply."""
     for rule in (
         source.transitions.select_related("target")
-        .only("order", "condition", "threshold", "option_id", "target_id", "target__course_id")
+        .only("order", "condition", "threshold", "option_id", "target_id", "target__id", "target__course_id")
         .order_by("order")
     ):
         if rule.matches(outcome):
