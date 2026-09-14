@@ -30,6 +30,14 @@ describe('styleEdge', () => {
 
         expect(edge.style.strokeDasharray).toBe('2 4');
         expect(edge.style.opacity).toBe(0.7);
+        expect(edge.style.strokeWidth).toBe(1.5);
         expect(edge.label).toBe('If failed');
+    });
+
+    it('draws the step past unpublished content solid, even where it leaves the track', () => {
+        const rejoin = (taken) => ({ id: 'content-11-next', source: 'content-11', target: 'content-3', data: { kind: 'rejoin', track: remedial, taken } });
+
+        expect(styleEdge(rejoin(undefined), context).style.strokeDasharray).toBe('6 4');
+        expect(styleEdge(rejoin(true), context).style.strokeDasharray).toBeUndefined();
     });
 });

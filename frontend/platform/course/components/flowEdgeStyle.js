@@ -3,7 +3,7 @@ import { conditionLabel } from './branching.js';
 
 /** How the flow view draws an edge from `buildFlowGraph`: its colour, dashes and label, by kind. */
 export function styleEdge(edge, { theme, localeMessages, trackColors }) {
-    const { kind, track, rules, inactive } = edge.data;
+    const { kind, track, rules, inactive, taken } = edge.data;
     const neutral = theme.palette.text.secondary;
     const trackColor = track ? trackColors.get(track.id) ?? neutral : neutral;
     const labelled = (label, color) => ({
@@ -31,12 +31,15 @@ export function styleEdge(edge, { theme, localeMessages, trackColors }) {
         next: { color: trackColor },
     };
     const { color, style = {}, ...rest } = byKind[kind] || byKind.next;
-    // A route out of unpublished content: drawn so the rule stays visible, dotted because no one takes it.
-    const inactiveStyle = inactive ? { strokeDasharray: '2 4', opacity: 0.7 } : {};
+    // A route out of unpublished content: drawn so the rule stays visible, dotted because no one takes it,
+    // and no wider than the path that is taken, so where the two coincide the taken path covers it.
+    const inactiveStyle = inactive ? { strokeDasharray: '2 4', strokeWidth: 1.5, opacity: 0.7 } : {};
+    // The step every learner makes past unpublished content: solid, even where it leaves the track.
+    const takenStyle = taken ? { strokeDasharray: undefined } : {};
     return {
         ...edge,
         type: 'smoothstep',
-        style: { stroke: color, strokeWidth: 1.5, ...style, ...inactiveStyle },
+        style: { stroke: color, strokeWidth: 1.5, ...style, ...inactiveStyle, ...takenStyle },
         markerEnd: { type: MarkerType.ArrowClosed, color },
         ...rest,
     };
