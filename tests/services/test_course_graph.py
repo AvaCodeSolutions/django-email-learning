@@ -94,10 +94,10 @@ def test_leaving_the_innermost_track_costs_two_queries(db, course, quiz, depth, 
         assert next_content(shape.innermost) == shape.wrap_up
 
 
-def test_routing_onto_a_track_costs_three_queries(db, course, quiz, django_assert_num_queries):
+def test_routing_onto_a_track_costs_two_queries(db, course, quiz, django_assert_num_queries):
     shape = nested_course(course, quiz, depth=3)
 
-    with django_assert_num_queries(3):
+    with django_assert_num_queries(2):
         assert next_content(shape.checkpoint, outcome=QuizOutcome(score=10, passed=False)) == shape.entry
 
 
