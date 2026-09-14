@@ -65,18 +65,17 @@ class Course(models.Model):
         return self.coursecontent_set.filter(transitions__isnull=False).exists()
 
     def validate_branching(self) -> None:
-        """Re-check every track and routing rule in this course, raising the first violation.
+        """Re-check where every track and routing rule in this course leads, raising the first violation.
 
-        Several of those checks compare against other rows - where a merge point sits
-        relative to its branch point, which track a content is on. Reordering or moving
-        content changes those rows without saving the track or the rule that depends on
-        them, so a structural edit calls this before committing.
+        Those checks compare against other rows - where a merge point sits relative to its
+        branch point, which track a content is on. Reordering or moving content changes those
+        rows without saving the track or the rule that depends on them, so a structural edit
+        calls this before committing. Checks on a single row's own fields run when it is saved.
         """
-        for track in self.content_tracks.all():
-            track.full_clean()
-        for content in self.coursecontent_set.prefetch_related("transitions"):
-            for transition in content.transitions.all():
-                transition.full_clean()
+        # The graph reads the course models, so a module-level import would cycle.
+        from django_email_learning.services.course_graph import CourseGraph
+
+        CourseGraph(self.id).validate()
 
     def __str__(self) -> str:
         return self.title

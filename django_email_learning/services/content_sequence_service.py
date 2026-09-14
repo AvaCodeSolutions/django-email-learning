@@ -13,7 +13,10 @@ is a branch point, and the outcome it produced picks the track. Content with no 
 walked in plain priority order, which is every course with no tracks - so a course that
 does not branch behaves exactly as it always has.
 
-Both functions answer *which content* - creating the delivery and its schedule is the
+Leaving a nested track runs over a `CourseGraph`, so that climb costs a fixed number of
+queries however deeply the course's tracks nest. Starting a course, stepping along the
+main spine and reading one content's routing rules stay as targeted ORM queries. Every
+function here answers *which content* - creating the delivery and its schedule is the
 caller's job.
 """
 
@@ -21,6 +24,7 @@ from typing import Optional
 
 from django_email_learning.models.course_contents import ContentTrack, CourseContent, RoutingOutcome
 from django_email_learning.models.courses import Course
+from django_email_learning.services.course_graph import CourseGraph
 
 # Told apart from a genuine `None`, which means "routed, and the route ends the course".
 _NO_ROUTE = object()
@@ -35,6 +39,12 @@ def first_content(course: Course) -> Optional[CourseContent]:
     return (
         CourseContent.objects.filter(course=course, track__isnull=True, is_published=True).order_by("priority").first()
     )
+
+
+def first_in(graph: CourseGraph) -> Optional[CourseContent]:
+    """`first_content()` for a course whose graph is already built."""
+    spine = graph.published_on(None)
+    return spine[0] if spine else None
 
 
 def next_content(current: CourseContent, outcome: Optional[RoutingOutcome] = None) -> Optional[CourseContent]:
@@ -52,51 +62,85 @@ def next_content(current: CourseContent, outcome: Optional[RoutingOutcome] = Non
         routed = _route(current, outcome)
         if routed is not _NO_ROUTE:
             return routed  # type: ignore[return-value]
-    return _walk_from(current)
+    if current.track_id is None:
+        return (
+            CourseContent.objects.filter(
+                course_id=current.course_id,
+                track__isnull=True,
+                is_published=True,
+                priority__gt=current.priority,
+            )
+            .order_by("priority")
+            .first()
+        )
+    return _walk_from(CourseGraph(current.course_id), current)
+
+
+def remaining_after(graph: CourseGraph, content: CourseContent) -> int:
+    """How many published contents a learner standing on `content` has still to come.
+
+    The projection assumes the learner does not branch again: it follows the track they
+    are on and the merge points beyond it, and steps through a branch point the way an
+    unrouted learner would. So the count changes when they *are* routed again, which is
+    the point - their path really did get longer or shorter.
+    """
+    remaining = 0
+    counted: set[int] = set()
+    following = _walk_from(graph, content)
+    # Content met a second time is only reachable from a malformed graph whose merge points
+    # lead back to published content already counted.
+    while following is not None and following.id not in counted:
+        counted.add(following.id)
+        remaining += 1
+        following = _walk_from(graph, following)
+    return remaining
 
 
 def _route(source: CourseContent, outcome: RoutingOutcome) -> object:
     """The content the routing rules on `source` select, or `_NO_ROUTE` if none apply."""
-    transitions = list(source.transitions.select_related("target").order_by("order"))
-    for transition in transitions:
-        if transition.matches(outcome):
-            return _enter(transition.target)
+    for rule in (
+        source.transitions.select_related("target")
+        .only("order", "condition", "threshold", "option_id", "target_id", "target__id", "target__course_id")
+        .order_by("order")
+    ):
+        if rule.matches(outcome):
+            return _enter(rule.target)
     return _NO_ROUTE
 
 
 def _enter(track: ContentTrack) -> Optional[CourseContent]:
     """The first published content on `track`, or where it continues if it has none."""
-    entry = CourseContent.objects.filter(track=track, is_published=True).order_by("priority").first()
+    entry = (
+        CourseContent.objects.filter(course_id=track.course_id, track=track, is_published=True)
+        .order_by("priority")
+        .first()
+    )
     if entry:
         return entry
-    merge_point = track.continuation()
+    graph = CourseGraph(track.course_id)
+    merge_point = graph.continuation(track)
     if merge_point is None:
         return None
     if merge_point.is_published:
         return merge_point
-    return _walk_from(merge_point)
+    return _walk_from(graph, merge_point)
 
 
-def _walk_from(start: CourseContent) -> Optional[CourseContent]:
+def _walk_from(graph: CourseGraph, start: CourseContent) -> Optional[CourseContent]:
     """The next published content after `start`, following merge points outward."""
     content = start
     visited_merge_points: set[int] = set()
 
     while True:
-        following = (
-            CourseContent.objects.filter(
-                course_id=content.course_id,
-                track_id=content.track_id,
-                is_published=True,
-                priority__gt=content.priority,
-            )
-            .order_by("priority")
-            .first()
+        following = next(
+            (candidate for candidate in graph.published_on(content.track_id) if candidate.priority > content.priority),
+            None,
         )
         if following:
             return following
 
-        merge_point = content.track.continuation() if content.track else None
+        track = graph.track(content.track_id)
+        merge_point = graph.continuation(track) if track else None
         if merge_point is None:
             return None
         if merge_point.id in visited_merge_points:
@@ -107,81 +151,3 @@ def _walk_from(start: CourseContent) -> Optional[CourseContent]:
         if merge_point.is_published:
             return merge_point
         content = merge_point
-
-
-class CoursePath:
-    """One course's shape, loaded once, for counting what is still ahead of a learner.
-
-    `next_content()` answers one step at a time and queries as it goes, which is right for
-    delivering but wrong for asking "how much of this is left" about a page full of
-    enrollments. This holds the same rules in memory so the walk costs no queries at all.
-
-    The projection assumes the learner does not branch again: it follows the track they
-    are on and the merge points beyond it, and steps through a branch point the way an
-    unrouted learner would. So the count changes when they *are* routed again, which is
-    the point - their path really did get longer or shorter.
-    """
-
-    def __init__(self, contents: list[CourseContent], tracks: list[ContentTrack]) -> None:
-        self._tracks = {track.id: track for track in tracks}
-        self._published_by_track: dict[Optional[int], list[CourseContent]] = {}
-        for content in sorted(contents, key=lambda c: c.priority):
-            if content.is_published:
-                self._published_by_track.setdefault(content.track_id, []).append(content)
-        self._by_id = {content.id: content for content in contents}
-
-    @classmethod
-    def for_courses(cls, course_ids: set[int]) -> dict[int, "CoursePath"]:
-        """Two queries for any number of courses."""
-        contents = list(CourseContent.objects.filter(course_id__in=course_ids))
-        tracks = list(ContentTrack.objects.filter(course_id__in=course_ids))
-        return {
-            course_id: cls(
-                [content for content in contents if content.course_id == course_id],
-                [track for track in tracks if track.course_id == course_id],
-            )
-            for course_id in course_ids
-        }
-
-    def content(self, content_id: int) -> Optional[CourseContent]:
-        return self._by_id.get(content_id)
-
-    def first(self) -> Optional[CourseContent]:
-        spine = self._published_by_track.get(None, [])
-        return spine[0] if spine else None
-
-    def _continuation(self, track_id: Optional[int]) -> Optional[CourseContent]:
-        while track_id is not None:
-            track = self._tracks.get(track_id)
-            if track is None:
-                return None
-            if track.merge_into_id:
-                return self._by_id.get(track.merge_into_id)
-            track_id = track.parent_track_id
-        return None
-
-    def remaining_after(self, content: CourseContent) -> int:
-        """How many published contents a learner standing on `content` has still to come."""
-        remaining = 0
-        visited_merge_points: set[int] = set()
-        while True:
-            following = next(
-                (
-                    candidate
-                    for candidate in self._published_by_track.get(content.track_id, [])
-                    if candidate.priority > content.priority
-                ),
-                None,
-            )
-            if following:
-                remaining += 1
-                content = following
-                continue
-
-            merge_point = self._continuation(content.track_id)
-            if merge_point is None or merge_point.id in visited_merge_points:
-                return remaining
-            visited_merge_points.add(merge_point.id)
-            if merge_point.is_published:
-                remaining += 1
-            content = merge_point
