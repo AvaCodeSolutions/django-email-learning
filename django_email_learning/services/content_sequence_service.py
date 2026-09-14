@@ -13,9 +13,11 @@ is a branch point, and the outcome it produced picks the track. Content with no 
 walked in plain priority order, which is every course with no tracks - so a course that
 does not branch behaves exactly as it always has.
 
-The walk runs over a `CourseGraph`, so a step costs a fixed number of queries however
-deeply the course's tracks nest. Every function here answers *which content* - creating
-the delivery and its schedule is the caller's job.
+Leaving a nested track runs over a `CourseGraph`, so that climb costs a fixed number of
+queries however deeply the course's tracks nest. Starting a course, stepping along the
+main spine and reading one content's routing rules stay as targeted ORM queries. Every
+function here answers *which content* - creating the delivery and its schedule is the
+caller's job.
 """
 
 from typing import Optional
@@ -34,7 +36,9 @@ def first_content(course: Course) -> Optional[CourseContent]:
     Always on the main spine: a learner reaches a track by being routed onto it, never
     by starting there.
     """
-    return first_in(CourseGraph(course.id))
+    return (
+        CourseContent.objects.filter(course=course, track__isnull=True, is_published=True).order_by("priority").first()
+    )
 
 
 def first_in(graph: CourseGraph) -> Optional[CourseContent]:
@@ -54,12 +58,22 @@ def next_content(current: CourseContent, outcome: Optional[RoutingOutcome] = Non
     `current` itself does not have to be published: callers use this to step over content
     that was unpublished mid-course.
     """
-    graph = CourseGraph(current.course_id)
     if outcome is not None:
-        routed = _route(graph, current, outcome)
+        routed = _route(current, outcome)
         if routed is not _NO_ROUTE:
             return routed  # type: ignore[return-value]
-    return _walk_from(graph, current)
+    if current.track_id is None:
+        return (
+            CourseContent.objects.filter(
+                course_id=current.course_id,
+                track__isnull=True,
+                is_published=True,
+                priority__gt=current.priority,
+            )
+            .order_by("priority")
+            .first()
+        )
+    return _walk_from(CourseGraph(current.course_id), current)
 
 
 def remaining_after(graph: CourseGraph, content: CourseContent) -> int:
@@ -82,21 +96,20 @@ def remaining_after(graph: CourseGraph, content: CourseContent) -> int:
     return remaining
 
 
-def _route(graph: CourseGraph, source: CourseContent, outcome: RoutingOutcome) -> object:
+def _route(source: CourseContent, outcome: RoutingOutcome) -> object:
     """The content the routing rules on `source` select, or `_NO_ROUTE` if none apply."""
-    for rule in graph.rules_on(source.id):
+    for rule in source.transitions.select_related("target").order_by("order"):
         if rule.matches(outcome):
-            target = graph.track(rule.target_id)
-            if target is not None:
-                return _enter(graph, target)
+            return _enter(rule.target)
     return _NO_ROUTE
 
 
-def _enter(graph: CourseGraph, track: ContentTrack) -> Optional[CourseContent]:
+def _enter(track: ContentTrack) -> Optional[CourseContent]:
     """The first published content on `track`, or where it continues if it has none."""
-    on_track = graph.published_on(track.id)
-    if on_track:
-        return on_track[0]
+    entry = CourseContent.objects.filter(track=track, is_published=True).order_by("priority").first()
+    if entry:
+        return entry
+    graph = CourseGraph(track.course_id)
     merge_point = graph.continuation(track)
     if merge_point is None:
         return None
