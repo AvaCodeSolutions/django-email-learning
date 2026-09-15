@@ -680,14 +680,14 @@ typing-extensions = "*"
 
 [[package]]
 name = "django-vite"
-version = "3.1.0"
+version = "3.2.0"
 description = "Integration of Vite in a Django project."
 optional = false
 python-versions = "*"
 groups = ["dev"]
 files = [
-    {file = "django_vite-3.1.0-py3-none-any.whl", hash = "sha256:4e46572bd6b1ce70784be129205dc2ffcbc7a3c19fea50bebfb72b327bbde5fc"},
-    {file = "django_vite-3.1.0.tar.gz", hash = "sha256:8b4ffe4a9fa81ff568bfb195e74dde8694aaf13fd4b656ae60bf59cce08b85e8"},
+    {file = "django_vite-3.2.0-py3-none-any.whl", hash = "sha256:0e3a6a36674b2a27d94d5ace469d871cab1c1da0d69067daca4f4ab4aa44cc04"},
+    {file = "django_vite-3.2.0.tar.gz", hash = "sha256:fdb96b3f4307466d1edd1c19a79cf7dbfabb1a7827c5cb2991d9a6aae528c9db"},
 ]
 
 [package.dependencies]
