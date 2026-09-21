@@ -19,7 +19,7 @@ const Certificate = () => {
 }
 
 const CertificateContent = () => {
-    const { localeMessages, name, issueDate, certificateNumber, customFields = [], qrcodeUrl: rawQrcodeUrl, logoUrl: rawLogoUrl } = useAppContext();
+    const { localeMessages, name, issueDate, certificateNumber, customFields = [], organizationName, qrcodeUrl: rawQrcodeUrl, logoUrl: rawLogoUrl } = useAppContext();
     const qrcodeUrl = sanitizeImageUrl(rawQrcodeUrl);
     const logoUrl = sanitizeImageUrl(rawLogoUrl);
 
@@ -122,7 +122,20 @@ const CertificateContent = () => {
                     },
                 })}
             >
-                {/* Your content here */}
+                {/* The sheet is a fixed physical size, so the footer is pinned to the bottom of
+                    it and this box absorbs whatever sits above - the custom fields, a long name -
+                    by giving up its own slack rather than pushing the logo and QR past the border. */}
+                <Box
+                    sx={{
+                        flex: 1,
+                        minHeight: 0,
+                        width: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}
+                >
                 <WorkspacePremiumIcon sx={(theme) => ({ fontSize: 86, color: theme.palette.primary.main, mb: 2 })} />
                 <Typography
                     variant="h1"
@@ -177,29 +190,31 @@ const CertificateContent = () => {
                 {customFields.length > 0 && (
                     <Stack
                         direction="row"
-                        spacing={6}
-                        sx={{ mt: 4, justifyContent: 'center', flexWrap: 'wrap', rowGap: 2 }}
+                        spacing={5}
+                        sx={{ mt: 3, justifyContent: 'center', flexWrap: 'wrap', rowGap: 1.5 }}
                     >
                         {customFields.map((field, index) => (
                             <Box key={index} sx={{ textAlign: 'center' }}>
                                 <Typography
-                                    variant="body2"
+                                    variant="caption"
+                                    component="div"
                                     sx={{ textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.7 }}
                                 >
                                     {field.label}
                                 </Typography>
-                                <Typography variant="body1" sx={{ fontWeight: 700, mt: 0.5 }}>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>
                                     {field.value}
                                 </Typography>
                             </Box>
                         ))}
                     </Stack>
                 )}
-                <Grid container spacing={2} sx={{ pt: 2, mt: 4, width: '100%', minHeight: '100px', alignItems: 'flex-end' }}>
+                </Box>
+                <Grid container spacing={2} sx={{ pt: 2, mt: 4, flexShrink: 0, width: '100%', minHeight: '100px', alignItems: 'flex-end' }}>
                     <Grid size={4} sx={{ textAlign: 'center' }} >
                         <Typography variant="body2">
                             { logoUrl && <><img src={logoUrl} alt="Organization Logo" style={{ width: 80, height: 80, objectFit: 'contain' }} /><br /></> }
-                            <b>{localeMessages['organization_team']}</b><br />
+                            <b>{organizationName}</b><br />
                             {localeMessages['issue_date']}: {issueDate}
                         </Typography>
                     </Grid>

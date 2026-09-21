@@ -9,6 +9,7 @@ const defaultAppContext = {
     name: 'Jane Doe',
     issueDate: 'January 01, 2025',
     certificateNumber: 'ORG-COURSE-42-abc123',
+    organizationName: 'Acme',
     qrcodeUrl: 'https://example.com/qr.png',
     logoUrl: 'https://example.com/logo.png',
     localeMessages: {
@@ -16,7 +17,6 @@ const defaultAppContext = {
         description: 'This certifies that Jane Doe has successfully completed the React Fundamentals course',
         issue_date: 'Issued on',
         certificate_number: 'Certificate Number',
-        organization_team: 'Acme Team',
     },
 };
 
@@ -43,9 +43,9 @@ describe('Certificate', () => {
         expect(screen.getByText(/ORG-COURSE-42-abc123/)).toBeInTheDocument();
     });
 
-    it('renders the organization team name', () => {
+    it('renders the issuing organization name', () => {
         renderWithProviders(<Certificate />, { appContext: defaultAppContext });
-        expect(screen.getByText('Acme Team')).toBeInTheDocument();
+        expect(screen.getByText('Acme')).toBeInTheDocument();
     });
 
     it('renders the QR code image', () => {

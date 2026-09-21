@@ -14,6 +14,11 @@ Changes prior to v1.0.0 are available in the [git history](https://github.com/Av
   - **A certificate keeps the values it was issued with.** `Certificate.custom_fields` copies the course's fields as the certificate is created, and the certificate page renders that copy — editing or removing a field on the course never changes a certificate already awarded. Certificates issued before this release carry an empty list and render as they did.
   - **API**: `certificate_fields`, a list of `{"label", "value"}`, on `POST …/courses/`, `POST …/courses/<course_id>/` and every course response. On an update the list replaces the course's fields outright; `[]` clears them and omitting the key leaves them alone.
 
+### Changed
+
+- **The certificate's logo, issue date, QR code and number are pinned to the bottom of the sheet.** They were centred along with everything above them, so on a fixed-size sheet a long name — or the new certificate fields — pushed them over the border. The block above now gives up its own slack instead, and the footer sits in the same place whatever the certificate carries.
+- **The certificate credits the issuing organization by name**, without the appended "Team".
+
 ### Migrations
 
 - `0030_certificate_custom_fields_certificatefield` creates `CertificateField` and adds `Certificate.custom_fields`, defaulting to an empty list. Additive and reversible, with no data migration.
