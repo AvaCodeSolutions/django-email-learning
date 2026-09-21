@@ -18,6 +18,8 @@ from .enums.from_email_type import FromEmailType
 from .organizations import Organization, OrganizationUser, domain_wide_email_enabled
 from .validators import validate_safe_name
 
+MAX_CERTIFICATE_FIELDS = 4
+
 
 class Course(models.Model):
     title = models.CharField(max_length=200, validators=[validate_safe_name])
@@ -158,6 +160,30 @@ class Course(models.Model):
             return final_path
         else:
             raise ValueError("Image file does not exist.")
+
+
+class CertificateField(models.Model):
+    """A label/value pair the course prints on every certificate it issues, e.g. "CPD Points"/"5".
+
+    A course holds at most ``MAX_CERTIFICATE_FIELDS`` of them. They are copied onto each
+    certificate as it is issued, so editing or removing one here never changes a certificate
+    that is already out.
+    """
+
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="certificate_fields")
+    label = models.CharField(max_length=50, validators=[validate_safe_name])
+    value = models.CharField(max_length=100, validators=[validate_safe_name])
+    order = models.PositiveSmallIntegerField()
+
+    class Meta:
+        ordering = ["order"]
+
+    def __str__(self) -> str:
+        return f"{self.course.title} - {self.label}"
+
+    def save(self, *args: Any, **kwargs: Any) -> None:  # type: ignore[no-untyped-def]
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 class CourseInstructor(models.Model):

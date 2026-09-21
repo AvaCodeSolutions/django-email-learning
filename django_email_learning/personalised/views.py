@@ -672,6 +672,7 @@ class CertificateView(BaseTemplateView):
                     "courseTitle": certificate.enrollment.course.title,
                     "issueDate": certificate.issued_at.strftime("%B %d, %Y"),
                     "certificateNumber": certificate_number,
+                    "customFields": certificate.custom_fields or [],
                     "organizationName": certificate.enrollment.course.organization.name,
                     "logoUrl": certificate.enrollment.course.organization.logo.url
                     if certificate.enrollment.course.organization.logo

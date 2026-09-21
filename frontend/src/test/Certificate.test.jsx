@@ -69,6 +69,30 @@ describe('Certificate', () => {
         expect(screen.queryByAltText('Organization Logo')).not.toBeInTheDocument();
     });
 
+    it('renders the custom fields issued with the certificate', () => {
+        renderWithProviders(<Certificate />, {
+            appContext: {
+                ...defaultAppContext,
+                customFields: [
+                    { label: 'CPD Points', value: '5' },
+                    { label: 'Level', value: 'Advanced' },
+                ],
+            },
+        });
+        expect(screen.getByText('CPD Points')).toBeInTheDocument();
+        expect(screen.getByText('5')).toBeInTheDocument();
+        expect(screen.getByText('Level')).toBeInTheDocument();
+        expect(screen.getByText('Advanced')).toBeInTheDocument();
+    });
+
+    it('renders nothing extra when the certificate carries no custom fields', () => {
+        renderWithProviders(<Certificate />, {
+            appContext: { ...defaultAppContext, customFields: [] },
+        });
+        expect(screen.getByText('Certificate of Completion')).toBeInTheDocument();
+        expect(screen.queryByText('CPD Points')).not.toBeInTheDocument();
+    });
+
     it('shows an error alert when errorMessage is present', () => {
         renderWithProviders(<Certificate />, {
             appContext: { ...defaultAppContext, errorMessage: 'Certificate not found' },

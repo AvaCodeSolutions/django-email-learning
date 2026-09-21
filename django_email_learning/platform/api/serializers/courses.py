@@ -1,11 +1,14 @@
 import enum
 from typing import Callable, Optional
 
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.translation import get_language_info
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
 
 from django_email_learning.models import (
+    MAX_CERTIFICATE_FIELDS,
     Answer,
+    CertificateField,
     Course,
     CourseContent,
     CourseContentType,
@@ -22,6 +25,7 @@ from django_email_learning.models import (
     Quiz,
     domain_wide_email_enabled,
 )
+from django_email_learning.models.validators import validate_safe_name
 from django_email_learning.platform.api.serializers.assignments import (
     AssignmentCreate,
     AssignmentResponse,
@@ -80,6 +84,35 @@ class WaitingPeriod(BaseModel):
             raise ValueError(f"Cannot convert {seconds} seconds to a valid WaitingPeriod.")
 
 
+class CertificateFieldModel(BaseModel):
+    """One label/value pair printed on the certificates this course issues."""
+
+    label: str = Field(min_length=1, max_length=50, examples=["CPD Points"])
+    value: str = Field(min_length=1, max_length=100, examples=["5"])
+
+    @field_validator("label", "value")
+    @classmethod
+    def validate_safe_text(cls, value: str) -> str:
+        """Both halves go verbatim onto a public certificate page, so they are held to the
+        same rules as a course title rather than being HTML-escaped into "Tom &amp; Jerry".
+        """
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("A certificate field needs both a label and a value.")
+        try:
+            validate_safe_name(stripped)
+        except DjangoValidationError as e:
+            raise ValueError("; ".join(e.messages))
+        return stripped
+
+
+def _replace_certificate_fields(course: Course, fields: list[CertificateFieldModel]) -> None:
+    """Rewrite the course's certificate fields to exactly ``fields``, in the order given."""
+    course.certificate_fields.all().delete()
+    for order, field in enumerate(fields, start=1):
+        CertificateField.objects.create(course=course, label=field.label, value=field.value, order=order)
+
+
 class CreateCourseRequest(BaseModel):
     title: str = Field(min_length=1, examples=["Introduction to Python"])
     slug: str = Field(
@@ -111,6 +144,12 @@ class CreateCourseRequest(BaseModel):
     )
     is_public: bool = Field(default=True, examples=[True])
     send_certificate: bool = Field(default=True, examples=[True])
+    certificate_fields: Optional[list[CertificateFieldModel]] = Field(
+        None,
+        max_length=MAX_CERTIFICATE_FIELDS,
+        examples=[[{"label": "CPD Points", "value": "5"}]],
+        description="Up to four label/value pairs printed on the certificates this course issues.",
+    )
     show_organization_footer: bool = Field(default=False, examples=[False])
     from_email_type: str = Field(
         default=FromEmailType.PLATFORM_DEFAULT.value,
@@ -183,6 +222,9 @@ class CreateCourseRequest(BaseModel):
             course.save()  # Save course before adding external references
             for ref in self.external_references:
                 course.external_references.create(name=ref["name"], url=ref["url"])
+        if self.certificate_fields:
+            course.save()  # Save course before adding certificate fields
+            _replace_certificate_fields(course, self.certificate_fields)
         return course
 
 
@@ -215,6 +257,12 @@ class UpdateCourseRequest(BaseModel):
     )
     is_public: Optional[bool] = Field(None, examples=[True])
     send_certificate: Optional[bool] = Field(None, examples=[True])
+    certificate_fields: Optional[list[CertificateFieldModel]] = Field(
+        None,
+        max_length=MAX_CERTIFICATE_FIELDS,
+        examples=[[{"label": "CPD Points", "value": "5"}]],
+        description="Replaces the course's certificate fields with exactly this list; [] clears them.",
+    )
     show_organization_footer: Optional[bool] = Field(None, examples=[False])
     from_email_type: Optional[str] = Field(None, examples=[FromEmailType.PLATFORM_DEFAULT.value])
     instructors: Optional[list[int]] = Field(None, examples=[1, 2, 3])
@@ -274,6 +322,9 @@ class UpdateCourseRequest(BaseModel):
             course.is_public = self.is_public
         if self.send_certificate is not None:
             course.send_certificate = self.send_certificate
+        if self.certificate_fields is not None:
+            course.save()  # Save course before replacing certificate fields
+            _replace_certificate_fields(course, self.certificate_fields)
         if self.show_organization_footer is not None:
             course.show_organization_footer = self.show_organization_footer
         if self.from_email_type is not None:
@@ -315,6 +366,7 @@ class CourseResponse(BaseModel):
     external_references: Optional[list[dict[str, str]]] = None
     is_public: bool
     send_certificate: bool
+    certificate_fields: list[CertificateFieldModel] = []
     show_organization_footer: bool
     from_email_type: str
     platform_from_email: str
@@ -348,6 +400,9 @@ class CourseResponse(BaseModel):
                 else None,
                 "is_public": course.is_public,
                 "send_certificate": course.send_certificate,
+                "certificate_fields": [
+                    {"label": field.label, "value": field.value} for field in course.certificate_fields.all()
+                ],
                 "show_organization_footer": course.show_organization_footer,
                 "from_email_type": course.from_email_type,
                 "platform_from_email": email_sender_service.from_email,

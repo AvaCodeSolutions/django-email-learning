@@ -12,3 +12,9 @@ def test_certificate_number(enrollment):
 
     expected_number = f"{enrollment.course.organization.id}-{enrollment.course.id}-{cert.id}-{cert.random_suffix}"
     assert cert.certificate_number == expected_number
+
+
+def test_custom_fields_default_to_an_empty_list(enrollment):
+    cert = Certificate.objects.create(enrollment=enrollment, name_on_certificate="John Doe")
+
+    assert cert.custom_fields == []

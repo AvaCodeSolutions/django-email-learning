@@ -5,6 +5,7 @@ import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import Grid from "@mui/material/Grid";
+import Stack from "@mui/material/Stack";
 import { alpha } from "@mui/material/styles";
 import { Alert } from "@mui/material";
 import { sanitizeImageUrl } from "../../src/sanitizeUrl.js";
@@ -18,7 +19,7 @@ const Certificate = () => {
 }
 
 const CertificateContent = () => {
-    const { localeMessages, name, issueDate, certificateNumber, qrcodeUrl: rawQrcodeUrl, logoUrl: rawLogoUrl } = useAppContext();
+    const { localeMessages, name, issueDate, certificateNumber, customFields = [], qrcodeUrl: rawQrcodeUrl, logoUrl: rawLogoUrl } = useAppContext();
     const qrcodeUrl = sanitizeImageUrl(rawQrcodeUrl);
     const logoUrl = sanitizeImageUrl(rawLogoUrl);
 
@@ -173,6 +174,27 @@ const CertificateContent = () => {
                         );
                     })()}
                 </Typography>
+                {customFields.length > 0 && (
+                    <Stack
+                        direction="row"
+                        spacing={6}
+                        sx={{ mt: 4, justifyContent: 'center', flexWrap: 'wrap', rowGap: 2 }}
+                    >
+                        {customFields.map((field, index) => (
+                            <Box key={index} sx={{ textAlign: 'center' }}>
+                                <Typography
+                                    variant="body2"
+                                    sx={{ textTransform: 'uppercase', letterSpacing: '0.08em', opacity: 0.7 }}
+                                >
+                                    {field.label}
+                                </Typography>
+                                <Typography variant="body1" sx={{ fontWeight: 700, mt: 0.5 }}>
+                                    {field.value}
+                                </Typography>
+                            </Box>
+                        ))}
+                    </Stack>
+                )}
                 <Grid container spacing={2} sx={{ pt: 2, mt: 4, width: '100%', minHeight: '100px', alignItems: 'flex-end' }}>
                     <Grid size={4} sx={{ textAlign: 'center' }} >
                         <Typography variant="body2">
