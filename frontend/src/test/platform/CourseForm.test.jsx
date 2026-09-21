@@ -203,3 +203,169 @@ describe('CourseForm description character limit', () => {
     expect(screen.getByText('11/1000 characters used.')).toBeInTheDocument();
   });
 });
+
+describe('CourseForm certificate fields', () => {
+  const certificateLocaleMessages = {
+    ...localeMessages,
+    update: 'Update',
+    create: 'Create',
+    remove: 'Remove',
+    course_send_certificate: 'Send Certificate on Completion',
+    certificate_fields: 'Certificate Fields',
+    add_certificate_field: 'Add Field',
+    certificate_field_label: 'Label',
+    certificate_field_value: 'Value',
+    certificate_field_label_required_helper_text: 'A label is required when a certificate field value is provided.',
+    certificate_field_value_required_helper_text: 'A value is required when a certificate field label is provided.',
+  };
+
+  const editCourseData = {
+    title: 'Existing Course',
+    slug: 'existing-slug',
+    description: 'A description.',
+    target_audience: '',
+    language: 'en',
+    is_public: true,
+    send_certificate: true,
+    show_organization_footer: false,
+    from_email_type: 'platform_default',
+    image: null,
+    image_path: null,
+    imap_connection_id: null,
+    newsletter_id: null,
+    external_references: [],
+    certificate_fields: [{ label: 'CPD Points', value: '5' }],
+    instructors: [],
+  };
+
+  it('hides the certificate fields section while the certificate is switched off', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CourseForm {...createProps} />, {
+      appContext: { localeMessages: certificateLocaleMessages },
+    });
+
+    expect(screen.getByText('Certificate Fields')).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('Send Certificate on Completion'));
+
+    expect(screen.queryByText('Certificate Fields')).not.toBeInTheDocument();
+  });
+
+  it('stops adding fields at four', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CourseForm {...createProps} />, {
+      appContext: { localeMessages: certificateLocaleMessages },
+    });
+
+    const addButton = screen.getByRole('button', { name: 'Add Field' });
+    for (let index = 0; index < 4; index += 1) {
+      await user.click(addButton);
+    }
+
+    expect(screen.getAllByLabelText('Label')).toHaveLength(4);
+    expect(addButton).toBeDisabled();
+  });
+
+  it('sends the certificate fields in the create payload', async () => {
+    global.fetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ id: 1 }) });
+    const user = userEvent.setup();
+    renderWithProviders(<CourseForm {...createProps} />, {
+      appContext: {
+        localeMessages: { ...certificateLocaleMessages, course_description: 'Course Description' },
+        languageOptions: [{ value: 'en', label: 'English' }],
+      },
+    });
+
+    await user.type(screen.getByLabelText(/Course Title/), 'Python Course');
+    await user.type(screen.getByLabelText(/Course Description/), 'A description.');
+    await user.click(screen.getByRole('button', { name: 'Add Field' }));
+    await user.type(screen.getByLabelText('Label'), 'CPD Points');
+    await user.type(screen.getByLabelText('Value'), '5');
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+
+    await waitFor(() => {
+      const postCall = global.fetch.mock.calls.find(([, opts]) => opts?.method === 'POST');
+      expect(postCall).toBeTruthy();
+      expect(JSON.parse(postCall[1].body)).toMatchObject({
+        certificate_fields: [{ label: 'CPD Points', value: '5' }],
+      });
+    });
+  });
+
+  it('refuses to save a field that has a label but no value', async () => {
+    global.fetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ id: 1 }) });
+    const user = userEvent.setup();
+    renderWithProviders(<CourseForm {...createProps} />, {
+      appContext: {
+        localeMessages: { ...certificateLocaleMessages, course_description: 'Course Description' },
+        languageOptions: [{ value: 'en', label: 'English' }],
+      },
+    });
+
+    await user.type(screen.getByLabelText(/Course Title/), 'Python Course');
+    await user.type(screen.getByLabelText(/Course Description/), 'A description.');
+    await user.click(screen.getByRole('button', { name: 'Add Field' }));
+    await user.type(screen.getByLabelText('Label'), 'CPD Points');
+    await user.click(screen.getByRole('button', { name: 'Create' }));
+
+    expect(
+      screen.getByText('A value is required when a certificate field label is provided.')
+    ).toBeInTheDocument();
+    expect(global.fetch.mock.calls.find(([, opts]) => opts?.method === 'POST')).toBeFalsy();
+  });
+
+  it('loads the saved fields in edit mode and sends the replacement list', async () => {
+    global.fetch.mockImplementation((url, options) => {
+      if (options?.method === 'POST') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(editCourseData) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(editCourseData) });
+    });
+    const user = userEvent.setup();
+    renderWithProviders(
+      <CourseForm {...createProps} createMode={false} courseId="1" />,
+      { appContext: { localeMessages: certificateLocaleMessages } }
+    );
+
+    const valueField = await screen.findByLabelText('Value');
+    expect(await screen.findByLabelText('Label')).toHaveValue('CPD Points');
+    expect(valueField).toHaveValue('5');
+
+    await user.clear(valueField);
+    await user.type(valueField, '10');
+    await user.click(screen.getByRole('button', { name: 'Update' }));
+
+    await waitFor(() => {
+      const postCall = global.fetch.mock.calls.find(([, opts]) => opts?.method === 'POST');
+      expect(postCall).toBeTruthy();
+      expect(JSON.parse(postCall[1].body)).toMatchObject({
+        certificate_fields: [{ label: 'CPD Points', value: '10' }],
+      });
+    });
+  });
+
+  it('leaves the saved fields untouched when the certificate is switched off', async () => {
+    global.fetch.mockImplementation((url, options) => {
+      if (options?.method === 'POST') {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(editCourseData) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(editCourseData) });
+    });
+    const user = userEvent.setup();
+    renderWithProviders(
+      <CourseForm {...createProps} createMode={false} courseId="1" />,
+      { appContext: { localeMessages: certificateLocaleMessages } }
+    );
+
+    await user.click(await screen.findByLabelText('Send Certificate on Completion'));
+    await user.click(screen.getByRole('button', { name: 'Update' }));
+
+    await waitFor(() => {
+      const postCall = global.fetch.mock.calls.find(([, opts]) => opts?.method === 'POST');
+      expect(postCall).toBeTruthy();
+      const body = JSON.parse(postCall[1].body);
+      expect(body).toMatchObject({ send_certificate: false });
+      expect(body).not.toHaveProperty('certificate_fields');
+    });
+  });
+});

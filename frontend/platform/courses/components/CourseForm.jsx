@@ -12,9 +12,32 @@ import { slugify } from '../../../src/utils.js';
 import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 
 const MAX_EXTERNAL_REFERENCES = 10;
+const MAX_CERTIFICATE_FIELDS = 4;
+const CERTIFICATE_FIELD_LABEL_MAX_LENGTH = 50;
+const CERTIFICATE_FIELD_VALUE_MAX_LENGTH = 100;
 const DESCRIPTION_MAX_LENGTH = 1000;
 
 const createEmptyExternalReference = () => ({ name: '', url: '' });
+
+const createEmptyCertificateField = () => ({ label: '', value: '' });
+
+const normalizeCertificateFields = (fields = []) => fields
+    .map((field) => ({
+        label: (field?.label || '').trim(),
+        value: (field?.value || '').trim(),
+    }))
+    .filter((field) => field.label || field.value);
+
+const certificateFieldsChanged = (originalFields, currentFields) => {
+    if (originalFields.length !== currentFields.length) {
+        return true;
+    }
+
+    return originalFields.some((field, index) => (
+        field.label !== currentFields[index]?.label
+        || field.value !== currentFields[index]?.value
+    ));
+};
 
 const normalizeExternalReferences = (references = []) => references
     .map((reference) => ({
@@ -72,6 +95,9 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     const [imageServerPath, setImageServerPath] = useState(null)
     const [externalReferences, setExternalReferences] = useState([])
     const [originalExternalReferences, setOriginalExternalReferences] = useState([])
+    const [certificateFields, setCertificateFields] = useState([])
+    const [originalCertificateFields, setOriginalCertificateFields] = useState([])
+    const [certificateFieldErrors, setCertificateFieldErrors] = useState([])
     const [initialValues, setInitialValues] = useState({
         title: "",
         description: "",
@@ -142,6 +168,12 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 }));
                 setExternalReferences(initialExternalReferences);
                 setOriginalExternalReferences(normalizeExternalReferences(initialExternalReferences));
+                const initialCertificateFields = (data.certificate_fields || []).map((field) => ({
+                    label: field.label || '',
+                    value: field.value || '',
+                }));
+                setCertificateFields(initialCertificateFields);
+                setOriginalCertificateFields(normalizeCertificateFields(initialCertificateFields));
                 if (data.imap_connection_id) {
                     setImapConnectionId(data.imap_connection_id);
                     setAddImapConnection(true);
@@ -228,7 +260,32 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             setLanguageHelperText("");
         }
 
+        // Certificate fields are only reachable while the certificate is on, so a half-filled
+        // row left behind a switched-off certificate must not block the save.
+        const nextCertificateFieldErrors = (sendCertificate ? certificateFields : []).map((field) => {
+            const label = field.label.trim();
+            const value = field.value.trim();
+            const rowErrors = { label: false, value: false };
+
+            if (!label && !value) {
+                return rowErrors;
+            }
+
+            if (!label) {
+                rowErrors.label = true;
+                isValid = false;
+            }
+
+            if (!value) {
+                rowErrors.value = true;
+                isValid = false;
+            }
+
+            return rowErrors;
+        });
+
         setExternalReferenceErrors(nextExternalReferenceErrors);
+        setCertificateFieldErrors(nextCertificateFieldErrors);
 
         return isValid;
     }
@@ -255,12 +312,35 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
         setExternalReferenceErrors((currentErrors) => currentErrors.filter((_, index) => index !== indexToRemove));
     }
 
+    const handleCertificateFieldChange = (index, field, value) => {
+        setCertificateFields((currentFields) => currentFields.map((currentField, currentIndex) => (
+            currentIndex === index ? { ...currentField, [field]: value } : currentField
+        )));
+        setCertificateFieldErrors((currentErrors) => currentErrors.map((error, currentIndex) => (
+            currentIndex === index ? { ...error, [field]: false } : error
+        )));
+    }
+
+    const handleAddCertificateField = () => {
+        if (certificateFields.length >= MAX_CERTIFICATE_FIELDS) {
+            return;
+        }
+        setCertificateFields((currentFields) => [...currentFields, createEmptyCertificateField()]);
+        setCertificateFieldErrors((currentErrors) => [...currentErrors, { label: false, value: false }]);
+    }
+
+    const handleRemoveCertificateField = (indexToRemove) => {
+        setCertificateFields((currentFields) => currentFields.filter((_, index) => index !== indexToRemove));
+        setCertificateFieldErrors((currentErrors) => currentErrors.filter((_, index) => index !== indexToRemove));
+    }
+
     const handleUpdateCourse = () => {
         const isValid = validateForm()
         if (!isValid) {
             return
         }
         const normalizedExternalReferences = normalizeExternalReferences(externalReferences);
+        const normalizedCertificateFields = normalizeCertificateFields(certificateFields);
         const trimmedTargetAudience = courseTargetAudience.trim();
         const currentImapConnectionId = addImapConnection && imapConnectionId != null
             ? parseInt(imapConnectionId)
@@ -326,6 +406,10 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             updatePayload.external_references = normalizedExternalReferences;
         }
 
+        if (sendCertificate && certificateFieldsChanged(originalCertificateFields, normalizedCertificateFields)) {
+            updatePayload.certificate_fields = normalizedCertificateFields;
+        }
+
         const currentInstructors = (addInstructors ? selectedInstructorIds : []).filter((id) => id != null);
         const sortedCurrent = [...currentInstructors].sort((a, b) => a - b);
         const sortedInitial = [...(initialValues.instructors || [])].sort((a, b) => a - b);
@@ -353,6 +437,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     imageServerPath: data.image_path ?? imageServerPath,
                 });
                 setOriginalExternalReferences(normalizeExternalReferences(data.external_references || normalizedExternalReferences));
+                setOriginalCertificateFields(normalizeCertificateFields(data.certificate_fields || normalizedCertificateFields));
                 console.log('Success:', data);
                 successCallback(data);
             }
@@ -377,6 +462,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             return
         }
         const normalizedExternalReferences = normalizeExternalReferences(externalReferences);
+        const normalizedCertificateFields = normalizeCertificateFields(certificateFields);
         apiClient.post(apiBaseUrl + '/organizations/' + activeOrganizationId + '/courses/', {
             title: courseTitle,
             slug: courseSlug,
@@ -385,6 +471,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             language: courseLanguage,
             is_public: isPublic,
             send_certificate: sendCertificate,
+            certificate_fields: sendCertificate && normalizedCertificateFields.length > 0 ? normalizedCertificateFields : null,
             show_organization_footer: showOrganizationFooter,
             from_email_type: fromEmailType,
             imap_connection_id: imapConnectionId ? parseInt(imapConnectionId) : null,
@@ -412,6 +499,9 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setExternalReferences([]);
                 setOriginalExternalReferences([]);
                 setExternalReferenceErrors([]);
+                setCertificateFields([]);
+                setOriginalCertificateFields([]);
+                setCertificateFieldErrors([]);
                 successCallback(data);
             }
         })
@@ -532,6 +622,79 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                             {localeMessages["course_send_certificate_helper_text"]}
                     </Typography>
               </Box>
+              {sendCertificate && (
+              <Box sx={{ mt: 2 }}>
+                <Stack direction="row" sx={{ mb: 1, justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="subtitle1">{localeMessages["certificate_fields"]}</Typography>
+                    <Button
+                        onClick={handleAddCertificateField}
+                        disabled={certificateFields.length >= MAX_CERTIFICATE_FIELDS || readOnly}
+                    >
+                        {localeMessages["add_certificate_field"]}
+                    </Button>
+                </Stack>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {localeMessages["certificate_fields_helper_text"]}
+                </Typography>
+                <Stack spacing={2}>
+                    {certificateFields.map((field, index) => (
+                        <Box
+                            key={index}
+                            sx={{
+                                display: 'grid',
+                                gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) minmax(0, 1fr) auto' },
+                                columnGap: { xs: 0, md: 2 },
+                                rowGap: { xs: 0, md: 0 },
+                                alignItems: 'start',
+                            }}
+                        >
+                            <TextField
+                                label={localeMessages["certificate_field_label"]}
+                                fullWidth
+                                margin="none"
+                                value={field.label}
+                                onChange={(e) => handleCertificateFieldChange(index, 'label', e.target.value)}
+                                error={Boolean(certificateFieldErrors[index]?.label)}
+                                helperText={certificateFieldErrors[index]?.label ? localeMessages["certificate_field_label_required_helper_text"] : ' '}
+                                disabled={readOnly}
+                                slotProps={{ htmlInput: { maxLength: CERTIFICATE_FIELD_LABEL_MAX_LENGTH } }}
+                                sx={{
+                                    mb: 0,
+                                    '&.MuiTextField-root': {
+                                        mt: 0,
+                                    },
+                                    '&.MuiTextField-root + .MuiTextField-root': {
+                                        mt: 0,
+                                    },
+                                }}
+                                dir={direction}
+                            />
+                            <TextField
+                                label={localeMessages["certificate_field_value"]}
+                                fullWidth
+                                margin="none"
+                                value={field.value}
+                                onChange={(e) => handleCertificateFieldChange(index, 'value', e.target.value)}
+                                error={Boolean(certificateFieldErrors[index]?.value)}
+                                helperText={certificateFieldErrors[index]?.value ? localeMessages["certificate_field_value_required_helper_text"] : ' '}
+                                disabled={readOnly}
+                                slotProps={{ htmlInput: { maxLength: CERTIFICATE_FIELD_VALUE_MAX_LENGTH } }}
+                                sx={{
+                                    mt: 0,
+                                    '&.MuiTextField-root': {
+                                        mt: 0,
+                                    },
+                                }}
+                                dir={direction}
+                            />
+                            <Button color="error" onClick={() => handleRemoveCertificateField(index)} disabled={readOnly} sx={{ mt: { xs: 0.5, md: 0 }, justifySelf: { xs: 'flex-start', md: 'start' }, alignSelf: { xs: 'flex-start', md: 'center' } }}>
+                                {localeMessages["remove"]}
+                            </Button>
+                        </Box>
+                    ))}
+                </Stack>
+              </Box>
+              )}
               <Box sx={{ mt: 2 }}>
                     <FormControlLabel
                             control={<Switch checked={showOrganizationFooter} disabled={readOnly} onChange={(e) => setShowOrganizationFooter(e.target.checked)} dir={direction} />}

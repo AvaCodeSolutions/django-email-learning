@@ -61,6 +61,22 @@ class Courses(BasePlatformView):
             "course_send_certificate_helper_text": _(
                 "When enabled, learners will receive a certificate email upon completing this course."
             ),
+            "certificate_fields": _("Certificate Fields"),
+            "add_certificate_field": _("Add Field"),
+            "certificate_fields_helper_text": _(
+                "Add up to 4 optional label/value pairs printed on the certificate, for example"
+                ' "CPD Points" / "5", "Level" / "Advanced", or "Study Hours" / "8". Each certificate keeps'
+                " the values as they were when it was issued, so later edits don't change certificates"
+                " already awarded."
+            ),
+            "certificate_field_label": _("Label"),
+            "certificate_field_value": _("Value"),
+            "certificate_field_label_required_helper_text": _(
+                "A label is required when a certificate field value is provided."
+            ),
+            "certificate_field_value_required_helper_text": _(
+                "A value is required when a certificate field label is provided."
+            ),
             "course_show_organization_footer": _("Show organization branding in email footer"),
             "course_show_organization_footer_helper_text": _(
                 "Add your organization's name and social links to the footer of this course's emails."
@@ -594,6 +610,22 @@ class CourseView(BasePlatformView):
             "course_send_certificate": _("Send Certificate on Completion"),
             "course_send_certificate_helper_text": _(
                 "When enabled, learners will receive a certificate email upon completing this course."
+            ),
+            "certificate_fields": _("Certificate Fields"),
+            "add_certificate_field": _("Add Field"),
+            "certificate_fields_helper_text": _(
+                "Add up to 4 optional label/value pairs printed on the certificate, for example"
+                ' "CPD Points" / "5", "Level" / "Advanced", or "Study Hours" / "8". Each certificate keeps'
+                " the values as they were when it was issued, so later edits don't change certificates"
+                " already awarded."
+            ),
+            "certificate_field_label": _("Label"),
+            "certificate_field_value": _("Value"),
+            "certificate_field_label_required_helper_text": _(
+                "A label is required when a certificate field value is provided."
+            ),
+            "certificate_field_value_required_helper_text": _(
+                "A value is required when a certificate field label is provided."
             ),
             "course_show_organization_footer": _("Show organization branding in email footer"),
             "course_show_organization_footer_helper_text": _(

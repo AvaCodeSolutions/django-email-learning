@@ -17,7 +17,13 @@ from .course_contents import (
     RoutingOutcome,
     TransitionCondition,
 )
-from .courses import Course, CourseInstructor, ExternalReference
+from .courses import (
+    MAX_CERTIFICATE_FIELDS,
+    CertificateField,
+    Course,
+    CourseInstructor,
+    ExternalReference,
+)
 from .deliveries import ContentDelivery, DeliverySchedule
 from .enrollments import BlockedEmail, Certificate, Enrollment, Learner
 from .enums.course_content_type import CourseContentType

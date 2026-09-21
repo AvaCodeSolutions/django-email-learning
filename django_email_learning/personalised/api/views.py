@@ -650,7 +650,15 @@ class SubmitCertificateFormView(View):
                 status=422,
             )
         certificate, created = Certificate.objects.get_or_create(
-            enrollment=enrollment, defaults={"name_on_certificate": name}
+            enrollment=enrollment,
+            defaults={
+                "name_on_certificate": name,
+                # Copied rather than looked up later: the certificate states what the course
+                # awarded on its issue date, and the course's fields can change afterwards.
+                "custom_fields": [
+                    {"label": field.label, "value": field.value} for field in enrollment.course.certificate_fields.all()
+                ],
+            },
         )
         certificate_path = reverse(
             "django_email_learning:personalised:certificate",

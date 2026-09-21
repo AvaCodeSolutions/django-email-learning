@@ -417,6 +417,124 @@ def test_update_course_replaces_external_references(superadmin_client):
     assert update_response.json()["external_references"] == update_payload["external_references"]
 
 
+def test_create_course_with_certificate_fields(superadmin_client):
+    payload = valid_create_course_payload(slug=uuid.uuid4().hex)
+    payload["certificate_fields"] = [
+        {"label": "CPD Points", "value": "5"},
+        {"label": "Level", "value": "Advanced"},
+    ]
+
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
+
+    assert response.status_code == 201
+    assert response.json()["certificate_fields"] == payload["certificate_fields"]
+    course = Course.objects.get(id=response.json()["id"])
+    assert [(f.label, f.value, f.order) for f in course.certificate_fields.all()] == [
+        ("CPD Points", "5", 1),
+        ("Level", "Advanced", 2),
+    ]
+
+
+def test_create_course_without_certificate_fields(superadmin_client):
+    payload = valid_create_course_payload(slug=uuid.uuid4().hex)
+
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
+
+    assert response.status_code == 201
+    assert response.json()["certificate_fields"] == []
+
+
+def test_create_course_with_more_than_four_certificate_fields_is_rejected(superadmin_client):
+    payload = valid_create_course_payload(slug=uuid.uuid4().hex)
+    payload["certificate_fields"] = [{"label": f"Label {index}", "value": str(index)} for index in range(5)]
+
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
+
+    assert response.status_code == 400
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        {"label": "", "value": "5"},
+        {"label": "CPD Points", "value": ""},
+        {"label": "CPD Points", "value": "https://example.com"},
+        {"label": "CPD\nPoints", "value": "5"},
+    ],
+)
+def test_create_course_with_an_unusable_certificate_field_is_rejected(superadmin_client, field):
+    payload = valid_create_course_payload(slug=uuid.uuid4().hex)
+    payload["certificate_fields"] = [field]
+
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
+
+    assert response.status_code == 400
+
+
+def test_update_course_replaces_certificate_fields(superadmin_client):
+    create_payload = valid_create_course_payload(slug=uuid.uuid4().hex)
+    create_payload["certificate_fields"] = [{"label": "CPD Points", "value": "5"}]
+    create_response = superadmin_client.post(get_url(1), json.dumps(create_payload), content_type="application/json")
+    assert create_response.status_code == 201
+    course_id = create_response.json()["id"]
+    _add_course_content(course_id)
+
+    update_payload = valid_update_course_payload()
+    update_payload["certificate_fields"] = [
+        {"label": "CPD Points", "value": "10"},
+        {"label": "Study Hours", "value": "8"},
+    ]
+    update_url = reverse(
+        "django_email_learning:api_platform:courses_detail",
+        kwargs={"organization_id": 1, "course_id": course_id},
+    )
+    update_response = superadmin_client.post(update_url, json.dumps(update_payload), content_type="application/json")
+
+    assert update_response.status_code == 200
+    assert update_response.json()["certificate_fields"] == update_payload["certificate_fields"]
+    assert Course.objects.get(id=course_id).certificate_fields.count() == 2
+
+
+def test_update_course_clears_certificate_fields_with_an_empty_list(superadmin_client):
+    create_payload = valid_create_course_payload(slug=uuid.uuid4().hex)
+    create_payload["certificate_fields"] = [{"label": "CPD Points", "value": "5"}]
+    create_response = superadmin_client.post(get_url(1), json.dumps(create_payload), content_type="application/json")
+    course_id = create_response.json()["id"]
+    _add_course_content(course_id)
+
+    update_payload = valid_update_course_payload()
+    update_payload["certificate_fields"] = []
+    update_url = reverse(
+        "django_email_learning:api_platform:courses_detail",
+        kwargs={"organization_id": 1, "course_id": course_id},
+    )
+    update_response = superadmin_client.post(update_url, json.dumps(update_payload), content_type="application/json")
+
+    assert update_response.status_code == 200
+    assert update_response.json()["certificate_fields"] == []
+    assert Course.objects.get(id=course_id).certificate_fields.count() == 0
+
+
+def test_update_course_leaves_certificate_fields_alone_when_omitted(superadmin_client):
+    create_payload = valid_create_course_payload(slug=uuid.uuid4().hex)
+    create_payload["certificate_fields"] = [{"label": "CPD Points", "value": "5"}]
+    create_response = superadmin_client.post(get_url(1), json.dumps(create_payload), content_type="application/json")
+    course_id = create_response.json()["id"]
+    _add_course_content(course_id)
+
+    update_payload = valid_update_course_payload()
+    update_payload["send_certificate"] = False
+    update_url = reverse(
+        "django_email_learning:api_platform:courses_detail",
+        kwargs={"organization_id": 1, "course_id": course_id},
+    )
+    update_response = superadmin_client.post(update_url, json.dumps(update_payload), content_type="application/json")
+
+    assert update_response.status_code == 200
+    assert update_response.json()["send_certificate"] is False
+    assert update_response.json()["certificate_fields"] == [{"label": "CPD Points", "value": "5"}]
+
+
 def test_slug_change_not_allowed(superadmin_client):
     # First, create a course to update
     create_payload = valid_create_course_payload()

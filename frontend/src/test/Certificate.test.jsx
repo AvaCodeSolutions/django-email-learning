@@ -9,6 +9,7 @@ const defaultAppContext = {
     name: 'Jane Doe',
     issueDate: 'January 01, 2025',
     certificateNumber: 'ORG-COURSE-42-abc123',
+    organizationName: 'Acme',
     qrcodeUrl: 'https://example.com/qr.png',
     logoUrl: 'https://example.com/logo.png',
     localeMessages: {
@@ -16,7 +17,6 @@ const defaultAppContext = {
         description: 'This certifies that Jane Doe has successfully completed the React Fundamentals course',
         issue_date: 'Issued on',
         certificate_number: 'Certificate Number',
-        organization_team: 'Acme Team',
     },
 };
 
@@ -43,9 +43,9 @@ describe('Certificate', () => {
         expect(screen.getByText(/ORG-COURSE-42-abc123/)).toBeInTheDocument();
     });
 
-    it('renders the organization team name', () => {
+    it('renders the issuing organization name', () => {
         renderWithProviders(<Certificate />, { appContext: defaultAppContext });
-        expect(screen.getByText('Acme Team')).toBeInTheDocument();
+        expect(screen.getByText('Acme')).toBeInTheDocument();
     });
 
     it('renders the QR code image', () => {
@@ -67,6 +67,30 @@ describe('Certificate', () => {
             appContext: { ...defaultAppContext, logoUrl: '' },
         });
         expect(screen.queryByAltText('Organization Logo')).not.toBeInTheDocument();
+    });
+
+    it('renders the custom fields issued with the certificate', () => {
+        renderWithProviders(<Certificate />, {
+            appContext: {
+                ...defaultAppContext,
+                customFields: [
+                    { label: 'CPD Points', value: '5' },
+                    { label: 'Level', value: 'Advanced' },
+                ],
+            },
+        });
+        expect(screen.getByText('CPD Points')).toBeInTheDocument();
+        expect(screen.getByText('5')).toBeInTheDocument();
+        expect(screen.getByText('Level')).toBeInTheDocument();
+        expect(screen.getByText('Advanced')).toBeInTheDocument();
+    });
+
+    it('renders nothing extra when the certificate carries no custom fields', () => {
+        renderWithProviders(<Certificate />, {
+            appContext: { ...defaultAppContext, customFields: [] },
+        });
+        expect(screen.getByText('Certificate of Completion')).toBeInTheDocument();
+        expect(screen.queryByText('CPD Points')).not.toBeInTheDocument();
     });
 
     it('shows an error alert when errorMessage is present', () => {

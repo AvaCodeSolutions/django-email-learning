@@ -420,6 +420,15 @@ class Certificate(models.Model):
     issued_at = models.DateTimeField(auto_now_add=True)
     name_on_certificate = models.CharField(max_length=200)
     random_suffix = models.IntegerField()
+    custom_fields = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="The course's certificate fields as they stood when this certificate was issued.",
+    )
+    # custom_fields is what the certificate page renders - never the course's current
+    # CertificateField rows. A certificate states what its course awarded on the issue date,
+    # so an edit to the course must not rewrite one already out. Empty when the course
+    # defined no fields.
 
     @property
     def certificate_number(self) -> str:

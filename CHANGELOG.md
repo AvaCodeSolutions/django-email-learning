@@ -6,6 +6,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [Unreleased]
+
+### Added
+
+- **A course can print up to four custom label/value pairs on its certificates** — "CPD Points" / "5", "Level" / "Advanced", or whatever the course awards. The **Certificate Fields** section of the course form edits them, and it is only shown while **Send Certificate on Completion** is on; switching the certificate off hides the fields and leaves them stored, so turning it back on restores them. Both halves of a pair are required, and each is held to the same rules as a course title (no URLs, control, zero-width or mixed-script characters).
+  - **A certificate keeps the values it was issued with.** `Certificate.custom_fields` copies the course's fields as the certificate is created, and the certificate page renders that copy — editing or removing a field on the course never changes a certificate already awarded. Certificates issued before this release carry an empty list and render as they did.
+  - **API**: `certificate_fields`, a list of `{"label", "value"}`, on `POST …/courses/`, `POST …/courses/<course_id>/` and every course response. On an update the list replaces the course's fields outright; `[]` clears them and omitting the key leaves them alone.
+
+### Changed
+
+- **The certificate's logo, issue date, QR code and number are pinned to the bottom of the sheet.** They were centred along with everything above them, so on a fixed-size sheet a long name — or the new certificate fields — pushed them over the border. The block above now gives up its own slack instead, and the footer sits in the same place whatever the certificate carries.
+- **The certificate credits the issuing organization by name**, without the appended "Team".
+
+### Migrations
+
+- `0030_certificate_custom_fields_certificatefield` creates `CertificateField` and adds `Certificate.custom_fields`, defaulting to an empty list. Additive and reversible, with no data migration.
+
 ## [7.2.1] - 2026-09-14
 
 ### Fixed
