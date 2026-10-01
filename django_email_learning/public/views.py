@@ -39,6 +39,31 @@ def get_terms_of_service_url() -> str | None:
     return settings.DJANGO_EMAIL_LEARNING.get("TERMS_OF_SERVICE_URL")  # type: ignore[return-value]
 
 
+def get_favicon_links(organization: Organization) -> list[dict[str, str]]:
+    """The <link rel="icon"> tags for an organization's public pages, best first:
+    the PNG rendered from its logo, else the logo itself (a vector logo, or one
+    whose PNG has not been rendered yet), else the platform's vertical lockup.
+    Both lockups are offered with a colour-scheme media query so the browser
+    picks the one drawn for its tab background. An empty list leaves the
+    library's own favicon in place.
+    """
+    if organization.favicon:
+        return [{"href": organization.favicon.url, "type": "image/png"}]
+    if organization.logo:
+        return [{"href": organization.logo.url}]
+
+    vertical = getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("LOGO", {}).get("VERTICAL_LOCKUP", {})
+    light, dark = vertical.get("LIGHT_BACKGROUND"), vertical.get("DARK_BACKGROUND")
+    if light and dark:
+        return [
+            {"href": light, "media": "(prefers-color-scheme: light)"},
+            {"href": dark, "media": "(prefers-color-scheme: dark)"},
+        ]
+    if light or dark:
+        return [{"href": light or dark}]
+    return []
+
+
 def get_organization_json_ld_links(organization: Organization) -> dict[str, object]:
     json_ld_links: dict[str, object] = {"url": organization.public_url}
     same_as = [link.url for link in organization.social_links.all()]
@@ -257,6 +282,7 @@ class OrganizationView(TemplateView):
             if len(courses) > 0:
                 context["json_ld"] = build_organization_courses_json_ld(courses, organization)
             context["page_title"] = organization.name
+            context["favicon_links"] = get_favicon_links(organization)
             return context
 
         # If organization not found, raise 404
@@ -389,4 +415,5 @@ class CourseView(TemplateView):
             self.request.build_absolute_uri(course.organization.logo.url) if course.organization.logo else None
         )
         context["page_title"] = course.title
+        context["favicon_links"] = get_favicon_links(course.organization)
         return context

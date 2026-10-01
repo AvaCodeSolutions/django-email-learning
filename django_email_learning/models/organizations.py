@@ -1,4 +1,6 @@
 import base64
+import hashlib
+import logging
 import uuid
 from email.utils import formataddr
 from typing import Any
@@ -6,16 +8,22 @@ from typing import Any
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from django.core.validators import MaxLengthValidator, RegexValidator
 from django.db import models
 from django.urls import reverse
 from django.utils.module_loading import import_string
 from django.utils.text import slugify
 
+from django_email_learning.services.favicon_service import is_raster_logo, make_favicon_png
+
 from .enums.enrollment_status import EnrollmentStatus
 from .validators import MAX_ORGANIZATION_NAME_LENGTH, validate_organization_name
 
 User = get_user_model()
+
+logger = logging.getLogger(__name__)
 
 hex_color_validator = RegexValidator(
     regex=r"^#[0-9A-Fa-f]{6}$",
@@ -39,6 +47,10 @@ def domain_wide_email_enabled() -> bool:
 class Organization(models.Model):
     name = models.CharField(max_length=MAX_ORGANIZATION_NAME_LENGTH, validators=[validate_organization_name])
     logo = models.ImageField(upload_to="organization_logos/", null=True, blank=True)
+    # A small square PNG rendered from the logo for the public pages' browser tab,
+    # rebuilt whenever the logo changes. Empty while there is no logo, and for a
+    # vector logo, which is served as its own favicon instead.
+    favicon = models.ImageField(upload_to="organization_logos/", null=True, blank=True, editable=False)
     description = models.TextField(null=True, blank=True, validators=[MaxLengthValidator(1000)])
     is_public = models.BooleanField(default=True)
     brand_color = models.CharField(max_length=7, default="#4A5EC0", validators=[hex_color_validator])
@@ -51,9 +63,50 @@ class Organization(models.Model):
         # wherever a human has to pick one (e.g. admin foreign key dropdowns).
         return f"{self.name} (#{self.pk})"
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        # The logo as stored, to tell in save() whether it changed. Read from
+        # __dict__ so a deferred logo is not fetched just for this; None marks
+        # it as unknown, and a save then leaves the favicon alone.
+        self._saved_logo_name: str | None
+        if not self.pk:
+            self._saved_logo_name = ""
+        elif "logo" in self.__dict__:
+            self._saved_logo_name = str(self.__dict__["logo"] or "")
+        else:
+            self._saved_logo_name = None
+
     def save(self, *args: Any, **kwargs: Any) -> None:  # type: ignore[no-untyped-def]
         self.full_clean()
+        logo_changed = self._saved_logo_name is not None and (self.logo.name or "") != self._saved_logo_name
         super().save(*args, **kwargs)
+        if logo_changed:
+            self.refresh_favicon()
+
+    def refresh_favicon(self) -> None:
+        """Re-renders ``favicon`` from the current logo, or clears it when there is
+        no raster logo to render. A logo Pillow cannot read leaves the organization
+        without a favicon rather than failing the save that changed it.
+        """
+        if self.favicon.name:
+            default_storage.delete(self.favicon.name)
+        logo_name = self.logo.name or ""
+        favicon_name = ""
+        if logo_name and is_raster_logo(logo_name):
+            try:
+                with default_storage.open(logo_name) as logo_file:
+                    png = make_favicon_png(logo_file)
+                # Named by content: media is typically served with a long cache
+                # lifetime, so a new favicon needs a new URL to reach browsers.
+                digest = hashlib.sha256(png).hexdigest()[:12]
+                favicon_name = default_storage.save(
+                    f"organization_logos/{self.pk}/favicon-{digest}.png", ContentFile(png)
+                )
+            except Exception:
+                logger.warning("Could not render a favicon for organization %s", self.pk, exc_info=True)
+        self.favicon = favicon_name or None
+        Organization.objects.filter(pk=self.pk).update(favicon=favicon_name or None)
+        self._saved_logo_name = logo_name
 
     @staticmethod
     def generate_embed_token() -> str:

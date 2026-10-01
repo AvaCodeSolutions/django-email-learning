@@ -333,6 +333,16 @@ Optional configuration for branding assets in the platform header.
         },
     }
 
+The vertical lockup also serves as the favicon of the public organization and course pages, for an organization that has no logo of its own. With both variants set, each is offered with a ``prefers-color-scheme`` media query so the browser picks the one drawn for its tab; with one, that one is used. With neither, the pages keep the library's own favicon.
+
+An organization's own logo takes precedence: when it is uploaded, a 64×64 transparent PNG is rendered from it and used as the favicon of that organization's public pages. Vector (SVG) logos cannot be rendered, so they are used as the favicon directly. Logos uploaded before favicons were rendered also serve as their own favicon until you render the PNGs:
+
+.. code-block:: bash
+
+    python manage.py generate_organization_favicons
+
+Add ``--all`` to re-render every organization's favicon, not only the missing ones.
+
 **PRIVATE_FILE_STORAGE_LOCATION**
 
 The filesystem path where privately uploaded files will be stored. Unlike media files served via Django's ``MEDIA_URL`` which are publicly accessible, files stored here are **not** served publicly. They are only accessible through an authenticated endpoint, ensuring that sensitive files (such as assignment submissions or certificates) are protected and only available to authorised users.

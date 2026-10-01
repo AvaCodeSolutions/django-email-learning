@@ -12,7 +12,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     {% block meta_tags %}{% endblock %}
+    {% block favicon %}
+    {% for link in favicon_links %}
+    <link rel="icon" href="{{ link.href }}"{% if link.type %} type="{{ link.type }}"{% endif %}{% if link.media %} media="{{ link.media }}"{% endif %} />
+    {% empty %}
     <link rel="icon" type="image/png" href="{% static 'logo.png' %}" />
+    {% endfor %}
+    {% endblock %}
     <title>{% block title %}{{ page_title }}{% endblock %}</title>
   </head>
   <body dir="{% block directionrtl %}{% if IS_RTL %}rtl{% else %}ltr{% endif %}{% endblock %}">
