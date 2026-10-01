@@ -6,6 +6,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.3.1] - 2026-10-01
+
+### Fixed
+
+- **The organization logo is centred on the public organization and course pages when the host site resets images to `display: block`** — Tailwind's preflight does, for one. Both pages centred the logo with `text-align` on its container, which only moves inline content, so under such a reset the logo sat flush left; on the organization page that showed on mobile, on the course page at every width. The logo now centres itself with auto margins, which holds whatever the host's CSS does to images.
+
+### Changed
+
+- **On mobile, the course page's enroll button sits below the course image, full width,** instead of over the bottom of it. The dark gradient laid over the image is dropped at that width too: it was there to keep the course title legible on the picture, and on mobile the title is shown above the image instead. Desktop is unchanged.
+
 ## [7.3.0] - 2026-09-21
 
 ### Added
