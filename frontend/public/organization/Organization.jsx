@@ -148,7 +148,7 @@ function Organization() {
             >
                 { organizationLogoUrl &&
                     <Box sx={{ flexShrink: 0, textAlign: { xs: 'center', md: 'left' } }}>
-                        <Box component="img" src={ organizationLogoUrl } alt={`${organization["name"]} Logo`} sx={{ maxWidth: 220, width: '100%', height: 'auto' }} />
+                        <Box component="img" src={ organizationLogoUrl } alt={`${organization["name"]} Logo`} sx={{ display: 'block', mx: { xs: 'auto', md: 0 }, maxWidth: 220, width: '100%', height: 'auto' }} />
                     </Box>
                 }
                 <Stack spacing={2} sx={{ flex: 1, minWidth: 0, pt: { xs: 1, md: 3 }, px: { xs: 0.5, md: 1 } }}>

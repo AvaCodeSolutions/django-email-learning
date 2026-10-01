@@ -115,6 +115,7 @@ function Course() {
                         aspectRatio: '16 / 9',
                         objectFit: 'cover',
                         display: 'block',
+                        borderRadius: { xs: 2, md: 0 },
                     }}
                 />
             ) : (
@@ -122,6 +123,7 @@ function Course() {
                     sx={{
                         width: '100%',
                         aspectRatio: { xs: '16 / 9', md: '32 / 9' },
+                        borderRadius: { xs: 2, md: 0 },
                         backgroundColor: 'grey.600',
                         display: 'flex',
                         alignItems: 'center',
@@ -132,22 +134,29 @@ function Course() {
                 </Box>
             )}
 
+            {/* On desktop this overlays the image with the title and the enroll
+                button; on mobile the title sits above the image instead, so this
+                drops below it as a plain row holding a full-width button. */}
             <Box
                 sx={{
-                    position: 'absolute',
+                    position: { xs: 'static', md: 'absolute' },
                     inset: 0,
                     display: 'flex',
                     alignItems: 'flex-end',
-                    p: { xs: 2, md: 3 },
-                    background: course.image
-                        ? 'linear-gradient(180deg, rgba(0, 0, 0, 0) 25%, rgba(0, 0, 0, 0.75) 100%)'
-                        : 'none',
+                    p: { xs: 0, md: 3 },
+                    pt: { xs: enrolled ? 0 : 2, md: 3 },
+                    background: {
+                        xs: 'none',
+                        md: course.image
+                            ? 'linear-gradient(180deg, rgba(0, 0, 0, 0) 25%, rgba(0, 0, 0, 0.75) 100%)'
+                            : 'none',
+                    },
                     pointerEvents: 'none',
                 }}
             >
                 <Stack
                     direction={courseDirection === 'rtl' ? 'row-reverse' : 'row'}
-                    spacing={2}
+                    spacing={{ xs: 0, md: 2 }}
                     sx={{
                         justifyContent: { xs: 'center', md: 'space-between' },
                         alignItems: { xs: 'center', md: 'flex-end' },
@@ -171,7 +180,7 @@ function Course() {
                     sx={{
                         pointerEvents: 'auto',
                         flexShrink: 0,
-                        mx: { xs: 'auto', md: 0 },
+                        width: { xs: '100%', md: 'auto' },
                     }}
                     >
                         {!enrolled && (
@@ -180,9 +189,10 @@ function Course() {
                                 size="large"
                                 onClick={showEnrollmentModal}
                                 sx={{
-                                    minWidth: { xs: 160, sm: 190 },
-                                    boxShadow: '0 16px 40px rgba(0, 0, 0, 0.28)',
-                                    border: 'solid 1px #ffffff30',
+                                    width: { xs: '100%', md: 'auto' },
+                                    minWidth: { md: 190 },
+                                    boxShadow: { xs: 'none', md: '0 16px 40px rgba(0, 0, 0, 0.28)' },
+                                    border: { xs: 'none', md: 'solid 1px #ffffff30' },
                                     fontWeight: 700,
                                     backgroundColor: organization.brand_color,
                                     color: getReadableTextColor(organization.brand_color),
@@ -245,6 +255,8 @@ function Course() {
                                     src={organizationLogoUrl}
                                     alt={`${organization.name} Logo`}
                                     sx={{
+                                        display: 'block',
+                                        mx: 'auto',
                                         maxWidth: 120,
                                     height: 'auto',
                                     borderRadius: 1,
