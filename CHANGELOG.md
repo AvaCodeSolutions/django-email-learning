@@ -6,6 +6,22 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.4.0] - 2026-10-01
+
+### Added
+
+- **The public organization and course pages use the organization's own favicon** in place of the library's. When a logo is uploaded, a 64×64 transparent PNG is rendered from it — transparent margins trimmed, scaled without distortion and centred — and replaced whenever the logo changes. The pages fall back in order:
+  - **the logo itself**, when there is no PNG: a vector (SVG) logo, which cannot be rendered, or a logo uploaded before this release;
+  - **the vertical lockup** of the `LOGO` setting, for an organization without a logo. With both `LIGHT_BACKGROUND` and `DARK_BACKGROUND` set, each is offered behind a `prefers-color-scheme` media query so the browser picks the one drawn for its tab; with one, that one is used;
+  - **the library's favicon**, as before.
+
+  The other pages built on `public/base.html` keep the library's favicon, which can be replaced by overriding its new `favicon` block.
+- **`generate_organization_favicons`** renders the PNG for every organization whose logo has none yet; run it once after upgrading so logos uploaded before this release stop serving at full size as favicons. `--all` re-renders every organization's.
+
+### Migrations
+
+- `0031_organization_favicon` adds `Organization.favicon`, an empty image field. Additive and reversible, with no data migration — `generate_organization_favicons` fills it for existing logos.
+
 ## [7.3.1] - 2026-10-01
 
 ### Fixed
