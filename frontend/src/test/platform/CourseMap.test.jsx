@@ -43,6 +43,7 @@ const localeMessages = {
     not_published: 'Not published',
     map_unreached: 'No rule routes here',
     map_course_complete: 'Course complete',
+    map_empty_track: 'No content - skips ahead',
     course_view_flow: 'Flow',
     edit_track: 'Edit Track',
 };
@@ -73,6 +74,15 @@ describe('CourseMap', () => {
         expect(screen.getByText('Remedial lesson')).toBeInTheDocument();
         expect(screen.getByText('Remedial')).toBeInTheDocument();
         expect(screen.getByText('Course complete')).toBeInTheDocument();
+    });
+
+    it('draws a routed track with no content as a box that skips ahead', () => {
+        const skip = { id: 9, name: 'Skip', parent_track_id: null, merge_into_id: 3 };
+        const skipRule = { ...failedRule, id: 2, order: 2, condition: 'passed', target_id: 9 };
+        renderMap({ tracks: [remedial, skip], transitions: [failedRule, skipRule] });
+
+        expect(screen.getByText('Skip')).toBeInTheDocument();
+        expect(screen.getByText('No content - skips ahead')).toBeInTheDocument();
     });
 
     it('fades unpublished content', () => {

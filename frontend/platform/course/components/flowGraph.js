@@ -19,12 +19,17 @@
  * marked `inactive`, and its plain next step is marked `taken` - the move every learner makes,
  * even where it leaves the track.
  *
+ * A track a rule routes onto but that holds no content of its own - one that only skips ahead
+ * to where it rejoins - gets an `empty` node, so the route still leads into the track's box and
+ * leaves it again rather than running straight over the content it skips.
+ *
  * `groups` has one entry per track, so the map can draw a track as a box around its content.
  */
 
 export const END_NODE_ID = 'end';
 export const contentNodeId = (contentId) => `content-${contentId}`;
 export const trackGroupId = (trackId) => `track-${trackId}`;
+export const emptyTrackNodeId = (trackId) => `track-${trackId}-empty`;
 
 const trackOf = (content) => content.track_id ?? null;
 
@@ -76,9 +81,11 @@ export function buildFlowGraph(contents, tracks = [], transitions = []) {
         return { target: continuationOf(trackOf(content)), leavesTrack: true };
     };
 
+    const emptyTracks = tracks.filter((track) => routedTracks.has(track.id) && !lanes.has(track.id));
+
     const entryOf = (trackId) => {
         const lane = lanes.get(trackId);
-        return lane && lane.length > 0 ? contentNodeId(lane[0].id) : continuationOf(trackId);
+        return lane && lane.length > 0 ? contentNodeId(lane[0].id) : emptyTrackNodeId(trackId);
     };
 
     const trackFor = (content) => (trackOf(content) === null ? null : trackById.get(trackOf(content)) ?? null);
@@ -93,9 +100,17 @@ export function buildFlowGraph(contents, tracks = [], transitions = []) {
             unreached: trackOf(content) !== null && !routedTracks.has(trackOf(content)),
         },
     }));
+    for (const track of emptyTracks) {
+        nodes.push({ id: emptyTrackNodeId(track.id), type: 'empty', data: { track } });
+    }
     nodes.push({ id: END_NODE_ID, type: 'end', data: {} });
 
     const edges = [];
+    for (const track of emptyTracks) {
+        const source = emptyTrackNodeId(track.id);
+        const target = continuationOf(track.id);
+        edges.push({ id: `${source}-next`, source, target, data: { kind: target === END_NODE_ID ? 'ends' : 'rejoin', track } });
+    }
     for (const content of contents) {
         const source = contentNodeId(content.id);
         const track = trackFor(content);

@@ -78,11 +78,25 @@ describe('layoutFlow', () => {
         expect(nodes.findIndex((node) => node.id === 'track-7')).toBeLessThan(nodes.findIndex((node) => node.id === 'track-12'));
     });
 
-    it('draws no box for a track with nothing on it', () => {
+    it('draws no box for a track with nothing on it that no rule routes onto', () => {
         const empty = { id: 9, name: 'Empty', parent_track_id: null, merge_into_id: 3 };
-        const nodes = layout(contents, [remedial, empty], [rule(1, 2, 7), rule(2, 2, 9)]);
+        const nodes = layout(contents, [remedial, empty], [rule(1, 2, 7)]);
 
         expect(nodes.find((node) => node.id === 'track-9')).toBeUndefined();
+    });
+
+    it('boxes a routed empty track beside the main content it skips', () => {
+        const empty = { id: 9, name: 'Empty', parent_track_id: null, merge_into_id: 3 };
+        const nodes = layout(contents, [remedial, empty], [rule(1, 2, 7), rule(2, 2, 9)]);
+        const y = (id) => boxOf(nodes, id).y;
+
+        expect(nodes.find((node) => node.id === 'track-9-empty').parentId).toBe('track-9');
+        expect(y('content-2')).toBeLessThan(y('track-9-empty'));
+        expect(y('track-9-empty')).toBeLessThan(y('content-3'));
+        const groupBox = boxOf(nodes, 'track-9');
+        for (const id of ['content-1', 'content-2', 'content-4', 'content-3', 'track-7']) {
+            expect(overlaps(boxOf(nodes, id), groupBox)).toBe(false);
+        }
     });
 
     it('never overlaps two track boxes, even when tracks only add content and rejoin at the next step', () => {

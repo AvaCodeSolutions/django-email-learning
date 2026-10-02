@@ -512,6 +512,7 @@ class CourseView(BasePlatformView):
             "map_not_submitted": _("If not submitted"),
             "map_unreached": _("No rule routes here"),
             "map_course_complete": _("Course complete"),
+            "map_empty_track": _("No content - skips ahead"),
             "not_published": _("Not published"),
             "track_breakdown_title": _("Tracks"),
             "track_breakdown_help": _(

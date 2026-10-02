@@ -67,11 +67,27 @@ describe('buildFlowGraph', () => {
         expect(graph.edges.find((edge) => edge.id === 'content-2-fallthrough').data.kind).toBe('unsubmitted');
     });
 
-    it('sends a route onto an empty track straight to where it rejoins', () => {
+    it('routes onto an empty track through a placeholder that rejoins where the track does', () => {
         const empty = { id: 9, name: 'Empty', parent_track_id: null, merge_into_id: 3 };
         const graph = buildFlowGraph(contents, [remedial, empty], [rule(1, 2, 9)]);
 
-        expect(graph.edges.find((edge) => edge.id === 'content-2-route-9').target).toBe('content-3');
+        expect(graph.nodes.find((node) => node.id === 'track-9-empty')).toMatchObject({ type: 'empty', data: { track: empty } });
+        expect(graph.edges.find((edge) => edge.id === 'content-2-route-9').target).toBe('track-9-empty');
+        expect(graph.edges.find((edge) => edge.id === 'track-9-empty-next')).toMatchObject({ target: 'content-3', data: { kind: 'rejoin', track: empty } });
+    });
+
+    it('ends the course from an empty track with no merge point', () => {
+        const empty = { id: 9, name: 'Empty', parent_track_id: null, merge_into_id: null };
+        const graph = buildFlowGraph(contents, [remedial, empty], [rule(1, 2, 9)]);
+
+        expect(graph.edges.find((edge) => edge.id === 'track-9-empty-next')).toMatchObject({ target: END_NODE_ID, data: { kind: 'ends' } });
+    });
+
+    it('adds no placeholder for an empty track no rule routes onto', () => {
+        const empty = { id: 9, name: 'Empty', parent_track_id: null, merge_into_id: 3 };
+        const graph = buildFlowGraph(contents, [remedial, empty], [rule(1, 2, 7)]);
+
+        expect(graph.nodes.find((node) => node.id === 'track-9-empty')).toBeUndefined();
     });
 
     it('ends the course from a track with no merge point', () => {

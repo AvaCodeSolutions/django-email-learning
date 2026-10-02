@@ -110,6 +110,34 @@ function EndNode() {
     );
 }
 
+// Stands in for a track with nothing on it, so the route onto it has somewhere to land inside its box.
+function EmptyTrackNode({ data }) {
+    const { localeMessages } = useAppContext();
+    return (
+        <Box
+            sx={{
+                width: NODE_WIDTH,
+                height: NODE_HEIGHT,
+                boxSizing: 'border-box',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                px: 1.5,
+                borderRadius: 1,
+                border: `1px dashed ${data.color}`,
+                color: 'text.secondary',
+                textAlign: 'center',
+            }}
+        >
+            <Handle type="target" position={Position.Top} isConnectable={false} style={HIDDEN_HANDLE} />
+            <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                {localeMessages['map_empty_track'] || 'No content - skips ahead'}
+            </Typography>
+            <Handle type="source" position={Position.Bottom} isConnectable={false} style={HIDDEN_HANDLE} />
+        </Box>
+    );
+}
+
 function TrackGroupNode({ data }) {
     const { localeMessages } = useAppContext();
     return (
@@ -160,7 +188,7 @@ function TrackGroupNode({ data }) {
     );
 }
 
-const NODE_TYPES = { content: ContentNode, end: EndNode, track: TrackGroupNode };
+const NODE_TYPES = { content: ContentNode, end: EndNode, track: TrackGroupNode, empty: EmptyTrackNode };
 
 function RejoinEdge({ id, style, markerEnd, ...position }) {
     return <BaseEdge id={id} path={rejoinPath(position)} style={style} markerEnd={markerEnd} />;
@@ -199,6 +227,9 @@ const CourseMap = ({ contents = [], tracks = [], transitions = [], onContentClic
                         onOpen: canOpenTracks ? () => openTrackRef.current?.(node.data.track) : undefined,
                     },
                 };
+            }
+            if (node.type === 'empty') {
+                return { ...node, data: { ...node.data, color: trackColors.get(node.data.track.id) } };
             }
             if (node.type === 'content') {
                 return {
