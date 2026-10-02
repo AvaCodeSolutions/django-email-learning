@@ -6,6 +6,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.5.0] - 2026-10-02
+
+### Changed
+
+- **The course page's content toolbar is one row.** The create actions — a button each for Add Lesson, Add Quiz, Add Assignment and Add Decision, plus Add Track — wrapped across the row beside the Enroll Learner menu, with the Table/Flow toggle on a second row below. They are now a single **Add** menu listing Lesson, Quiz, Assignment, Decision and, for admins and editors, Track, set apart below a divider. The view toggle sits on one side of the row and Add and Enroll Learner on the other.
+- **The Add and Enroll Learner menus show an icon and a one-line description for each entry**, such as "Let learners choose their path" for Decision, or "Enroll one learner by email address" for Manual Email.
+- **On mobile, Add and Enroll Learner each take a full-width row**, and their menus open as wide as the button. The Table/Flow toggle shows its icons only.
+- **The Submitted Assignments tab shows once the course has a submission, and Course Analytics once it has an enrollment.** A new course offered both as empty tabs; enrolling the first learner from the Enroll Learner menu brings Course Analytics up straight away.
+
 ## [7.4.1] - 2026-10-02
 
 ### Fixed
