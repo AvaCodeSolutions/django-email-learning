@@ -6,6 +6,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.4.1] - 2026-10-02
+
+### Fixed
+
+- **The public course page lists only published lessons.** Its lesson list, and the `teaches` field of its JSON-LD, included the titles of unpublished lessons as well.
+- **The flow view draws a track with no content.** A track that holds nothing — one a rule routes onto only to skip some of the main path before it rejoins — had no box, and the arrow onto it ran straight down the main path to where it rejoins, over the content it skips. It is now a box beside the skipped content holding a "No content - skips ahead" placeholder, with the route leading into it and an arrow back out to where it rejoins or to the end of the course. A track with no content that no rule routes onto is still left off the map.
+
 ## [7.4.0] - 2026-10-01
 
 ### Added
