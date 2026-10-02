@@ -257,6 +257,8 @@ class CourseView(BasePlatformView):
             "imported_from_google_success": _("Learners imported from Google Workspace successfully."),
             "manual_email": _("Manual Email"),
             "from_google_workspace": _("Import from Google Workspace"),
+            "manual_email_description": _("Enroll one learner by email address"),
+            "from_google_workspace_menu_description": _("Import users from your Workspace domain"),
             "google_workspace_description": _(
                 "If you are an administrator of a Google Workspace domain, you can import users from your"
                 " domain into the platform and enroll them in this course."
@@ -278,6 +280,12 @@ class CourseView(BasePlatformView):
             "quiz": _("Quiz"),
             "assignment": _("Assignment"),
             "decision": _("Decision"),
+            "track": _("Track"),
+            "add_lesson_description": _("Content emailed to learners"),
+            "add_quiz_description": _("Questions to check understanding"),
+            "add_assignment_description": _("Work learners submit for review"),
+            "add_decision_description": _("Let learners choose their path"),
+            "add_track_description": _("A separate path through the course"),
             "add": _("Add"),
             "new_lesson": _("New Lesson"),
             "update_lesson": _("Update Lesson"),

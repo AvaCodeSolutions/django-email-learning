@@ -23,6 +23,8 @@ const localeMessages = {
   server_error: 'Server error occurred. Please try again later.',
   enroll_learner: 'Enroll Learner',
   tab_manage_course_content: 'Manage Course Content',
+  tab_submitted_assignments: 'Submitted Assignments',
+  tab_course_analytics: 'Course Analytics',
   total_enrollments: 'Total Enrollments',
   add_to_your_site: 'Add to your site',
   embed_customize_form_title: 'Customize your form',
@@ -46,10 +48,12 @@ const localeMessages = {
   type: 'Type',
   published: 'Published',
   actions: 'Actions',
-  add_lesson: 'Add Lesson',
-  add_quiz: 'Add Quiz',
-  add_assignment: 'Add Assignment',
-  add_track: 'Add Track',
+  add: 'Add',
+  lesson: 'Lesson',
+  quiz: 'Quiz',
+  assignment: 'Assignment',
+  decision: 'Decision',
+  track: 'Track',
 };
 
 const baseAppContext = {
@@ -151,7 +155,7 @@ describe('Course', () => {
     expect(screen.getByText(localeMessages.total_enrollments)).toBeInTheDocument();
   });
 
-  it('keeps the authoring buttons disabled until the content structure loads', async () => {
+  it('keeps the Add menu disabled until the content structure loads', async () => {
     let resolveContents;
     const contentsPromise = new Promise((resolve) => {
       resolveContents = resolve;
@@ -167,17 +171,90 @@ describe('Course', () => {
       appContext: { ...baseAppContext, courseEnabled: true },
     });
 
-    expect(screen.getByRole('button', { name: 'Add Lesson' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Add Quiz' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Add Assignment' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Add Track' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Add' })).toBeDisabled();
 
     resolveContents({ ok: true, json: () => Promise.resolve({ course_contents: [], tracks: [], transitions: [] }) });
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Add Lesson' })).toBeEnabled());
-    expect(screen.getByRole('button', { name: 'Add Quiz' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'Add Assignment' })).toBeEnabled();
-    expect(screen.getByRole('button', { name: 'Add Track' })).toBeEnabled();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add' })).toBeEnabled());
+  });
+
+  it('lists every content type and tracks in the Add menu', async () => {
+    renderWithProviders(<Course />, {
+      appContext: { ...baseAppContext, courseEnabled: true },
+    });
+
+    const addButton = screen.getByRole('button', { name: 'Add' });
+    await waitFor(() => expect(addButton).toBeEnabled());
+    await userEvent.click(addButton);
+
+    const menu = await screen.findByRole('menu');
+    for (const label of ['Lesson', 'Quiz', 'Assignment', 'Decision', 'Track']) {
+      expect(within(menu).getByRole('menuitem', { name: label })).toBeInTheDocument();
+    }
+  });
+
+  it('hides the Track entry from users who cannot edit branching', async () => {
+    renderWithProviders(<Course />, {
+      appContext: { ...baseAppContext, userRole: 'instructor', courseEnabled: true },
+    });
+
+    const addButton = screen.getByRole('button', { name: 'Add' });
+    await waitFor(() => expect(addButton).toBeEnabled());
+    await userEvent.click(addButton);
+
+    const menu = await screen.findByRole('menu');
+    expect(within(menu).getByRole('menuitem', { name: 'Lesson' })).toBeInTheDocument();
+    expect(within(menu).queryByRole('menuitem', { name: 'Track' })).not.toBeInTheDocument();
+  });
+
+  describe('activity tabs', () => {
+    const mockActivity = ({ enrollments = 0, submissions = 0 }) => {
+      global.fetch.mockImplementation((url) => {
+        if (url.includes('/contents')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
+        }
+        if (url.includes('/submitted_assignments/')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ items: [], count: submissions, page: 1, has_more: false }) });
+        }
+        if (url.endsWith('/courses/5/')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({
+            enrollments_count: { unverified: 0, active: enrollments, deactivated: 0, completed: 0 },
+          }) });
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      });
+    };
+
+    it('hides the Submitted Assignments and Course Analytics tabs for a course with no activity', async () => {
+      mockActivity({ enrollments: 0, submissions: 0 });
+      renderWithProviders(<Course />, {
+        appContext: { ...baseAppContext, isInstructor: true, courseEnabled: true },
+      });
+
+      await waitFor(() => expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/submitted_assignments/?page_size=1'), expect.anything()));
+      expect(screen.queryByRole('tab', { name: /Submitted Assignments/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole('tab', { name: /Course Analytics/ })).not.toBeInTheDocument();
+    });
+
+    it('shows the tabs once the course has a submission and an enrollment', async () => {
+      mockActivity({ enrollments: 1, submissions: 1 });
+      renderWithProviders(<Course />, {
+        appContext: { ...baseAppContext, isInstructor: true, courseEnabled: true },
+      });
+
+      expect(await screen.findByRole('tab', { name: /Submitted Assignments/ })).toBeInTheDocument();
+      expect(await screen.findByRole('tab', { name: /Course Analytics/ })).toBeInTheDocument();
+    });
+
+    it('keeps Submitted Assignments hidden from non-instructors even with submissions', async () => {
+      mockActivity({ enrollments: 1, submissions: 1 });
+      renderWithProviders(<Course />, {
+        appContext: { ...baseAppContext, isInstructor: false, courseEnabled: true },
+      });
+
+      expect(await screen.findByRole('tab', { name: /Course Analytics/ })).toBeInTheDocument();
+      expect(screen.queryByRole('tab', { name: /Submitted Assignments/ })).not.toBeInTheDocument();
+    });
   });
 
   describe('"Add to your site" embed button', () => {

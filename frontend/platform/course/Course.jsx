@@ -16,8 +16,10 @@ import CodeIcon from '@mui/icons-material/Code';
 import AddRoadIcon from '@mui/icons-material/AddRoad';
 import AltRouteIcon from '@mui/icons-material/AltRoute';
 import CallSplitIcon from '@mui/icons-material/CallSplit';
+import AddIcon from '@mui/icons-material/Add';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { useState, useEffect, memo } from 'react';
-import { Box, Grid, Button, Dialog, DialogTitle, DialogContent, DialogActions, LinearProgress, Typography, Alert, Tabs, Tab, Badge, Link, IconButton, Tooltip, Switch, FormControlLabel, TextField, InputAdornment, GlobalStyles, ToggleButton, ToggleButtonGroup } from '@mui/material'
+import { Box, Grid, Button, Dialog, DialogTitle, DialogContent, DialogActions, LinearProgress, Typography, Alert, Tabs, Tab, Badge, Link, IconButton, Tooltip, Switch, FormControlLabel, TextField, InputAdornment, GlobalStyles, ToggleButton, ToggleButtonGroup, Menu, MenuItem, ListItemIcon, ListItemText, Divider } from '@mui/material'
 import { useTheme } from '@mui/material/styles';
 import ContentTable from './components/ContentTable.jsx';
 import SubmittedAssignmentsSection from './components/SubmittedAssignmentsSection.jsx';
@@ -36,7 +38,7 @@ const CustomComponentSlot = memo(function CustomComponentSlot({ html, display })
   return (
     <Box
       className="custom-component-wrapper"
-      sx={{ display, marginBottom: {xs: 1, md: 2} }}
+      sx={{ display }}
       dangerouslySetInnerHTML={{ __html: sanitizeComponentHtml(html) }}
     />
   );
@@ -84,7 +86,9 @@ function Course() {
     const [isWeeklyStatsLoading, setIsWeeklyStatsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('content');
     const [pendingAssignmentsCount, setPendingAssignmentsCount] = useState(0);
+    const [submissionsCount, setSubmissionsCount] = useState(0);
     const [courseStructure, setCourseStructure] = useState({ contents: [], tracks: [], transitions: [] });
+    const [addMenuAnchorEl, setAddMenuAnchorEl] = useState(null);
     const [contentView, setContentView] = useState('table');
 
     const [pageSuccessMessage, setPageSuccessMessage] = useState('');
@@ -125,6 +129,9 @@ function Course() {
     const hasEnrollmentsChartData = !!(enrollmentsPieData && totalEnrollments > 0);
     const hasWeeklyChartData = !!(weeklyStats && weeklyStats.some((stat) => stat.count > 0));
     const canSeeSubmittedAssignments = Boolean(isInstructor);
+    // These tabs would only show empty states until the course has some activity.
+    const showSubmittedAssignmentsTab = canSeeSubmittedAssignments && submissionsCount > 0;
+    const showAnalyticsTab = totalEnrollments > 0;
     const canEditBranching = userRole === 'admin' || userRole === 'editor';
 
 
@@ -157,6 +164,12 @@ function Course() {
             .finally(() => setIsWeeklyStatsLoading(false));
     }
 
+    const refreshSubmissionsCount = () => {
+        apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/submitted_assignments/?page_size=1`)
+            .then(data => setSubmissionsCount(data.count ?? 0))
+            .catch(error => console.error('Error fetching submitted assignments count:', error));
+    }
+
     const refreshPendingAssignmentsCount = () => {
         const endpoint = `${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/submitted_assignments/?status=pending_review`;
         apiClient.get(endpoint)
@@ -182,14 +195,15 @@ function Course() {
     useEffect(() => {
         if (canSeeSubmittedAssignments) {
             refreshPendingAssignmentsCount();
+            refreshSubmissionsCount();
         }
     }, [canSeeSubmittedAssignments, organizationId, courseId]);
 
     useEffect(() => {
-        if (!canSeeSubmittedAssignments && activeTab === 'submitted_assignments') {
+        if ((!showSubmittedAssignmentsTab && activeTab === 'submitted_assignments') || (!showAnalyticsTab && activeTab === 'analytics')) {
             setActiveTab('content');
         }
-    }, [canSeeSubmittedAssignments, activeTab]);
+    }, [showSubmittedAssignmentsTab, showAnalyticsTab, activeTab]);
 
     const handleEnrollMenuSuccess = (msg) => {
         setPageSuccessMessage(msg);
@@ -432,6 +446,29 @@ function Course() {
         setDialogMaxWidth('sm');
         setDialogOpen(true);
     }
+
+    const openContentForm = (Form, props) => {
+        setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><Form
+            cancelCallback={() => setDialogOpen(false)}
+            successCallback={resetDialog}
+            courseId={courseId}
+            tracks={courseStructure.tracks}
+            {...props} /></Suspense>);
+        setDialogOpen(true);
+    }
+
+    const addMenuItems = [
+        { key: 'lesson', icon: <DescriptionIcon fontSize="small" />, label: localeMessages["lesson"], description: localeMessages["add_lesson_description"],
+            onClick: () => openContentForm(LessonForm, { header: localeMessages["new_lesson"], successCallback: () => setContentLoaded(false) }) },
+        { key: 'quiz', icon: <BallotIcon fontSize="small" />, label: localeMessages["quiz"], description: localeMessages["add_quiz_description"],
+            onClick: () => openContentForm(QuizForm) },
+        { key: 'assignment', icon: <AssignmentIcon fontSize="small" />, label: localeMessages["assignment"], description: localeMessages["add_assignment_description"],
+            onClick: () => openContentForm(AssignmentForm, { header: localeMessages["new_assignment"] }) },
+        { key: 'decision', icon: <CallSplitIcon fontSize="small" />, label: localeMessages["decision"], description: localeMessages["add_decision_description"],
+            onClick: () => openContentForm(DecisionForm, { header: localeMessages["new_decision"] }) },
+        ...(canEditBranching ? [{ key: 'track', icon: <AddRoadIcon fontSize="small" />, label: localeMessages["track"], description: localeMessages["add_track_description"],
+            dividerBefore: true, onClick: () => openTrackForm(null) }] : []),
+    ];
 
     const deleteTrack = (track) => {
         closeSmallDialog();
@@ -768,7 +805,7 @@ function Course() {
                             iconPosition="start"
                             label={<><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{localeMessages["tab_manage_course_content"] || 'Manage Course Content'}</Box><Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{localeMessages["tab_contents"] || 'Contents'}</Box></>}
                         />
-                        {canSeeSubmittedAssignments && (
+                        {showSubmittedAssignmentsTab && (
                             <Tab
                                 value="submitted_assignments"
                                 icon={<TaskAltIcon fontSize="small" />}
@@ -796,12 +833,14 @@ function Course() {
                                 }
                             />
                         )}
-                        <Tab
-                            value="analytics"
-                            icon={<InsightsIcon fontSize="small" />}
-                            iconPosition="start"
-                            label={<><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{localeMessages["tab_course_analytics"] || 'Course Analytics'}</Box><Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{localeMessages["tab_analytics"] || 'Analytics'}</Box></>}
-                        />
+                        {showAnalyticsTab && (
+                            <Tab
+                                value="analytics"
+                                icon={<InsightsIcon fontSize="small" />}
+                                iconPosition="start"
+                                label={<><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{localeMessages["tab_course_analytics"] || 'Course Analytics'}</Box><Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{localeMessages["tab_analytics"] || 'Analytics'}</Box></>}
+                            />
+                        )}
                         <Tab
                             value="course_info"
                             icon={<InfoIcon fontSize="small" />}
@@ -812,51 +851,54 @@ function Course() {
 
                     {activeTab === 'content' && (
                         <>
-                            <Box sx={{ px: 1, display: 'flex', flexDirection: {xs:'column', md: 'row'}, flexWrap: { md: 'wrap' }, alignItems: { xs: 'stretch', md: 'flex-start' }, pb: 2, width: '100%', '& > .MuiButton-root': { flex: { md: '0 0 auto' } } }}>
-                                {userRole !== 'viewer' && <><Button variant="contained" startIcon={<DescriptionIcon />} disabled={!contentLoaded} sx={{ marginBottom: {xs: 1, md: 2}, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
-                                setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><LessonForm
-                                    header={localeMessages["new_lesson"]}
-                                    cancelCallback={() => setDialogOpen(false)}
-                                    successCallback={() => setContentLoaded(false)}
-                                    courseId={courseId}
-                                    tracks={courseStructure.tracks} /></Suspense>);
-                                setDialogOpen(true);}}>{localeMessages["add_lesson"]}</Button>
-                            <Button variant="contained" startIcon={<BallotIcon />} disabled={!contentLoaded} sx={{ marginBottom: {xs: 1, md: 2}, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
-                                setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><QuizForm
-                                    cancelCallback={() => setDialogOpen(false)}
-                                    successCallback={resetDialog}
-                                    courseId={courseId}
-                                    tracks={courseStructure.tracks} /></Suspense>);
-                                setDialogOpen(true);}}>{localeMessages["add_quiz"]}</Button>
-                            <Button variant="contained" startIcon={<AssignmentIcon />} disabled={!contentLoaded} sx={{ marginBottom: 2, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
-                                setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><AssignmentForm
-                                    header={localeMessages["new_assignment"]}
-                                    cancelCallback={() => setDialogOpen(false)}
-                                    successCallback={resetDialog}
-                                    courseId={courseId}
-                                    tracks={courseStructure.tracks} /></Suspense>);
-                                setDialogOpen(true);}}>{localeMessages["add_assignment"]}</Button>
-                            <Button variant="contained" startIcon={<CallSplitIcon />} disabled={!contentLoaded} sx={{ marginBottom: 2, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => {
-                                setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><DecisionForm
-                                    header={localeMessages["new_decision"]}
-                                    cancelCallback={() => setDialogOpen(false)}
-                                    successCallback={resetDialog}
-                                    courseId={courseId}
-                                    tracks={courseStructure.tracks} /></Suspense>);
-                                setDialogOpen(true);}}>{localeMessages["add_decision"] || 'Add Decision'}</Button>
-                            {canEditBranching && <Button variant="outlined" startIcon={<AddRoadIcon />} disabled={!contentLoaded} sx={{ marginBottom: 2, marginInlineEnd: {xs: 0, md: 1} }} onClick={() => openTrackForm(null)}>{localeMessages["add_track"] || 'Add Track'}</Button>}
-                            {customComponent && <CustomComponentSlot html={customComponent.html} display={customComponent.container_display} />}
-                            {userRole === 'admin' && <Box sx={{ marginInlineStart: { xs: 0, md: 'auto' }, alignSelf: { xs: 'stretch', md: 'flex-start' } }}><EnrollMenu successCallback={handleEnrollMenuSuccess} courseEnabled={courseEnabled} /></Box>}
-                            </> }
-                            </Box>
-                            {courseStructure.tracks.length > 0 && (
-                                <Box sx={{ px: 1, pb: 1.5, display: 'flex', justifyContent: 'flex-end' }}>
+                            <Box sx={{ px: 1, pb: 2, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1 }}>
+                                {courseStructure.tracks.length > 0 && (
                                     <ToggleButtonGroup size="small" exclusive value={contentView} onChange={(_, value) => value && setContentView(value)}>
-                                        <ToggleButton value="table"><ViewListIcon fontSize="small" sx={{ marginInlineEnd: 0.5 }} />{localeMessages["course_view_table"] || 'Table'}</ToggleButton>
-                                        <ToggleButton value="map"><AltRouteIcon fontSize="small" sx={{ marginInlineEnd: 0.5 }} />{localeMessages["course_view_flow"] || 'Flow'}</ToggleButton>
+                                        <ToggleButton value="table" aria-label={localeMessages["course_view_table"] || 'Table'}><ViewListIcon fontSize="small" sx={{ marginInlineEnd: { xs: 0, sm: 0.5 } }} /><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{localeMessages["course_view_table"] || 'Table'}</Box></ToggleButton>
+                                        <ToggleButton value="map" aria-label={localeMessages["course_view_flow"] || 'Flow'}><AltRouteIcon fontSize="small" sx={{ marginInlineEnd: { xs: 0, sm: 0.5 } }} /><Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{localeMessages["course_view_flow"] || 'Flow'}</Box></ToggleButton>
                                     </ToggleButtonGroup>
-                                </Box>
-                            )}
+                                )}
+                                {userRole !== 'viewer' && (
+                                    <Box sx={{ marginInlineStart: 'auto', display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, flexWrap: { sm: 'wrap' }, alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'flex-end', gap: 1, width: { xs: '100%', sm: 'auto' } }}>
+                                        {customComponent && <CustomComponentSlot html={customComponent.html} display={customComponent.container_display} />}
+                                        <Button
+                                            variant="contained"
+                                            startIcon={<AddIcon />}
+                                            endIcon={<ArrowDropDownIcon />}
+                                            disabled={!contentLoaded}
+                                            sx={{ width: { xs: '100%', sm: 'auto' } }}
+                                            aria-haspopup="menu"
+                                            aria-controls={addMenuAnchorEl ? 'add-content-menu' : undefined}
+                                            aria-expanded={addMenuAnchorEl ? 'true' : undefined}
+                                            onClick={(event) => setAddMenuAnchorEl(event.currentTarget)}
+                                        >
+                                            {localeMessages["add"] || 'Add'}
+                                        </Button>
+                                        <Menu
+                                            id="add-content-menu"
+                                            anchorEl={addMenuAnchorEl}
+                                            open={Boolean(addMenuAnchorEl)}
+                                            onClose={() => setAddMenuAnchorEl(null)}
+                                            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                                            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                                            slotProps={{ paper: { sx: { marginTop: '4px', border: '1px solid', borderColor: 'border.main', minWidth: Math.max(260, addMenuAnchorEl?.offsetWidth ?? 0) } } }}
+                                        >
+                                            {addMenuItems.flatMap((item) => [
+                                                item.dividerBefore && <Divider key={`${item.key}-divider`} />,
+                                                <MenuItem key={item.key} onClick={() => { setAddMenuAnchorEl(null); item.onClick(); }}>
+                                                    <ListItemIcon>{item.icon}</ListItemIcon>
+                                                    <ListItemText
+                                                        primary={item.label}
+                                                        secondary={item.description}
+                                                        slotProps={{ secondary: { sx: { fontSize: '0.75rem' } } }}
+                                                    />
+                                                </MenuItem>,
+                                            ].filter(Boolean))}
+                                        </Menu>
+                                        {userRole === 'admin' && <EnrollMenu successCallback={handleEnrollMenuSuccess} courseEnabled={courseEnabled} />}
+                                    </Box>
+                                )}
+                            </Box>
                             {/* The table stays mounted under the map: it loads and refreshes the course structure the map draws. */}
                             <Box sx={{ display: contentView === 'map' && courseStructure.tracks.length > 0 ? 'none' : 'block' }}>
                                 <ContentTable courseId={courseId} loaded={contentLoaded} eventHandler={(event) => tableEventHandler(event)} />
@@ -875,13 +917,13 @@ function Course() {
                         </>
                     )}
 
-                    {canSeeSubmittedAssignments && activeTab === 'submitted_assignments' && (
+                    {showSubmittedAssignmentsTab && activeTab === 'submitted_assignments' && (
                         <SubmittedAssignmentsSection
                             onPendingCountChange={(count) => setPendingAssignmentsCount(count)}
                         />
                     )}
 
-                    {activeTab === 'analytics' && (
+                    {showAnalyticsTab && activeTab === 'analytics' && (
                         <CourseAnalyticsSection
                             localeMessages={localeMessages}
                             totalEnrollments={totalEnrollments}
@@ -893,7 +935,7 @@ function Course() {
                             weeklyStats={weeklyStats}
                         />
                     )}
-                    {activeTab === 'analytics' && (
+                    {showAnalyticsTab && activeTab === 'analytics' && (
                         <Suspense fallback={null}>
                             <TrackAnalytics courseId={courseId} />
                         </Suspense>

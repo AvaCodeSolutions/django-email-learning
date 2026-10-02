@@ -3,7 +3,8 @@ import { useAppContext } from '../../../src/render.jsx';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import GoogleIcon from '@mui/icons-material/Google';
-import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Menu, MenuItem, Alert, Typography, FormGroup, FormControlLabel, Checkbox } from '@mui/material';
+import AlternateEmailIcon from '@mui/icons-material/AlternateEmail';
+import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Menu, MenuItem, ListItemIcon, ListItemText, Alert, Typography, FormGroup, FormControlLabel, Checkbox } from '@mui/material';
 import apiClient from '../../../src/apiClient.js';
 import { sanitizeEndpointUrl, sanitizeUrl } from '../../../src/sanitizeUrl.js';
 
@@ -283,15 +284,7 @@ const EnrollMenu = ({successCallback, courseEnabled: courseEnabledProp}) => {
                 startIcon={<PersonAddAlt1Icon sx={{ marginLeft: direction == 'rtl' ? 1 : 0 }} />}
                 endIcon={<ArrowDropDownIcon />}
                 sx={(theme) => ({
-                    marginBottom: 2,
-                    minWidth: 190,
-                    width: { xs: '100%', md: 'auto' },
-                    justifyContent: 'flex-start',
-                    '& .MuiButton-endIcon': {
-                        marginInlineStart: 'auto',
-                        marginInlineEnd: 0,
-                    },
-                    marginInlineEnd: { xs: 0, md: 1 },
+                    width: { xs: '100%', sm: 'auto' },
                     ...(theme.palette.mode === 'dark' && {
                         borderColor: 'rgba(184, 190, 255, 0.5)',
                         '&:hover': { borderColor: 'rgba(210, 214, 255, 0.5)' },
@@ -307,31 +300,40 @@ const EnrollMenu = ({successCallback, courseEnabled: courseEnabledProp}) => {
                 open={isEnrollMenuOpen}
                 onClose={closeEnrollMenu}
                 disableRestoreFocus
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 slotProps={{
                     list: {
                         ref: enrollMenuListRef,
                         onKeyDown: handleEnrollMenuKeyDown,
                         autoFocus: true,
-                        sx: {
-                            minWidth: 200,
-                            py: 0,
-                        }
                     },
                     paper: {
                         sx: {
-                            marginTop: "1px",
+                            marginTop: '4px',
                             border: '1px solid',
                             borderColor: 'border.main',
+                            minWidth: Math.max(260, enrollMenuAnchorEl?.offsetWidth ?? 0),
                         }
                     }
                 }}
                 >
-                <MenuItem onClick={openManualEnrollDialog} sx={{ fontSize: '0.87rem', px: 1 }}>
-                    {localeMessages['manual_email']}
+                <MenuItem onClick={openManualEnrollDialog}>
+                    <ListItemIcon><AlternateEmailIcon fontSize="small" /></ListItemIcon>
+                    <ListItemText
+                        primary={localeMessages['manual_email']}
+                        secondary={localeMessages['manual_email_description']}
+                        slotProps={{ secondary: { sx: { fontSize: '0.75rem' } } }}
+                    />
                 </MenuItem>
                 {userRole === 'admin' && availableFeatures.includes('google_workspace_enroll') && (
-                    <MenuItem onClick={openGoogleWorkspaceDialog} sx={{ fontSize: '0.87rem', px: 1 }}>
-                        {localeMessages['from_google_workspace']}
+                    <MenuItem onClick={openGoogleWorkspaceDialog}>
+                        <ListItemIcon><GoogleIcon fontSize="small" /></ListItemIcon>
+                        <ListItemText
+                            primary={localeMessages['from_google_workspace']}
+                            secondary={localeMessages['from_google_workspace_menu_description']}
+                            slotProps={{ secondary: { sx: { fontSize: '0.75rem' } } }}
+                        />
                     </MenuItem>
                 )}
             </Menu>
