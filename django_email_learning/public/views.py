@@ -342,7 +342,9 @@ class CourseView(TemplateView):
             or None,
             lessons=[
                 content.lesson.title  # type: ignore[union-attr]
-                for content in course.coursecontent_set.filter(lesson__isnull=False).order_by("priority")
+                for content in course.coursecontent_set.filter(lesson__isnull=False, is_published=True).order_by(
+                    "priority"
+                )
             ],
         )
         organization_data = OrganizationSerializer(

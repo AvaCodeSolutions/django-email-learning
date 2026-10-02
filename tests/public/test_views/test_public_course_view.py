@@ -63,6 +63,23 @@ def test_course_view_anonymous_client(db, anonymous_client, course, course_lesso
     assert json_ld["teaches"] == ["Sample Lesson"]
 
 
+def test_course_view_excludes_unpublished_lessons(db, anonymous_client, course, course_lesson_content):
+    course.enabled = True
+    course.save()
+    course_lesson_content.is_published = False
+    course_lesson_content.save()
+
+    url = reverse(
+        "django_email_learning:public:course_view",
+        kwargs={"organization_id": 1, "course_slug": course.slug},
+    )
+    response = anonymous_client.get(url)
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["course"]["lessons"] == []
+    assert "teaches" not in json.loads(response.context["json_ld"])
+
+
 def test_course_view_includes_instructors(db, anonymous_client, users, course):
     course.enabled = True
     course.save()
