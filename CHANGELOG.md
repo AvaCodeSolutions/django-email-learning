@@ -34,6 +34,11 @@ Changes prior to v1.0.0 are available in the [git history](https://github.com/Av
   The other pages built on `public/base.html` keep the library's favicon, which can be replaced by overriding its new `favicon` block.
 - **`generate_organization_favicons`** renders the PNG for every organization whose logo has none yet; run it once after upgrading so logos uploaded before this release stop serving at full size as favicons. `--all` re-renders every organization's.
 
+### Fixed
+
+- **The embed script can now be loaded in CORS mode.** `del-enroll-form.js` was served without `Access-Control-Allow-Origin`, so any page fetching it in CORS mode had it blocked and the widgets never rendered. That covers a `type="module"` import, a `crossorigin` attribute or an SRI hash — and Astro, for one, turns a plain `<script src>` into a module import unless it is marked `is:inline`. The script is generic and credential-free, so it is now served with `Access-Control-Allow-Origin: *`.
+- **Embed endpoint errors are readable cross-origin.** A request with an unknown embed token got its 404 without CORS headers, so the widget saw an opaque network failure rather than the response. `PublicCorsMixin` now wraps the token check, and a preflight answers `204` without resolving the token, so it reveals nothing about which tokens are valid. With `EMBEDDABLE_ENROLLMENT_ENABLED` off, a preflight still gets the same `404` as any other request.
+
 ### Migrations
 
 - `0031_organization_favicon` adds `Organization.favicon`, an empty image field. Additive and reversible, with no data migration — `generate_organization_favicons` fills it for existing logos.

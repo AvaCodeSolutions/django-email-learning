@@ -204,7 +204,10 @@ class PublicCorsMixin:
     """
 
     def dispatch(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
-        if request.method == "OPTIONS":
+        # A preflight never resolves the token, so it can't be used to probe
+        # which tokens are valid; with embedding disabled it falls through to
+        # the same 404 as every other request.
+        if request.method == "OPTIONS" and embeddable_enrollment_enabled():
             response = HttpResponse(status=204)
         else:
             response = super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
@@ -236,7 +239,7 @@ class EmbedTokenResolverMixin:
 
 
 @method_decorator(csrf_exempt, name="dispatch")
-class EmbeddableEnrollView(EmbedTokenResolverMixin, PublicCorsMixin, View):
+class EmbeddableEnrollView(PublicCorsMixin, EmbedTokenResolverMixin, View):
     """Cross-origin counterpart to EnrollView for embedding on third-party
     sites, addressed by a per-organization embed_token in the URL rather than
     a caller-supplied organization_id (which would let anyone target any
@@ -289,7 +292,7 @@ class EmbeddableEnrollView(EmbedTokenResolverMixin, PublicCorsMixin, View):
 
 
 @method_decorator(csrf_exempt, name="dispatch")
-class EmbeddableNewsletterSubscribeView(EmbedTokenResolverMixin, PublicCorsMixin, View):
+class EmbeddableNewsletterSubscribeView(PublicCorsMixin, EmbedTokenResolverMixin, View):
     """Cross-origin counterpart to NewsletterSubscribeView, gated by the same
     embed_token/EMBEDDABLE_ENROLLMENT_ENABLED checks as EmbeddableEnrollView.
     """
