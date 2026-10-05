@@ -37,8 +37,8 @@ def test_course_view_anonymous_client(db, anonymous_client, course, course_lesso
     )
 
     url = reverse(
-        "django_email_learning:public:course_view",
-        kwargs={"organization_id": 1, "course_slug": course.slug},
+        "django_email_learning:public:course_page",
+        kwargs={"organization_slug": "my-organization", "course_slug": course.slug},
     )
     response = anonymous_client.get(url)
 
@@ -70,8 +70,8 @@ def test_course_view_excludes_unpublished_lessons(db, anonymous_client, course, 
     course_lesson_content.save()
 
     url = reverse(
-        "django_email_learning:public:course_view",
-        kwargs={"organization_id": 1, "course_slug": course.slug},
+        "django_email_learning:public:course_page",
+        kwargs={"organization_slug": "my-organization", "course_slug": course.slug},
     )
     response = anonymous_client.get(url)
 
@@ -90,8 +90,8 @@ def test_course_view_includes_instructors(db, anonymous_client, users, course):
     CourseInstructor.objects.create(course=course, org_user=org_user)
 
     url = reverse(
-        "django_email_learning:public:course_view",
-        kwargs={"organization_id": 1, "course_slug": course.slug},
+        "django_email_learning:public:course_page",
+        kwargs={"organization_slug": "my-organization", "course_slug": course.slug},
     )
     response = anonymous_client.get(url)
 
@@ -104,8 +104,8 @@ def test_course_view_instructors_empty_when_none_assigned(db, anonymous_client, 
     course.save()
 
     url = reverse(
-        "django_email_learning:public:course_view",
-        kwargs={"organization_id": 1, "course_slug": course.slug},
+        "django_email_learning:public:course_page",
+        kwargs={"organization_slug": "my-organization", "course_slug": course.slug},
     )
     response = anonymous_client.get(url)
 
@@ -120,8 +120,8 @@ def test_course_view_includes_organization_brand_color(db, anonymous_client, cou
     course.organization.save()
 
     url = reverse(
-        "django_email_learning:public:course_view",
-        kwargs={"organization_id": 1, "course_slug": course.slug},
+        "django_email_learning:public:course_page",
+        kwargs={"organization_slug": "my-organization", "course_slug": course.slug},
     )
     response = anonymous_client.get(url)
 
@@ -135,8 +135,8 @@ def test_course_view_json_ld_escapes_script_tag_in_description(db, anonymous_cli
     course.save()
 
     url = reverse(
-        "django_email_learning:public:course_view",
-        kwargs={"organization_id": 1, "course_slug": course.slug},
+        "django_email_learning:public:course_page",
+        kwargs={"organization_slug": "my-organization", "course_slug": course.slug},
     )
     response = anonymous_client.get(url)
 
@@ -158,8 +158,8 @@ def test_course_view_enrollment_closed_when_cap_reached(db, anonymous_client, co
     Enrollment.objects.create(learner=learner, course=course, status=EnrollmentStatus.ACTIVE)
 
     url = reverse(
-        "django_email_learning:public:course_view",
-        kwargs={"organization_id": 1, "course_slug": course.slug},
+        "django_email_learning:public:course_page",
+        kwargs={"organization_slug": "my-organization", "course_slug": course.slug},
     )
     response = anonymous_client.get(url)
     assert response.status_code == 200
@@ -168,8 +168,8 @@ def test_course_view_enrollment_closed_when_cap_reached(db, anonymous_client, co
 
 def test_course_view_excludes_disabled_course(db, anonymous_client, course):
     url = reverse(
-        "django_email_learning:public:course_view",
-        kwargs={"organization_id": 1, "course_slug": course.slug},
+        "django_email_learning:public:course_page",
+        kwargs={"organization_slug": "my-organization", "course_slug": course.slug},
     )
     response = anonymous_client.get(url)
     assert response.status_code == 404
@@ -177,8 +177,8 @@ def test_course_view_excludes_disabled_course(db, anonymous_client, course):
 
 def test_course_view_non_existent_course(db, anonymous_client):
     url = reverse(
-        "django_email_learning:public:course_view",
-        kwargs={"organization_id": 1, "course_slug": "missing-course"},
+        "django_email_learning:public:course_page",
+        kwargs={"organization_slug": "my-organization", "course_slug": "missing-course"},
     )
     response = anonymous_client.get(url)
     assert response.status_code == 404
@@ -194,8 +194,8 @@ def test_course_view_includes_terms_of_service_url_when_configured(db, anonymous
     course.save()
 
     url = reverse(
-        "django_email_learning:public:course_view",
-        kwargs={"organization_id": 1, "course_slug": course.slug},
+        "django_email_learning:public:course_page",
+        kwargs={"organization_slug": "my-organization", "course_slug": course.slug},
     )
     response = anonymous_client.get(url)
 
@@ -209,8 +209,8 @@ def test_course_view_excludes_non_public_course(db, anonymous_client, course):
     course.save()
 
     url = reverse(
-        "django_email_learning:public:course_view",
-        kwargs={"organization_id": 1, "course_slug": course.slug},
+        "django_email_learning:public:course_page",
+        kwargs={"organization_slug": "my-organization", "course_slug": course.slug},
     )
     response = anonymous_client.get(url)
     assert response.status_code == 404
@@ -225,8 +225,8 @@ def test_course_view_excludes_course_from_non_public_organization(db, anonymous_
     course.organization.save()
 
     url = reverse(
-        "django_email_learning:public:course_view",
-        kwargs={"organization_id": 1, "course_slug": course.slug},
+        "django_email_learning:public:course_page",
+        kwargs={"organization_slug": "my-organization", "course_slug": course.slug},
     )
     response = anonymous_client.get(url)
     assert response.status_code == 404

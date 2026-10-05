@@ -100,7 +100,9 @@ Manual Installation Steps
    You can change ``email-learning/`` to any URL path you prefer. This will make:
 
    - **Platform (Admin Interface)**: Available at ``/email-learning/platform/``
-   - **Public Course Pages**: Available at ``/email-learning/public/organization/<org_id>/``
+   - **Public Pages**: Available at ``/email-learning/public/@<organization_slug>/`` and
+     ``/email-learning/public/@<organization_slug>/courses/<course_slug>/`` (or at your own address, see
+     :ref:`PUBLIC_URL_NAMES <public-page-urls>`)
    - **API Endpoints**: Available under ``/email-learning/api/``
 
 Access Control
@@ -231,6 +233,79 @@ Optional link to your terms of service. When provided, this link is displayed in
         'JWT_SECRET_KEY': 'another-very-long-random-string',
         'TERMS_OF_SERVICE_URL': 'https://yourdomain.com/terms',
     }
+
+.. _public-page-urls:
+
+**PUBLIC_URL_NAMES**
+
+The URL names of the routes that serve the public organization and course pages. Every public
+link the library builds reverses these names: ``Organization.public_url``, ``Course.public_url``,
+the platform's "public view" links and the structured data (JSON-LD) on the public pages.
+
+By default they are the library's own routes, under the prefix you include its URLs at:
+
+- ``organization``: ``django_email_learning:public:organization_page`` - ``/email-learning/public/@<organization_slug>/``
+- ``course``: ``django_email_learning:public:course_page`` - ``/email-learning/public/@<organization_slug>/courses/<course_slug>/``
+
+To serve the pages somewhere else, such as the site root, mount the library's views on your own
+routes and name them here. The organization route must take an ``organization_slug`` keyword
+argument and the course route ``organization_slug`` and ``course_slug``:
+
+.. code-block:: python
+
+    # urls.py
+    from django_email_learning.public.views import CourseView, OrganizationView
+
+    urlpatterns = [
+        path("@<slug:organization_slug>/", OrganizationView.as_view(), name="organization_public_page"),
+        path(
+            "@<slug:organization_slug>/courses/<slug:course_slug>/",
+            CourseView.as_view(),
+            name="course_public_page",
+        ),
+        path("email-learning/", include("django_email_learning.urls")),
+    ]
+
+.. code-block:: python
+
+    # settings.py
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
+        'PUBLIC_URL_NAMES': {
+            'organization': 'organization_public_page',
+            'course': 'course_public_page',
+        },
+    }
+
+Either key can be left out to keep the library's route for that page. The public views answer
+any address other than the one named here with a permanent (301) redirect to it, keeping the
+query string. That covers the library's own ``public/@<organization_slug>/`` routes, which stay
+mounted, and the id-based addresses the pages had before organizations had slugs.
+
+**RESERVED_ORGANIZATION_SLUGS**
+
+Slugs a new organization is never given, so that no organization's public page can pass itself
+off as the platform's own. When an organization's name slugifies to a reserved slug, it gets the
+next free numbered one instead (``support-2``). The list replaces the default, which is
+``admin``, ``administrator``, ``api``, ``help``, ``official``, ``platform``, ``public``,
+``staff``, ``support`` and ``system``, so include those you want to keep:
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
+        'RESERVED_ORGANIZATION_SLUGS': [
+            'admin', 'administrator', 'api', 'help', 'official', 'platform',
+            'public', 'staff', 'support', 'system', 'yourbrand',
+        ],
+    }
+
+The list applies only when a slug is generated. Existing slugs are left alone, and staff can
+still set any slug in the Django admin.
 
 **QUIZ_DEFAULTS**
 

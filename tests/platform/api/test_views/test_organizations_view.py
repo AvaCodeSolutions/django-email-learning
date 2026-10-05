@@ -309,7 +309,7 @@ def test_get_single_organization_includes_public_url(org_admin_client):
     response = org_admin_client.get(update_url(organization.id))
 
     assert response.status_code == 200
-    assert response.json().get("public_url").endswith(f"/organizations/{organization.id}/")
+    assert response.json().get("public_url").endswith(f"/public/@{organization.slug}/")
 
 
 def test_get_single_organization_includes_public_url_for_private_organization(org_admin_client):
@@ -323,7 +323,7 @@ def test_get_single_organization_includes_public_url_for_private_organization(or
     # The URL is always computed; the frontend is responsible for only linking to it
     # when is_public is true, since the public page itself 404s for private orgs.
     assert response.json().get("is_public") is False
-    assert response.json().get("public_url").endswith(f"/organizations/{organization.id}/")
+    assert response.json().get("public_url").endswith(f"/public/@{organization.slug}/")
 
 
 def test_can_enroll_learner_reflects_cap(org_admin_client, settings, course):
