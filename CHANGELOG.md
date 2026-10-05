@@ -6,6 +6,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.8.0] - 2026-10-05
+
+### Added
+
+- **The `LOGO` setting takes a `MARK` variant**, the logo without its text, with `LIGHT_BACKGROUND` and `DARK_BACKGROUND` like the lockups. It is shown in the collapsed platform sidebar. Without it the `VERTICAL_LOCKUP` is shown there, and without any custom logo the library's own mark.
+
+### Changed
+
+- **The platform sidebar collapses to an icon-only drawer on medium screens.** From the `md` breakpoint (900px) up to `xl` (1536px) the 250px sidebar took a large share of the width; it is now 64px wide, showing each page's icon with its name as a tooltip, and the logo mark in place of the full logo. A small arrow on it opens the full sidebar, with the organization selector, over the page content, and an arrow on that collapses it again. From `xl` up the full sidebar stays open as before, and phones keep the menu button in the top bar.
+
 ## [7.7.1] - 2026-10-05
 
 ### Fixed
