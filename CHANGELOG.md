@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.7.1] - 2026-10-05
+
+### Fixed
+
+- **An organization whose name contains an underscore can be saved.** The generated slug kept the underscores `slugify` leaves in a name, so `Acme_Academy` became `acme_academy`, which the slug validator rejects, and creating the organization raised a `ValidationError`. Runs of underscores and hyphens now become a single hyphen: `acme-academy`. Migration `0035` rewrites slugs already saved this way the same way, adding a `-2`, `-3`, ... suffix if the result is taken, so links to the old `/@acme_academy/` address stop working.
+
 ## [7.7.0] - 2026-10-05
 
 ### Changed
