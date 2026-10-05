@@ -6,6 +6,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.7.0] - 2026-10-05
+
+### Changed
+
+- **The public course page has a two-column layout with a sidebar.** The full-width 16:9 course image was about 640px tall, which pushed the title below the fold on laptop screens. The title and the course content (description, who it is for, topics, references) now fill the main column, and a sidebar beside it holds the course image, the enroll button, the provider and the instructors. The image keeps its 16:9 ratio at sidebar width, so nothing in it is cropped. RTL courses put the sidebar on the left.
+  - **The sidebar sticks while it fits in the viewport**, keeping the enroll button on screen. When it is too tall to stick, it scrolls with the page and the fixed bottom enroll bar appears once the button leaves the screen, as before.
+  - **On mobile the page is a single column**: title, the image card with the enroll button, the course content, then the provider and instructors.
+
+### Added
+
+- **Quick facts on the public course page's enroll card**: that the course is delivered by email, its number of published lessons, and its language in that language's own name.
+
 ## [7.6.1] - 2026-10-05
 
 ### Security
