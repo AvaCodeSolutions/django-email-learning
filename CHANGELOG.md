@@ -6,6 +6,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.9.0] - 2026-10-05
+
+### Changed
+
+- **The course content table is tidier.** Rows varied in height and carried a lot of controls: a Type column of stacked chips, an edit pencil on every title, and one to three action icons with delete first.
+  - **The type is an icon before the title**, with its name as a tooltip, and the Type column is gone. Practice, the attempt limit and branching are one muted line under the title instead of chips, so rows keep one height.
+  - **Clicking anywhere on a row opens the content.** Its actions sit in a "⋯" menu: edit, move to another track, send a lesson to yourself, and delete, last and in red. The publish switch, the menu and the drag handle keep their own clicks.
+  - **Unpublished content is muted** and labelled "Not published".
+  - **Tracks use their colour from the Flow view**: a track's header, its rows and its "Rejoins at" or "Ends the course" line share it, in place of two shades of the primary colour. Once a course has tracks, main path rows get a neutral grey edge of their own, so a track reads as branching off it.
+  - **The drag handle shows when hovering a row**, and always on touch screens.
+
+### Fixed
+
+- **Progress bars use the primary colour instead of a gradient.** A theme override painted every progress bar with a primary-to-secondary gradient, which also hid the green that the quiz analytics give a correct answer's bar. Bars are now the primary colour, or the colour a page sets for them.
+
 ## [7.8.2] - 2026-10-05
 
 ### Changed
