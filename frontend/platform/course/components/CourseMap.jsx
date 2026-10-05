@@ -272,6 +272,11 @@ const CourseMap = ({ contents = [], tracks = [], transitions = [], onContentClic
                 fitView
                 fitViewOptions={{ padding: FIT_PADDING, maxZoom: 1 }}
                 minZoom={0.2}
+                // A plain wheel scrolls the page instead of zooming the map. Zooming needs
+                // React Flow's zoom key held (Ctrl, or Cmd on macOS); Ctrl+wheel and trackpad
+                // pinches still zoom through zoomOnPinch, since browsers report both as ctrlKey wheels.
+                zoomOnScroll={false}
+                preventScrolling={false}
                 nodesDraggable={false}
                 nodesConnectable={false}
                 nodesFocusable={false}

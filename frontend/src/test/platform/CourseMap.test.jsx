@@ -129,4 +129,17 @@ describe('CourseMap', () => {
 
         expect(screen.getByText('Remedial').closest('button')).toBeNull();
     });
+
+    it('leaves a plain wheel to scroll the page and zooms only with Ctrl held', () => {
+        renderMap();
+        const pane = document.querySelector('.react-flow__renderer');
+
+        const plainWheel = new WheelEvent('wheel', { deltaY: 100, bubbles: true, cancelable: true });
+        pane.dispatchEvent(plainWheel);
+        expect(plainWheel.defaultPrevented).toBe(false);
+
+        const ctrlWheel = new WheelEvent('wheel', { deltaY: 100, ctrlKey: true, bubbles: true, cancelable: true });
+        pane.dispatchEvent(ctrlWheel);
+        expect(ctrlWheel.defaultPrevented).toBe(true);
+    });
 });
