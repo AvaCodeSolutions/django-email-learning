@@ -22,6 +22,7 @@ from django.contrib.auth import views as auth_views
 from django.urls import include, path
 from django.views.generic import TemplateView
 
+from django_email_learning.public.views import CourseView, OrganizationView
 from django_service.views import CustomComponentCourseView, EmailTemplatePreview
 
 urlpatterns = [
@@ -64,6 +65,15 @@ urlpatterns = [
     path(
         "email_learning/",
         include("django_email_learning.urls", namespace="django_email_learning"),
+    ),
+    # The public pages mounted again at the site root, as a host project would to
+    # serve them at /@<slug>/; DJANGO_EMAIL_LEARNING["PUBLIC_URL_NAMES"] points the
+    # library at these names.
+    path("@<slug:organization_slug>/", OrganizationView.as_view(), name="root_organization_page"),
+    path(
+        "@<slug:organization_slug>/courses/<slug:course_slug>/",
+        CourseView.as_view(),
+        name="root_course_page",
     ),
     path(
         "email_template_preview/",

@@ -3,7 +3,6 @@ import re
 from typing import Any, Callable, Optional
 
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.urls import reverse
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from django_email_learning.models import Organization, OrganizationUser, SocialLink
@@ -75,6 +74,7 @@ class SocialLinkResponse(BaseModel):
 class OrganizationResponse(BaseModel):
     id: int
     name: str
+    slug: str
     logo: Optional[str] = None
     logo_path: Optional[str] = None
     description: Optional[str] = Field(None, max_length=1000)
@@ -88,18 +88,15 @@ class OrganizationResponse(BaseModel):
 
     @staticmethod
     def from_django_model(organization: Organization, abs_url_builder: Callable) -> "OrganizationResponse":
-        url = reverse(
-            "django_email_learning:public:organization_view",
-            kwargs={"organization_id": organization.id},
-        )
         return OrganizationResponse.model_validate(
             {
                 "id": organization.id,
                 "name": organization.name,
+                "slug": organization.slug,
                 "logo": abs_url_builder(organization.logo.url) if organization.logo else None,
                 "logo_path": organization.logo.name if organization.logo else None,
                 "description": organization.description,
-                "public_url": abs_url_builder(url),
+                "public_url": abs_url_builder(organization.get_public_path()),
                 "social_links": list(organization.social_links.all()),
                 "is_public": organization.is_public,
                 "brand_color": organization.brand_color,

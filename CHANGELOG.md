@@ -6,6 +6,29 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [Unreleased]
+
+### Added
+
+- **Organizations have a slug, and their public pages live at it**: `public/@<organization_slug>/` and `public/@<organization_slug>/courses/<course_slug>/`, under the prefix the library's URLs are included at. The slug is generated from the name when an organization is created — *Acme Academy* becomes `acme-academy` — and stays put when the organization is renamed, so shared links keep working.
+  - **A taken or reserved slug gets the next free number**: `acme-academy-2`, `acme-academy-3`, ... A name with nothing to slugify, such as one written entirely in a non-Latin script, becomes `organization`. If another organization takes the slug between generating it and saving, the save picks the next free one and retries.
+  - **`RESERVED_ORGANIZATION_SLUGS`** lists slugs no new organization is given, so no organization's page can pass itself off as the platform's own. It replaces the default list: `admin`, `administrator`, `api`, `help`, `official`, `platform`, `public`, `staff`, `support`, `system`.
+  - **Staff can change a slug in the Django admin**, where a blank one is generated again from the current name. Slugs are lowercase letters, numbers and single hyphens, at most 50 characters.
+  - **API**: `slug` on the platform's organization responses.
+- **`PUBLIC_URL_NAMES`** lets a host project serve the public pages at its own address — the site root, say — by mounting `OrganizationView` and `CourseView` on its own routes and naming them here. `Organization.public_url`, `Course.public_url`, the platform's "public view" links and the pages' JSON-LD all reverse these names. The organization route takes an `organization_slug` kwarg and the course route `organization_slug` and `course_slug`.
+- **`Organization.get_public_path()` and `Course.get_public_path()`** return the page's path whether or not it is currently public.
+
+### Changed
+
+- **The id-based public addresses redirect to the slug ones.** `public/organizations/<organization_id>/` and `public/organizations/<organization_id>/courses/<course_slug>/` answer with a permanent (301) redirect, keeping the query string. Their URL names, `organization_view` and `course_view`, still reverse. The redirect is only given while the organization (and course) is public — otherwise they return 404 as before, so a private organization's slug is never revealed.
+- **The public views redirect to the address named in `PUBLIC_URL_NAMES`** when reached at any other, including the library's own `public/@<organization_slug>/` routes when the host serves the pages elsewhere. Subclasses that override `get_context_data` can read the resolved `self.organization` (`OrganizationView`) or `self.course` (`CourseView`), set in `get()`.
+
+### Migrations
+
+- `0032_organization_slug` adds `Organization.slug`, nullable and unique.
+- `0033_populate_organization_slug` gives every existing organization a slug from its name, oldest first, so when two names slugify alike the older organization keeps the plain slug. It honours `RESERVED_ORGANIZATION_SLUGS`. Reversing it is a no-op.
+- `0034_alter_organization_slug` makes the slug required.
+
 ## [7.5.0] - 2026-10-02
 
 ### Changed

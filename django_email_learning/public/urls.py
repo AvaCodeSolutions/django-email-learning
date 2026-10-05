@@ -11,6 +11,19 @@ app_name = "django_email_learning"
 
 urlpatterns = [
     path(
+        "@<slug:organization_slug>/",
+        OrganizationView.as_view(),
+        name="organization_page",
+    ),
+    path(
+        "@<slug:organization_slug>/courses/<slug:course_slug>/",
+        CourseView.as_view(),
+        name="course_page",
+    ),
+    # The id-based addresses the pages had before organizations got slugs. The
+    # same views serve them, answering with a permanent redirect to the slug
+    # address so links already shared keep working.
+    path(
         "organizations/<int:organization_id>/",
         OrganizationView.as_view(),
         name="organization_view",

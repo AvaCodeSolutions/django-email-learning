@@ -12,6 +12,7 @@ from PIL import Image
 from django_email_learning.models.imap_connections import ImapConnection
 from django_email_learning.models.newsletters import Newsletter
 from django_email_learning.services import jwt_service
+from django_email_learning.services.public_urls import public_url_name
 
 from .enums.enrollment_status import EnrollmentStatus
 from .enums.from_email_type import FromEmailType
@@ -122,15 +123,20 @@ class Course(models.Model):
         )
         return qs
 
+    def get_public_path(self) -> str:
+        """The path of the course's public page, whether or not the page is
+        currently public. See DJANGO_EMAIL_LEARNING["PUBLIC_URL_NAMES"].
+        """
+        return reverse(
+            public_url_name("course"),
+            kwargs={"organization_slug": self.organization.slug, "course_slug": self.slug},
+        )
+
     @property
     def public_url(self) -> str | None:
         if not (self.enabled and self.is_public and self.organization.is_public):
             return None
-        path = reverse(
-            "django_email_learning:public:course_view",
-            kwargs={"organization_id": self.organization.id, "course_slug": self.slug},
-        )
-        return f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{path}"
+        return f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{self.get_public_path()}"
 
     def generate_unsubscribe_link(self, email: str) -> str:
         payload = {

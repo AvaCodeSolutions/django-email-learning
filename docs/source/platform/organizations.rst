@@ -49,6 +49,9 @@ To create a new organization:
    - **Description**: A detailed description of the organization's purpose
    - **Logo**: Upload a logo image (optional)
 
+The organization's public address (its slug) is generated from the name when it is created.
+See `Organization slug`_.
+
 .. note::
    Ensure your Django ``MEDIA_ROOT`` and ``MEDIA_URL`` settings are properly configured to handle logo uploads.
 
@@ -153,12 +156,51 @@ To add a user to an organization:
 Public Organization Pages
 -------------------------
 
-Each organization has a public page accessible at:
+Each public organization has a page at its slug, and each of its public courses a page below it:
 
-``/email-learning/public/organization/<organization_id>/``
+- ``/email-learning/public/@<organization_slug>/``
+- ``/email-learning/public/@<organization_slug>/courses/<course_slug>/``
 
-This page:
+The organization page:
+
 - Lists all publicly available courses for the organization
 - Allows anonymous users to enroll in courses
 - Displays organization branding (name, logo, description)
 - Provides course enrollment forms and information
+
+A host project can serve these pages at a different address, such as the site root
+(``https://yourdomain.com/@acme/``), by mounting the views itself and naming its routes in
+the ``PUBLIC_URL_NAMES`` setting. See :ref:`PUBLIC_URL_NAMES <public-page-urls>`.
+
+Organization slug
+~~~~~~~~~~~~~~~~~
+
+The slug is the organization's public address. It is generated from the name when the
+organization is created:
+
+- The name is lowercased and reduced to letters, numbers and hyphens: *Acme Academy*
+  becomes ``acme-academy``.
+- When that slug is already taken, or is reserved, the first free one of ``acme-academy-2``,
+  ``acme-academy-3``, ... is used instead.
+- A name with nothing left to keep, such as one written entirely in a non-Latin script,
+  becomes ``organization`` (or ``organization-2``, and so on).
+- Slugs are at most 50 characters long.
+
+A few slugs are reserved so that no organization's page can pass itself off as the platform's
+own: ``admin``, ``administrator``, ``api``, ``help``, ``official``, ``platform``, ``public``,
+``staff``, ``support`` and ``system``. The ``RESERVED_ORGANIZATION_SLUGS`` setting replaces
+this list.
+
+**The slug does not change when the organization is renamed**, so links already shared keep
+working. Staff can change it in the Django admin, where a blank slug is generated again from
+the current name. Changing a slug breaks links to the old address.
+
+Old addresses
+~~~~~~~~~~~~~
+
+Before organizations had slugs, the public pages lived at
+``/email-learning/public/organizations/<organization_id>/`` and
+``/email-learning/public/organizations/<organization_id>/courses/<course_slug>/``. Those
+addresses still work: they answer with a permanent (301) redirect to the slug address, keeping
+any query string. They redirect only while the organization (and course) is public, and
+return 404 otherwise, so a private organization's slug is never revealed.

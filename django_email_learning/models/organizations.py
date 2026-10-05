@@ -2,6 +2,7 @@ import base64
 import hashlib
 import logging
 import uuid
+from collections.abc import Callable, Iterable
 from email.utils import formataddr
 from typing import Any
 
@@ -11,12 +12,13 @@ from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.validators import MaxLengthValidator, RegexValidator
-from django.db import models
+from django.db import IntegrityError, models, transaction
 from django.urls import reverse
 from django.utils.module_loading import import_string
 from django.utils.text import slugify
 
 from django_email_learning.services.favicon_service import is_raster_logo, make_favicon_png
+from django_email_learning.services.public_urls import public_url_name
 
 from .enums.enrollment_status import EnrollmentStatus
 from .validators import MAX_ORGANIZATION_NAME_LENGTH, validate_organization_name
@@ -29,6 +31,51 @@ hex_color_validator = RegexValidator(
     regex=r"^#[0-9A-Fa-f]{6}$",
     message="Enter a valid hex color, e.g. #4A5EC0.",
 )
+
+ORGANIZATION_SLUG_MAX_LENGTH = 50
+
+organization_slug_validator = RegexValidator(
+    regex=r"^[a-z0-9]+(?:-[a-z0-9]+)*$",
+    message="Use lowercase letters, numbers and single hyphens, e.g. acme-academy.",
+)
+
+# Slugs a new organization is never given, so no organization's public page can
+# pass itself off as the platform's own. Replaced as a whole by
+# DJANGO_EMAIL_LEARNING["RESERVED_ORGANIZATION_SLUGS"].
+DEFAULT_RESERVED_ORGANIZATION_SLUGS = (
+    "admin",
+    "administrator",
+    "api",
+    "help",
+    "official",
+    "platform",
+    "public",
+    "staff",
+    "support",
+    "system",
+)
+
+
+def reserved_organization_slugs() -> frozenset[str]:
+    conf = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
+    return frozenset(conf.get("RESERVED_ORGANIZATION_SLUGS", DEFAULT_RESERVED_ORGANIZATION_SLUGS))
+
+
+def generate_organization_slug(name: str, is_taken: Callable[[str], bool], reserved: Iterable[str]) -> str:
+    """The slugified ``name``, or - when that is reserved or ``is_taken`` - the
+    first free one of ``<slug>-2``, ``<slug>-3``, ... A name with nothing
+    slugify keeps (one written entirely in a non-Latin script, say) becomes
+    ``organization``. The base is cut short so the suffix always fits.
+    """
+    reserved = frozenset(reserved)
+    base = slugify(name) or "organization"
+    candidate = base[:ORGANIZATION_SLUG_MAX_LENGTH].strip("-")
+    counter = 1
+    while candidate in reserved or is_taken(candidate):
+        counter += 1
+        suffix = f"-{counter}"
+        candidate = f"{base[: ORGANIZATION_SLUG_MAX_LENGTH - len(suffix)].strip('-')}{suffix}"
+    return candidate
 
 
 def domain_wide_email_enabled() -> bool:
@@ -57,6 +104,17 @@ class Organization(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
     embed_token = models.CharField(max_length=64, unique=True, null=True, blank=True, editable=False)
+    # The public pages' address: /@<slug>/. Generated from the name when the
+    # organization is created and kept from then on - renaming the organization
+    # does not move its public pages, so links already shared keep working.
+    slug = models.SlugField(
+        max_length=ORGANIZATION_SLUG_MAX_LENGTH,
+        unique=True,
+        blank=True,
+        validators=[organization_slug_validator],
+        help_text="The organization's public address, /@<slug>/. Leave blank to generate it from the name. "
+        "Changing it breaks links already shared to the old address.",
+    )
 
     def __str__(self) -> str:
         # Names are not unique, so the id disambiguates same-named organizations
@@ -76,12 +134,48 @@ class Organization(models.Model):
         else:
             self._saved_logo_name = None
 
+    # How many times save() regenerates a slug that another organization took
+    # between generating it and inserting this one.
+    SLUG_SAVE_ATTEMPTS = 3
+
     def save(self, *args: Any, **kwargs: Any) -> None:  # type: ignore[no-untyped-def]
+        slug_generated = not self.slug
+        if slug_generated:
+            self.slug = self._generate_slug()
+            if kwargs.get("update_fields") is not None:
+                kwargs["update_fields"] = {*kwargs["update_fields"], "slug"}
         self.full_clean()
         logo_changed = self._saved_logo_name is not None and (self.logo.name or "") != self._saved_logo_name
-        super().save(*args, **kwargs)
+        if slug_generated:
+            self._save_with_generated_slug(*args, **kwargs)
+        else:
+            super().save(*args, **kwargs)
         if logo_changed:
             self.refresh_favicon()
+
+    def _generate_slug(self) -> str:
+        others = Organization.objects.exclude(pk=self.pk) if self.pk else Organization.objects.all()
+        return generate_organization_slug(
+            self.name,
+            is_taken=lambda slug: others.filter(slug=slug).exists(),
+            reserved=reserved_organization_slugs(),
+        )
+
+    def _save_with_generated_slug(self, *args: Any, **kwargs: Any) -> None:
+        """full_clean() checked the slug was free, but another organization saved
+        at the same moment can still take it before this one is inserted. The
+        unique constraint catches that; generate the next free slug and retry.
+        """
+        for attempt in range(self.SLUG_SAVE_ATTEMPTS):
+            try:
+                with transaction.atomic():
+                    super().save(*args, **kwargs)
+                return
+            except IntegrityError:
+                slug_taken = Organization.objects.filter(slug=self.slug).exclude(pk=self.pk).exists()
+                if not slug_taken or attempt == self.SLUG_SAVE_ATTEMPTS - 1:
+                    raise
+                self.slug = self._generate_slug()
 
     def refresh_favicon(self) -> None:
         """Re-renders ``favicon`` from the current logo, or clears it when there is
@@ -149,15 +243,17 @@ class Organization(models.Model):
             return ""
         return formataddr((self.name, f"{self.email_local_part}@{domain}"))
 
+    def get_public_path(self) -> str:
+        """The path of the organization's public page, whether or not the page is
+        currently public. See DJANGO_EMAIL_LEARNING["PUBLIC_URL_NAMES"].
+        """
+        return reverse(public_url_name("organization"), kwargs={"organization_slug": self.slug})
+
     @property
     def public_url(self) -> str | None:
         if not self.is_public:
             return None
-        path = reverse(
-            "django_email_learning:public:organization_view",
-            kwargs={"organization_id": self.id},
-        )
-        return f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{path}"
+        return f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{self.get_public_path()}"
 
     def get_learners_cap(self) -> int:
         """

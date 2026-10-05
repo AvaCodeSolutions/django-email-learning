@@ -1,6 +1,5 @@
 import pytest
 from django.core.exceptions import ValidationError
-from django.urls import reverse
 
 from django_email_learning.models import FromEmailType
 from django_email_learning.services.email_sender_service import email_sender_service
@@ -51,11 +50,21 @@ def test_public_url_returns_absolute_url_when_publicly_reachable(course, setting
     course.is_public = True
     course.save()
 
-    expected_path = reverse(
-        "django_email_learning:public:course_view",
-        kwargs={"organization_id": course.organization_id, "course_slug": course.slug},
-    )
-    assert course.public_url == f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{expected_path}"
+    base_url = settings.DJANGO_EMAIL_LEARNING["SITE_BASE_URL"]
+    assert course.public_url == f"{base_url}/email_learning/public/@my-organization/courses/{course.slug}/"
+
+
+def test_public_url_uses_the_host_route_named_in_settings(course, settings):
+    course.enabled = True
+    course.is_public = True
+    course.save()
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "PUBLIC_URL_NAMES": {"course": "root_course_page"},
+    }
+
+    base_url = settings.DJANGO_EMAIL_LEARNING["SITE_BASE_URL"]
+    assert course.public_url == f"{base_url}/@my-organization/courses/{course.slug}/"
 
 
 def test_enrollments_count_property(course, enrollments_factory):

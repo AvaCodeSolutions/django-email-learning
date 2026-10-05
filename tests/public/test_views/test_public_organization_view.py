@@ -6,7 +6,7 @@ from django_email_learning.models import Enrollment, EnrollmentStatus, Learner, 
 
 
 def test_organization_view_anonymous_client(db, anonymous_client):
-    url = reverse("django_email_learning:public:organization_view", kwargs={"organization_id": 1})
+    url = reverse("django_email_learning:public:organization_page", kwargs={"organization_slug": "my-organization"})
     response = anonymous_client.get(url)
     assert response.status_code == 200
     assert response.context["appContext"]["organization"]["id"] == 1
@@ -20,7 +20,7 @@ def test_organization_view_anonymous_client(db, anonymous_client):
 
 def test_organization_view_includes_brand_color(db, anonymous_client):
     Organization.objects.filter(id=1).update(brand_color="#654321")
-    url = reverse("django_email_learning:public:organization_view", kwargs={"organization_id": 1})
+    url = reverse("django_email_learning:public:organization_page", kwargs={"organization_slug": "my-organization"})
     response = anonymous_client.get(url)
     assert response.status_code == 200
     assert response.context["appContext"]["organization"]["brand_color"] == "#654321"
@@ -33,7 +33,7 @@ def test_organization_view_enrollment_closed_when_cap_reached(anonymous_client, 
     }
     learner = Learner.objects.create(email="learner@example.com", organization=Organization.objects.get(id=1))
     Enrollment.objects.create(learner=learner, course=course, status=EnrollmentStatus.ACTIVE)
-    url = reverse("django_email_learning:public:organization_view", kwargs={"organization_id": 1})
+    url = reverse("django_email_learning:public:organization_page", kwargs={"organization_slug": "my-organization"})
     response = anonymous_client.get(url)
     assert response.status_code == 200
     assert response.context["appContext"]["enrollmentOpen"] is False
@@ -42,7 +42,7 @@ def test_organization_view_enrollment_closed_when_cap_reached(anonymous_client, 
 def test_organization_view_anonymous_client_with_courses(db, anonymous_client, course):
     course.enabled = True
     course.save()
-    url = reverse("django_email_learning:public:organization_view", kwargs={"organization_id": 1})
+    url = reverse("django_email_learning:public:organization_page", kwargs={"organization_slug": "my-organization"})
     response = anonymous_client.get(url)
 
     assert response.status_code == 200
@@ -61,7 +61,7 @@ def test_organization_view_non_existent_organization(db, anonymous_client):
 def test_organization_view_excludes_disabled_courses(db, anonymous_client, course):
     course.enabled = False
     course.save()
-    url = reverse("django_email_learning:public:organization_view", kwargs={"organization_id": 1})
+    url = reverse("django_email_learning:public:organization_page", kwargs={"organization_slug": "my-organization"})
     response = anonymous_client.get(url)
 
     assert response.status_code == 200
@@ -72,7 +72,7 @@ def test_organization_view_excludes_non_public_courses(db, anonymous_client, cou
     course.enabled = True
     course.is_public = False
     course.save()
-    url = reverse("django_email_learning:public:organization_view", kwargs={"organization_id": 1})
+    url = reverse("django_email_learning:public:organization_page", kwargs={"organization_slug": "my-organization"})
     response = anonymous_client.get(url)
 
     assert response.status_code == 200
@@ -83,7 +83,7 @@ def test_organization_view_json_ld_escapes_script_tag_in_course_description(db, 
     course.enabled = True
     course.description = "Nice course</script><script>alert(document.cookie)</script>"
     course.save()
-    url = reverse("django_email_learning:public:organization_view", kwargs={"organization_id": 1})
+    url = reverse("django_email_learning:public:organization_page", kwargs={"organization_slug": "my-organization"})
 
     response = anonymous_client.get(url)
 
@@ -97,7 +97,7 @@ def test_organization_view_retuns_404_for_non_public_organization(db, anonymous_
     organization = course.organization
     organization.is_public = False
     organization.save()
-    url = reverse("django_email_learning:public:organization_view", kwargs={"organization_id": 1})
+    url = reverse("django_email_learning:public:organization_page", kwargs={"organization_slug": "my-organization"})
     response = anonymous_client.get(url)
 
     assert response.status_code == 404

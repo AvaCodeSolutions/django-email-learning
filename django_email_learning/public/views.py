@@ -2,7 +2,7 @@ import json
 
 from django.conf import settings
 from django.db.models import Prefetch
-from django.http import Http404
+from django.http import Http404, HttpRequest, HttpResponse, HttpResponsePermanentRedirect
 from django.middleware.csrf import get_token
 from django.urls import reverse
 from django.utils.decorators import method_decorator
@@ -62,6 +62,18 @@ def get_favicon_links(organization: Organization) -> list[dict[str, str]]:
     if light or dark:
         return [{"href": light or dark}]
     return []
+
+
+def canonical_redirect(request: HttpRequest, canonical_path: str) -> HttpResponsePermanentRedirect | None:
+    """A permanent redirect to ``canonical_path`` - keeping the query string, so
+    campaign parameters survive - when the page was reached at any other address:
+    an id-based one from before organizations had slugs, or the library's own
+    route when the host serves the page elsewhere (PUBLIC_URL_NAMES).
+    """
+    if request.path == canonical_path:
+        return None
+    query = request.META.get("QUERY_STRING", "")
+    return HttpResponsePermanentRedirect(f"{canonical_path}?{query}" if query else canonical_path)
 
 
 def get_organization_json_ld_links(organization: Organization) -> dict[str, object]:
@@ -146,6 +158,7 @@ def build_single_course_json_ld(  # type: ignore[no-untyped-def]
 @method_decorator(ensure_csrf_cookie, name="dispatch")
 class OrganizationView(TemplateView):
     template_name = "public/organization.html"
+    organization: Organization
 
     def get_max_subscribers(self) -> int:
         return (
@@ -154,9 +167,26 @@ class OrganizationView(TemplateView):
             .get("MAX_SUBSCRIBER_PER_NEWSLETTER", 500)
         )
 
+    def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
+        # Reached by slug, or by id at the address the page had before slugs.
+        # Only a public organization's page redirects, so the redirect never
+        # gives away the name of a private one.
+        if "organization_slug" in kwargs:
+            lookup = {"slug": kwargs["organization_slug"]}
+        else:
+            lookup = {"id": kwargs.get("organization_id")}
+        organization = Organization.objects.filter(is_public=True, **lookup).first()
+        if organization is None:
+            raise Http404(_("Organization does not exist"))
+        self.organization = organization
+        redirect = canonical_redirect(request, organization.get_public_path())
+        if redirect:
+            return redirect
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs) -> dict:  # type: ignore[no-untyped-def]
         get_token(self.request)  # Ensure CSRF token is set in cookies
-        organization_id: int = kwargs.get("organization_id")  # type: ignore[assignment]
+        organization_id: int = self.organization.id
         context = super().get_context_data(**kwargs)
         # Add any additional context if needed
         organization_details = Organization.objects.filter(
@@ -292,26 +322,39 @@ class OrganizationView(TemplateView):
 @method_decorator(ensure_csrf_cookie, name="dispatch")
 class CourseView(TemplateView):
     template_name = "public/course.html"
+    course: Course
 
-    def get_context_data(self, **kwargs) -> dict:  # type: ignore[no-untyped-def]
-        get_token(self.request)  # Ensure CSRF token is set in cookies
-        course_slug: str = kwargs.get("course_slug")  # type: ignore[assignment]
-        organization_id: int = kwargs.get("organization_id")  # type: ignore[assignment]
-        context = super().get_context_data(**kwargs)
+    def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
+        # Reached by organization slug, or by organization id at the address the
+        # page had before slugs. Only a public course redirects, so the redirect
+        # never gives away the name of a private organization.
+        if "organization_slug" in kwargs:
+            organization_lookup = {"organization__slug": kwargs["organization_slug"]}
+        else:
+            organization_lookup = {"organization__id": kwargs.get("organization_id")}
         try:
-            course = (
+            self.course = (
                 Course.objects.select_related("organization")
                 .prefetch_related("organization__social_links", "instructors__org_user__user")
                 .get(
-                    slug=course_slug,
-                    organization__id=organization_id,
+                    slug=kwargs.get("course_slug"),
                     enabled=True,
                     is_public=True,
                     organization__is_public=True,
+                    **organization_lookup,
                 )
             )
         except Course.DoesNotExist:
             raise Http404(_("Course does not exist"))
+        redirect = canonical_redirect(request, self.course.get_public_path())
+        if redirect:
+            return redirect
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs) -> dict:  # type: ignore[no-untyped-def]
+        get_token(self.request)  # Ensure CSRF token is set in cookies
+        context = super().get_context_data(**kwargs)
+        course = self.course
 
         course_lang_info = get_language_info(course.language)
         # A CourseInstructor always references an org_user that can act as an

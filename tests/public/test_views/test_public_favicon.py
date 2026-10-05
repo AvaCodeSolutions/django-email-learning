@@ -77,7 +77,7 @@ def test_organization_page_renders_the_organization_favicon(db, anonymous_client
     organization.logo = default_storage.save("organization_logos/1/logo.png", ContentFile(png_bytes()))
     organization.save()
 
-    url = reverse("django_email_learning:public:organization_view", kwargs={"organization_id": 1})
+    url = reverse("django_email_learning:public:organization_page", kwargs={"organization_slug": "my-organization"})
     html = anonymous_client.get(url).content.decode()
 
     assert f'<link rel="icon" href="/media/{organization.favicon.name}" type="image/png" />' in html
@@ -90,8 +90,8 @@ def test_course_page_renders_the_lockup_favicons(db, anonymous_client, course, l
     course.save()
 
     url = reverse(
-        "django_email_learning:public:course_view",
-        kwargs={"organization_id": 1, "course_slug": course.slug},
+        "django_email_learning:public:course_page",
+        kwargs={"organization_slug": "my-organization", "course_slug": course.slug},
     )
     html = anonymous_client.get(url).content.decode()
 
@@ -102,7 +102,7 @@ def test_course_page_renders_the_lockup_favicons(db, anonymous_client, course, l
 def test_organization_page_falls_back_to_the_library_favicon(db, anonymous_client, lockups):
     lockups()
 
-    url = reverse("django_email_learning:public:organization_view", kwargs={"organization_id": 1})
+    url = reverse("django_email_learning:public:organization_page", kwargs={"organization_slug": "my-organization"})
     html = anonymous_client.get(url).content.decode()
 
     assert 'type="image/png" href="/static/logo.png"' in html
