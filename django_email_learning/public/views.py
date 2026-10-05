@@ -6,7 +6,7 @@ from django.http import Http404, HttpRequest, HttpResponse, HttpResponsePermanen
 from django.middleware.csrf import get_token
 from django.urls import reverse
 from django.utils.decorators import method_decorator
-from django.utils.translation import get_language, get_language_info, gettext as _
+from django.utils.translation import get_language, get_language_info, gettext as _, ngettext
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic import TemplateView
 
@@ -413,6 +413,7 @@ class CourseView(TemplateView):
             "enrollApiUrl": f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{enroll_api_path}",
             "enrollmentOpen": course.organization.can_enroll_learner(),
             "direction": "rtl" if lang_info["bidi"] else "ltr",
+            "courseLanguageName": course_lang_info["name_local"],
             "termsOfServiceUrl": get_terms_of_service_url(),
             "localeMessages": {
                 "enroll_now": _("Enroll Now"),
@@ -440,6 +441,9 @@ class CourseView(TemplateView):
                 "target_audience_title": _("Who is this course for?"),
                 "external_references_title": _("External References"),
                 "instructors_title": _("Instructors"),
+                "delivered_by_email": _("Delivered by email"),
+                "lesson_count": ngettext("%(count)d lesson", "%(count)d lessons", len(course_data.lessons))
+                % {"count": len(course_data.lessons)},
                 "terms_of_service_confirmation": _(
                     "By enrolling, you agree to our"
                     " <a href='TERMS_OF_SERVICE_URL' target='_blank'>Terms of Service</a>."
