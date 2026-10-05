@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.8.1] - 2026-10-05
+
+### Fixed
+
+- **Scrolling over the course flow map scrolls the page instead of zooming the map.** With the pointer over the map, the mouse wheel zoomed it, so scrolling down a course page could zoom the map by accident. The map now zooms only with Ctrl held (Cmd on macOS), or with a trackpad pinch; the zoom buttons, double-click and dragging to pan are unchanged.
+
 ## [7.8.0] - 2026-10-05
 
 ### Added
