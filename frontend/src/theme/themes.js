@@ -203,9 +203,8 @@ const defaultOptions = {
         root: {
           backgroundColor: 'transparent',
         },
-        bar: ({ theme }) => ({
-          background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 70%)`,
-        }),
+        // The bar keeps MUI's own colouring - the primary colour, or the palette named by a
+        // `color` prop - so a bar such as a correct quiz answer's (`color="success"`) shows as set.
       },
     },
     // Only h1-h4 use the display font, per the design system's "Headings
