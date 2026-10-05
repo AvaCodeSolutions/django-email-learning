@@ -137,6 +137,8 @@ class BasePlatformView(TemplateView):
                     "verticalDark": DJANGO_EMAIL_LEARNING_SETTINGS.get("LOGO", {})
                     .get("VERTICAL_LOCKUP", {})
                     .get("DARK_BACKGROUND"),
+                    "markLight": DJANGO_EMAIL_LEARNING_SETTINGS.get("LOGO", {}).get("MARK", {}).get("LIGHT_BACKGROUND"),
+                    "markDark": DJANGO_EMAIL_LEARNING_SETTINGS.get("LOGO", {}).get("MARK", {}).get("DARK_BACKGROUND"),
                 }
                 if DJANGO_EMAIL_LEARNING_SETTINGS.get("LOGO")
                 else None,

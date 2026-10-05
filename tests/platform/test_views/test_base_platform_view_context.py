@@ -321,3 +321,41 @@ def test_valid_session_organization_is_kept(db, users):
 
     assert response.status_code == 200
     assert response.context["activeOrganizationId"] == other_organization.id
+
+
+def test_custom_logo_includes_mark_urls(db, users, monkeypatch):
+    """The LOGO setting's MARK variant reaches the sidebar's mini drawer."""
+    from django_email_learning.platform.views import base
+
+    monkeypatch.setitem(
+        base.DJANGO_EMAIL_LEARNING_SETTINGS,
+        "LOGO",
+        {"MARK": {"LIGHT_BACKGROUND": "/mark-light.png", "DARK_BACKGROUND": "/mark-dark.png"}},
+    )
+    client = Client()
+    client.force_login(users["editor_user"])
+
+    response = client.get(get_url())
+
+    custom_logo = response.context["appContext"]["customLogo"]
+    assert custom_logo["markLight"] == "/mark-light.png"
+    assert custom_logo["markDark"] == "/mark-dark.png"
+
+
+def test_custom_logo_mark_urls_are_none_when_mark_not_set(db, users, monkeypatch):
+    """Without MARK, the mark URLs are empty so the frontend falls back to the vertical lockup."""
+    from django_email_learning.platform.views import base
+
+    monkeypatch.setitem(
+        base.DJANGO_EMAIL_LEARNING_SETTINGS,
+        "LOGO",
+        {"VERTICAL_LOCKUP": {"LIGHT_BACKGROUND": "/vertical-light.png"}},
+    )
+    client = Client()
+    client.force_login(users["editor_user"])
+
+    response = client.get(get_url())
+
+    custom_logo = response.context["appContext"]["customLogo"]
+    assert custom_logo["markLight"] is None
+    assert custom_logo["markDark"] is None

@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { renderWithProviders } from './test-utils';
+import { useMediaQuery } from '@mui/material';
 import MenuBar from '../components/MenuBar';
 
 vi.mock('../render.jsx');
@@ -42,6 +43,7 @@ const defaultProps = {
   changeOrganizationCallback: vi.fn(),
   showOrganizationSwitcher: true,
   drawerWidth: 250,
+  miniDrawerWidth: 64,
 };
 
 describe('MenuBar', () => {
@@ -254,4 +256,92 @@ describe('MenuBar', () => {
     expect(screen.queryByText('Content delivery')).not.toBeInTheDocument();
   });
 
+});
+
+describe('MenuBar mini drawer (md up to xl)', () => {
+  beforeEach(() => {
+    setupDefaultFetch();
+    // Match the md breakpoint but not xl (MUI's default xl is 1536px).
+    useMediaQuery.mockImplementation((query) => !String(query).includes('1536'));
+  });
+
+  afterEach(() => {
+    useMediaQuery.mockImplementation(() => true);
+  });
+
+  function getPermanentDrawerPaper() {
+    return document.querySelector('.MuiDrawer-docked .MuiDrawer-paper');
+  }
+
+  it('renders a permanent drawer at the mini width', () => {
+    renderWithProviders(<MenuBar {...defaultProps} />);
+    expect(getPermanentDrawerPaper()).toHaveStyle({ width: '64px' });
+  });
+
+  it('shows nav items as icons labelled through aria-label instead of text', () => {
+    renderWithProviders(<MenuBar {...defaultProps} />);
+    const drawer = within(getPermanentDrawerPaper());
+    expect(drawer.getByLabelText('Courses')).toBeInTheDocument();
+    expect(drawer.queryByText('Courses')).not.toBeInTheDocument();
+  });
+
+  it('hides section labels and the organization selector', () => {
+    renderWithProviders(<MenuBar {...defaultProps} />);
+    const drawer = within(getPermanentDrawerPaper());
+    expect(drawer.queryByText('Platform')).not.toBeInTheDocument();
+    expect(drawer.queryByLabelText('Select organization')).not.toBeInTheDocument();
+  });
+
+  it('shows the logo mark without the text lockup', () => {
+    renderWithProviders(<MenuBar {...defaultProps} />);
+    const logo = within(getPermanentDrawerPaper()).getByAltText('Logo');
+    expect(logo.getAttribute('src')).toMatch(/logo\.png/);
+  });
+
+  it('uses the custom mark from the logo settings when set', () => {
+    renderWithProviders(<MenuBar {...defaultProps} />, {
+      appContext: { customLogo: { verticalLight: '/vertical-light.png', markLight: '/mark-light.png' } },
+    });
+    const logo = within(getPermanentDrawerPaper()).getByAltText('Logo');
+    expect(logo).toHaveAttribute('src', '/mark-light.png');
+  });
+
+  it('falls back to the custom vertical lockup when no custom mark is set', () => {
+    renderWithProviders(<MenuBar {...defaultProps} />, {
+      appContext: { customLogo: { verticalLight: '/vertical-light.png' } },
+    });
+    const logo = within(getPermanentDrawerPaper()).getByAltText('Logo');
+    expect(logo).toHaveAttribute('src', '/vertical-light.png');
+  });
+
+  it('expands to the full drawer from the arrow on the mini drawer', async () => {
+    renderWithProviders(<MenuBar {...defaultProps} />);
+    fireEvent.click(within(getPermanentDrawerPaper()).getByRole('button', { name: 'Expand menu' }));
+    await waitFor(() => expect(screen.getByText('Courses')).toBeInTheDocument());
+    expect(screen.getByLabelText('Select organization')).toBeInTheDocument();
+  });
+
+  it('collapses the expanded drawer from its arrow', async () => {
+    renderWithProviders(<MenuBar {...defaultProps} />);
+    fireEvent.click(within(getPermanentDrawerPaper()).getByRole('button', { name: 'Expand menu' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Collapse menu' }));
+    await waitFor(() => expect(screen.queryByText('Courses')).not.toBeInTheDocument());
+  });
+});
+
+describe('MenuBar full drawer (xl up)', () => {
+  beforeEach(() => {
+    setupDefaultFetch();
+    useMediaQuery.mockImplementation(() => true);
+  });
+
+  it('renders a permanent drawer at the full width', () => {
+    renderWithProviders(<MenuBar {...defaultProps} />);
+    expect(document.querySelector('.MuiDrawer-docked .MuiDrawer-paper')).toHaveStyle({ width: '250px' });
+  });
+
+  it('does not show the expand arrow', () => {
+    renderWithProviders(<MenuBar {...defaultProps} />);
+    expect(screen.queryByRole('button', { name: 'Expand menu' })).not.toBeInTheDocument();
+  });
 });

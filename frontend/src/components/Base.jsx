@@ -16,6 +16,7 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
   const [dialogMaxWidth, setDialogMaxWidth] = useState('md');
   const [dialogCloseOnBackdropClick, setDialogCloseOnBackdropClick] = useState(false);
   const drawerWidth = 250;
+  const miniDrawerWidth = 64;
   const activeCrumbIndex = breadCrumbList.length - 1;
 
   useEffect(() => {
@@ -96,8 +97,8 @@ function Base({breadCrumbList, children, bottomDrawerParams, organizationIdRefre
   return (
    <>
     <GlobalStyles styles={(theme) => ({ body: { margin: 0, padding: 0, backgroundColor: theme.palette.background.main, color: theme.palette.text.primary } })} />
-    <MenuBar activeOrganizationId={activeOrganizationId} changeOrganizationCallback={setActiveOrganizationId} showOrganizationSwitcher={showOrganizationSwitcher} drawerWidth={drawerWidth} />
-    <Box sx={{ width: { md: `calc(100% - ${drawerWidth}px)` }, float: { md: direction === 'rtl' ? 'left' : 'right' }, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <MenuBar activeOrganizationId={activeOrganizationId} changeOrganizationCallback={setActiveOrganizationId} showOrganizationSwitcher={showOrganizationSwitcher} drawerWidth={drawerWidth} miniDrawerWidth={miniDrawerWidth} />
+    <Box sx={{ width: { md: `calc(100% - ${miniDrawerWidth}px)`, xl: `calc(100% - ${drawerWidth}px)` }, float: { md: direction === 'rtl' ? 'left' : 'right' }, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
     <Box component="main"
       sx={{ flexGrow: 1, padding: {xs: 0, sm: 3, md: 3}, maxWidth: '1400px', width: '100%' }}>
     <Grid container spacing={0} sx={{ mt: { xs: 12, md: 6 }, px: { xs: 1, sm: 4 } }}>

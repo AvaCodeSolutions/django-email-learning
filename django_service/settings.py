@@ -154,6 +154,10 @@ DJANGO_EMAIL_LEARNING = {
             "LIGHT_BACKGROUND": None,
             "DARK_BACKGROUND": None,
         },
+        "MARK": {
+            "LIGHT_BACKGROUND": None,
+            "DARK_BACKGROUND": None,
+        },
     },
 }
 

@@ -386,6 +386,7 @@ Optional configuration for branding assets in the platform header.
 
 - ``HORIZONTAL_LOCKUP``: Used on mobile devices where the sidebar is not open by default and the logo is shown in the top navbar.
 - ``VERTICAL_LOCKUP``: Used for sidebar-oriented layouts.
+- ``MARK``: The logo without its text, used in the collapsed (icon-only) sidebar on medium-sized screens. Falls back to ``VERTICAL_LOCKUP`` when not set.
 
     - ``LIGHT_BACKGROUND``: Logo URL/path for light backgrounds.
     - ``DARK_BACKGROUND``: Logo URL/path for dark backgrounds.
@@ -404,6 +405,10 @@ Optional configuration for branding assets in the platform header.
             'VERTICAL_LOCKUP': {
                 'LIGHT_BACKGROUND': 'url/path-to-vertical-logo-for-light-background.png',
                 'DARK_BACKGROUND': 'url/path-to-vertical-logo-for-dark-background.png',
+            },
+            'MARK': {
+                'LIGHT_BACKGROUND': 'url/path-to-logo-mark-for-light-background.png',
+                'DARK_BACKGROUND': 'url/path-to-logo-mark-for-dark-background.png',
             },
         },
     }
