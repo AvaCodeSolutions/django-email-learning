@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.8.2] - 2026-10-05
+
+### Changed
+
+- **The course page's enrollment figures take less space.** Total, active and weekly enrollments had a full-width bar of their own above the tabs. They are now small boxes at the start of the row with the public course page and "Add to your site" buttons. As before, they are hidden on screens narrower than the `md` breakpoint (900px) and while the course is disabled.
+
 ## [7.8.1] - 2026-10-05
 
 ### Fixed
