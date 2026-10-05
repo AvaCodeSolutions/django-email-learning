@@ -6,6 +6,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.6.1] - 2026-10-05
+
+### Security
+
+- **`dompurify` updated to 3.4.16** — picks up the fix for [GHSA-p98j-92pf-mc4p](https://github.com/advisories/GHSA-p98j-92pf-mc4p) (low): with `IN_PLACE` sanitizing, an `afterSanitize` hook that removed a node left the event handlers of the detached subtree armed, a path to DOM XSS. 3.4.15 was inside the affected `3.4.13 - 3.4.15` range. It is a runtime dependency that ships in the served assets, so the `package.json` floor is raised from `^3.4.12` to `^3.4.16` and a fresh install cannot resolve back to a vulnerable version.
+- **Development dependencies**: `undici` 8.9.0 → 8.11.2, pulled in by `jsdom` for the frontend tests, clears ten advisories (high), among them denial of service, response splitting in the retry interceptor and a TLS certificate validation bypass in `BalancedPool`. `brace-expansion` 5.0.9 → 5.0.12, pulled in by `eslint`, clears three denial-of-service advisories (high). Neither reaches the served assets or installs of `django-email-learning`. `npm audit` on the frontend now reports no vulnerabilities.
+
 ## [7.6.0] - 2026-10-05
 
 ### Added
