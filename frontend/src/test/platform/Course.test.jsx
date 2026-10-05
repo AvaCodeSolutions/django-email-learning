@@ -155,6 +155,21 @@ describe('Course', () => {
     expect(screen.getByText(localeMessages.total_enrollments)).toBeInTheDocument();
   });
 
+  it('shows the enrollment summary in the same row as the public link buttons', () => {
+    renderWithProviders(<Course />, {
+      appContext: {
+        ...baseAppContext,
+        courseEnabled: true,
+        coursePublicUrl: 'https://example.com/public/organization/1/courses/sample-course/',
+      },
+    });
+    const publicLink = document.querySelector('a[href="https://example.com/public/organization/1/courses/sample-course/"]');
+    // label -> stat pill -> stats group -> the shared row
+    const row = screen.getByText(localeMessages.total_enrollments).parentElement.parentElement.parentElement;
+    expect(row).toContainElement(publicLink);
+    expect(row).not.toContainElement(screen.getByRole('tablist'));
+  });
+
   it('keeps the Add menu disabled until the content structure loads', async () => {
     let resolveContents;
     const contentsPromise = new Promise((resolve) => {

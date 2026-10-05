@@ -44,6 +44,29 @@ const CustomComponentSlot = memo(function CustomComponentSlot({ html, display })
   );
 });
 
+// A compact enrollment figure, sized to sit in the same row as the public link buttons.
+function EnrollmentStat({ label, value, detail }) {
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'baseline',
+        gap: 0.75,
+        px: 1.5,
+        py: 0.75,
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 2,
+        fontSize: '0.8125rem',
+      }}
+    >
+      <Box component="span" sx={{ color: 'text.secondary' }}>{label}</Box>
+      <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>{value}</Box>
+      {detail && <Box component="span" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>{detail}</Box>}
+    </Box>
+  );
+}
+
 const QuizForm = lazy(() => import("./components/QuizForm.jsx"));
 const LessonForm = lazy(() => import("./components/LessonForm.jsx"));
 const AssignmentForm = lazy(() => import("./components/AssignmentForm.jsx"));
@@ -132,6 +155,8 @@ function Course() {
     // These tabs would only show empty states until the course has some activity.
     const showSubmittedAssignmentsTab = canSeeSubmittedAssignments && submissionsCount > 0;
     const showAnalyticsTab = totalEnrollments > 0;
+    const showEnrollmentSummary = courseEnabled !== false;
+    const showPublicLinks = !!(courseEnabled && coursePublicUrl);
     const canEditBranching = userRole === 'admin' || userRole === 'editor';
 
 
@@ -667,81 +692,92 @@ function Course() {
                 </Box>
             )}
             <Grid size={{xs: 12}} sx={{ px: { xs: 0, md: 2 }, pt: 2, pb: 3 }}>
-                {courseEnabled && coursePublicUrl && (
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'wrap', gap: 1, mx: { xs: 2, md: 0 }, mb: 1 }}>
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 0.5,
-                                pl: 1.5,
-                                pr: 0.5,
-                                py: 0.2,
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                borderRadius: 2,
-                            }}
-                        >
-                            <Link
-                                href={coursePublicUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                underline="none"
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 0.75,
-                                    color: 'text.primary',
-                                    fontSize: '0.8125rem',
-                                    fontWeight: 500,
-                                    '&:hover': { color: 'primary.dark' },
-                                }}
-                            >
-                                <PublicIcon fontSize="small" />
-                                {localeMessages["view_public_course_page"]}
-                            </Link>
-                            <Tooltip title={publicUrlCopied ? localeMessages["public_course_link_copied"] : localeMessages["copy_public_course_link"]}>
-                                <IconButton
-                                    size="small"
-                                    onClick={handleCopyPublicUrl}
-                                    aria-label={localeMessages["copy_public_course_link"]}
+                {(showEnrollmentSummary || showPublicLinks) && (
+                    <Box sx={{ display: { xs: showPublicLinks ? 'flex' : 'none', md: 'flex' }, flexWrap: 'wrap', gap: 1, mx: { xs: 2, md: 0 }, mb: 2 }}>
+                        {showEnrollmentSummary && (
+                            <Box sx={{ display: { xs: 'none', md: 'flex' }, flexWrap: 'wrap', gap: 1 }}>
+                                <EnrollmentStat label={localeMessages["total_enrollments"] || 'Total Enrollments'} value={totalEnrollments} />
+                                <EnrollmentStat label={localeMessages["active"] || 'Active'} value={activeEnrollments} detail={`(${activePercentage}%)`} />
+                                <EnrollmentStat label={localeMessages["weekly_enrollments"] || 'Weekly Enrollments'} value={currentWeekEnrollments} />
+                            </Box>
+                        )}
+                        {showPublicLinks && (
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 1, marginInlineStart: 'auto' }}>
+                                <Box
                                     sx={{
-                                        borderRadius: '50%',
-                                        border: '1px solid transparent',
-                                        '&:hover': { borderColor: 'divider', color: 'primary.dark' },
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 0.5,
+                                        pl: 1.5,
+                                        pr: 0.5,
+                                        py: 0.2,
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        borderRadius: 2,
                                     }}
                                 >
-                                    <ContentCopyIcon fontSize="small" />
-                                </IconButton>
-                            </Tooltip>
-                        </Box>
-                        {embeddableEnrollmentEnabled && (
-                            <Box
-                                component="button"
-                                type="button"
-                                onClick={handleOpenEmbedDialog}
-                                aria-label={localeMessages["add_to_your_site"]}
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 0.75,
-                                    pl: 1.5,
-                                    pr: 1.5,
-                                    py: 0.2,
-                                    border: '1px solid',
-                                    borderColor: 'divider',
-                                    borderRadius: 2,
-                                    background: 'none',
-                                    cursor: 'pointer',
-                                    color: 'text.primary',
-                                    fontSize: '0.8125rem',
-                                    fontWeight: 500,
-                                    fontFamily: 'inherit',
-                                    '&:hover': { color: 'primary.dark', borderColor: 'primary.dark' },
-                                }}
-                            >
-                                <CodeIcon fontSize="small" />
-                                {localeMessages["add_to_your_site"]}
+                                    <Link
+                                        href={coursePublicUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        underline="none"
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 0.75,
+                                            color: 'text.primary',
+                                            fontSize: '0.8125rem',
+                                            fontWeight: 500,
+                                            '&:hover': { color: 'primary.dark' },
+                                        }}
+                                    >
+                                        <PublicIcon fontSize="small" />
+                                        {localeMessages["view_public_course_page"]}
+                                    </Link>
+                                    <Tooltip title={publicUrlCopied ? localeMessages["public_course_link_copied"] : localeMessages["copy_public_course_link"]}>
+                                        <IconButton
+                                            size="small"
+                                            onClick={handleCopyPublicUrl}
+                                            aria-label={localeMessages["copy_public_course_link"]}
+                                            sx={{
+                                                borderRadius: '50%',
+                                                border: '1px solid transparent',
+                                                '&:hover': { borderColor: 'divider', color: 'primary.dark' },
+                                            }}
+                                        >
+                                            <ContentCopyIcon fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Box>
+                                {embeddableEnrollmentEnabled && (
+                                    <Box
+                                        component="button"
+                                        type="button"
+                                        onClick={handleOpenEmbedDialog}
+                                        aria-label={localeMessages["add_to_your_site"]}
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 0.75,
+                                            pl: 1.5,
+                                            pr: 1.5,
+                                            py: 0.2,
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            borderRadius: 2,
+                                            background: 'none',
+                                            cursor: 'pointer',
+                                            color: 'text.primary',
+                                            fontSize: '0.8125rem',
+                                            fontWeight: 500,
+                                            fontFamily: 'inherit',
+                                            '&:hover': { color: 'primary.dark', borderColor: 'primary.dark' },
+                                        }}
+                                    >
+                                        <CodeIcon fontSize="small" />
+                                        {localeMessages["add_to_your_site"]}
+                                    </Box>
+                                )}
                             </Box>
                         )}
                     </Box>
@@ -750,38 +786,6 @@ function Course() {
                     <Alert severity="warning" sx={{ mx: { xs: 2, md: 0 }, mb: 3 }}>
                         {renderDisabledBanner()}
                     </Alert>
-                )}
-                {courseEnabled !== false && (
-                <Box
-                    sx={{
-                        display: { xs: 'none', md: 'block' },
-                        mb: 3,
-                        p: 2,
-                        borderRadius: { xs: 0, sm: 2 },
-                        backgroundColor: 'background.box', boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.04)',
-                    }}
-                >
-                    <Grid container spacing={2}>
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                            <Typography variant="caption" sx={{ color: 'text.primary', display: 'block', mb: 0.5, opacity: { xs: 1 } }}>
-                                {localeMessages["total_enrollments"] || 'Total Enrollments'}
-                            </Typography>
-                            <Typography variant="h6">{totalEnrollments}</Typography>
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                            <Typography variant="caption" sx={{ color: 'text.primary', display: 'block', mb: 0.5 }}>
-                                {localeMessages["active"] || 'Active'}
-                            </Typography>
-                            <Typography variant="h6">{activeEnrollments} <Typography component="span" variant="body2" sx={{ color: 'text.secondary' }}>({activePercentage}%)</Typography></Typography>
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                            <Typography variant="caption" sx={{ color: 'text.primary', display: 'block', mb: 0.5 }}>
-                                {localeMessages["weekly_enrollments"] || 'Weekly Enrollments'}
-                            </Typography>
-                            <Typography variant="h6">{currentWeekEnrollments}</Typography>
-                        </Grid>
-                    </Grid>
-                </Box>
                 )}
                 <Box sx={{ px: { xs: 0, md: 2 }, py: 2, backgroundColor: 'background.box', boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.04)', borderRadius: { xs: 0, sm: 2 }, minHeight: 300 }}>
                     <Tabs
