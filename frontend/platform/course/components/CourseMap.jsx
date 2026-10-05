@@ -12,12 +12,10 @@ import FlagIcon from '@mui/icons-material/Flag';
 import { useAppContext } from '../../../src/render.jsx';
 import { rejoinPath, styleEdge } from './flowEdgeStyle.js';
 import { buildFlowGraph } from './flowGraph.js';
+import { trackColorMap } from './branching.js';
 import { NODE_HEIGHT, NODE_WIDTH, layoutBounds, layoutFlow, mapHeight } from './flowLayout.js';
 
 const TYPE_ICONS = { lesson: DescriptionOutlinedIcon, quiz: BallotOutlinedIcon, assignment: AssignmentOutlinedIcon, decision: CallSplitOutlinedIcon };
-
-// Tracks are told apart by colour; each track's box also carries its name, so the palette can repeat.
-const TRACK_COLORS = ['#7e57c2', '#00897b', '#ef6c00', '#1e88e5', '#d81b60', '#6d4c41'];
 
 const HIDDEN_HANDLE = { opacity: 0, pointerEvents: 'none' };
 
@@ -215,7 +213,7 @@ const CourseMap = ({ contents = [], tracks = [], transitions = [], onContentClic
     const canOpenTracks = Boolean(onTrackClick);
 
     const { nodes, edges, bounds } = useMemo(() => {
-        const trackColors = new Map(tracks.map((track, index) => [track.id, TRACK_COLORS[index % TRACK_COLORS.length]]));
+        const trackColors = trackColorMap(tracks);
         const graph = buildFlowGraph(contents, tracks, transitions);
         const positioned = layoutFlow(graph.nodes, graph.edges, graph.groups).map((node) => {
             if (node.type === 'track') {

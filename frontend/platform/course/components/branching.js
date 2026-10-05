@@ -169,6 +169,12 @@ export function buildContentTree(contents, tracks = [], transitions = []) {
     return rows;
 }
 
+// Tracks are told apart by colour, the same one in the course map and the content table. Each
+// track is also labelled with its name, so the palette can repeat.
+export const TRACK_COLORS = ['#7e57c2', '#00897b', '#ef6c00', '#1e88e5', '#d81b60', '#6d4c41'];
+
+export const trackColorMap = (tracks = []) => new Map(tracks.map((track, index) => [track.id, TRACK_COLORS[index % TRACK_COLORS.length]]));
+
 // A select holds '' for the main path; the API holds null.
 export const toTrackValue = (trackId) => (trackId == null ? '' : trackId);
 export const fromTrackValue = (value) => (value === '' ? null : Number(value));

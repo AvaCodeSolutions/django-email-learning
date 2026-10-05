@@ -1,4 +1,5 @@
-import { Alert, Box, CircularProgress, Chip, IconButton, Menu, MenuItem, Switch, TableContainer, Table, TableHead, TableRow, TableBody, TableCell, Paper, Tooltip, Typography } from '@mui/material';
+import { Alert, Box, CircularProgress, Chip, Divider, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Switch, TableContainer, Table, TableHead, TableRow, TableBody, TableCell, Paper, Tooltip, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import EmptyTableState from '../../../src/components/EmptyTableState.jsx';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -16,11 +17,12 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import ForwardToInboxOutlinedIcon from '@mui/icons-material/ForwardToInboxOutlined';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 import { useAppContext } from '../../../src/render.jsx';
 import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
-import { buildContentTree, conditionLabel } from './branching.js';
+import { buildContentTree, conditionLabel, trackColorMap } from './branching.js';
 
 const TYPE_ICONS = { lesson: DescriptionOutlinedIcon, quiz: BallotOutlinedIcon, assignment: AssignmentOutlinedIcon, decision: CallSplitOutlinedIcon };
 const TypeIcon = ({ type, ...props }) => {
@@ -29,6 +31,12 @@ const TypeIcon = ({ type, ...props }) => {
 };
 
 const trackOf = (content) => content.track_id ?? null;
+
+// The drag handle column's full width, padding included, per breakpoint.
+const DRAG_COLUMN_WIDTH = { xs: 56, sm: 40 };
+// A row's indent at each depth, in theme spacing units.
+const INDENT = { xs: { base: 0.5, step: 1.5 }, sm: { base: 2, step: 3 } };
+const SPACING_PX = 8;
 
 const idsOnTrack = (list, trackId) => list.filter((content) => trackOf(content) === trackId).map((content) => content.id);
 
@@ -58,6 +66,9 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
     const [sendingContentId, setSendingContentId] = useState(null);
     const [sendSuccessMessage, setSendSuccessMessage] = useState('');
     const [moveMenu, setMoveMenu] = useState(null);
+    const [actionsMenu, setActionsMenu] = useState(null);
+    // A drag that ends over its own row would otherwise also count as a click on it.
+    const suppressRowClickRef = useRef(false);
 
     const { apiBaseUrl: rawApiBaseUrl, userRole, localeMessages, direction } = useAppContext();
     const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
@@ -65,15 +76,37 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
     const canSendLesson = userRole === 'admin' || userRole === 'editor';
     const canEditBranching = userRole === 'admin' || userRole === 'editor';
     const canMove = canEditBranching && tracks.length > 0;
-    const columnCount = userRole !== 'viewer' ? 6 : 5;
+    const canAuthor = userRole !== 'viewer';
+    const columnCount = canAuthor ? 5 : 3;
     const alignStart = direction == 'rtl' ? 'right' : 'left';
     const branchPointIds = useMemo(() => new Set(transitions.map((rule) => rule.source_id)), [transitions]);
     const rows = useMemo(() => buildContentTree(contentList, tracks, transitions), [contentList, tracks, transitions]);
     // A branch point routes on the first submission, so the attempt notes do not describe it.
     const showQuizTwoAttemptNote = contentList.some((content) => content.type === 'quiz' && !branchPointIds.has(content.id) && content.is_blocking !== false && content.limited_attempts == true);
     const showQuizUnlimitedAttemptsNote = contentList.some((content) => content.type === 'quiz' && !branchPointIds.has(content.id) && content.is_blocking !== false && content.limited_attempts == false);
-    const indent = (depth) => ({ xs: 0.5 + depth * 1.5, sm: 2 + depth * 3 });
-    const trackAccent = (depth) => (depth > 0 ? (theme) => `3px solid ${theme.palette.primary.light}` : undefined);
+    const trackColors = useMemo(() => trackColorMap(tracks), [tracks]);
+    const indent = (depth) => ({ xs: INDENT.xs.base + depth * INDENT.xs.step, sm: INDENT.sm.base + depth * INDENT.sm.step });
+    // Branch and rejoin rows are one cell across the whole row, so for authors they also skip the
+    // drag column: that lines their icon up with the type icons of the contents below.
+    const fullRowIndent = (depth) => {
+        if (!canAuthor) {
+            return indent(depth);
+        }
+        const px = (breakpoint) => `${DRAG_COLUMN_WIDTH[breakpoint] + (INDENT[breakpoint].base + depth * INDENT[breakpoint].step) * SPACING_PX}px`;
+        return { xs: px('xs'), sm: px('sm') };
+    };
+    // A track's rows share its colour with the course map; contents on a track the listing
+    // did not return fall back to the primary colour.
+    const trackColor = (trackId) => (theme) => trackColors.get(trackId) ?? theme.palette.primary.main;
+    const trackBorder = (trackId) => (theme) => `3px solid ${trackColor(trackId)(theme)}`;
+    // Once a course has tracks, the main path gets a neutral lane of its own, as it does in the
+    // course map, so a track reads as branching off it. Without tracks there is nothing to tell apart.
+    const contentBorder = (content, depth) => {
+        if (depth > 0) {
+            return trackBorder(content.track_id);
+        }
+        return tracks.length > 0 ? (theme) => `3px solid ${theme.palette.divider}` : undefined;
+    };
     const moveLabel = localeMessages["move_to_track"] || 'Move to';
 
     const startDrag = (event, contentId) => {
@@ -122,6 +155,10 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                 if (endOrder.join(',') !== startOrder.join(',')) {
                     eventHandlerRef.current({ type: 'content_reordered', new_order: endOrder });
                 }
+            }
+            if (dragId !== null) {
+                suppressRowClickRef.current = true;
+                window.setTimeout(() => { suppressRowClickRef.current = false; }, 0);
             }
             dragStartOrderRef.current = null;
             setIsDragging(false);
@@ -253,21 +290,88 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
         eventHandler({ type: 'content_moved', content_id: content.id, track_id: trackId });
     }
 
-    const moveButton = (content, size) => (
-        <Tooltip title={moveLabel} placement="top">
-            <IconButton size={size} aria-label={`${moveLabel}: ${content.title}`} onClick={(event) => setMoveMenu({ anchorEl: event.currentTarget, content })}>
-                <DriveFileMoveIcon fontSize={size === 'small' ? 'small' : undefined} />
+    const openContent = (contentId) => {
+        eventHandler({ type: 'content_clicked', content_id: contentId });
+    }
+
+    // Controls inside a row handle their own clicks; this keeps them from also opening the content.
+    const stopRowClick = (event) => event.stopPropagation();
+
+    const actionsLabel = localeMessages["more_actions"] || 'More actions';
+
+    const actionsButton = (content) => (
+        sendingContentId === content.id ? (
+            <CircularProgress size="18px" sx={{ display: 'inline-block', verticalAlign: 'middle', m: '7px' }} />
+        ) : (
+            <IconButton
+                size="small"
+                aria-label={`${actionsLabel}: ${content.title}`}
+                aria-haspopup="menu"
+                onClick={(event) => { event.stopPropagation(); setActionsMenu({ anchorEl: event.currentTarget, content }); }}
+            >
+                <MoreHorizIcon fontSize="small" />
             </IconButton>
-        </Tooltip>
+        )
     );
 
-    const renderContentRow = ({ key, content, depth, isBranchPoint }) => (
+    const publishSwitch = (content) => (
+        <Switch
+            size="small"
+            checked={content.is_published}
+            onClick={stopRowClick}
+            onChange={() => TogglePublishContent(content.id, !content.is_published)}
+            disabled={!canAuthor}
+            slotProps={{ input: { 'aria-label': `${localeMessages["published"] || 'Published'}: ${content.title}` } }}
+        />
+    );
+
+    // The short facts about a content, as one muted line under its title.
+    const contentDetails = (content, isBranchPoint) => {
+        const details = [];
+        if (content.type === 'quiz' && content.is_blocking === false) {
+            details.push(<span key="practice">{localeMessages["practice_quiz"]}</span>);
+        }
+        if (isBranchPoint) {
+            details.push(
+                <Box key="branching" component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, color: 'primary.main' }}>
+                    <AltRouteIcon sx={{ fontSize: '0.85rem' }} />
+                    {localeMessages["quiz_tab_branching"] || 'Branching'}
+                </Box>
+            );
+        } else if (content.type === 'quiz' && content.is_blocking !== false && content.limited_attempts !== null && content.limited_attempts !== undefined) {
+            details.push(<span key="attempts">{content.limited_attempts ? localeMessages["two_attempts"] : localeMessages["unlimited_attempts"]}</span>);
+        }
+        if (details.length === 0) {
+            return null;
+        }
+        return (
+            <Typography component="div" variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: 0.75, lineHeight: 1.4 }}>
+                {details.flatMap((detail, index) => (index === 0 ? [detail] : [<span key={`sep-${index}`} aria-hidden="true">·</span>, detail]))}
+            </Typography>
+        );
+    };
+
+    const renderContentRow = ({ key, content, depth, isBranchPoint }) => {
+        const isDragged = isDragging && draggedContentId === content.id;
+        const typeLabel = localeMessages[content.type] || content.type;
+        // The lane border goes on the row's first cell, so it lines up with the full-width branch
+        // and rejoin rows: the drag handle for authors, the title for viewers.
+        const laneBorder = contentBorder(content, depth);
+        return (
         <TableRow
             key={key}
             data-content-id={content.id}
+            hover={!isDragging}
+            onClick={() => {
+                if (!suppressRowClickRef.current) {
+                    openContent(content.id);
+                }
+            }}
             sx={{
+                cursor: isDragging ? 'grabbing' : 'pointer',
                 transition: 'transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease',
-                ...(isDragging && draggedContentId === content.id
+                '&:hover .drag-handle': { opacity: 1 },
+                ...(isDragged
                     ? {
                         backgroundColor: 'background.box',
                         transform: 'translateY(-2px) scale(1.005)',
@@ -292,12 +396,24 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                     }
                 }
             }}>
-             { userRole !== 'viewer' && <TableCell align={alignStart} sx={{ cursor: 'grab', width: { xs: '48px', sm: '40px' }, minWidth: { xs: '48px', sm: '40px' }, padding: { xs: '8px 4px', sm: '8px 0' }, textAlign: 'center' }}><DragIndicatorIcon fontSize="small"
-            onMouseDown={(event) => startDrag(event, content.id)}
-            onTouchStart={(event) => startDrag(event, content.id)}
-            /></TableCell>}
-            <TableCell align={alignStart} sx={{ position: 'relative', paddingInlineStart: indent(depth), borderInlineStart: trackAccent(depth) }}>
-                {isDragging && draggedContentId === content.id && (
+            {canAuthor && (
+                <TableCell
+                    align={alignStart}
+                    onClick={stopRowClick}
+                    sx={{ cursor: 'grab', boxSizing: 'border-box', width: { xs: `${DRAG_COLUMN_WIDTH.xs}px`, sm: `${DRAG_COLUMN_WIDTH.sm}px` }, minWidth: { xs: `${DRAG_COLUMN_WIDTH.xs}px`, sm: `${DRAG_COLUMN_WIDTH.sm}px` }, padding: { xs: '8px 4px', sm: '8px 0' }, textAlign: 'center', borderInlineStart: laneBorder }}
+                >
+                    <DragIndicatorIcon
+                        className="drag-handle"
+                        fontSize="small"
+                        onMouseDown={(event) => startDrag(event, content.id)}
+                        onTouchStart={(event) => startDrag(event, content.id)}
+                        // Shown on row hover from sm up; always on touch screens, which cannot hover.
+                        sx={{ color: 'text.secondary', opacity: { xs: 1, sm: isDragged ? 1 : 0 }, transition: 'opacity 0.15s', '@media (hover: none)': { opacity: 1 } }}
+                    />
+                </TableCell>
+            )}
+            <TableCell align={alignStart} sx={{ position: 'relative', paddingInlineStart: indent(depth), borderInlineStart: canAuthor ? undefined : laneBorder }}>
+                {isDragged && (
                     <Box sx={{
                         display: { xs: 'flex', sm: 'none' },
                         flexDirection: 'column',
@@ -315,20 +431,35 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                         <KeyboardArrowDownIcon sx={{ fontSize: 16, color: 'text.secondary', mt: '-6px' }} />
                     </Box>
                 )}
-                <Box
-                    component="span"
-                    onClick={() => {let event = {type: 'content_clicked', content_id: content.id}; eventHandler(event);}}
-                    sx={(theme) => ({ cursor: 'pointer', color: theme.palette.mode === 'dark' ? theme.palette.link?.main ?? theme.palette.primary.light : theme.palette.primary.dark, display: { xs: 'block', sm: 'inline-flex' }, alignItems: 'center', gap: 0.5, '&:hover': { opacity: 0.8 }, '&:hover .edit-icon': { opacity: 1 } })}>
-                    <Box component="span" sx={{ display: { xs: 'inline-flex', sm: 'none' }, alignItems: 'center', gap: 0.4, color: 'text.secondary', fontWeight: 500, verticalAlign: 'middle', mr: 0.5 }}>
-                        <TypeIcon type={content.type} sx={{ fontSize: '0.95rem' }} />
-                        {localeMessages[content.type]}:
-                    </Box>
-                    <Box component="span" sx={{ display: { xs: 'inline', sm: 'inline-flex' }, alignItems: 'center', gap: 0.5 }}>
-                        {content.title}
-                        {userRole !== 'viewer' && <EditOutlinedIcon className="edit-icon" sx={{ fontSize: '0.9rem', opacity: 1, transition: 'opacity 0.15s', verticalAlign: 'middle', ml: 1 }} />}
-                        {content.type === 'quiz' && content.is_blocking === false && (
-                            <Chip label={localeMessages["practice_quiz"]} size="small" sx={(theme) => ({ ml: 1, backgroundColor: theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.2)' : 'rgba(33, 150, 243, 0.14)', color: theme.palette.mode === 'dark' ? '#64B5F6' : '#0D47A1', fontSize: { xs: '0.6rem', sm: '0.75rem' }, height: { xs: 16, sm: 24 }, '& .MuiChip-label': { px: { xs: 0.5, sm: 1 } } })} />
-                        )}
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                    <Tooltip title={typeLabel} placement="top">
+                        <Box component="span" sx={{ display: 'inline-flex', color: 'text.secondary', mt: '2px' }}>
+                            <TypeIcon type={content.type} fontSize="small" titleAccess={typeLabel} />
+                        </Box>
+                    </Tooltip>
+                    <Box sx={{ minWidth: 0 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: 1 }}>
+                            <Box
+                                component="span"
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter' || event.key === ' ') {
+                                        event.preventDefault();
+                                        openContent(content.id);
+                                    }
+                                }}
+                                sx={{ fontWeight: 500, color: content.is_published ? 'text.primary' : 'text.secondary', '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 2, borderRadius: 0.5 } }}
+                            >
+                                {content.title}
+                            </Box>
+                            {!content.is_published && (
+                                <Box component="span" sx={{ fontSize: '0.7rem', lineHeight: 1.6, px: 0.75, borderRadius: 1, border: '1px solid', borderColor: 'divider', color: 'text.secondary' }}>
+                                    {localeMessages["not_published"] || 'Not published'}
+                                </Box>
+                            )}
+                        </Box>
+                        {contentDetails(content, isBranchPoint)}
                     </Box>
                 </Box>
                 {/* Mobile second line */}
@@ -344,86 +475,35 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
                     )}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25, px: 1 }}>
                         <Typography variant="caption" color="text.disabled">{localeMessages["published"] || 'Published'}:</Typography>
-                        <Switch size="small" checked={content.is_published} onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} slotProps={{ input: { 'aria-label': `${localeMessages["published"] || 'Published'}: ${content.title}` } }} />
+                        {publishSwitch(content)}
                     </Box>
-                    {userRole !== 'viewer' && <>
+                    {canAuthor && <>
                         <Box sx={{ width: '1px', height: '14px', backgroundColor: 'divider' }} />
                         <Box sx={{ display: 'flex', alignItems: 'center', px: 0.5 }}>
-                            <IconButton size="small" aria-label={localeMessages["delete"]} onClick={() => deleteContent(content.id)}><DeleteIcon fontSize="small" /></IconButton>
-                            {canMove && moveButton(content, 'small')}
-                            {canSendLesson && content.type === 'lesson' && (
-                                sendingContentId === content.id ? (
-                                    <CircularProgress size="16px" sx={{ display: 'inline-block', verticalAlign: 'middle', mx: '3px' }} />
-                                ) : (
-                                    <Tooltip title={localeMessages["send_lesson_to_yourself"] || 'Send it to yourself'} placement="top">
-                                        <span>
-                                            <IconButton size="small" aria-label={localeMessages["send_lesson"] || 'Send lesson'} onClick={() => sendLessonToCurrentUser(content.id)}><ForwardToInboxOutlinedIcon fontSize="small" /></IconButton>
-                                        </span>
-                                    </Tooltip>
-                                )
-                            )}
+                            {actionsButton(content)}
                         </Box>
                     </>}
                 </Box>
             </TableCell>
-            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={alignStart}>{formatPeriod(content.waiting_period)}</TableCell>
-            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={alignStart}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
-                    <Chip
-                        size="small"
-                        icon={<TypeIcon type={content.type} />}
-                        label={localeMessages[content.type]}
-                        variant="outlined"
-                        sx={(theme) => ({ fontSize: '0.75rem', color: theme.palette.mode === 'dark' ? theme.palette.text.primary : undefined, borderColor: theme.palette.mode === 'dark' ? theme.palette.text.secondary : undefined })}
-                    />
-                    {isBranchPoint ? (
-                        <Chip
-                            size="small"
-                            icon={<AltRouteIcon />}
-                            label={localeMessages["quiz_tab_branching"] || 'Branching'}
-                            color="primary"
-                            variant="outlined"
-                            sx={{ fontSize: '0.7rem' }}
-                        />
-                    ) : content.type === 'quiz' && content.is_blocking !== false && content.limited_attempts !== null && (
-                        <Chip
-                            size="small"
-                            variant="outlined"
-                            label={content.limited_attempts ? localeMessages["two_attempts"] : localeMessages["unlimited_attempts"]}
-                            sx={{ fontSize: '0.7rem', color: 'text.secondary', borderColor: 'divider' }}
-                        />
-                    )}
-                </Box>
-            </TableCell>
-            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={alignStart}><Switch checked={content.is_published} onChange={() => TogglePublishContent(content.id, !content.is_published)} disabled={userRole == 'viewer'} slotProps={{ input: { 'aria-label': `${localeMessages["published"] || 'Published'}: ${content.title}` } }} /></TableCell>
-            {userRole !== 'viewer' && <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={alignStart}>
-                <IconButton aria-label={localeMessages["delete"]} onClick={() => deleteContent(content.id)}><DeleteIcon /></IconButton>
-                {canMove && moveButton(content, 'medium')}
-                {canSendLesson && content.type === 'lesson' && (
-                    sendingContentId === content.id ? (
-                        <CircularProgress size="18px" sx={{ display: 'inline-block', verticalAlign: 'middle' }} />
-                    ) : (
-                        <Tooltip title={localeMessages["send_lesson_to_yourself"] || 'Send it to yourself'} placement="top">
-                            <span>
-                                <IconButton aria-label={localeMessages["send_lesson"] || 'Send lesson'} onClick={() => sendLessonToCurrentUser(content.id)}><ForwardToInboxOutlinedIcon /></IconButton>
-                            </span>
-                        </Tooltip>
-                    )
-                )}
+            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, color: 'text.secondary' }} align={alignStart}>{formatPeriod(content.waiting_period)}</TableCell>
+            <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={alignStart}>{publishSwitch(content)}</TableCell>
+            {canAuthor && <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, width: 56 }} align="center">
+                {actionsButton(content)}
             </TableCell>}
         </TableRow>
-    );
+        );
+    };
 
     const renderBranchRow = ({ key, track, rules, alsoFrom, depth }) => {
         const editLabel = localeMessages["edit_track"] || 'Edit Track';
         const deleteLabel = localeMessages["delete_track"] || 'Delete Track';
         return (
-            <TableRow key={key} data-track-id={track.id} sx={{ backgroundColor: 'action.hover' }}>
-                <TableCell colSpan={columnCount} sx={{ py: 0.75, paddingInlineStart: indent(depth), borderInlineStart: (theme) => `3px solid ${theme.palette.primary.main}` }}>
+            <TableRow key={key} data-track-id={track.id} sx={{ backgroundColor: (theme) => alpha(trackColor(track.id)(theme), theme.palette.mode === 'dark' ? 0.16 : 0.07) }}>
+                <TableCell colSpan={columnCount} sx={{ py: 0.75, paddingInlineStart: fullRowIndent(depth), borderInlineStart: trackBorder(track.id) }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-                        <AltRouteIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                        <AltRouteIcon fontSize="small" sx={{ color: trackColor(track.id) }} />
                         {rules.map((rule) => (
-                            <Chip key={rule.id} size="small" color="primary" variant="outlined" label={conditionLabel(rule, localeMessages)} />
+                            <Chip key={rule.id} size="small" variant="outlined" label={conditionLabel(rule, localeMessages)} sx={{ color: trackColor(track.id), borderColor: trackColor(track.id) }} />
                         ))}
                         <Typography component="span" variant="body2" sx={{ fontWeight: 600 }}>{track.name}</Typography>
                         {alsoFrom.length > 0 && (
@@ -451,10 +531,11 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
         );
     };
 
-    const renderRejoinRow = ({ key, mergeContent, depth }) => (
+    const renderRejoinRow = ({ key, track, mergeContent, depth }) => (
         <TableRow key={key}>
-            <TableCell colSpan={columnCount} sx={{ py: 0.5, paddingInlineStart: indent(depth), borderInlineStart: (theme) => `3px solid ${theme.palette.primary.main}` }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: 'text.secondary' }}>
+            <TableCell colSpan={columnCount} sx={{ py: 0.5, paddingInlineStart: fullRowIndent(depth), borderInlineStart: trackBorder(track.id) }}>
+                {/* In the track's colour, like its header, so the line reads as closing that track. */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, color: trackColor(track.id) }}>
                     {mergeContent ? <SubdirectoryArrowRightIcon fontSize="small" /> : <FlagIcon fontSize="small" />}
                     <Typography variant="caption">
                         {mergeContent
@@ -494,12 +575,11 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
               <Table size="small" sx={{ width: "100%", direction: direction }} aria-label="Contents">
             <TableHead sx={{ display: { xs: 'none', sm: 'table-header-group' } }}>
               <TableRow>
-                { userRole !== 'viewer' && <TableCell sx={{ width: '40px', boxSizing: 'border-box' }}></TableCell>}
+                {canAuthor && <TableCell sx={{ width: `${DRAG_COLUMN_WIDTH.sm}px`, boxSizing: 'border-box' }}></TableCell>}
                 <TableCell sx={{ textAlign: alignStart }}>{localeMessages["title"]}</TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: alignStart }}>{localeMessages["waiting_time"]}</TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: alignStart }}>{localeMessages["type"]}</TableCell>
-                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: alignStart }}>{localeMessages["published"]}</TableCell>
-                {userRole !== 'viewer' && <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} align={alignStart}>{localeMessages["actions"]}</TableCell>}
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: alignStart, width: 140 }}>{localeMessages["waiting_time"]}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, textAlign: alignStart, width: 110 }}>{localeMessages["published"]}</TableCell>
+                {canAuthor && <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' }, width: 56 }} align="center">{localeMessages["actions"]}</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -513,6 +593,39 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
             </TableBody>
           </Table>
         </TableContainer>
+        {/* Rendered once outside the rows: React bubbles a portal's clicks through the tree it was
+            declared in, so a menu inside a row would also open that row's content. */}
+        <Menu
+            anchorEl={actionsMenu?.anchorEl}
+            open={Boolean(actionsMenu)}
+            onClose={() => setActionsMenu(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: direction === 'rtl' ? 'left' : 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: direction === 'rtl' ? 'left' : 'right' }}
+        >
+            {actionsMenu && [
+                <MenuItem key="edit" onClick={() => { const { content } = actionsMenu; setActionsMenu(null); openContent(content.id); }}>
+                    <ListItemIcon><EditOutlinedIcon fontSize="small" /></ListItemIcon>
+                    <ListItemText>{localeMessages["edit"] || 'Edit'}</ListItemText>
+                </MenuItem>,
+                canMove && (
+                    <MenuItem key="move" onClick={() => { const { anchorEl, content } = actionsMenu; setActionsMenu(null); setMoveMenu({ anchorEl, content }); }}>
+                        <ListItemIcon><DriveFileMoveIcon fontSize="small" /></ListItemIcon>
+                        <ListItemText>{moveLabel}</ListItemText>
+                    </MenuItem>
+                ),
+                canSendLesson && actionsMenu.content.type === 'lesson' && (
+                    <MenuItem key="send" onClick={() => { const { content } = actionsMenu; setActionsMenu(null); sendLessonToCurrentUser(content.id); }}>
+                        <ListItemIcon><ForwardToInboxOutlinedIcon fontSize="small" /></ListItemIcon>
+                        <ListItemText>{localeMessages["send_lesson_to_yourself"] || 'Send it to yourself'}</ListItemText>
+                    </MenuItem>
+                ),
+                <Divider key="divider" />,
+                <MenuItem key="delete" onClick={() => { const { content } = actionsMenu; setActionsMenu(null); deleteContent(content.id); }} sx={{ color: 'error.main' }}>
+                    <ListItemIcon sx={{ color: 'inherit' }}><DeleteIcon fontSize="small" /></ListItemIcon>
+                    <ListItemText>{localeMessages["delete"]}</ListItemText>
+                </MenuItem>,
+            ].filter(Boolean)}
+        </Menu>
         <Menu anchorEl={moveMenu?.anchorEl} open={Boolean(moveMenu)} onClose={() => setMoveMenu(null)}>
             <MenuItem disabled={moveMenu ? trackOf(moveMenu.content) === null : false} onClick={() => moveTo(null)}>
                 {localeMessages["main_path"] || 'Main path'}

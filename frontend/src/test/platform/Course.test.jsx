@@ -629,8 +629,9 @@ describe('Course', () => {
       });
       renderWithProviders(<Course />, { appContext: { ...baseAppContext, courseEnabled: true } });
 
-      const rowDeleteButtons = await screen.findAllByRole('button', { name: 'Delete' });
-      await user.click(rowDeleteButtons[0]);
+      const rowMenuButtons = await screen.findAllByRole('button', { name: /^More actions: Welcome Lesson/ });
+      await user.click(rowMenuButtons[0]);
+      await user.click(screen.getByRole('menuitem', { name: 'Delete' }));
       await screen.findByText('Are you sure you want to delete the content: Welcome Lesson?');
       const dialog = screen.getByRole('dialog');
       await user.click(within(dialog).getByRole('button', { name: 'Delete' }));
@@ -645,8 +646,9 @@ describe('Course', () => {
       mockFetchWithDeleteResponse({ ok: false, status: 500, json: () => Promise.resolve({}) });
       renderWithProviders(<Course />, { appContext: { ...baseAppContext, courseEnabled: true } });
 
-      const rowDeleteButtons = await screen.findAllByRole('button', { name: 'Delete' });
-      await user.click(rowDeleteButtons[0]);
+      const rowMenuButtons = await screen.findAllByRole('button', { name: /^More actions: Welcome Lesson/ });
+      await user.click(rowMenuButtons[0]);
+      await user.click(screen.getByRole('menuitem', { name: 'Delete' }));
       await screen.findByText('Are you sure you want to delete the content: Welcome Lesson?');
       const dialog = screen.getByRole('dialog');
       await user.click(within(dialog).getByRole('button', { name: 'Delete' }));

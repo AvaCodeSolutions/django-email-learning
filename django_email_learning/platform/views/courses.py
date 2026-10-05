@@ -740,6 +740,7 @@ class CourseView(BasePlatformView):
             "tab_course_info": _("Course Info"),
             "tab_info": _("Info"),
             "edit": _("Edit"),
+            "more_actions": _("More actions"),
             "course_updated_successfully": _("Course updated successfully."),
         }
 
