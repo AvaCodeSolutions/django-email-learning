@@ -38,7 +38,7 @@
     "@tiptap/pm": "^3.31.3",
     "@tiptap/react": "^3.31.3",
     "@xyflow/react": "^12.11.6",
-    "dompurify": "^3.4.12",
+    "dompurify": "^3.4.16",
     "ldrs": "^1.1.9",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
