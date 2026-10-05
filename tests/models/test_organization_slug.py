@@ -17,6 +17,23 @@ def test_generate_slugifies_the_name():
     assert generate_organization_slug("Acme Academy!", never_taken, reserved=()) == "acme-academy"
 
 
+@pytest.mark.parametrize(
+    ("name", "slug"),
+    [
+        ("Acme_Academy", "acme-academy"),
+        ("Acme__ - _Academy", "acme-academy"),
+        ("_Acme_", "acme"),
+        ("___", "organization"),
+    ],
+)
+def test_generate_turns_underscores_into_single_hyphens(name, slug):
+    assert generate_organization_slug(name, never_taken, reserved=()) == slug
+
+
+def test_create_accepts_a_name_with_underscores(db):
+    assert Organization.objects.create(name="Professional/past_due").slug == "professionalpast-due"
+
+
 def test_generate_appends_a_counter_when_the_slug_is_taken():
     taken = {"acme", "acme-2"}
     assert generate_organization_slug("Acme", taken.__contains__, reserved=()) == "acme-3"

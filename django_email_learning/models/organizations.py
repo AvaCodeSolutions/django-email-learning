@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import logging
+import re
 import uuid
 from collections.abc import Callable, Iterable
 from email.utils import formataddr
@@ -68,7 +69,9 @@ def generate_organization_slug(name: str, is_taken: Callable[[str], bool], reser
     ``organization``. The base is cut short so the suffix always fits.
     """
     reserved = frozenset(reserved)
-    base = slugify(name) or "organization"
+    # slugify keeps underscores and leaves runs of them and hyphens alone, but
+    # organization_slug_validator allows only single hyphens between words.
+    base = re.sub(r"[-_]+", "-", slugify(name)).strip("-") or "organization"
     candidate = base[:ORGANIZATION_SLUG_MAX_LENGTH].strip("-")
     counter = 1
     while candidate in reserved or is_taken(candidate):
