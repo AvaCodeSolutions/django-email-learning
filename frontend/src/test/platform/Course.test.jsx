@@ -56,6 +56,12 @@ const localeMessages = {
   track: 'Track',
 };
 
+// An enabled course always has published content on its main spine; without it the
+// page treats the course as disabled.
+const publishedContents = [
+  { id: 1, title: 'Intro lesson', type: 'lesson', waiting_period: null, is_published: true, track_id: null },
+];
+
 const baseAppContext = {
   courseId: '5',
   courseTitle: 'Sample Course',
@@ -68,7 +74,7 @@ describe('Course', () => {
     window.localStorage.setItem('activeOrganizationId', '1');
     global.fetch.mockImplementation((url) => {
       if (url.includes('/contents')) {
-        return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: publishedContents }) });
       }
       return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
     });
@@ -86,9 +92,9 @@ describe('Course', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
-  it('shows the disabled banner with a linked "enable it" when the course has content', () => {
+  it('shows the disabled banner with a linked "enable it" when the course has published content', () => {
     renderWithProviders(<Course />, {
-      appContext: { ...baseAppContext, courseEnabled: false, courseHasContent: true },
+      appContext: { ...baseAppContext, courseEnabled: false, courseHasPublishedContent: true },
     });
     expect(screen.getByRole('alert')).toHaveTextContent(
       'This course is disabled. Learners cannot be enrolled until you enable it.'
@@ -96,9 +102,9 @@ describe('Course', () => {
     expect(screen.getByRole('button', { name: 'enable it' })).toBeInTheDocument();
   });
 
-  it('shows "enable it" as plain text (not a link) when the course has no content', () => {
+  it('shows "enable it" as plain text (not a link) when the course has no published content', () => {
     renderWithProviders(<Course />, {
-      appContext: { ...baseAppContext, courseEnabled: false, courseHasContent: false },
+      appContext: { ...baseAppContext, courseEnabled: false, courseHasPublishedContent: false },
     });
     expect(screen.getByRole('alert')).toHaveTextContent(
       'This course is disabled. Learners cannot be enrolled until you enable it.'
@@ -109,7 +115,7 @@ describe('Course', () => {
   it('opens the enable confirmation dialog when "enable it" is clicked', async () => {
     const user = userEvent.setup();
     renderWithProviders(<Course />, {
-      appContext: { ...baseAppContext, courseEnabled: false, courseHasContent: true },
+      appContext: { ...baseAppContext, courseEnabled: false, courseHasPublishedContent: true },
     });
     await user.click(screen.getByRole('button', { name: 'enable it' }));
     expect(await screen.findByText('Enable Sample Course')).toBeInTheDocument();
@@ -118,7 +124,7 @@ describe('Course', () => {
   it('hides the disabled banner and re-enables the Enroll button after confirming enable', async () => {
     const user = userEvent.setup();
     renderWithProviders(<Course />, {
-      appContext: { ...baseAppContext, courseEnabled: false, courseHasContent: true },
+      appContext: { ...baseAppContext, courseEnabled: false, courseHasPublishedContent: true },
     });
     await user.click(screen.getByRole('button', { name: 'enable it' }));
     await user.click(await screen.findByRole('button', { name: 'Continue' }));
@@ -226,7 +232,7 @@ describe('Course', () => {
     const mockActivity = ({ enrollments = 0, submissions = 0 }) => {
       global.fetch.mockImplementation((url) => {
         if (url.includes('/contents')) {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: publishedContents }) });
         }
         if (url.includes('/submitted_assignments/')) {
           return Promise.resolve({ ok: true, json: () => Promise.resolve({ items: [], count: submissions, page: 1, has_more: false }) });
@@ -314,7 +320,7 @@ describe('Course', () => {
           });
         }
         if (url.includes('/contents')) {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: publishedContents }) });
         }
         return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
       });
@@ -341,7 +347,7 @@ describe('Course', () => {
           return Promise.resolve({ ok: false, status: 409, json: () => Promise.resolve({ error: 'nope' }) });
         }
         if (url.includes('/contents')) {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: publishedContents }) });
         }
         return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
       });
@@ -368,7 +374,7 @@ describe('Course', () => {
           });
         }
         if (url.includes('/contents')) {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: publishedContents }) });
         }
         return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
       });
@@ -399,7 +405,7 @@ describe('Course', () => {
           });
         }
         if (url.includes('/contents')) {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: publishedContents }) });
         }
         return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
       });
@@ -430,7 +436,7 @@ describe('Course', () => {
           });
         }
         if (url.includes('/contents')) {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: publishedContents }) });
         }
         return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
       });
@@ -468,7 +474,7 @@ describe('Course', () => {
           });
         }
         if (url.includes('/contents')) {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: publishedContents }) });
         }
         return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
       });
@@ -505,7 +511,7 @@ describe('Course', () => {
           });
         }
         if (url.includes('/contents')) {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: publishedContents }) });
         }
         return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
       });
@@ -543,7 +549,7 @@ describe('Course', () => {
           });
         }
         if (url.includes('/contents')) {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: publishedContents }) });
         }
         return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
       });
@@ -574,7 +580,7 @@ describe('Course', () => {
           });
         }
         if (url.includes('/contents')) {
-          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: [] }) });
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: publishedContents }) });
         }
         return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
       });
@@ -654,6 +660,43 @@ describe('Course', () => {
       await user.click(within(dialog).getByRole('button', { name: 'Delete' }));
 
       expect(await screen.findByRole('alert')).toHaveTextContent(localeMessages.content_delete_failed);
+    });
+  });
+
+  describe('disabling the course when no published content is left', () => {
+    const mockContents = (contents) => {
+      global.fetch.mockImplementation((url) => {
+        if (url.includes('/contents')) {
+          return Promise.resolve({ ok: true, json: () => Promise.resolve({ course_contents: contents, tracks: [], transitions: [] }) });
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      });
+    };
+
+    it('shows the course as disabled, without an enable link, once the last published content is unpublished', async () => {
+      const user = userEvent.setup();
+      mockContents([
+        { id: 1, title: 'Only lesson', type: 'lesson', waiting_period: null, is_published: true, track_id: null },
+      ]);
+      renderWithProviders(<Course />, { appContext: { ...baseAppContext, courseEnabled: true, courseHasPublishedContent: true } });
+
+      const [publishSwitch] = await screen.findAllByRole('switch', { name: 'Published: Only lesson' });
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      await user.click(publishSwitch);
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'This course is disabled. Learners cannot be enrolled until you enable it.'
+      );
+      expect(screen.queryByRole('button', { name: 'enable it' })).not.toBeInTheDocument();
+    });
+
+    it('does not count content published only inside a track', async () => {
+      mockContents([
+        { id: 1, title: 'Track lesson', type: 'lesson', waiting_period: null, is_published: true, track_id: 3 },
+      ]);
+      renderWithProviders(<Course />, { appContext: { ...baseAppContext, courseEnabled: true, courseHasPublishedContent: true } });
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('This course is disabled.');
     });
   });
 

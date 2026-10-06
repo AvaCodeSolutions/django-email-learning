@@ -595,8 +595,22 @@ def test_enabling_course_without_content_fails(sample_course, superadmin_client)
     )
     update_response = superadmin_client.post(update_url, json.dumps(update_payload), content_type="application/json")
     assert update_response.status_code == 409
-    assert update_response.json()["error"] == "Cannot enable a course that has no content."
+    assert update_response.json()["error"] == "Cannot enable a course that has no published content."
     assert Course.objects.get(id=course_id).enabled is False
+
+
+def test_enabling_course_with_only_unpublished_content_fails(course, course_quiz_content, superadmin_client):
+    assert course_quiz_content.is_published is False
+    update_url = reverse(
+        "django_email_learning:api_platform:courses_detail",
+        kwargs={"organization_id": 1, "course_id": course.id},
+    )
+    payload = valid_update_course_payload(enabled=True)
+    response = superadmin_client.post(update_url, json.dumps(payload), content_type="application/json")
+    assert response.status_code == 409
+    assert response.json()["error"] == "Cannot enable a course that has no published content."
+    course.refresh_from_db()
+    assert course.enabled is False
 
 
 def test_enabling_course_with_content_succeeds(sample_course, superadmin_client):
@@ -689,6 +703,7 @@ def _add_course_content(course_id: int) -> CourseContent:
         type=CourseContentType.LESSON,
         lesson=lesson,
         waiting_period=0,
+        is_published=True,
     )
 
 

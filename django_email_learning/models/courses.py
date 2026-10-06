@@ -113,6 +113,24 @@ class Course(models.Model):
         return super().delete(using, keep_parents)
 
     @property
+    def has_published_content(self) -> bool:
+        """Whether a new enrollment has published content to start on. Enrollments
+        always start on the main spine, so content published only inside a track
+        does not count.
+        """
+        return self.coursecontent_set.filter(track__isnull=True, is_published=True).exists()
+
+    def disable_if_no_published_content(self) -> bool:
+        """Disable the course once it has nothing left to start learners on.
+        Returns whether the course was disabled by this call.
+        """
+        if not self.enabled or self.has_published_content:
+            return False
+        self.enabled = False
+        self.save(update_fields=["enabled"])
+        return True
+
+    @property
     def enrollments_count(self) -> dict[str, int]:
         qs = self.enrollments.aggregate(
             unverified=models.Count("id", filter=models.Q(status=EnrollmentStatus.UNVERIFIED)),

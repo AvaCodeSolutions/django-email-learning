@@ -5,6 +5,7 @@ from django.urls import reverse
 
 from django_email_learning.models import (
     ContentDelivery,
+    ContentTrack,
     Course,
     CourseContent,
     CourseContentType,
@@ -790,6 +791,55 @@ def test_update_content_is_published(superadmin_client, course_lesson_content):
     data = response.json()
     assert data["id"] == course_lesson_content.id
     assert data["is_published"] is False
+
+
+def _enable(course: Course) -> None:
+    course.enabled = True
+    course.save()
+
+
+def test_unpublishing_last_published_content_disables_course(superadmin_client, course_lesson_content):
+    course = course_lesson_content.course
+    _enable(course)
+    url = single_content_url(course_lesson_content.id, course.id, course.organization_id)
+    response = superadmin_client.post(url, json.dumps({"is_published": False}), content_type="application/json")
+    assert response.status_code == 200
+    course.refresh_from_db()
+    assert course.enabled is False
+
+
+def test_unpublishing_content_keeps_course_enabled_while_other_content_is_published(
+    superadmin_client, course_lesson_content, course_quiz_content
+):
+    course = course_lesson_content.course
+    course_quiz_content.is_published = True
+    course_quiz_content.save()
+    _enable(course)
+    url = single_content_url(course_lesson_content.id, course.id, course.organization_id)
+    response = superadmin_client.post(url, json.dumps({"is_published": False}), content_type="application/json")
+    assert response.status_code == 200
+    course.refresh_from_db()
+    assert course.enabled is True
+
+
+def test_moving_last_published_content_into_a_track_disables_course(superadmin_client, course_lesson_content):
+    course = course_lesson_content.course
+    _enable(course)
+    track = ContentTrack.objects.create(course=course, name="Side track")
+    url = single_content_url(course_lesson_content.id, course.id, course.organization_id)
+    response = superadmin_client.post(url, json.dumps({"track_id": track.id}), content_type="application/json")
+    assert response.status_code == 200
+    course.refresh_from_db()
+    assert course.enabled is False
+
+
+def test_deleting_last_published_content_disables_course(superadmin_client, course_lesson_content):
+    course = course_lesson_content.course
+    _enable(course)
+    response = superadmin_client.delete(single_content_url(course_lesson_content.id, course.id, course.organization_id))
+    assert response.status_code == 200
+    course.refresh_from_db()
+    assert course.enabled is False
 
 
 # ---------------------------------------------------------------------------

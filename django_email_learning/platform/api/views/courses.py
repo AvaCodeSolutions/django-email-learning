@@ -250,7 +250,9 @@ class SingleCourseContentView(View):
                 course_id=kwargs["course_id"],
                 course__organization_id=kwargs["organization_id"],
             )
-            course_content.delete()
+            with transaction.atomic():
+                course_content.delete()
+                course_content.course.disable_if_no_published_content()
             return JsonResponse({"message": "Course content deleted successfully"}, status=200)
         except CourseContent.DoesNotExist:
             return JsonResponse({"error": "Course content not found"}, status=404)
@@ -442,6 +444,9 @@ class SingleCourseContentView(View):
         course_content.save()
         if moves_track:
             course_content.course.validate_branching()
+        # Unpublishing or moving the last published content off the main spine leaves
+        # nothing to start new enrollments on, so the course can no longer stay enabled.
+        course_content.course.disable_if_no_published_content()
         return JsonResponse(
             serializers.CourseContentResponse.model_validate(course_content).model_dump(),
             status=200,

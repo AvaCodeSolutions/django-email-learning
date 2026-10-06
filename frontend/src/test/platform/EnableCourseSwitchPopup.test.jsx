@@ -93,7 +93,7 @@ describe('EnableCourseSwitchPopup', () => {
     global.fetch.mockResolvedValue({
       ok: false,
       status: 409,
-      json: () => Promise.resolve({ error: 'Cannot enable a course that has no content.' }),
+      json: () => Promise.resolve({ error: 'Cannot enable a course that has no published content.' }),
     });
     const user = userEvent.setup();
     const handleClose = vi.fn();
@@ -109,7 +109,7 @@ describe('EnableCourseSwitchPopup', () => {
     );
     await user.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() =>
-      expect(screen.getByText('Cannot enable a course that has no content.')).toBeInTheDocument()
+      expect(screen.getByText('Cannot enable a course that has no published content.')).toBeInTheDocument()
     );
     expect(handleClose).not.toHaveBeenCalled();
   });

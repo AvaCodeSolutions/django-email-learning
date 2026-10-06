@@ -79,8 +79,11 @@ const EnableCourseSwitchPopup = lazy(() => import("../courses/components/EnableC
 const CourseForm = lazy(() => import("../courses/components/CourseForm.jsx"));
 
 
+// New enrollments start on the main spine, so only content published there counts.
+const hasPublishedContent = (contents) => contents.some((content) => content.is_published && content.track_id == null);
+
 function Course() {
-    const { courseTitle, courseId, courseEnabled: courseEnabledFromContext, courseHasContent, coursePublicUrl: rawCoursePublicUrl, embeddableEnrollmentEnabled, localeMessages, userRole, isInstructor, apiBaseUrl: rawApiBaseUrl, platformBaseUrl: rawPlatformBaseUrl, customComponent, activeOrganizationBrandColor } = useAppContext();
+    const { courseTitle, courseId, courseEnabled: courseEnabledFromContext, courseHasPublishedContent: courseHasPublishedContentFromContext, coursePublicUrl: rawCoursePublicUrl, embeddableEnrollmentEnabled, localeMessages, userRole, isInstructor, apiBaseUrl: rawApiBaseUrl, platformBaseUrl: rawPlatformBaseUrl, customComponent, activeOrganizationBrandColor } = useAppContext();
     const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const platformBaseUrl = sanitizeUrl(rawPlatformBaseUrl);
     const coursePublicUrl = sanitizeUrl(rawCoursePublicUrl);
@@ -111,6 +114,10 @@ function Course() {
     const [pendingAssignmentsCount, setPendingAssignmentsCount] = useState(0);
     const [submissionsCount, setSubmissionsCount] = useState(0);
     const [courseStructure, setCourseStructure] = useState({ contents: [], tracks: [], transitions: [] });
+    const [courseStructureLoaded, setCourseStructureLoaded] = useState(false);
+    const courseHasPublishedContent = courseStructureLoaded
+        ? hasPublishedContent(courseStructure.contents)
+        : courseHasPublishedContentFromContext;
     const [addMenuAnchorEl, setAddMenuAnchorEl] = useState(null);
     const [contentView, setContentView] = useState('table');
 
@@ -253,7 +260,7 @@ function Course() {
         return (
             <>
                 {before}
-                {courseHasContent ? (
+                {courseHasPublishedContent ? (
                     <Link component="button" type="button" underline="hover" onClick={openEnableCourseDialog}>
                         {localeMessages["course_disabled_banner_link"]}
                     </Link>
@@ -520,11 +527,22 @@ function Course() {
         setDialogOpen(true);
     }
 
+    // The server disables the course once its last published content is unpublished,
+    // moved into a track or deleted; mirror that here instead of reloading the course.
+    const disableCourseIfNothingPublished = (contents) => {
+        if (!hasPublishedContent(contents)) {
+            setCourseEnabled(false);
+        }
+    }
+
     const tableEventHandler = async (event) => {
         console.log("Event triggered from ContentTable", event);
         if (event.type === 'content_loaded') {
+            const contents = event.data.course_contents || [];
             setContentLoaded(true);
-            setCourseStructure({ contents: event.data.course_contents || [], tracks: event.data.tracks || [], transitions: event.data.transitions || [] });
+            setCourseStructureLoaded(true);
+            setCourseStructure({ contents, tracks: event.data.tracks || [], transitions: event.data.transitions || [] });
+            disableCourseIfNothingPublished(contents);
         }
         if (event.type === 'content_clicked') {
             setDialogOpen(false);
@@ -630,12 +648,11 @@ function Course() {
             setDialogOpen(true);
         }
         if (event.type === 'content_published') {
-            setCourseStructure((current) => ({
-                ...current,
-                contents: current.contents.map((content) => (
-                    content.id === event.content_id ? { ...content, is_published: event.is_published } : content
-                )),
-            }));
+            const contents = courseStructure.contents.map((content) => (
+                content.id === event.content_id ? { ...content, is_published: event.is_published } : content
+            ));
+            setCourseStructure((current) => ({ ...current, contents }));
+            disableCourseIfNothingPublished(contents);
         }
         if (event.type === 'content_moved') {
             apiClient.post(`${apiBaseUrl}/organizations/${organizationId}/courses/${courseId}/contents/${event.content_id}/`, { track_id: event.track_id })

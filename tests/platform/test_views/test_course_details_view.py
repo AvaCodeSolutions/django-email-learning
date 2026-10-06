@@ -60,26 +60,40 @@ def test_course_public_url_set_when_course_enabled_and_public(superadmin_client,
     assert response.context["appContext"]["coursePublicUrl"] is not None
 
 
-def test_course_has_content_false_when_course_has_no_content(superadmin_client, course):
-    response = superadmin_client.get(get_url(course.id))
-    assert response.status_code == 200
-    assert response.context["appContext"]["courseHasContent"] is False
-
-
-def test_course_has_content_true_when_course_has_content(superadmin_client, course):
+def _add_lesson_content(course: Course, **kwargs) -> CourseContent:
     lesson = Lesson.objects.create(title="Lesson", content="Content")
-    CourseContent.objects.create(
+    return CourseContent.objects.create(
         course=course,
         priority=1,
         type=CourseContentType.LESSON,
         lesson=lesson,
         waiting_period=0,
+        **kwargs,
     )
+
+
+def test_course_has_published_content_false_when_course_has_no_content(superadmin_client, course):
+    response = superadmin_client.get(get_url(course.id))
+    assert response.status_code == 200
+    assert response.context["appContext"]["courseHasPublishedContent"] is False
+
+
+def test_course_has_published_content_false_when_content_is_unpublished(superadmin_client, course):
+    _add_lesson_content(course)
 
     response = superadmin_client.get(get_url(course.id))
 
     assert response.status_code == 200
-    assert response.context["appContext"]["courseHasContent"] is True
+    assert response.context["appContext"]["courseHasPublishedContent"] is False
+
+
+def test_course_has_published_content_true_when_content_is_published(superadmin_client, course):
+    _add_lesson_content(course, is_published=True)
+
+    response = superadmin_client.get(get_url(course.id))
+
+    assert response.status_code == 200
+    assert response.context["appContext"]["courseHasPublishedContent"] is True
 
 
 def test_editor_cannot_view_course_in_another_organization(editor_client, course):
