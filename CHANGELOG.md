@@ -6,6 +6,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.10.0] - 2026-10-06
+
+### Changed
+
+- **A course needs published content to be enabled.** Before, any content was enough, even if none of it was published, so an enabled course could take enrollments it had nothing to send. Content published only inside a track does not count, because every enrollment starts on the main path. On the course page, the disabled banner only links "enable it" once there is published content.
+- **A course is disabled when its last published content goes.** Unpublishing or deleting the last published content on the main path, or moving it into a track, disables the course, and the course page shows it as disabled straight away. Courses that are already enabled without published content stay enabled until their content next changes.
+
 ## [7.9.0] - 2026-10-05
 
 ### Changed
