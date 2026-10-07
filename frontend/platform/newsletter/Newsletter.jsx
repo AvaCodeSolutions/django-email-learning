@@ -72,6 +72,7 @@ function SendoutDialog({ open, onClose, onSuccess, sendout, newsletterId, organi
     const [subject, setSubject] = useState('');
     const [body, setBody] = useState('');
     const [scheduledAt, setScheduledAt] = useState('');
+    const [originalScheduledAt, setOriginalScheduledAt] = useState('');
     const [error, setError] = useState('');
     const [saving, setSaving] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -93,6 +94,7 @@ function SendoutDialog({ open, onClose, onSuccess, sendout, newsletterId, organi
                     setSubject(data.subject);
                     setBody(data.body);
                     setScheduledAt(toLocalDatetimeValue(data.scheduled_at));
+                    setOriginalScheduledAt(toLocalDatetimeValue(data.scheduled_at));
                 })
                 .catch(() => setError(localeMessages['sendout_create_error']))
                 .finally(() => setLoading(false));
@@ -100,6 +102,7 @@ function SendoutDialog({ open, onClose, onSuccess, sendout, newsletterId, organi
             setSubject('');
             setBody('');
             setScheduledAt(defaultScheduledAt());
+            setOriginalScheduledAt('');
             setError('');
         }
     }, [open, sendout]);
@@ -108,6 +111,11 @@ function SendoutDialog({ open, onClose, onSuccess, sendout, newsletterId, organi
         if (!subject.trim()) { setError(localeMessages['sendout_subject_required']); return; }
         if (!body.trim()) { setError(localeMessages['sendout_body_required']); return; }
         if (!scheduledAt) { setError(localeMessages['sendout_scheduled_at_required']); return; }
+        // An existing sendout may keep its original date; any new or changed date must be in the future.
+        if (scheduledAt !== originalScheduledAt && new Date(scheduledAt) <= new Date()) {
+            setError(localeMessages['sendout_scheduled_at_in_past']);
+            return;
+        }
         setSaving(true);
         const payload = { subject, body, scheduled_at: new Date(scheduledAt).toISOString() };
         const req = isEdit
@@ -234,7 +242,7 @@ function SendoutDialog({ open, onClose, onSuccess, sendout, newsletterId, organi
                         fullWidth
                         required
                         sx={{ mb: 2 }}
-                        slotProps={{ inputLabel: { shrink: true } }}
+                        slotProps={{ inputLabel: { shrink: true }, htmlInput: { min: toLocalDatetimeValue(new Date().toISOString()) } }}
                     />
                     <Box sx={{ mb: 1 }}>
                         <Typography variant="caption" color="text.secondary">{localeMessages['sendout_body']}</Typography>

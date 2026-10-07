@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta
 
 import pytest
 from django.urls import reverse
@@ -96,7 +97,7 @@ def test_create_sendout_strips_script_but_keeps_allowed_formatting(superadmin_cl
     payload = {
         "subject": "Weekly update",
         "body": "<p>Hello <strong>world</strong></p><script>alert(document.cookie)</script>",
-        "scheduled_at": timezone.now().isoformat(),
+        "scheduled_at": (timezone.now() + timedelta(hours=1)).isoformat(),
     }
     response = superadmin_client.post(list_url(1, newsletter.id), json.dumps(payload), content_type="application/json")
     assert response.status_code == 201
@@ -110,9 +111,63 @@ def test_update_sendout_strips_script_tag(superadmin_client, scheduled_sendout):
     payload = {
         "subject": scheduled_sendout.subject,
         "body": '<p>Updated</p><img src=x onerror="alert(1)">',
-        "scheduled_at": timezone.now().isoformat(),
+        "scheduled_at": (timezone.now() + timedelta(hours=1)).isoformat(),
     }
     url = detail_url(1, scheduled_sendout.newsletter_id, scheduled_sendout.id)
     response = superadmin_client.patch(url, json.dumps(payload), content_type="application/json")
     assert response.status_code == 200
     assert "onerror" not in response.json()["body"]
+
+
+# --- CREATE / UPDATE scheduled_at validation ---
+
+
+def test_create_sendout_in_past_returns_400(superadmin_client, newsletter):
+    payload = {
+        "subject": "Too late",
+        "body": "<p>Body</p>",
+        "scheduled_at": (timezone.now() - timedelta(minutes=5)).isoformat(),
+    }
+    response = superadmin_client.post(list_url(1, newsletter.id), json.dumps(payload), content_type="application/json")
+    assert response.status_code == 400
+    assert response.json()["error"] == "Scheduled date must be in the future."
+    assert not Sendout.objects.filter(newsletter=newsletter).exists()
+
+
+def test_create_sendout_in_past_without_timezone_returns_400(superadmin_client, newsletter):
+    payload = {
+        "subject": "Too late",
+        "body": "<p>Body</p>",
+        "scheduled_at": "2000-01-01T10:00:00",
+    }
+    response = superadmin_client.post(list_url(1, newsletter.id), json.dumps(payload), content_type="application/json")
+    assert response.status_code == 400
+
+
+def test_update_sendout_to_past_returns_400(superadmin_client, scheduled_sendout):
+    payload = {
+        "subject": scheduled_sendout.subject,
+        "body": scheduled_sendout.body,
+        "scheduled_at": (timezone.now() - timedelta(days=1)).isoformat(),
+    }
+    url = detail_url(1, scheduled_sendout.newsletter_id, scheduled_sendout.id)
+    response = superadmin_client.patch(url, json.dumps(payload), content_type="application/json")
+    assert response.status_code == 400
+    scheduled_sendout.refresh_from_db()
+    assert scheduled_sendout.scheduled_at > timezone.now() - timedelta(hours=1)
+
+
+def test_update_sendout_keeping_existing_past_date_succeeds(superadmin_client, newsletter):
+    past = timezone.now() - timedelta(days=1)
+    sendout = Sendout.objects.create(
+        newsletter=newsletter,
+        subject="Blocked",
+        body="Body",
+        scheduled_at=past,
+        status=Sendout.Status.BLOCKED,
+    )
+    payload = {"subject": "Fixed subject", "body": "<p>Body</p>", "scheduled_at": past.isoformat()}
+    url = detail_url(1, newsletter.id, sendout.id)
+    response = superadmin_client.patch(url, json.dumps(payload), content_type="application/json")
+    assert response.status_code == 200
+    assert response.json()["subject"] == "Fixed subject"

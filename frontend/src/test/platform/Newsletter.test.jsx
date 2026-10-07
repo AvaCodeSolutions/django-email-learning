@@ -6,6 +6,11 @@ import Newsletter from '../../../platform/newsletter/Newsletter';
 
 vi.mock('../../render.jsx');
 vi.mock('vite/modulepreload-polyfill', () => ({}));
+vi.mock('../../components/ContentEditor.jsx', () => ({
+  default: ({ contentUpdateCallback }) => (
+    <textarea aria-label="Body editor" onChange={(e) => contentUpdateCallback(e.target.value)} />
+  ),
+}));
 vi.mock('@melloware/coloris', () => {
   const coloris = vi.fn();
   coloris.init = vi.fn();
@@ -32,6 +37,10 @@ const localeMessages = {
   copy_embed_widget: 'Copy widget tag',
   embed_code_copied: 'Copied!',
   close: 'Close',
+  sendout_subject: 'Subject',
+  sendout_scheduled_at: 'Scheduled At',
+  sendout_scheduled_at_in_past: 'Scheduled date must be in the future.',
+  save: 'Save',
 };
 
 const baseAppContext = {
@@ -186,6 +195,40 @@ describe('Newsletter', () => {
       await screen.findByText(
         '<del-newsletter-form button_bg_color="#16a34a" button_text_color="#ffffff" token="tok" newsletter_id="3"></del-newsletter-form>'
       );
+    });
+  });
+
+  describe('Create sendout dialog', () => {
+    const openDialogAndFill = async (user, scheduledAt) => {
+      renderWithProviders(<Newsletter />, { appContext: baseAppContext });
+      await user.click(screen.getByRole('button', { name: /Create Sendout/ }));
+      await user.type(screen.getByLabelText(/Subject/), 'Hello');
+      await user.type(screen.getByLabelText('Body editor'), '<p>Body</p>');
+      const input = screen.getByLabelText(/Scheduled At/);
+      await user.clear(input);
+      await user.type(input, scheduledAt);
+    };
+
+    it('rejects a scheduled date in the past without calling the API', async () => {
+      const user = userEvent.setup();
+      await openDialogAndFill(user, '2000-01-01T10:00');
+      await user.click(screen.getByRole('button', { name: 'Save' }));
+
+      expect(await screen.findByText('Scheduled date must be in the future.')).toBeInTheDocument();
+      const postCalls = global.fetch.mock.calls.filter(([, opts]) => opts?.method === 'POST');
+      expect(postCalls).toHaveLength(0);
+    });
+
+    it('submits a scheduled date in the future', async () => {
+      const user = userEvent.setup();
+      await openDialogAndFill(user, '2999-01-01T10:00');
+      await user.click(screen.getByRole('button', { name: 'Save' }));
+
+      await waitFor(() => {
+        const postCalls = global.fetch.mock.calls.filter(([, opts]) => opts?.method === 'POST');
+        expect(postCalls).toHaveLength(1);
+      });
+      expect(screen.queryByText('Scheduled date must be in the future.')).not.toBeInTheDocument();
     });
   });
 });
