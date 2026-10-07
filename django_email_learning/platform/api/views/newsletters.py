@@ -1,11 +1,13 @@
 import csv
 import io
 import json
+from datetime import datetime
 
 from django.conf import settings
 from django.db.utils import IntegrityError
 from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
 from pydantic import ValidationError
@@ -24,6 +26,14 @@ from django_email_learning.platform.api.embed_snippet import (
 from django_email_learning.platform.api.newsletter_access_mixin import NewsletterAccessMixin
 from django_email_learning.platform.api.pagniated_api_mixin import PaginatedApiMixin
 from django_email_learning.public.api.views import embeddable_enrollment_enabled
+
+PAST_SCHEDULED_AT_ERROR = "Scheduled date must be in the future."
+
+
+def _is_in_past(value: datetime) -> bool:
+    if timezone.is_naive(value):
+        value = timezone.make_aware(value)
+    return value <= timezone.now()
 
 
 @method_decorator(accessible_for(roles={"admin", "editor", "viewer"}), name="get")
@@ -114,6 +124,8 @@ class SendoutView(NewsletterAccessMixin, View):
         try:
             payload = json.loads(request.body)
             data = serializers.CreateSendoutRequest.model_validate(payload)
+            if _is_in_past(data.scheduled_at):
+                return JsonResponse({"error": PAST_SCHEDULED_AT_ERROR}, status=400)
             sendout = Sendout.objects.create(
                 newsletter=newsletter,
                 subject=data.subject,
@@ -165,6 +177,10 @@ class SingleSendoutView(NewsletterAccessMixin, View):
         try:
             payload = json.loads(request.body)
             data = serializers.UpdateSendoutRequest.model_validate(payload)
+            # Only reject a past date when it is being changed, so an existing
+            # sendout can still be edited without having to reschedule it.
+            if data.scheduled_at != sendout.scheduled_at and _is_in_past(data.scheduled_at):
+                return JsonResponse({"error": PAST_SCHEDULED_AT_ERROR}, status=400)
             sendout.subject = data.subject
             sendout.body = data.body
             sendout.scheduled_at = data.scheduled_at

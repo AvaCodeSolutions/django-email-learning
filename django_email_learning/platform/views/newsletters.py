@@ -47,6 +47,7 @@ class NewsletterDetailView(BasePlatformView):
             "sendout_subject_required": _("Subject is required."),
             "sendout_body_required": _("Body is required."),
             "sendout_scheduled_at_required": _("Scheduled date is required."),
+            "sendout_scheduled_at_in_past": _("Scheduled date must be in the future."),
             "sendout_create_error": _("Failed to create sendout. Please try again."),
             "cancel": _("Cancel"),
             "save": _("Save"),
