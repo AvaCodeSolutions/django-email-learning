@@ -85,6 +85,7 @@ def test_metrics_service_uses_configured_recorder_object_as_is(settings):
         ("assignment_submitted", ("course-1", 11, 5)),
         ("sendout_all_deliveries_failed", (7, 3)),
         ("sendout_blocked_by_resolver", (7, 3)),
+        ("sendout_skipped", (7, 3, "no_confirmed_subscribers")),
     ],
 )
 def test_metrics_service_delegates_all_calls(method_name, args):

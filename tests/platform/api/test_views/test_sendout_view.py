@@ -171,3 +171,47 @@ def test_update_sendout_keeping_existing_past_date_succeeds(superadmin_client, n
     response = superadmin_client.patch(url, json.dumps(payload), content_type="application/json")
     assert response.status_code == 200
     assert response.json()["subject"] == "Fixed subject"
+
+
+# --- Skipped sendouts ---
+
+
+@pytest.fixture()
+def skipped_sendout(newsletter):
+    return Sendout.objects.create(
+        newsletter=newsletter,
+        subject="Nobody to send to",
+        body="Body",
+        scheduled_at=timezone.now() - timedelta(hours=1),
+        status=Sendout.Status.SKIPPED,
+        skipped_reason=Sendout.SkippedReason.NO_CONFIRMED_SUBSCRIBERS,
+    )
+
+
+def test_list_skipped_sendouts_includes_reason(superadmin_client, newsletter, skipped_sendout, scheduled_sendout):
+    response = superadmin_client.get(list_url(1, newsletter.id), {"status": "skipped"})
+    assert response.status_code == 200
+    sendouts = response.json()["sendouts"]
+    assert [s["id"] for s in sendouts] == [skipped_sendout.id]
+    assert sendouts[0]["status"] == "skipped"
+    assert sendouts[0]["skipped_reason"] == "no_confirmed_subscribers"
+
+
+def test_update_skipped_sendout_returns_409(superadmin_client, skipped_sendout):
+    payload = {
+        "subject": "New subject",
+        "body": "<p>Body</p>",
+        "scheduled_at": (timezone.now() + timedelta(hours=1)).isoformat(),
+    }
+    url = detail_url(1, skipped_sendout.newsletter_id, skipped_sendout.id)
+    response = superadmin_client.patch(url, json.dumps(payload), content_type="application/json")
+    assert response.status_code == 409
+    skipped_sendout.refresh_from_db()
+    assert skipped_sendout.subject == "Nobody to send to"
+
+
+def test_delete_skipped_sendout_returns_409(superadmin_client, skipped_sendout):
+    url = detail_url(1, skipped_sendout.newsletter_id, skipped_sendout.id)
+    response = superadmin_client.delete(url)
+    assert response.status_code == 409
+    assert Sendout.objects.filter(id=skipped_sendout.id).exists()

@@ -35,6 +35,11 @@ class NewsletterDetailView(BasePlatformView):
             "scheduled": _("Scheduled"),
             "sent": _("Sent"),
             "blocked": _("Blocked"),
+            "skipped": _("Skipped"),
+            "sendout_skipped_no_confirmed_subscribers": _(
+                "This sendout was skipped because the newsletter had no confirmed subscribers when it was due."
+            ),
+            "sendout_skipped_default_message": _("This sendout was skipped."),
             "all": _("All"),
             "subject": _("Subject"),
             "scheduled_at": _("Scheduled At"),

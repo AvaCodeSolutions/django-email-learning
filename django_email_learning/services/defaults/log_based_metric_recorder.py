@@ -235,3 +235,14 @@ class LogBasedMetricRecorder(MetricRecorderProtocol):
                 "newsletter_id": newsletter_id,
             },
         )
+
+    def sendout_skipped(self, sendout_id: int, newsletter_id: int, reason: str) -> None:
+        logger.info(
+            "Sendout skipped",
+            extra={
+                "metric": "sendout_skipped",
+                "sendout_id": sendout_id,
+                "newsletter_id": newsletter_id,
+                "reason": reason,
+            },
+        )

@@ -99,5 +99,8 @@ class MetricsService:
     def sendout_blocked_by_resolver(self, sendout_id: int, newsletter_id: int) -> None:
         self.metric_recorder.sendout_blocked_by_resolver(sendout_id, newsletter_id)
 
+    def sendout_skipped(self, sendout_id: int, newsletter_id: int, reason: str) -> None:
+        self.metric_recorder.sendout_skipped(sendout_id, newsletter_id, reason)
+
 
 metric_service = MetricsService()

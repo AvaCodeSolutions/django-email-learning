@@ -41,6 +41,9 @@ const localeMessages = {
   sendout_scheduled_at: 'Scheduled At',
   sendout_scheduled_at_in_past: 'Scheduled date must be in the future.',
   save: 'Save',
+  skipped: 'Skipped',
+  sendout_skipped_no_confirmed_subscribers: 'Skipped: no confirmed subscribers.',
+  delete_sendout: 'Delete sendout',
 };
 
 const baseAppContext = {
@@ -229,6 +232,36 @@ describe('Newsletter', () => {
         expect(postCalls).toHaveLength(1);
       });
       expect(screen.queryByText('Scheduled date must be in the future.')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Skipped sendouts', () => {
+    it('shows the skip reason and offers no delete button', async () => {
+      global.fetch.mockImplementation((url) => {
+        if (url.includes('/sendouts')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({
+              sendouts: [{
+                id: 9,
+                subject: 'Nobody home',
+                scheduled_at: '2026-01-01T10:00:00Z',
+                status: 'skipped',
+                skipped_reason: 'no_confirmed_subscribers',
+              }],
+            }),
+          });
+        }
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      });
+      const user = userEvent.setup();
+      renderWithProviders(<Newsletter />, { appContext: baseAppContext });
+
+      expect(await screen.findByText('Skipped')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Delete sendout' })).not.toBeInTheDocument();
+
+      await user.hover(screen.getByTestId('InfoOutlinedIcon'));
+      expect(await screen.findByText('Skipped: no confirmed subscribers.')).toBeInTheDocument();
     });
   });
 });

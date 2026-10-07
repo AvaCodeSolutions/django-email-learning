@@ -41,7 +41,12 @@ class DatabaseSendoutQueue(TaskQueueProtocol[SendoutDelivery]):
     def __init__(self) -> None:
         self._iterator: Iterator[SendoutDelivery] = iter([])
 
-    def _fanout_and_get_batch(self) -> Iterator[SendoutDelivery]:
+    def _fanout_and_get_batch(self) -> Iterator[SendoutDelivery] | None:
+        """Returns the next batch of deliveries, or ``None`` when every due
+        sendout claimed was blocked or skipped. Those no longer match the
+        claim query, so the caller can claim again straight away rather than
+        let them hold up sendouts further down the queue until the next run.
+        """
         # Step 1: claim a batch of due sendouts
         with transaction.atomic():
             due_ids = list(
@@ -81,13 +86,20 @@ class DatabaseSendoutQueue(TaskQueueProtocol[SendoutDelivery]):
 
         due_ids = allowed_ids
         if not due_ids:
-            return iter([])
+            return None
 
         # Step 2: lazy fan-out — create a SendoutDelivery for every current,
         # confirmed subscriber that doesn't already have one (idempotent via
         # ignore_conflicts). Unconfirmed subscribers are excluded entirely -
         # if they confirm later, they'll be picked up by a future sendout's
         # own fan-out.
+        #
+        # A sendout with no confirmed subscribers and no deliveries yet has
+        # nobody to go to, so it's moved to SKIPPED. Left SCHEDULED, nothing
+        # would ever complete it and it would be claimed again on every poll,
+        # taking up room in the batch. One that already has deliveries is
+        # partway through sending and is left for Step 3 to finish.
+        fanned_out_ids: list[int] = []
         for sendout_id in due_ids:
             subscriber_ids = list(
                 NewsletterSubscriber.objects.filter(
@@ -99,6 +111,14 @@ class DatabaseSendoutQueue(TaskQueueProtocol[SendoutDelivery]):
                     [SendoutDelivery(sendout_id=sendout_id, subscriber_id=sid) for sid in subscriber_ids],
                     ignore_conflicts=True,
                 )
+            elif not SendoutDelivery.objects.filter(sendout_id=sendout_id).exists():
+                self._skip_sendout(sendout_id, Sendout.SkippedReason.NO_CONFIRMED_SUBSCRIBERS)
+                continue
+            fanned_out_ids.append(sendout_id)
+
+        due_ids = fanned_out_ids
+        if not due_ids:
+            return None
 
         # Step 3: lock and mark PROCESSING a batch of actionable deliveries
         max_retries = get_max_retries()
@@ -130,11 +150,25 @@ class DatabaseSendoutQueue(TaskQueueProtocol[SendoutDelivery]):
             .iterator(chunk_size=BATCH_SIZE)
         )
 
+    def _skip_sendout(self, sendout_id: int, reason: Sendout.SkippedReason) -> None:
+        sendout = Sendout.objects.get(id=sendout_id)
+        sendout.status = Sendout.Status.SKIPPED
+        sendout.skipped_reason = reason
+        sendout.save(update_fields=["status", "skipped_reason"])
+        logger.info(f"Sendout {sendout.id}: skipped ({reason}).")
+        metric_service.sendout_skipped(
+            sendout_id=sendout.id,
+            newsletter_id=sendout.newsletter_id,
+            reason=reason.value,
+        )
+
     def next_task(self) -> SendoutDelivery | None:
         try:
             return next(self._iterator)
         except StopIteration:
-            self._iterator = self._fanout_and_get_batch()
+            while (batch := self._fanout_and_get_batch()) is None:
+                pass
+            self._iterator = batch
             try:
                 return next(self._iterator)
             except StopIteration:

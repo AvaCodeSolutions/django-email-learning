@@ -99,6 +99,7 @@ class SendoutView(NewsletterAccessMixin, View):
             Sendout.Status.SCHEDULED,
             Sendout.Status.SENT,
             Sendout.Status.BLOCKED,
+            Sendout.Status.SKIPPED,
         ):
             sendouts = sendouts.filter(status=status_filter)
 
@@ -173,6 +174,11 @@ class SingleSendoutView(NewsletterAccessMixin, View):
                 {"error": "Cannot edit a sendout that has already been sent."},
                 status=409,
             )
+        if sendout.status == Sendout.Status.SKIPPED:
+            return JsonResponse(
+                {"error": "Cannot edit a sendout that was skipped."},
+                status=409,
+            )
 
         try:
             payload = json.loads(request.body)
@@ -205,6 +211,11 @@ class SingleSendoutView(NewsletterAccessMixin, View):
         if sendout.status == Sendout.Status.SENT:
             return JsonResponse(
                 {"error": "Cannot delete a sendout that has already been sent."},
+                status=409,
+            )
+        if sendout.status == Sendout.Status.SKIPPED:
+            return JsonResponse(
+                {"error": "Cannot delete a sendout that was skipped."},
                 status=409,
             )
 

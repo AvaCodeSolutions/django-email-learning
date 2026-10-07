@@ -553,11 +553,16 @@ function Newsletter() {
                                                                 <InfoOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
                                                             </Tooltip>
                                                         )}
+                                                        {s.status === 'skipped' && (
+                                                            <Tooltip title={localeMessages[`sendout_skipped_${s.skipped_reason}`] || localeMessages['sendout_skipped_default_message'] || 'This sendout was skipped.'}>
+                                                                <InfoOutlinedIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                                                            </Tooltip>
+                                                        )}
                                                     </Box>
                                                 </TableCell>
                                                 {isOrganizationAdmin && (
                                                     <TableCell align="right">
-                                                        {s.status !== 'sent' && (
+                                                        {s.status !== 'sent' && s.status !== 'skipped' && (
                                                             <IconButton
                                                                 aria-label={localeMessages['delete_sendout'] || 'Delete sendout'}
                                                                 size="small"
