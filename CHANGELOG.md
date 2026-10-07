@@ -6,6 +6,19 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.11.0] - 2026-10-07
+
+### Added
+
+- **Sendouts with nobody to send to are skipped.** A sendout that fell due while its newsletter had no confirmed subscribers got no deliveries, so nothing ever completed it: it stayed Scheduled for good and was claimed again on every poll, and enough of them could fill the 50-sendout claim batch and keep other sendouts from going out. Such a sendout now moves to a new **Skipped** status with `skipped_reason="no_confirmed_subscribers"`, and a `sendout_skipped` metric is emitted with the reason. Subscribers who confirm later don't receive it. A sendout that already has deliveries is never skipped, so one partway through sending still finishes even if everyone has since unsubscribed. Migration `0036` adds the `skipped_reason` field; `blocked_reason` is unchanged.
+  - **The platform shows the reason** as a tooltip next to the Skipped status, and a skipped sendout has no delete button. The API returns `skipped_reason`, accepts `?status=skipped`, and answers `409` to editing or deleting a skipped sendout, as it does for a sent one.
+  - **Custom metric recorders** get a new `sendout_skipped(sendout_id, newsletter_id, reason)` method on `MetricRecorderProtocol`. Recorders that subclass the protocol inherit a no-op; ones that don't need to add it.
+
+### Fixed
+
+- **A sendout can't be scheduled in the past.** Creating one with a date that had already passed was accepted and sent on the next job run. The API now answers `400` ("Scheduled date must be in the future."), and the sendout dialog refuses to save it and greys out past times in the date picker. When editing, only a changed date is checked, so a sendout whose date has passed, such as a blocked one, can still have its subject or body fixed without being rescheduled.
+- **Blocked and skipped sendouts no longer hold up the rest of the queue.** When every sendout in a claimed batch was blocked by `SENDOUT_ALLOWED_RESOLVER` (or, now, skipped), the job ended its run without looking further, so due sendouts behind them waited for the next run. The queue now claims the next batch straight away.
+
 ## [7.10.0] - 2026-10-06
 
 ### Changed
