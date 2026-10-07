@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.11.1] - 2026-10-07
+
+### Fixed
+
+- **`source-map-js` updated to 1.2.2** — picks up the fix for [GHSA-68fv-2mgg-jv7q](https://github.com/advisories/GHSA-68fv-2mgg-jv7q) (high): crafted section offsets in an indexed source map could block the event loop, a denial of service. 1.2.1 was inside the affected `>=1.0.0 <1.2.2` range. It reaches the project as a development dependency, through `vite` (via `postcss` and `sass`) for the frontend build and through `jsdom` for the frontend tests, so it never ships in the served assets or in installs of `django-email-learning`. Only `frontend/package-lock.json` moves, and `npm audit` on the frontend now reports no vulnerabilities.
+
 ## [7.11.0] - 2026-10-07
 
 ### Added
