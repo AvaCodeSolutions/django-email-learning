@@ -49,9 +49,13 @@ class Sendout(models.Model):
         SCHEDULED = "scheduled", "Scheduled"
         SENT = "sent", "Sent"
         BLOCKED = "blocked", "Blocked"
+        SKIPPED = "skipped", "Skipped"
 
     class BlockedReason(models.TextChoices):
         DENIED_BY_RESOLVER = "denied_by_resolver", "Denied by resolver"
+
+    class SkippedReason(models.TextChoices):
+        NO_CONFIRMED_SUBSCRIBERS = "no_confirmed_subscribers", "No confirmed subscribers"
 
     newsletter = models.ForeignKey(Newsletter, on_delete=models.CASCADE, related_name="sendouts")
     subject = models.CharField(max_length=500)
@@ -61,6 +65,7 @@ class Sendout(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.SCHEDULED, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     blocked_reason = models.CharField(max_length=50, choices=BlockedReason.choices, null=True, blank=True)
+    skipped_reason = models.CharField(max_length=50, choices=SkippedReason.choices, null=True, blank=True)
 
     def __str__(self) -> str:
         return f"{self.subject} — {self.newsletter.title} ({self.status})"

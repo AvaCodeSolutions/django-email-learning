@@ -47,6 +47,7 @@ class SendoutResponse(BaseModel):
     sent_at: Optional[datetime] = None
     status: str
     blocked_reason: Optional[str] = None
+    skipped_reason: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -81,6 +82,7 @@ class SendoutDetailResponse(BaseModel):
     sent_at: Optional[datetime] = None
     status: str
     blocked_reason: Optional[str] = None
+    skipped_reason: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
