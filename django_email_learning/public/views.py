@@ -417,6 +417,7 @@ class CourseView(TemplateView):
             "enrollmentOpen": course.organization.can_enroll_learner(),
             "direction": "rtl" if lang_info["bidi"] else "ltr",
             "courseLanguageName": course_lang_info["name_local"],
+            "shareUrl": course.public_url,
             "termsOfServiceUrl": get_terms_of_service_url(),
             "localeMessages": {
                 "enroll_now": _("Enroll Now"),
@@ -447,6 +448,14 @@ class CourseView(TemplateView):
                 "external_references_title": _("External References"),
                 "instructors_title": _("Instructors"),
                 "delivered_by_email": _("Delivered by email"),
+                "share_course": _("Share this course"),
+                "share_after_enrollment": _("Know someone who would enjoy this course? Share it with them."),
+                # Translators: PLATFORM is a social network name, such as LinkedIn.
+                "share_on": _("Share on PLATFORM"),
+                "share_by_email": _("Share by email"),
+                "copy_link": _("Copy link"),
+                "link_copied": _("Link copied"),
+                "more_share_options": _("More sharing options"),
                 "lesson_count": ngettext("%(count)d lesson", "%(count)d lessons", len(course_data.lessons))
                 % {"count": len(course_data.lessons)},
                 "terms_of_service_confirmation": _(
@@ -456,6 +465,7 @@ class CourseView(TemplateView):
             },
         }
         context["course_title"] = course.title
+        context["course_url"] = course.public_url
         context["course_description"] = course.description
         context["course_image_url"] = self.request.build_absolute_uri(course.image.url) if course.image else None
         context["json_ld"] = build_single_course_json_ld(

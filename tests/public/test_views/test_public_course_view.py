@@ -244,3 +244,18 @@ def test_course_view_marks_lessons_behind_a_gate(db, anonymous_client, gate_cour
 
     assert course_data["lessons"] == ["Welcome", "Paid lesson"]
     assert course_data["lesson_gates"] == [None, "Payment"]
+
+
+def test_course_view_shares_the_canonical_course_url(db, anonymous_client, course):
+    course.enabled = True
+    course.save()
+    url = reverse(
+        "django_email_learning:public:course_page",
+        kwargs={"organization_slug": "my-organization", "course_slug": course.slug},
+    )
+
+    response = anonymous_client.get(f"{url}?utm_source=newsletter")
+
+    canonical_url = f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{course.get_public_path()}"
+    assert response.context["appContext"]["shareUrl"] == canonical_url
+    assert f'<meta property="og:url" content="{canonical_url}">' in response.content.decode()
