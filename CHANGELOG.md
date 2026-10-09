@@ -6,6 +6,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.13.0] - 2026-10-09
+
+### Added
+
+- **Share buttons on the public course page.** The enroll card has a "Share this course" row with links for X, LinkedIn, Facebook, WhatsApp, Telegram and email, and a button that copies the course link. Where the browser supports it, one more button opens the phone's or browser's own share menu. The success message shown after enrolling asks the learner to share the course too. These are plain share links, so the page loads no scripts from the social networks. The labels are new translatable strings.
+- **The course page's app context** includes `shareUrl`, the course's canonical public URL.
+
+### Changed
+
+- **The course page's `og:url`** is now the canonical course URL. Before, it repeated whatever address the visitor arrived on, so query strings such as `?utm_source=...` were copied into link previews.
+
 ## [7.12.0] - 2026-10-09
 
 ### Added
