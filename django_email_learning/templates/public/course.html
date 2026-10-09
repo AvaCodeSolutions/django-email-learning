@@ -10,7 +10,7 @@
 {% block meta_tags %}
     <meta name="description" content="{{ course_description }}">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:url" content="{{ course_url }}">
     <meta property="og:title" content="{{ course_title }}">
     {% if course_description %}<meta property="og:description" content="{{ course_description }}">{% endif %}
     {% if course_image_url %}<meta property="og:image" content="{{ course_image_url }}">{% endif %}

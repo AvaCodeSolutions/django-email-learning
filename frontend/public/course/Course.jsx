@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import render from '../../src/render.jsx';
 import Layout from '../components/Layout.jsx';
 import EnrollmentForm from '../components/EnrollmentForm.jsx';
-import { Alert, Avatar, Box, Button, Card, Container, Dialog, Link, List, ListItem, ListItemIcon, ListItemText, Stack, Typography } from '@mui/material';
+import ShareButtons from '../components/ShareButtons.jsx';
+import { Alert, Avatar, Box, Button, Card, Container, Dialog, Divider, Link, List, ListItem, ListItemIcon, ListItemText, Stack, Typography } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
@@ -43,13 +44,14 @@ function Course() {
     const topEnrollButtonRef = useRef(null);
     const sidebarRef = useRef(null);
 
-    const { course, organization, enrollApiUrl: rawEnrollApiUrl, courseLanguageName, localeMessages } = useAppContext();
+    const { course, organization, enrollApiUrl: rawEnrollApiUrl, courseLanguageName, shareUrl: rawShareUrl, localeMessages } = useAppContext();
     const enrollApiUrl = sanitizeEndpointUrl(rawEnrollApiUrl);
     // The course image, the organization logo and the organization's public
     // link are all organization-editable and reach anonymous visitors.
     const courseImage = sanitizeImageUrl(course.image);
     const organizationLogoUrl = sanitizeImageUrl(organization.logo_url);
     const organizationPublicUrl = sanitizeUrl(organization.public_url);
+    const shareUrl = sanitizeUrl(rawShareUrl);
     const hasOrganizationPublicUrl = Boolean(organizationPublicUrl);
     const hasLessons = course.lessons && course.lessons.length > 0;
     const hasInstructors = course.instructors && course.instructors.length > 0;
@@ -164,6 +166,14 @@ function Course() {
                 sx={{ mb: 4, direction: courseDirection }}
             >
                 {localeMessages['enrollment_success']}
+                <Box sx={{ mt: 1.5 }}>
+                    <ShareButtons
+                        url={shareUrl}
+                        title={course.title}
+                        messages={localeMessages}
+                        label={localeMessages['share_after_enrollment']}
+                    />
+                </Box>
             </Alert>
         )}
 
@@ -275,6 +285,17 @@ function Course() {
                                 </Stack>
                             ))}
                         </Stack>
+                        {shareUrl && (
+                            <>
+                                <Divider sx={{ my: 1.5 }} />
+                                <ShareButtons
+                                    url={shareUrl}
+                                    title={course.title}
+                                    messages={localeMessages}
+                                    label={localeMessages['share_course']}
+                                />
+                            </>
+                        )}
                     </Box>
                 </Card>
 
