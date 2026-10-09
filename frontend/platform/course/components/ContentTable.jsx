@@ -7,6 +7,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import BallotOutlinedIcon from '@mui/icons-material/BallotOutlined';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
+import LockClockOutlinedIcon from '@mui/icons-material/LockClockOutlined';
 import CallSplitOutlinedIcon from '@mui/icons-material/CallSplitOutlined';
 import AltRouteIcon from '@mui/icons-material/AltRoute';
 import DriveFileMoveIcon from '@mui/icons-material/DriveFileMove';
@@ -24,7 +25,7 @@ import { useAppContext } from '../../../src/render.jsx';
 import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 import { buildContentTree, conditionLabel, trackColorMap } from './branching.js';
 
-const TYPE_ICONS = { lesson: DescriptionOutlinedIcon, quiz: BallotOutlinedIcon, assignment: AssignmentOutlinedIcon, decision: CallSplitOutlinedIcon };
+const TYPE_ICONS = { lesson: DescriptionOutlinedIcon, quiz: BallotOutlinedIcon, assignment: AssignmentOutlinedIcon, decision: CallSplitOutlinedIcon, gate: LockClockOutlinedIcon };
 const TypeIcon = ({ type, ...props }) => {
     const Icon = TYPE_ICONS[type] || AssignmentOutlinedIcon;
     return <Icon {...props} />;
@@ -330,6 +331,9 @@ const ContentTable = ({ courseId, eventHandler, loaded = false }) => {
         const details = [];
         if (content.type === 'quiz' && content.is_blocking === false) {
             details.push(<span key="practice">{localeMessages["practice_quiz"]}</span>);
+        }
+        if (content.type === 'gate' && content.gate_key) {
+            details.push(<Box key="gate-key" component="span" sx={{ fontFamily: 'monospace' }}>{content.gate_key}</Box>);
         }
         if (isBranchPoint) {
             details.push(

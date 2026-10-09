@@ -46,6 +46,7 @@ from django_email_learning.platform.api.views import (
     SubmittedAssignmentsView,
     SubscribersCsvExportView,
     SubscriberView,
+    UnlockGateView,
     UpdateSessionView,
 )
 
@@ -162,6 +163,11 @@ urlpatterns = [
         "organizations/<int:organization_id>/enrollments/<int:enrollment_id>/cancel/",
         CancelEnrollmentView.as_view(),
         name="enrollment_cancel",
+    ),
+    path(
+        "organizations/<int:organization_id>/enrollments/<int:enrollment_id>/gates/<int:course_content_id>/unlock/",
+        UnlockGateView.as_view(),
+        name="enrollment_gate_unlock",
     ),
     path(
         "organizations/<int:organization_id>/courses/<int:course_id>/enrollments/",

@@ -17,10 +17,17 @@ Both functions answer *which content* - creating the delivery and its schedule i
 caller's job.
 """
 
+from collections import defaultdict
 from typing import Optional
 
-from django_email_learning.models.course_contents import ContentTrack, CourseContent, RoutingOutcome
+from django_email_learning.models.course_contents import (
+    ContentTrack,
+    ContentTransition,
+    CourseContent,
+    RoutingOutcome,
+)
 from django_email_learning.models.courses import Course
+from django_email_learning.models.enums.course_content_type import CourseContentType
 
 # Told apart from a genuine `None`, which means "routed, and the route ends the course".
 _NO_ROUTE = object()
@@ -107,6 +114,57 @@ def _walk_from(start: CourseContent) -> Optional[CourseContent]:
         if merge_point.is_published:
             return merge_point
         content = merge_point
+
+
+def gates_ahead(course: Course) -> dict[int, CourseContent]:
+    """Each published content that sits behind a gate, mapped to the gate holding it.
+
+    Content is behind a gate when every way to it passes one: a published gate comes
+    before it on its own track, or its track is only entered from content that is itself
+    behind a gate. Where more than one gate qualifies, the nearest one is named.
+    """
+    contents = list(
+        CourseContent.objects.filter(course=course, is_published=True).select_related("gate").order_by("priority")
+    )
+    by_track: dict[Optional[int], list[CourseContent]] = defaultdict(list)
+    for content in contents:
+        by_track[content.track_id].append(content)
+    published_ids = {content.id for content in contents}
+    entry_sources: dict[int, list[CourseContent]] = defaultdict(list)
+    for transition in ContentTransition.objects.filter(source__course=course).select_related("source"):
+        if transition.source_id in published_ids:
+            entry_sources[transition.target_id].append(transition.source)
+
+    track_gates: dict[int, Optional[CourseContent]] = {}
+
+    def gate_for_track(track_id: Optional[int]) -> Optional[CourseContent]:
+        if track_id is None:
+            return None
+        if track_id not in track_gates:
+            # Seeded before recursing, so a malformed graph routing back into a track ends
+            # the walk instead of looping.
+            track_gates[track_id] = None
+            sources = entry_sources.get(track_id, [])
+            gates = [gate_for(source) for source in sources]
+            track_gates[track_id] = gates[0] if gates and all(gates) else None
+        return track_gates[track_id]
+
+    def gate_for(content: CourseContent) -> Optional[CourseContent]:
+        earlier_gates = [
+            candidate
+            for candidate in by_track[content.track_id]
+            if candidate.type == CourseContentType.GATE and candidate.priority < content.priority
+        ]
+        if earlier_gates:
+            return earlier_gates[-1]
+        return gate_for_track(content.track_id)
+
+    held = {}
+    for content in contents:
+        gate = gate_for(content)
+        if gate is not None:
+            held[content.id] = gate
+    return held
 
 
 class CoursePath:

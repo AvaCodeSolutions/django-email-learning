@@ -12,6 +12,8 @@ from django_email_learning.models import (
     DeliveryStatus,
     Enrollment,
     EnrollmentStatus,
+    GateUnlock,
+    waiting_gate_delivery,
 )
 from django_email_learning.platform.api.serializers.assignments import ReviewResult
 from django_email_learning.platform.api.serializers.common import (
@@ -36,6 +38,7 @@ class EventType(enum.StrEnum):
     EMAIL_OPENED = "email_opened"
     REMINDER_SENT = "reminder_sent"
     COURSE_COMPLETED = "course_completed"
+    GATE_UNLOCKED = "gate_unlocked"
 
 
 class DeactivatedEvent(BaseModel):
@@ -87,6 +90,14 @@ class EmailOpenedEvent(BaseModel):
     course_content_type: str
 
 
+class GateUnlockedEvent(BaseModel):
+    type: Literal[EventType.GATE_UNLOCKED] = Field(default=EventType.GATE_UNLOCKED, exclude=True)
+    course_content_id: int
+    gate_title: str
+    source: str
+    unlocked_by: str | None = None
+
+
 class Event(BaseModel):
     type: EventType
     timestamp: datetime
@@ -98,6 +109,7 @@ class Event(BaseModel):
         | AssignmentSubmitedEvent
         | AssignmentReviewdEvent
         | ReminderSentEvent
+        | GateUnlockedEvent
         | None
     ) = Field(discriminator="type")  # REGISTERED, VERIFIED, COURSE_COMPLETED have no additional data
 
@@ -140,6 +152,33 @@ def _next_delivery(enrollment: Enrollment) -> NextDeliveryResponse | None:
     )
 
 
+class WaitingGateResponse(BaseModel):
+    """The gate an enrollment is held at, waiting for it to be unlocked."""
+
+    course_content_id: int
+    title: str
+    key: str
+    since: datetime | None = None
+
+
+def waiting_gate(enrollment: Enrollment) -> WaitingGateResponse | None:
+    delivery = waiting_gate_delivery(enrollment)
+    if delivery is None or delivery.course_content.gate is None:
+        return None
+    reached = (
+        delivery.delivery_schedules.filter(status=DeliveryStatus.DELIVERED)  # type: ignore[attr-defined]
+        .order_by("-delivered_at")
+        .values_list("delivered_at", flat=True)
+        .first()
+    )
+    return WaitingGateResponse(
+        course_content_id=delivery.course_content.id,
+        title=delivery.course_content.gate.title,
+        key=delivery.course_content.gate.key,
+        since=reached,
+    )
+
+
 class PathStepResponse(BaseModel):
     """One content on the route a learner has taken through a course."""
 
@@ -164,13 +203,18 @@ def learner_path(enrollment: Enrollment) -> list[PathStepResponse]:
             "course_content__lesson",
             "course_content__quiz",
             "course_content__assignment",
+            "course_content__decision",
+            "course_content__gate",
         )
         .prefetch_related("delivery_schedules")
         .order_by("id")
     )
+    waiting = waiting_gate_delivery(enrollment)
     for delivery in deliveries:
         statuses = {schedule.status for schedule in delivery.delivery_schedules.all()}
-        if DeliveryStatus.DELIVERED in statuses:
+        if waiting is not None and delivery.id == waiting.id:
+            status = "waiting"
+        elif DeliveryStatus.DELIVERED in statuses:
             status = "delivered"
         elif statuses & {DeliveryStatus.SCHEDULED, DeliveryStatus.PROCESSING}:
             status = "scheduled"
@@ -197,6 +241,7 @@ class EnrollmentResponse(BaseModel):
     status: EnrollmentStatus
     events: list[Event]
     next_delivery: NextDeliveryResponse | None = None
+    waiting_at_gate: WaitingGateResponse | None = None
     path: list[PathStepResponse] = []
     has_branching: bool = False
 
@@ -333,6 +378,21 @@ class EnrollmentResponse(BaseModel):
                                 )
                             )
                             attempt_number += 1
+        for unlock in GateUnlock.objects.filter(enrollment=enrollment).select_related(
+            "course_content__gate", "unlocked_by"
+        ):
+            events.append(
+                Event(
+                    type=EventType.GATE_UNLOCKED,
+                    timestamp=unlock.unlocked_at,
+                    event_data=GateUnlockedEvent(
+                        course_content_id=unlock.course_content_id,
+                        gate_title=unlock.course_content.title,
+                        source=unlock.source,
+                        unlocked_by=unlock.unlocked_by.get_username() if unlock.unlocked_by else None,
+                    ),
+                )
+            )
         if enrollment.status == EnrollmentStatus.COMPLETED and enrollment.final_state_at:
             events.append(
                 Event(
@@ -360,6 +420,7 @@ class EnrollmentResponse(BaseModel):
                 "status": enrollment.status,
                 "events": events,
                 "next_delivery": _next_delivery(enrollment),
+                "waiting_at_gate": waiting_gate(enrollment),
             }
         )
 

@@ -125,6 +125,8 @@ Scopes
      - Grants
    * - ``enrollments:create``
      - Create enrollments
+   * - ``enrollments:update``
+     - Update enrollments: unlock gates
 
 A scope names a resource and an action rather than an endpoint, so adding an
 endpoint to an existing resource does not strand callers on a key that predates
@@ -231,8 +233,68 @@ newsletter, if it has one. The subscription is confirmed along with the
 enrollment: immediately for a verified one, and when the learner follows the
 verification link otherwise.
 
-Creating an enrollment is the only endpoint in v1 that acts on data. Read
-endpoints for enrollments and courses will follow, each behind its own scope.
+The created enrollment includes ``waiting_at_gate``: the key of the gate the
+learner is waiting at, or ``null``.
+
+.. _unlock-a-gate:
+
+Unlock a gate
+^^^^^^^^^^^^^
+
+Requires ``enrollments:update``.
+
+.. code-block:: http
+
+   POST /api/v1/enrollments/<enrollment_id>/unlock/
+   Content-Type: application/json
+
+   {
+     "gate": "payment"
+   }
+
+Lets the learner past a :doc:`gate <../platform/gates>`. The enrollment id is the
+one returned when the enrollment was created, or passed to a ``gate_reached``
+signal receiver.
+
+``gate`` is the gate's key. Naming it is recommended. It can then unlock a gate the
+learner has not reached yet, so they pass straight through when they get there.
+It also means a late or retried call can never open a different gate from the one
+it was meant for. When ``gate`` is omitted, the gate the learner is waiting at right
+now is unlocked.
+
+.. code-block:: json
+
+   {
+     "status": "unlocked",
+     "gate": "payment",
+     "enrollment": {
+       "id": 42,
+       "email": "learner@example.com",
+       "course_slug": "intro-to-widgets",
+       "status": "active",
+       "enrolled_at": "2026-10-01T09:00:00Z",
+       "activated_at": "2026-10-01T09:05:00Z",
+       "waiting_at_gate": null
+     }
+   }
+
+``status`` is one of:
+
+* ``unlocked``: the learner was waiting at the gate and has moved on;
+* ``unlocked_in_advance``: the learner has not reached the gate yet and will
+  pass it without stopping;
+* ``already_unlocked``: nothing changed. The call is safe to retry, so payment
+  provider webhooks that deliver more than once need no deduplication.
+
+The enrollment may be unverified or active. Other responses:
+
+* ``404``: no enrollment with that id in this organization, or no gate with that
+  key in its course
+* ``409``: the enrollment has ended (completed or deactivated), or ``gate`` was
+  omitted and the learner is not waiting at one
+
+Read endpoints for enrollments and courses will follow, each behind its own
+scope.
 
 OpenAPI Schema
 --------------

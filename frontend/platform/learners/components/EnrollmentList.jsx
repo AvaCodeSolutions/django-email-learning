@@ -55,7 +55,13 @@ function EnrollentList({enrollments, selectHandler}) {
             key={enrollment.id} sx={(theme) => ({':hover': {backgroundColor: theme.palette.background.dark, cursor: 'pointer', borderBottomColor: 'primary.light', borderBottomWidth: 2, borderBottomStyle: 'solid'}})}
             onClick={() => selectHandler(enrollment.id)}>
               <TableCell align={direction=="rtl" ? "right" : "left"}>{enrollment.course_title}</TableCell>
-              <TableCell align={direction=="rtl" ? "right" : "left"}>{localeMessages[enrollment.status]}</TableCell>
+              <TableCell align={direction=="rtl" ? "right" : "left"}>
+                {enrollment.waiting_at_gate ? (
+                  <Typography variant="body2" color="warning.main">
+                    {(localeMessages['waiting_at_gate'] || 'Waiting at gate: %(gate)s').replace('%(gate)s', enrollment.waiting_at_gate)}
+                  </Typography>
+                ) : localeMessages[enrollment.status]}
+              </TableCell>
               <TableCell align={direction=="rtl" ? "right" : "left"} sx={{ minWidth: 170 }}>
                 <LinearProgressWithLabel value={enrollment.progress} direction={direction} />
               </TableCell>

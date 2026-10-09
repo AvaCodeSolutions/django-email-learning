@@ -137,6 +137,10 @@ class ContentDelivery(models.Model):
         self.save()
 
     def calculate_valid_until(self) -> Optional[datetime]:
+        if self.course_content.gate:
+            # A gate's timeout runs from when the learner reaches it, not from when the
+            # delivery is created ahead of the waiting period - see gate_service.
+            return None
         if self.course_content.deadline_days and self.course_content.deadline_days > 0:
             return timezone.now() + timedelta(days=self.course_content.deadline_days)
         return None

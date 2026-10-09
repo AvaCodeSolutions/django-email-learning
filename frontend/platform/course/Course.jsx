@@ -16,6 +16,7 @@ import CodeIcon from '@mui/icons-material/Code';
 import AddRoadIcon from '@mui/icons-material/AddRoad';
 import AltRouteIcon from '@mui/icons-material/AltRoute';
 import CallSplitIcon from '@mui/icons-material/CallSplit';
+import LockClockIcon from '@mui/icons-material/LockClock';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { useState, useEffect, memo } from 'react';
@@ -71,6 +72,7 @@ const QuizForm = lazy(() => import("./components/QuizForm.jsx"));
 const LessonForm = lazy(() => import("./components/LessonForm.jsx"));
 const AssignmentForm = lazy(() => import("./components/AssignmentForm.jsx"));
 const DecisionForm = lazy(() => import("./components/DecisionForm.jsx"));
+const GateForm = lazy(() => import("./components/GateForm.jsx"));
 const DeleteContentForm = lazy(() => import("./components/DeleteContentForm.jsx"));
 const TrackForm = lazy(() => import("./components/TrackForm.jsx"));
 const CourseMap = lazy(() => import("./components/CourseMap.jsx"));
@@ -498,6 +500,8 @@ function Course() {
             onClick: () => openContentForm(AssignmentForm, { header: localeMessages["new_assignment"] }) },
         { key: 'decision', icon: <CallSplitIcon fontSize="small" />, label: localeMessages["decision"], description: localeMessages["add_decision_description"],
             onClick: () => openContentForm(DecisionForm, { header: localeMessages["new_decision"] }) },
+        { key: 'gate', icon: <LockClockIcon fontSize="small" />, label: localeMessages["gate"], description: localeMessages["add_gate_description"],
+            onClick: () => openContentForm(GateForm, { header: localeMessages["new_gate"] }) },
         ...(canEditBranching ? [{ key: 'track', icon: <AddRoadIcon fontSize="small" />, label: localeMessages["track"], description: localeMessages["add_track_description"],
             dividerBefore: true, onClick: () => openTrackForm(null) }] : []),
     ];
@@ -621,6 +625,23 @@ function Course() {
                                 initialOptions={content.decision.options}
                                 initialDeadlineDays={content.decision.deadline_days}
                                 initialReminderIntervalDays={content.decision.reminder_interval_days}
+                                initialWaitingPeriod={content.waiting_period}
+                                tracks={courseStructure.tracks}
+                                initialTrackId={content.track_id}
+                                /></Suspense>);
+            } else if (content.type == 'gate') {
+                setDialogOpen(true);
+                setDialogContent(<Suspense fallback={<Box sx={{ p: 2 }}><LinearProgress /></Box>}><GateForm
+                                header={localeMessages["update_gate"]}
+                                cancelCallback={() => setDialogOpen(false)}
+                                successCallback={resetDialog}
+                                courseId={courseId}
+                                contentId={content.id}
+                                initialTitle={content.gate.title}
+                                initialKey={content.gate.key}
+                                initialMessage={content.gate.message}
+                                initialTimeoutDays={content.gate.timeout_days}
+                                initialTimeoutAction={content.gate.timeout_action}
                                 initialWaitingPeriod={content.waiting_period}
                                 tracks={courseStructure.tracks}
                                 initialTrackId={content.track_id}

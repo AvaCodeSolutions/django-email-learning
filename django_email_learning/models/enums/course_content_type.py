@@ -6,3 +6,4 @@ class CourseContentType(StrEnum):
     QUIZ = "quiz"
     ASSIGNMENT = "assignment"
     DECISION = "decision"
+    GATE = "gate"

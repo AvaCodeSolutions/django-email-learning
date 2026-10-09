@@ -1,0 +1,9 @@
+{% load i18n %}
+{% translate "Hello," %}
+
+{% blocktranslate count days=timeout_days %}We were waiting on {{ gate_title }} to continue {{ course_title }}, and it wasn't completed within {{ days }} day, so your enrollment has ended.{% plural %}We were waiting on {{ gate_title }} to continue {{ course_title }}, and it wasn't completed within {{ days }} days, so your enrollment has ended.{% endblocktranslate %}
+
+{% translate "Still interested? You can enroll again at any time." %}
+
+{% translate "Best regards," %}
+{% blocktranslate with organization_name=organization_name %}{{ organization_name }} Team{% endblocktranslate %}

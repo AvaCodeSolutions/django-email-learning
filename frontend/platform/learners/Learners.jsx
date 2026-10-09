@@ -10,6 +10,8 @@ import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import BallotIcon from '@mui/icons-material/Ballot';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import CallSplitIcon from '@mui/icons-material/CallSplit';
+import LockClockIcon from '@mui/icons-material/LockClock';
+import LockOpenIcon from '@mui/icons-material/LockOpen';
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import AssignmentReturnedIcon from '@mui/icons-material/AssignmentReturned';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
@@ -28,9 +30,10 @@ import LearnerPath from './components/LearnerPath.jsx';
 const EnrollentList = lazy(() => import("./components/EnrollmentList.jsx"));
 const NextDelivery = lazy(() => import("./components/NextDelivery.jsx"));
 const CancelEnrollment = lazy(() => import("./components/CancelEnrollment.jsx"));
+const WaitingAtGate = lazy(() => import("./components/WaitingAtGate.jsx"));
 
 
-const ENROLLMENT_STATUSES = ['active', 'completed', 'deactivated', 'canceled', 'inactive'];
+const ENROLLMENT_STATUSES = ['active', 'waiting', 'completed', 'deactivated', 'canceled', 'inactive'];
 
 function Learners() {
 
@@ -70,6 +73,8 @@ function Learners() {
     'content_sent_quiz': {icon: <BallotIcon />, color: "#26a69a", title: localeMessages["quiz_sent"]},
     'content_sent_assignment': {icon: <AssignmentIcon />, color: "#336eb7", title: localeMessages["assignment_sent"]},
     'content_sent_decision': {icon: <CallSplitIcon />, color: "#5c6bc0", title: localeMessages["decision_sent"]},
+    'content_sent_gate': {icon: <LockClockIcon />, color: "#ef6c00", title: localeMessages["gate_reached"]},
+    'gate_unlocked': {icon: <LockOpenIcon />, color: "#43a047", title: localeMessages["gate_unlocked"]},
     'quiz_submitted': {icon: <AssignmentReturnedIcon />, color: "#26a69a", title: localeMessages["quiz_submitted"]},
     'course_completed': {icon: <SchoolIcon />, color: "#0097a7", title: localeMessages["course_completed"]},
     'deactivated': {icon: <BackspaceIcon />, color: "#b71c1c", title: localeMessages["learner_deactivated"]},
@@ -79,6 +84,11 @@ function Learners() {
     'assignment_reviewed': {icon: <AssignmentIndIcon />, color: "#336eb7", title: localeMessages["assignment_reviewed"]},
   };
 
+
+  const gateUnlockSourceLabel = ({ source, unlocked_by }) => {
+    const label = localeMessages[`gate_unlock_source_${source}`] || source;
+    return label.replace('%(user)s', unlocked_by || '');
+  };
 
   const showEnrollmentStatus = (enrollmentId) => {
     setDialogOpen(true);
@@ -101,6 +111,16 @@ function Learners() {
                     canSend={userRole === 'admin'}
                     sendUrl={`${apiBaseUrl}/organizations/${organizationId}/enrollments/${enrollmentId}/delivery-schedules/${data.next_delivery.delivery_schedule_id}/send/`}
                     onSent={() => showEnrollmentStatus(enrollmentId)}
+                  />
+                </Suspense>
+              )}
+              {data.waiting_at_gate && (
+                <Suspense fallback={null}>
+                  <WaitingAtGate
+                    gate={data.waiting_at_gate}
+                    canUnlock={userRole === 'admin'}
+                    unlockUrl={`${apiBaseUrl}/organizations/${organizationId}/enrollments/${enrollmentId}/gates/${data.waiting_at_gate.course_content_id}/unlock/`}
+                    onUnlocked={() => { showEnrollmentStatus(enrollmentId); reloadLearners(); }}
                   />
                 </Suspense>
               )}
@@ -159,6 +179,10 @@ function Learners() {
                 { event.type === "deactivated" && <>
                   <Box><Typography>{localeMessages["reason"]}: {localeMessages[event.event_data.reason] || event.event_data.reason}</Typography></Box>
                 </>}
+                { event.type === "gate_unlocked" && <>
+                  <Box><Typography>{event.event_data.gate_title}</Typography></Box>
+                  <Box><Typography variant="body2" color="text.secondary">{gateUnlockSourceLabel(event.event_data)}</Typography></Box>
+                </>}
                 { event.type === "reminder_sent" && <>
                   <Box><Typography>{localeMessages["quiz_title"]}: {event.event_data.content_title}</Typography></Box>
                 </>}
@@ -190,6 +214,7 @@ function Learners() {
         enrollmentsCount: learner.enrollments_count || { total: 0, completed: 0 },
         enrollmentStatus: learner.enrollment_status || null,
         enrollmentProgress: learner.enrollment_progress ?? null,
+        enrollmentWaitingAtGate: learner.enrollment_waiting_at_gate || null,
         enrollments: [],
         state: 0, // 0: not loaded, 1: loading, 2: loaded
       })));
@@ -410,8 +435,10 @@ function Learners() {
                       {courseFilter && learner.enrollmentProgress !== null ? (
                         <Box sx={{ minWidth: 120 }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                            <Typography variant="body2" color="text.secondary">
-                              {localeMessages[learner.enrollmentStatus] || learner.enrollmentStatus}
+                            <Typography variant="body2" color={learner.enrollmentWaitingAtGate ? 'warning.main' : 'text.secondary'}>
+                              {learner.enrollmentWaitingAtGate
+                                ? (localeMessages['waiting_at_gate'] || 'Waiting at gate: %(gate)s').replace('%(gate)s', learner.enrollmentWaitingAtGate)
+                                : (localeMessages[learner.enrollmentStatus] || learner.enrollmentStatus)}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
                               {learner.enrollmentProgress}%

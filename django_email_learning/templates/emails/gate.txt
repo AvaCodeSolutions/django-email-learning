@@ -1,0 +1,7 @@
+{% load i18n %}{% autoescape off %}
+{{ gate.title }}
+
+{{ message_text }}
+
+{% translate "Unsubscribe link:" %} {{ unsubscribe_link }}
+{% endautoescape %}

@@ -9,6 +9,8 @@ from .course_contents import (
     DecisionOption,
     DecisionOutcome,
     DecisionPoint,
+    Gate,
+    GateTimeoutAction,
     Lesson,
     Question,
     Quiz,
@@ -31,6 +33,13 @@ from .enums.deactivation_reason import DeactivationReason
 from .enums.delivery_status import DeliveryStatus
 from .enums.enrollment_status import EnrollmentStatus
 from .enums.from_email_type import FromEmailType
+from .gates import (
+    GateUnlock,
+    GateUnlockSource,
+    is_waiting_at_gate,
+    waiting_gate_deliveries,
+    waiting_gate_delivery,
+)
 from .imap_connections import ImapConnection, InboxFolder, is_domain_or_ip
 from .jobs import JobExecution, JobName, JobStatus
 from .mixin_models import EncryptionMixin

@@ -129,6 +129,7 @@ class Enrollment(models.Model):
             (DeactivationReason.FAILED, "Failed"),
             (DeactivationReason.INACTIVE, "Inactive"),
             (DeactivationReason.REVOKED, "Revoked"),
+            (DeactivationReason.GATE_EXPIRED, "Gate expired"),
         ],
         max_length=50,
     )

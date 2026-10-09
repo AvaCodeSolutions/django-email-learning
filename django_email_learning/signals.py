@@ -3,11 +3,22 @@ import logging
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_migrate
-from django.dispatch import receiver
+from django.dispatch import Signal, receiver
 
 from django_email_learning.apps import PLATFORM_ADMIN_GROUP_NAME
 
 logger = logging.getLogger(__name__)
+
+# Sent when a learner arrives at a gate they hold no unlock for, and is now waiting there.
+# Sent with sender=Gate and keyword arguments `enrollment`, `course_content` and `gate`,
+# once the transaction that put them there has committed.
+gate_reached = Signal()
+
+# Sent when a gate is unlocked for an enrollment - by the API, an admin, or a timeout that
+# continues past it - and sent with sender=Gate and keyword arguments `enrollment`,
+# `course_content`, `gate`, `unlock` (the GateUnlock) and `was_waiting`, which is False when
+# the gate was unlocked before the learner reached it. Sent after the transaction commits.
+gate_unlocked = Signal()
 
 
 @receiver(post_migrate)

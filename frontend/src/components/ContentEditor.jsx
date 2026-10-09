@@ -49,14 +49,19 @@ import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import ImageIcon from '@mui/icons-material/Image';
 import VerticalAlignCenterIcon from '@mui/icons-material/VerticalAlignCenter';
+import SmartButtonIcon from '@mui/icons-material/SmartButton';
 import { useAppContext } from '../render'
 import { getCookie } from '../utils.js';
 import { sanitizeEndpointUrl, sanitizeImageUrl, sanitizeUrl } from '../sanitizeUrl.js';
 import { ChaoticOrbit } from 'ldrs/react'
+import EmailButtonDialog from './EmailButtonDialog.jsx';
+import { ALL_LINK_VARIABLES, EmailButton } from './emailButton.js';
 import 'ldrs/react/ChaoticOrbit.css'
 
 
-function ContentEditor({ initialContent, contentUpdateCallback, disabled = false, extraMinLines = 0, editorInstanceCallback, defaultDirection }) {
+// `linkVariables` are the learner details a button's link may carry; content with no enrollment,
+// such as a newsletter, offers fewer.
+function ContentEditor({ initialContent, contentUpdateCallback, disabled = false, extraMinLines = 0, editorInstanceCallback, defaultDirection, linkVariables = ALL_LINK_VARIABLES }) {
     const {
         direction: appDirection,
         apiBaseUrl: rawApiBaseUrl,
@@ -65,6 +70,7 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
         aiTextEditModel,
         aiTextEditingModel,
         availableFeatures = [],
+        brandColor,
     } = useAppContext();
     const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const direction = defaultDirection || appDirection;
@@ -82,6 +88,8 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
     const [aiEditError, setAiEditError] = useState(null);
     const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
     const [imageFormValues, setImageFormValues] = useState({ src: '', alt: '' });
+    // Null while closed; `{ button }` while open, where button is null for a new one.
+    const [buttonDialog, setButtonDialog] = useState(null);
 
     useEffect(() => {
         setEditorHeight((previousHeight) => Math.max(previousHeight, minHeight));
@@ -126,7 +134,7 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                 enableClickSelection: true,
             }),
             TextAlign.configure({
-                types: ['paragraph', 'heading'],
+                types: ['paragraph', 'heading', 'emailButton'],
             }),
             Image.configure({
                 allowBase64: false,
@@ -138,6 +146,10 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
             }),
             Heading.configure({
                 levels: [1, 2, 3],
+            }),
+            EmailButton.configure({
+                brandColor,
+                onEdit: (button) => setButtonDialog({ button }),
             }),
             UndoRedo,
             Dropcursor,],
@@ -223,6 +235,24 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
 
     const unlinkActiveLink = () => {
         editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    };
+
+    const openButtonDialog = () => {
+        setButtonDialog({ button: editor.isActive('emailButton') ? editor.getAttributes('emailButton') : null });
+    };
+
+    const saveButton = (attributes) => {
+        if (buttonDialog?.button && editor.isActive('emailButton')) {
+            editor.chain().focus().updateAttributes('emailButton', attributes).run();
+        } else {
+            editor.chain().focus().insertContent({ type: 'emailButton', attrs: attributes }).run();
+        }
+        setButtonDialog(null);
+    };
+
+    const removeButton = () => {
+        editor.chain().focus().deleteSelection().run();
+        setButtonDialog(null);
     };
 
     const openImageEditDialog = () => {
@@ -633,6 +663,15 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                         <InsertLinkIcon />
                     </IconButton>
                     </Tooltip>
+                    <Tooltip title="Insert Button" placement="top">
+                    <IconButton
+                        onClick={openButtonDialog}
+                        size="small"
+                        aria-label="Insert Button"
+                    >
+                        <SmartButtonIcon />
+                    </IconButton>
+                    </Tooltip>
                     <Tooltip title="Block Quote" placement="top">
                     <IconButton
                         onClick={() => editor.chain().focus().toggleBlockquote().run()}
@@ -940,6 +979,16 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                         </BubbleMenu>
                     )}
                     <EditorContent editor={editor} />
+                    {buttonDialog && (
+                        <EmailButtonDialog
+                            open
+                            button={buttonDialog.button}
+                            variables={linkVariables}
+                            onSave={saveButton}
+                            onRemove={removeButton}
+                            onClose={() => setButtonDialog(null)}
+                        />
+                    )}
                     <Dialog
                         open={isImageDialogOpen}
                         onClose={closeImageEditDialog}

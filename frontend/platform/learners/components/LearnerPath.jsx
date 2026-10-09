@@ -2,9 +2,10 @@ import { Box, Chip, Typography } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutlined';
 import ScheduleIcon from '@mui/icons-material/Schedule';
+import LockClockIcon from '@mui/icons-material/LockClock';
 import { useAppContext } from '../../../src/render.jsx';
 
-const STATUS_ICONS = { delivered: CheckCircleOutlineIcon, scheduled: ScheduleIcon, not_sent: RemoveCircleOutlineIcon };
+const STATUS_ICONS = { delivered: CheckCircleOutlineIcon, scheduled: ScheduleIcon, not_sent: RemoveCircleOutlineIcon, waiting: LockClockIcon };
 
 /**
  * The route one learner has taken through a branching course: every content they were sent or
@@ -57,6 +58,7 @@ function LearnerPath({ path = [] }) {
                                     icon={<Icon />}
                                     label={step.title}
                                     variant={step.status === 'delivered' ? 'filled' : 'outlined'}
+                                    color={step.status === 'waiting' ? 'warning' : 'default'}
                                     aria-label={`${step.title}: ${statusLabel(step.status)}`}
                                 />
                             );

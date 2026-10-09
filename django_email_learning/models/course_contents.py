@@ -6,6 +6,7 @@ from typing import Optional
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.utils.html import strip_tags
 from django.utils.translation import gettext, ngettext
 
 from .courses import Course
@@ -179,6 +180,56 @@ class DecisionOption(models.Model):
         return self.text
 
 
+class GateTimeoutAction(StrEnum):
+    DEACTIVATE = "deactivate"
+    CONTINUE = "continue"
+
+
+class Gate(models.Model):
+    """A point where a learner's progress waits for something outside the course.
+
+    Reaching a gate holds the enrollment until it is unlocked - by an API call naming the
+    gate's `key`, or by an admin - so the rest of a course can depend on a payment, an
+    account being created or a form being filled in. A learner is never asked anything
+    here; `message`, when set, is emailed as they arrive to tell them what is pending.
+    """
+
+    title = models.CharField(
+        max_length=500,
+        help_text="What the learner waits for, e.g. 'Payment'. Shown on the public course page.",
+    )
+    key = models.SlugField(
+        max_length=100,
+        help_text="Names this gate in the unlock API. Unique within a course.",
+    )
+    message = models.TextField(
+        blank=True,
+        default="",
+        help_text="Emailed to the learner when they reach the gate. Empty sends nothing.",
+    )
+    timeout_days = models.IntegerField(
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Days to wait for an unlock before `timeout_action` applies. 0 waits indefinitely.",
+    )
+    timeout_action = models.CharField(
+        max_length=20,
+        choices=[
+            (GateTimeoutAction.DEACTIVATE.value, "Deactivate the enrollment"),
+            (GateTimeoutAction.CONTINUE.value, "Continue past the gate"),
+        ],
+        default=GateTimeoutAction.DEACTIVATE.value,
+    )
+
+    def __str__(self) -> str:
+        return self.title
+
+    @property
+    def has_message(self) -> bool:
+        """Whether `message` says anything, rather than being empty markup left by an editor."""
+        return bool(strip_tags(self.message).replace("&nbsp;", " ").strip()) or "<img" in self.message.lower()
+
+
 class ContentTrack(models.Model):
     """A named branch of a course: a run of content a learner takes instead of the main spine.
 
@@ -320,6 +371,7 @@ class CourseContent(models.Model):
     quiz = models.ForeignKey(Quiz, null=True, blank=True, on_delete=models.CASCADE)
     assignment = models.ForeignKey(Assignment, null=True, blank=True, on_delete=models.CASCADE)
     decision = models.ForeignKey(DecisionPoint, null=True, blank=True, on_delete=models.CASCADE)
+    gate = models.ForeignKey(Gate, null=True, blank=True, on_delete=models.CASCADE)
     waiting_period = models.IntegerField(
         help_text="Waiting period in seconds after previous content is sent or submited."
     )
@@ -334,6 +386,8 @@ class CourseContent(models.Model):
             return f"{self.priority} - Assignment: {self.assignment.title}"
         elif self.type == CourseContentType.DECISION and self.decision:
             return f"{self.priority} - Decision: {self.decision.title}"
+        elif self.type == CourseContentType.GATE and self.gate:
+            return f"{self.priority} - Gate: {self.gate.title}"
         return f"{self.course.title} content #{self.priority}"
 
     @property
@@ -344,6 +398,8 @@ class CourseContent(models.Model):
             return self.assignment.deadline_days
         elif self.type == CourseContentType.DECISION and self.decision:
             return self.decision.deadline_days
+        elif self.type == CourseContentType.GATE and self.gate:
+            return self.gate.timeout_days
         return None
 
     @property
@@ -370,6 +426,8 @@ class CourseContent(models.Model):
             return self.assignment.title
         elif self.type == CourseContentType.DECISION and self.decision:
             return self.decision.title
+        elif self.type == CourseContentType.GATE and self.gate:
+            return self.gate.title
         return "Untitled Content"
 
     @property
@@ -388,6 +446,8 @@ class CourseContent(models.Model):
             # A decision has no wrong answer to fail on, so a missed deadline moves the learner on
             # rather than ending the enrollment.
             return False
+        elif self.type == CourseContentType.GATE and self.gate:
+            return self.gate.timeout_action == GateTimeoutAction.DEACTIVATE
         return None
 
     def human_readable_waiting_period(self) -> str:
@@ -414,6 +474,8 @@ class CourseContent(models.Model):
             raise ValidationError("Assignment must be provided for assignment content.")
         if self.type == CourseContentType.DECISION and not self.decision:
             raise ValidationError("Decision must be provided for decision content.")
+        if self.type == CourseContentType.GATE and not self.gate:
+            raise ValidationError("Gate must be provided for gate content.")
         if self.type == CourseContentType.LESSON and self.lesson:
             self.lesson.full_clean()
         elif self.type == CourseContentType.QUIZ and self.quiz:
@@ -422,6 +484,19 @@ class CourseContent(models.Model):
             self.assignment.full_clean()
         elif self.type == CourseContentType.DECISION and self.decision:
             self.decision.full_clean()
+        elif self.type == CourseContentType.GATE and self.gate:
+            self.gate.full_clean()
+            self._validate_gate_key_unique()
+
+    def _validate_gate_key_unique(self) -> None:
+        # The key lives on the gate but is unique per course, which no database constraint
+        # can express across the two tables.
+        assert self.gate is not None
+        clashing = CourseContent.objects.filter(course_id=self.course_id, gate__key=self.gate.key).exclude(pk=self.pk)
+        if clashing.exists():
+            raise ValidationError(
+                {"key": gettext("Another gate in this course already uses the key '%(key)s'.") % {"key": self.gate.key}}
+            )
 
     def full_clean(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self._validate_content()
@@ -476,6 +551,11 @@ class CourseContent(models.Model):
                 fields=["course", "decision"],
                 condition=models.Q(decision__isnull=False),
                 name="unique_decision_per_course",
+            ),
+            models.UniqueConstraint(
+                fields=["course", "gate"],
+                condition=models.Q(gate__isnull=False),
+                name="unique_gate_per_course",
             ),
             # Split in two because a single constraint over ("course", "track", "priority")
             # would stop enforcing anything on the main spine: both backends treat NULL

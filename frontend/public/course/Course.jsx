@@ -4,6 +4,7 @@ import Layout from '../components/Layout.jsx';
 import EnrollmentForm from '../components/EnrollmentForm.jsx';
 import { Alert, Avatar, Box, Button, Card, Container, Dialog, Link, List, ListItem, ListItemIcon, ListItemText, Stack, Typography } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import AutoStoriesIcon from '@mui/icons-material/AutoStories';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
@@ -385,7 +386,9 @@ function Course() {
                         </Typography>
                         <Card sx={outlinedCardSx}>
                             <List disablePadding>
-                                {course.lessons.map((lesson, index) => (
+                                {course.lessons.map((lesson, index) => {
+                                    const lockedBy = course.lesson_gates?.[index];
+                                    return (
                                     <ListItem
                                         key={index}
                                         sx={{
@@ -404,24 +407,38 @@ function Course() {
                                                 ml: courseDirection === 'rtl' ? 1 : 0,
                                             }}
                                         >
-                                            <CheckCircleIcon
-                                                sx={{
-                                                    color: organization.brand_color,
-                                                    fontSize: '1.5rem',
-                                                }}
-                                            />
+                                            {lockedBy ? (
+                                                <LockOutlinedIcon
+                                                    aria-hidden="false"
+                                                    titleAccess={localeMessages['locked']}
+                                                    sx={{ color: 'text.secondary', fontSize: '1.5rem' }}
+                                                />
+                                            ) : (
+                                                <CheckCircleIcon
+                                                    sx={{
+                                                        color: organization.brand_color,
+                                                        fontSize: '1.5rem',
+                                                    }}
+                                                />
+                                            )}
                                         </ListItemIcon>
                                         <ListItemText
                                             primary={lesson}
+                                            secondary={lockedBy ? (localeMessages['unlocks_after'] || 'Unlocks after GATE_TITLE').replace('GATE_TITLE', lockedBy) : null}
                                             slotProps={{
                                                 primary: {
                                                     variant: 'body2',
+                                                    sx: { textAlign, ...(lockedBy ? { color: 'text.secondary' } : {}) },
+                                                },
+                                                secondary: {
+                                                    variant: 'caption',
                                                     sx: { textAlign },
                                                 },
                                             }}
                                         />
                                     </ListItem>
-                                ))}
+                                    );
+                                })}
                             </List>
                         </Card>
                     </Box>

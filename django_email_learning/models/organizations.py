@@ -280,8 +280,24 @@ class Organization(models.Model):
         cap = self.get_learners_cap()
         if not cap:
             return True
-        active_learner_count = self.learner_set.filter(enrollments__status=EnrollmentStatus.ACTIVE).distinct().count()
-        return active_learner_count < cap
+        return self.active_learner_count() < cap
+
+    def active_learner_count(self) -> int:
+        """Learners with at least one active enrollment that is not held at a gate.
+
+        A learner waiting at a gate - for a payment, an account, a form - isn't taking
+        anything from the course yet, so they don't use up a place under the cap.
+        """
+        # Imported here: gates imports enrollments, which imports this module.
+        from .enrollments import Enrollment
+        from .gates import is_waiting_at_gate
+
+        progressing = (
+            Enrollment.objects.filter(learner__organization=self, status=EnrollmentStatus.ACTIVE)
+            .alias(waiting=is_waiting_at_gate())
+            .filter(waiting=False)
+        )
+        return progressing.values("learner_id").distinct().count()
 
 
 class SocialLink(models.Model):

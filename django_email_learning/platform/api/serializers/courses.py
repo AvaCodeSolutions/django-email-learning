@@ -1,5 +1,5 @@
 import enum
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.translation import get_language_info
@@ -16,6 +16,7 @@ from django_email_learning.models import (
     DecisionOption,
     DecisionPoint,
     FromEmailType,
+    Gate,
     ImapConnection,
     Lesson,
     Newsletter,
@@ -38,6 +39,11 @@ from django_email_learning.platform.api.serializers.decisions import (
     DecisionCreate,
     DecisionPointResponse,
     DecisionUpdate,
+)
+from django_email_learning.platform.api.serializers.gates import (
+    GateCreate,
+    GateResponse,
+    GateUpdate,
 )
 from django_email_learning.platform.api.serializers.lessons import (
     LessonCreate,
@@ -423,7 +429,7 @@ class CourseResponse(BaseModel):
 class CreateCourseContentRequest(BaseModel):
     priority: int | None = Field(gt=0, examples=[1], default=None)
     waiting_period: WaitingPeriod
-    content: LessonCreate | QuizCreate | AssignmentCreate | DecisionCreate = Field(discriminator="type")
+    content: LessonCreate | QuizCreate | AssignmentCreate | DecisionCreate | GateCreate = Field(discriminator="type")
     # Empty puts the new content on the main spine.
     track_id: Optional[int] = None
 
@@ -439,6 +445,7 @@ class CreateCourseContentRequest(BaseModel):
         quiz = None
         assignment = None
         decision = None
+        gate = None
         if isinstance(self.content, LessonCreate):
             lesson = Lesson(
                 title=self.content.title,
@@ -501,6 +508,17 @@ class CreateCourseContentRequest(BaseModel):
                 DecisionOption.objects.create(decision=decision, text=option.text, order=order)
             content_type = CourseContentType.DECISION
 
+        elif isinstance(self.content, GateCreate):
+            gate = Gate(
+                title=self.content.title,
+                key=self.content.key,
+                message=self.content.message,
+                timeout_days=self.content.timeout_days,
+                timeout_action=self.content.timeout_action.value,
+            )
+            gate.save()
+            content_type = CourseContentType.GATE
+
         course_content = CourseContent.objects.create(
             course=course,
             track_id=self.track_id,
@@ -510,6 +528,7 @@ class CreateCourseContentRequest(BaseModel):
             lesson=lesson,
             quiz=quiz,
             decision=decision,
+            gate=gate,
             type=content_type,
         )
 
@@ -523,6 +542,7 @@ class UpdateCourseContentRequest(BaseModel):
     quiz: Optional[UpdateQuiz] = None
     assignment: Optional[AssignmentUpdate] = None
     decision: Optional[DecisionUpdate] = None
+    gate: Optional[GateUpdate] = None
     is_published: Optional[bool] = None
     # Present-but-null moves the content back to the main spine, so this is read through
     # model_fields_set rather than compared against None.
@@ -539,12 +559,13 @@ class UpdateCourseContentRequest(BaseModel):
             self.quiz,
             self.assignment,
             self.decision,
+            self.gate,
             self.is_published,
         ]
         if not any(f is not None for f in fields) and "track_id" not in self.model_fields_set:
             raise ValueError(
                 "At least one of 'priority', 'waiting_period', 'lesson', 'quiz',"
-                " 'assignment', 'decision', 'is_published', or 'track_id' must be provided."
+                " 'assignment', 'decision', 'gate', 'is_published', or 'track_id' must be provided."
             )
         return self
 
@@ -558,6 +579,7 @@ class CourseContentResponse(BaseModel):
     quiz: Optional[QuizResponse] = None
     assignment: Optional[AssignmentResponse] = None
     decision: Optional[DecisionPointResponse] = None
+    gate: Optional[GateResponse] = None
     is_published: bool
     track_id: Optional[int] = None
     is_branch_point: bool = False
@@ -579,6 +601,17 @@ class CourseContentSummaryResponse(BaseModel):
     track_id: Optional[int] = None
     limited_attempts: Optional[bool] = None
     is_blocking: Optional[bool] = None
+    gate_key: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def gate_key_from_content(cls, data: Any) -> Any:
+        if isinstance(data, CourseContent):
+            return {
+                **{name: getattr(data, name) for name in cls.model_fields if name != "gate_key"},
+                "gate_key": data.gate.key if data.gate else None,
+            }
+        return data
 
     @field_serializer("waiting_period")
     def serialize_waiting_period(self, waiting_period: int) -> dict:

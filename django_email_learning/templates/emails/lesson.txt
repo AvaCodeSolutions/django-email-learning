@@ -1,6 +1,7 @@
-{% load i18n %}
+{% load i18n %}{% autoescape off %}
 {{ lesson.title }}
 
-{{ lesson.content|striptags }}
+{{ lesson_text }}
 
 {% translate "Unsubscribe link:" %} {{ unsubscribe_link }}
+{% endautoescape %}

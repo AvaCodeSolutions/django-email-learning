@@ -13,6 +13,7 @@ from django_email_learning.models import (
 from django_email_learning.services.command_models.abstract_command import (
     AbstractCommand,
 )
+from django_email_learning.services.email_buttons import link_variables, render_as_text, render_buttons
 from django_email_learning.services.email_sender_service import email_sender_service
 from django_email_learning.services.metrics_service import MetricsService
 from django_email_learning.services.utils import mask_email
@@ -60,8 +61,11 @@ class SendLessonCommand(AbstractCommand):
             else None
         )
 
+        button_values = link_variables(enrollment_id=enrollment.id if enrollment else None, email=self.email)
         context = {
             "lesson": lesson,
+            "lesson_content": render_buttons(lesson.content, button_values, content.course.organization.brand_color),
+            "lesson_text": render_as_text(lesson.content, button_values),
             "unsubscribe_link": content.course.generate_unsubscribe_link(self.email),
             "progress": progress,
             "next_content": next_content,

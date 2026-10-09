@@ -67,6 +67,15 @@ The action cannot be undone — the enrollment state machine has no transition o
 
 Behind the button is an admin-only endpoint, ``POST /api/platform/organizations/<id>/enrollments/<id>/cancel/``. An enrollment that reached a final state in the meantime returns ``409`` and is left exactly as it was.
 
+Unlocking a Gate
+----------------
+
+A learner held at a :doc:`gate <gates>` shows as *Waiting at gate* in the learners list and in the enrollment view. Organization admins can choose **Unlock** next to the gate to let them continue, the same as an unlock through the API. The timeline records the unlock and who made it.
+
+Behind the button is an admin-only endpoint, ``POST /api/platform/organizations/<id>/enrollments/<id>/gates/<course_content_id>/unlock/``. Unlocking a gate that is already unlocked changes nothing; an enrollment that has ended returns ``409``.
+
+.. _learner-capacity:
+
 Learner Capacity
 -----------------
 
