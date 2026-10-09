@@ -31,8 +31,16 @@ const KEY_PATTERN = /^[-a-zA-Z0-9_]+$/;
 // RequiredTextField colours its helper text as an error; these fields also use it for a hint.
 const helperTextColor = (hasError) => ({ formHelperText: { sx: { color: hasError ? 'errorText.main' : 'text.secondary' } } });
 
-// The editor leaves markup such as <p></p> behind once its text is deleted.
-const isBlankHtml = (html) => !html || (!/<img/i.test(html) && !html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim());
+// The editor leaves markup such as <p></p> behind once its text is deleted. Parsed rather
+// than stripped with a pattern: DOMParser runs no scripts and loads nothing, and only the
+// text is read here - the message itself is sent as written and sanitized by the server.
+const isBlankHtml = (html) => {
+    if (!html) {
+        return true;
+    }
+    const body = new DOMParser().parseFromString(html, 'text/html').body;
+    return !body.querySelector('img') && !body.textContent.trim();
+};
 
 // A key suggested from the title while the author has not typed one of their own.
 const keyFromTitle = (title) => title
