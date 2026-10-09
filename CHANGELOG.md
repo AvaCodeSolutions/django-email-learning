@@ -6,6 +6,30 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.12.0] - 2026-10-09
+
+### Added
+
+- **Gates: course content that holds learners until something outside the course happens.** A gate is a new content type for making the rest of a course depend on a payment, an account being created or a form being submitted. Learners who reach a gate wait there until it is unlocked. A gate has a title, a key unique within its course (such as `payment`), and an optional message emailed as the learner arrives. It can also have a timeout counted from when the learner reaches it; when it runs out, the gate either deactivates the enrollment, with the new reason `gate_expired` and an email saying so, or lets the learner continue. Migration `0037` adds the `Gate` and `GateUnlock` models. See the new *Gates* page in the docs.
+  - **Unlocking from your own system:** `POST /api/v1/enrollments/<id>/unlock/` with `{"gate": "<key>"}`, under a new `enrollments:update` API key scope. Without `gate`, it unlocks the gate the learner is waiting at. A gate can be unlocked before the learner reaches it, so they pass straight through when they get there. Unlocking again changes nothing and answers `already_unlocked`, so retried webhooks are safe.
+  - **Unlocking from the platform:** organization admins get an **Unlock** button in the enrollment view.
+  - **A waiting enrollment stays `active`.** The platform shows it as *Waiting at gate*: the learners list gains a **Waiting** status filter, and the enrollment's path and timeline show when the learner reached the gate and who unlocked it. Organization API enrollment responses include `waiting_at_gate`.
+  - **Waiting learners don't count toward the learner cap**, and unlocking never checks the cap, so a learner who has paid is never held back because the organization filled up in the meantime.
+  - **Signals:** `gate_reached` and `gate_unlocked` in `django_email_learning.signals` let a project react in code, for example by starting a checkout when a learner arrives. Both are sent after the transaction commits.
+  - **The public course page** shows lessons behind a published gate with a lock and "Unlocks after …".
+- **Buttons in the content editor.** A new **Insert Button** tool adds a button that links to any page, and can add the learner's **enrollment ID** and **email** to the link's query string. The values are filled in for each learner as the email is sent, and are never stored in the content. Parameter names can be changed to whatever the page expects, such as `client_reference_id` and `prefilled_email` for a Stripe payment link. A value that isn't available is left off: newsletters have no enrollment, and neither does a lesson an admin sends to themselves. Buttons work in lessons, gate messages and newsletters, are drawn in the organization's brand colour, and can be aligned left, centre or right. In the editor a button is selected rather than followed when clicked, and is edited from an icon that appears on hover.
+
+### Changed
+
+- **Projects that override the `emails/lesson.html` template** should render `{{ lesson_content|safe }}` in place of `{{ lesson.content|safe }}`, so the lesson's buttons get their learner values and styling. `lesson` is still in the context, so an override that keeps the old line still renders, just with buttons shown as plain links. `emails/lesson.txt` now renders `lesson_text`.
+- **Platform pages' app context** includes the active organization's `brandColor`.
+
+### Fixed
+
+- **Plain-text lesson emails were double-escaped.** Text such as "Fish & chips" arrived as `Fish &amp;amp; chips`, and the unsubscribe link contained `&amp;` in place of `&`, which broke it in text-only mail clients. Plain-text lesson and gate emails are now real text, with block elements on lines of their own.
+- **The plain-text part of a newsletter was the raw HTML body.** It is now text.
+- **Creating course content that is refused on save left its lesson, quiz or other content behind.** Creating content is now all-or-nothing.
+
 ## [7.11.1] - 2026-10-07
 
 ### Fixed
