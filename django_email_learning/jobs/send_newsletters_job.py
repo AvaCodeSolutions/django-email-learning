@@ -19,6 +19,7 @@ from django_email_learning.models import (
     domain_wide_email_enabled,
 )
 from django_email_learning.ports.task_queue_protocol import TaskQueueProtocol
+from django_email_learning.services.email_buttons import link_variables, render_as_text, render_buttons
 from django_email_learning.services.email_sender_service import email_sender_service
 from django_email_learning.services.metrics_service import metric_service
 
@@ -181,15 +182,16 @@ class SendNewslettersJob:
         except Exception:
             full_unsubscribe_url = ""
 
+        # A subscriber has no enrollment, so a button here can only carry their email.
+        button_values = link_variables(email=email)
+        text_body = render_as_text(sendout.body, button_values)
         plain_body = (
-            f"{sendout.body}\n\n---\nTo unsubscribe, visit: {full_unsubscribe_url}"
-            if full_unsubscribe_url
-            else sendout.body
+            f"{text_body}\n\n---\nTo unsubscribe, visit: {full_unsubscribe_url}" if full_unsubscribe_url else text_body
         )
 
         context = {
             "subject": sendout.subject,
-            "body": sendout.body,
+            "body": render_buttons(sendout.body, button_values, sendout.newsletter.organization.brand_color),
             "newsletter_title": sendout.newsletter.title,
             "unsubscribe_url": full_unsubscribe_url,
             "social_links": sendout.newsletter.organization.social_links.all(),

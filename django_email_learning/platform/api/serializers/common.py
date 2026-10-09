@@ -53,3 +53,5 @@ class EnrollmentSummaryResponse(BaseModel):
     status: EnrollmentStatus
     progress: int
     certificate_url: str | None = None
+    # The title of the gate the enrollment is held at, if it is waiting at one.
+    waiting_at_gate: str | None = None

@@ -16,6 +16,8 @@ class PublicCourseSerializer(BaseModel):
     language: str
     is_rtl: bool = False
     lessons: list[str] = []
+    # Aligned with `lessons`: the title of the gate a lesson waits behind, or None.
+    lesson_gates: list[str | None] = []
     target_audience: str | None = None
     external_references: list[dict[str, str]] | None = None
     newsletter_id: int | None = None

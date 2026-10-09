@@ -252,6 +252,7 @@ function SendoutDialog({ open, onClose, onSuccess, sendout, newsletterId, organi
                             key={open ? (sendout?.id ?? 'new') : 'closed'}
                             initialContent={body}
                             contentUpdateCallback={setBody}
+                            linkVariables={['email']}
                             extraMinLines={8}
                             defaultDirection={direction}
                             editorInstanceCallback={setEditorInstance}

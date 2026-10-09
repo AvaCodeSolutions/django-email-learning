@@ -7,3 +7,4 @@ class DeactivationReason(StrEnum):
     FAILED = "failed"
     INACTIVE = "inactive"
     REVOKED = "revoked"
+    GATE_EXPIRED = "gate_expired"

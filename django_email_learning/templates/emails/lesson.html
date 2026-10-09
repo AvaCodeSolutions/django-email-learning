@@ -38,7 +38,7 @@
 {% block content %}
         <h2 class="email-title">{{ lesson.title }}</h2>
 
-        {{ lesson.content|safe }}
+        {{ lesson_content|safe }}
 
         <div class="progress-wrapper">
             {% block lesson_extras %}

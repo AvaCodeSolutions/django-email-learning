@@ -230,3 +230,17 @@ def test_course_view_excludes_course_from_non_public_organization(db, anonymous_
     )
     response = anonymous_client.get(url)
     assert response.status_code == 404
+
+
+def test_course_view_marks_lessons_behind_a_gate(db, anonymous_client, gate_course):
+    gate_course.course.enabled = True
+    gate_course.course.save()
+    url = reverse(
+        "django_email_learning:public:course_page",
+        kwargs={"organization_slug": "my-organization", "course_slug": gate_course.course.slug},
+    )
+
+    course_data = anonymous_client.get(url).context["appContext"]["course"]
+
+    assert course_data["lessons"] == ["Welcome", "Paid lesson"]
+    assert course_data["lesson_gates"] == [None, "Payment"]

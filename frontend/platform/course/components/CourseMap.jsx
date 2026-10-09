@@ -6,6 +6,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import AltRouteIcon from '@mui/icons-material/AltRoute';
 import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
 import BallotOutlinedIcon from '@mui/icons-material/BallotOutlined';
+import LockClockOutlinedIcon from '@mui/icons-material/LockClockOutlined';
 import CallSplitOutlinedIcon from '@mui/icons-material/CallSplitOutlined';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import FlagIcon from '@mui/icons-material/Flag';
@@ -15,7 +16,7 @@ import { buildFlowGraph } from './flowGraph.js';
 import { trackColorMap } from './branching.js';
 import { NODE_HEIGHT, NODE_WIDTH, layoutBounds, layoutFlow, mapHeight } from './flowLayout.js';
 
-const TYPE_ICONS = { lesson: DescriptionOutlinedIcon, quiz: BallotOutlinedIcon, assignment: AssignmentOutlinedIcon, decision: CallSplitOutlinedIcon };
+const TYPE_ICONS = { lesson: DescriptionOutlinedIcon, quiz: BallotOutlinedIcon, assignment: AssignmentOutlinedIcon, decision: CallSplitOutlinedIcon, gate: LockClockOutlinedIcon };
 
 const HIDDEN_HANDLE = { opacity: 0, pointerEvents: 'none' };
 

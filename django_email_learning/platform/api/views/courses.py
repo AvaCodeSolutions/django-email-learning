@@ -31,6 +31,7 @@ from django_email_learning.platform.api.embed_snippet import (
 )
 from django_email_learning.platform.api.serializers import branching as branching_serializers
 from django_email_learning.platform.api.serializers.decisions import DecisionUpdate
+from django_email_learning.platform.api.serializers.gates import GateUpdate
 from django_email_learning.public.api.views import embeddable_enrollment_enabled
 from django_email_learning.services import quiz_analytics_service
 from django_email_learning.services.command_models.send_lesson_command import (
@@ -125,7 +126,10 @@ class CourseContentView(View):
                     .get("max_priority")
                 )
                 serializer.priority = (max_priority or 0) + 1
-            course_content = serializer.to_django_model(course=course)
+            # Atomic so content refused on save - a gate key already used in the course - does
+            # not leave the gate, lesson or quiz it was built from behind.
+            with transaction.atomic():
+                course_content = serializer.to_django_model(course=course)
 
             return JsonResponse(
                 serializers.CourseContentResponse.model_validate(course_content).model_dump(),
@@ -141,7 +145,7 @@ class CourseContentView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         try:
             course = Course.objects.get(id=kwargs["course_id"], organization_id=kwargs["organization_id"])
-            course_contents = course.coursecontent_set.all().order_by("priority")
+            course_contents = course.coursecontent_set.select_related("gate").order_by("priority")
             response_list = []
             for content in course_contents:
                 response_list.append(serializers.CourseContentSummaryResponse.model_validate(content).model_dump())
@@ -327,6 +331,20 @@ class SingleCourseContentView(View):
         removed.delete()
 
     @staticmethod
+    def _update_gate(course_content: CourseContent, update: GateUpdate) -> None:
+        gate = course_content.gate
+        assert gate is not None
+        for field in ("title", "key", "message", "timeout_days"):
+            value = getattr(update, field)
+            if value is not None:
+                setattr(gate, field, value)
+        if update.timeout_action is not None:
+            gate.timeout_action = update.timeout_action.value
+        # Saved through the content, whose validation knows the course's other gate keys.
+        course_content.full_clean()
+        gate.save()
+
+    @staticmethod
     def _move_to_track(course_content: CourseContent, track_id: Optional[int]) -> None:
         """Put `course_content` at the end of `track_id`, or of the main spine when None."""
         if track_id == course_content.track_id:
@@ -394,6 +412,9 @@ class SingleCourseContentView(View):
 
         if serializer.decision is not None and course_content.decision is not None:
             self._update_decision(course_content.decision, serializer.decision)
+
+        if serializer.gate is not None and course_content.gate is not None:
+            self._update_gate(course_content, serializer.gate)
 
         if serializer.quiz is not None and course_content.quiz is not None:
             quiz_serializer = serializer.quiz

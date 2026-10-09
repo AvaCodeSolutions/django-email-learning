@@ -103,6 +103,9 @@ Content Types
 **Decision Points**
   A single question with two or more answers and no right answer. The answer a learner picks can send them down a different track of the course — see :doc:`branching`.
 
+**Gates**
+  A step that holds learners until it is unlocked from outside the course — after a payment, an account being created or a form being submitted. See :doc:`gates`.
+
 Content Management Actions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -110,6 +113,7 @@ Content Management Actions
   - Click **"Add Lesson"** to create educational content
   - Click **"Add Quiz"** to create assessments
   - Click **"Add Decision"** to ask learners a question whose answer routes them
+  - Click **"Add Gate"** to hold learners until something outside the course unlocks the rest — see :doc:`gates`
   - Click **"Add Track"** to create a separate path through the course — see :doc:`branching`
   - Each piece of content can be scheduled for delayed delivery
 

@@ -17,6 +17,7 @@ from django_email_learning.public.serializers import (
     PublicInstructorSerializer,
     SocialLinkSerializer,
 )
+from django_email_learning.services import content_sequence_service
 
 # Same substitution Django's json_script template filter uses: these characters
 # are meaningless to a JSON parser (valid unicode escapes) but meaningful to an
@@ -357,6 +358,12 @@ class CourseView(TemplateView):
         course = self.course
 
         course_lang_info = get_language_info(course.language)
+        lesson_contents = list(
+            course.coursecontent_set.filter(lesson__isnull=False, is_published=True)
+            .select_related("lesson")
+            .order_by("priority")
+        )
+        gates = content_sequence_service.gates_ahead(course)
         # A CourseInstructor always references an org_user that can act as an
         # instructor, which requires a display_name - but guard anyway rather
         # than ever fall back to exposing the user's email on a public page.
@@ -383,12 +390,8 @@ class CourseView(TemplateView):
             instructors=instructors,
             external_references=[{"name": ref.name, "url": ref.url} for ref in course.external_references.all()]
             or None,
-            lessons=[
-                content.lesson.title  # type: ignore[union-attr]
-                for content in course.coursecontent_set.filter(lesson__isnull=False, is_published=True).order_by(
-                    "priority"
-                )
-            ],
+            lessons=[content.lesson.title for content in lesson_contents],  # type: ignore[union-attr]
+            lesson_gates=[gate.title if (gate := gates.get(content.id)) else None for content in lesson_contents],
         )
         organization_data = OrganizationSerializer(
             id=course.organization.id,
@@ -431,6 +434,8 @@ class CourseView(TemplateView):
                 "email_invalid": _("Please enter a valid email address"),
                 "course_language": _("Course language"),
                 "topics_covered": _("Here is the list of topics covered in this course:"),
+                "locked": _("Locked"),
+                "unlocks_after": _("Unlocks after GATE_TITLE"),
                 "provided_by": _("Provided by ORGANIZATION_NAME"),
                 "in_app_browser_or_disabled_cookies": _(
                     "It seems you are using an in-app browser or have disabled cookies."

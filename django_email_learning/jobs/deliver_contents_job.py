@@ -18,6 +18,7 @@ from django_email_learning.models import (
     JobStatus,
 )
 from django_email_learning.ports.task_queue_protocol import TaskQueueProtocol
+from django_email_learning.services import gate_service
 from django_email_learning.services.command_models.send_assignment_command import (
     AssignmentNotFoundError,
     SendAssignmentCommand,
@@ -26,6 +27,7 @@ from django_email_learning.services.command_models.send_decision_command import 
     DecisionNotFoundError,
     SendDecisionCommand,
 )
+from django_email_learning.services.command_models.send_gate_command import GateNotFoundError
 from django_email_learning.services.command_models.send_lesson_command import (
     LessonNotFoundError,
     SendLessonCommand,
@@ -264,6 +266,10 @@ class DeliverContentsJob:
                     f"Decision content delivered for DeliverySchedule ID {delivery_schedule.id}. "
                     "Next content scheduling is deferred until the learner answers."
                 )
+        elif course_content.type == CourseContentType.GATE:
+            # The learner either walks through an unlocked gate or waits there; either way
+            # what comes next is scheduled by the gate service, not here.
+            self.send_gate_content(delivery_schedule)
         elif course_content.type == CourseContentType.ASSIGNMENT and course_content.assignment is not None:
             is_delivered = self.send_assignment_content(delivery_schedule)
 
@@ -388,6 +394,25 @@ class DeliverContentsJob:
             logger.exception(
                 f"Failed to send decision content for DeliverySchedule ID {delivery_schedule.id}: {str(e)}"
             )
+            self.handle_failed_delivery(delivery_schedule)
+        return False
+
+    def send_gate_content(self, delivery_schedule: DeliverySchedule) -> bool:
+        if not delivery_schedule.delivery.course_content.gate:
+            delivery_schedule.status = DeliveryStatus.CANCELED
+            delivery_schedule.save()
+            logger.error(f"DeliverySchedule ID {delivery_schedule.id} has no associated gate. Canceling the delivery.")
+            return False
+
+        try:
+            gate_service.reach_gate(delivery_schedule)
+            return True
+        except GateNotFoundError:
+            logger.error(f"Gate for DeliverySchedule ID {delivery_schedule.id} not found. Canceling the delivery.")
+            delivery_schedule.status = DeliveryStatus.CANCELED
+            delivery_schedule.save()
+        except Exception as e:
+            logger.exception(f"Failed to deliver gate for DeliverySchedule ID {delivery_schedule.id}: {str(e)}")
             self.handle_failed_delivery(delivery_schedule)
         return False
 

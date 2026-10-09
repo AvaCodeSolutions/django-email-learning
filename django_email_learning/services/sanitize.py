@@ -31,7 +31,9 @@ RICH_TEXT_ALLOWED_TAGS = [
     "code",
 ]
 RICH_TEXT_ALLOWED_ATTRIBUTES = {
-    "a": ["href", "target", "rel"],
+    # The data attributes mark a button and name the learner values its link carries;
+    # see email_buttons, which validates them again when the email is rendered.
+    "a": ["href", "target", "rel", "data-email-button", "data-query-params", "style"],
     "img": ["src", "alt", "width", "height"],
     "p": ["style"],
     "h1": ["style"],
@@ -41,8 +43,8 @@ RICH_TEXT_ALLOWED_ATTRIBUTES = {
     "h5": ["style"],
     "h6": ["style"],
 }
-# The only inline style TextAlign produces is text-align on paragraphs/
-# headings — everything else (background-image, position, etc.) is dropped
+# The only inline style TextAlign produces is text-align on paragraphs,
+# headings and buttons — everything else (background-image, position, etc.) is dropped
 # even though the style attribute itself is allowed above.
 RICH_TEXT_CSS_SANITIZER = CSSSanitizer(allowed_css_properties=["text-align"])
 

@@ -18,15 +18,19 @@ from django_email_learning.decorators import accessible_for
 from django_email_learning.models import (
     Certificate,
     Course,
+    CourseContent,
+    CourseContentType,
     DeactivationReason,
     DeliverySchedule,
     Enrollment,
     EnrollmentStatus,
+    GateUnlockSource,
     Learner,
+    is_waiting_at_gate,
 )
 from django_email_learning.platform.api import serializers
 from django_email_learning.platform.api.pagniated_api_mixin import PaginatedApiMixin
-from django_email_learning.platform.api.serializers.learners import learner_path
+from django_email_learning.platform.api.serializers.learners import learner_path, waiting_gate
 from django_email_learning.services.command_models.enroll_command import EnrollCommand
 from django_email_learning.services.command_models.exceptions.blocked_email_error import (
     BlockedEmailError,
@@ -44,12 +48,16 @@ from django_email_learning.services.enrollment_cancellation_service import (
     CancellationOutcome,
     cancel_enrollment,
 )
+from django_email_learning.services.gate_service import UnlockOutcome, unlock_gate
 from django_email_learning.services.manual_delivery_service import (
     ManualDeliveryOutcome,
     send_delivery_schedule_now,
 )
 
 logger = logging.getLogger(__name__)
+
+# Not an EnrollmentStatus: a waiting enrollment is ACTIVE, held at a gate.
+WAITING_STATUS_FILTER = "waiting"
 
 
 @method_decorator(accessible_for(roles={"admin", "instructor"}), name="get")
@@ -69,10 +77,13 @@ class LearnersView(PaginatedApiMixin, View):
                 qs = qs.filter(status=EnrollmentStatus.ACTIVE)
         if "status" in request.GET:
             status_value = request.GET["status"]
-            try:
-                qs = qs.filter(status=EnrollmentStatus(status_value))
-            except ValueError:
-                pass
+            if status_value == WAITING_STATUS_FILTER:
+                qs = qs.filter(status=EnrollmentStatus.ACTIVE).alias(waiting=is_waiting_at_gate()).filter(waiting=True)
+            else:
+                try:
+                    qs = qs.filter(status=EnrollmentStatus(status_value))
+                except ValueError:
+                    pass
         if "search" in request.GET:
             search_term = request.GET["search"]
             qs = qs.filter(models.Q(learner__email__icontains=search_term))
@@ -104,6 +115,8 @@ class LearnersView(PaginatedApiMixin, View):
             if enrollment:
                 data["enrollment_status"] = enrollment.status
                 data["enrollment_progress"] = enrollment.progress_percentage()
+                gate = waiting_gate(enrollment) if enrollment.status == EnrollmentStatus.ACTIVE else None
+                data["enrollment_waiting_at_gate"] = gate.title if gate else None
         return data
 
 
@@ -124,6 +137,7 @@ class SingleLearnerView(View):
                             kwargs={"certificate_number": certificate.certificate_number},
                         )
                     )
+                gate = waiting_gate(enrollment) if enrollment.status == EnrollmentStatus.ACTIVE else None
                 enroolments_list.append(
                     serializers.EnrollmentSummaryResponse(
                         id=enrollment.id,
@@ -131,6 +145,7 @@ class SingleLearnerView(View):
                         status=EnrollmentStatus(enrollment.status),
                         progress=enrollment.progress_percentage(),
                         certificate_url=certificate_url,
+                        waiting_at_gate=gate.title if gate else None,
                     )
                 )
             return JsonResponse(
@@ -325,3 +340,41 @@ class CancelEnrollmentView(View):
             },
             status=200,
         )
+
+
+@method_decorator(accessible_for(roles={"admin"}), name="post")
+class UnlockGateView(View):
+    """Unlocks a gate for one learner on the admin's behalf.
+
+    Admin-only for the same reason sending a delivery early is: it moves a learner on
+    through their course, and here past whatever the gate was holding them for - a
+    payment, an account - which is a call for an admin rather than an instructor.
+
+    Works the same whether the learner is waiting at the gate or has not reached it yet,
+    and calling it again for a gate already unlocked changes nothing.
+    """
+
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            enrollment = Enrollment.objects.get(
+                id=kwargs["enrollment_id"], course__organization_id=kwargs["organization_id"]
+            )
+        except Enrollment.DoesNotExist:
+            return JsonResponse({"error": "Enrollment not found"}, status=404)
+
+        try:
+            course_content = CourseContent.objects.select_related("gate").get(
+                id=kwargs["course_content_id"],
+                course_id=enrollment.course_id,
+                type=CourseContentType.GATE,
+            )
+        except CourseContent.DoesNotExist:
+            return JsonResponse({"error": "Gate not found"}, status=404)
+
+        result = unlock_gate(enrollment, course_content, GateUnlockSource.ADMIN, unlocked_by=request.user)
+        if result.outcome == UnlockOutcome.NOT_UNLOCKABLE:
+            return JsonResponse(
+                {"error": "Enrollment has ended", "status": result.enrollment_status},
+                status=409,
+            )
+        return JsonResponse({"status": result.outcome, "enrollment_status": result.enrollment_status}, status=200)

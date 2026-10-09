@@ -14,6 +14,7 @@ from django_email_learning.models import (
     JobName,
     JobStatus,
 )
+from django_email_learning.services import gate_service
 from django_email_learning.services.email_sender_service import email_sender_service
 from django_email_learning.services.metrics_service import metric_service
 from django_email_learning.services.utils import mask_email
@@ -45,6 +46,11 @@ class DeactivateInactiveEnrollmentsJob:
 
         for delivery in deliveries:
             if delivery.course_content.lesson:
+                continue
+
+            if delivery.course_content.gate:
+                # A gate's timeout has its own outcome and its own email.
+                gate_service.expire_gate(delivery)
                 continue
 
             if not delivery.course_content.is_blocking:

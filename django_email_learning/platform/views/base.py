@@ -109,6 +109,8 @@ class BasePlatformView(TemplateView):
                 },
                 "navbarCustomComponents": [],
                 "userRole": role,
+                # Buttons in the content editor are drawn in it, as they will be in the email.
+                "brandColor": active_organization.brand_color,
                 "currentUserId": self.request.user.id if self.request.user.is_authenticated else None,
                 "direction": "rtl" if lang_info["bidi"] else "ltr",
                 "isPlatformAdmin": (

@@ -1,0 +1,17 @@
+{% extends "emails/base.html" %}
+{% load i18n %}
+
+{% block content %}
+    <h2 class="email-title">{% translate "Enrollment ended" %}</h2>
+
+    <p class="email-paragraph">{% translate "Hello," %}</p>
+
+    <p class="email-paragraph" style="margin-bottom: 20px;">{% blocktranslate count days=timeout_days %}We were waiting on {{ gate_title }} to continue {{ course_title }}, and it wasn't completed within {{ days }} day, so your enrollment has ended.{% plural %}We were waiting on {{ gate_title }} to continue {{ course_title }}, and it wasn't completed within {{ days }} days, so your enrollment has ended.{% endblocktranslate %}</p>
+
+    <p class="email-paragraph">{% translate "Still interested? You can enroll again at any time." %}</p>
+
+    <p class="email-paragraph">
+        {% translate "Best regards," %}<br />
+        {% blocktranslate with organization_name=organization_name %}{{ organization_name }} Team{% endblocktranslate %}
+    </p>
+{% endblock %}

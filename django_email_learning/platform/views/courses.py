@@ -279,11 +279,13 @@ class CourseView(BasePlatformView):
             "quiz": _("Quiz"),
             "assignment": _("Assignment"),
             "decision": _("Decision"),
+            "gate": _("Gate"),
             "track": _("Track"),
             "add_lesson_description": _("Content emailed to learners"),
             "add_quiz_description": _("Questions to check understanding"),
             "add_assignment_description": _("Work learners submit for review"),
             "add_decision_description": _("Let learners choose their path"),
+            "add_gate_description": _("Hold learners until something outside the course happens"),
             "add_track_description": _("A separate path through the course"),
             "add": _("Add"),
             "new_lesson": _("New Lesson"),
@@ -358,6 +360,40 @@ class CourseView(BasePlatformView):
             "decision_prompt_required": _("A decision needs a question."),
             "decision_options_required": _("A decision needs at least two answers, and none of them can be empty."),
             "decision_save_failed": _("Could not save the decision."),
+            "new_gate": _("New Gate"),
+            "update_gate": _("Update Gate"),
+            "save_gate": _("Save Gate"),
+            "gate_intro": _(
+                "Learners who reach a gate wait there until it is unlocked - through the API, or by an admin "
+                "from the learners page - so the rest of the course can depend on a payment, an account being "
+                "created or a form being submitted."
+            ),
+            "gate_title_help": _(
+                "What learners wait for, e.g. Payment. Shown on the public course page next to the lessons it locks."
+            ),
+            "gate_key": _("Key"),
+            "gate_key_help": _(
+                "Names this gate in the unlock API. Letters, numbers, hyphens and underscores; unique within the "
+                "course. Changing it breaks integrations that use the old key."
+            ),
+            "gate_message": _("Message to learners"),
+            "gate_message_help": _(
+                "Emailed when a learner reaches the gate, e.g. with a payment link. Leave empty to send nothing."
+            ),
+            "gate_settings": _("Gate Settings"),
+            "gate_timeout": _("Timeout"),
+            "gate_timeout_tooltip": _(
+                "How long to wait for an unlock, counted from when the learner reaches the gate. "
+                "Off means they wait indefinitely."
+            ),
+            "gate_timeout_action": _("When it times out"),
+            "gate_timeout_deactivate": _("Deactivate the enrollment"),
+            "gate_timeout_continue": _("Continue past the gate"),
+            "gate_title_required": _("A gate needs a title."),
+            "gate_key_required": _("A gate needs a key."),
+            "gate_key_invalid": _("Use only letters, numbers, hyphens and underscores."),
+            "gate_save_failed": _("Could not save the gate."),
+            "gate_saved_success": _("Gate saved."),
             "decision_branching_help": _(
                 "Send learners down a track by the answer they pick. Rules are checked in order; the first that "
                 "matches wins. Without rules, every learner continues to the next content."

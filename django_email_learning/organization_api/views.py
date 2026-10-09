@@ -26,8 +26,13 @@ from django_email_learning.decorators import require_organization_api_key
 from django_email_learning.models import (
     ApiKeyScope,
     Course,
+    CourseContent,
+    CourseContentType,
     Enrollment,
+    EnrollmentStatus,
+    GateUnlockSource,
     NewsletterSubscriber,
+    waiting_gate_delivery,
 )
 from django_email_learning.organization_api import serializers
 from django_email_learning.organization_api.openapi import (
@@ -40,6 +45,7 @@ from django_email_learning.organization_api.serializers import (
     EnrollmentCreatedResponse,
     ErrorResponse,
     ErrorWithReferenceResponse,
+    GateUnlockResponse,
     PingResponse,
 )
 from django_email_learning.public.api.rate_limiting import is_rate_limited
@@ -59,6 +65,7 @@ from django_email_learning.services.command_models.exceptions.learner_cap_exceed
 from django_email_learning.services.command_models.verify_enrollment_command import (
     VerifyEnrollmentCommand,
 )
+from django_email_learning.services.gate_service import UnlockOutcome, unlock_gate
 from django_email_learning.services.utils import mask_email
 
 logger = logging.getLogger(__name__)
@@ -273,6 +280,96 @@ class EnrollmentsView(RateLimitedApiView):
             enrollment=serializers.EnrollmentResponse.from_django_model(enrollment) if enrollment else None
         )
         return JsonResponse(response.model_dump(mode="json", exclude_none=True), status=201)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+@method_decorator(require_organization_api_key(scopes=[ApiKeyScope.ENROLLMENTS_UPDATE]), name="post")
+class GateUnlockView(RateLimitedApiView):
+    openapi_operations = {
+        "post": OperationSpec(
+            operation_id="unlockGate",
+            summary="Unlock a gate for an enrollment",
+            description=(
+                "A gate is a step in a course that holds a learner until something outside the "
+                "course happens - a payment, an account being created, a form being submitted. "
+                "This call is that signal. If the learner is waiting at the gate they move on to "
+                "the rest of the course straight away; if they have not reached it yet, the unlock "
+                "is kept and they pass through without stopping when they do. Calling it again "
+                "for a gate that is already unlocked changes nothing, so it is safe to retry. "
+                "The enrollment may be unverified or active, but not completed or deactivated."
+            ),
+            request=serializers.GateUnlockRequest,
+            responses={
+                200: ResponseSpec("The gate is unlocked for this enrollment.", GateUnlockResponse),
+                400: ResponseSpec("The request body is malformed or fails validation.", ErrorResponse),
+                401: ResponseSpec("The API key is missing, malformed, unknown, revoked or expired.", ErrorResponse),
+                403: ResponseSpec("The key lacks the required scope or is not an organization key.", ErrorResponse),
+                404: ResponseSpec(
+                    "No enrollment with that id in this organization, or no gate with that key in its course.",
+                    ErrorResponse,
+                ),
+                409: ResponseSpec(
+                    "The enrollment has ended, or no gate was named and the learner is not waiting at one.",
+                    ErrorResponse,
+                ),
+                429: ResponseSpec("The key's request budget for the current window is exhausted.", ErrorResponse),
+            },
+        )
+    }
+
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        rate_limited = self.check_rate_limit(request)
+        if rate_limited:
+            return rate_limited
+
+        try:
+            payload = serializers.GateUnlockRequest.model_validate(json.loads(request.body or "{}"))
+        except json.JSONDecodeError:
+            return JsonResponse({"error": INVALID_JSON_MESSAGE}, status=400)
+        except ValidationError as e:
+            return JsonResponse({"error": e.json()}, status=400)
+
+        try:
+            enrollment = Enrollment.objects.select_related("learner", "course").get(
+                id=kwargs["enrollment_id"], course__organization_id=request.organization.id
+            )
+        except Enrollment.DoesNotExist:
+            return JsonResponse({"error": "Enrollment not found"}, status=404)
+
+        if payload.gate is not None:
+            course_content = (
+                CourseContent.objects.filter(
+                    course_id=enrollment.course_id, type=CourseContentType.GATE, gate__key=payload.gate
+                )
+                .select_related("gate")
+                .first()
+            )
+            if course_content is None:
+                return JsonResponse({"error": "Gate not found"}, status=404)
+        else:
+            waiting = waiting_gate_delivery(enrollment) if enrollment.status == EnrollmentStatus.ACTIVE else None
+            if waiting is None:
+                return JsonResponse({"error": "The learner is not waiting at a gate"}, status=409)
+            course_content = waiting.course_content
+
+        result = unlock_gate(enrollment, course_content, GateUnlockSource.API, api_key=request.api_key)
+        if result.outcome == UnlockOutcome.NOT_UNLOCKABLE:
+            return JsonResponse({"error": "The enrollment has ended"}, status=409)
+
+        logger.info(
+            "API key %s unlocked gate '%s' for enrollment %s (%s)",
+            request.api_key.key_id,
+            course_content.gate.key,  # type: ignore[union-attr]
+            enrollment.id,
+            result.outcome,
+        )
+        enrollment.refresh_from_db()
+        response = GateUnlockResponse(
+            status=result.outcome.value,  # type: ignore[arg-type]
+            gate=course_content.gate.key,  # type: ignore[union-attr]
+            enrollment=serializers.EnrollmentResponse.from_django_model(enrollment),
+        )
+        return JsonResponse(response.model_dump(mode="json"), status=200)
 
 
 def organization_api_docs_enabled() -> bool:

@@ -1,4 +1,5 @@
 import uuid
+from types import SimpleNamespace
 
 import pytest
 from django.contrib.auth.models import Group, User
@@ -16,6 +17,7 @@ from django_email_learning.models import (
     DeliveryStatus,
     Enrollment,
     EnrollmentStatus,
+    Gate,
     ImapConnection,
     JobExecution,
     JobName,
@@ -370,3 +372,39 @@ def job_factory(db):
         return JobExecution.objects.create(job_name=name)
 
     return _factory
+
+
+@pytest.fixture
+def gate_course(db, course):
+    """Spine: Welcome (lesson, 1), Payment (gate, 2), Paid lesson (lesson, 3)."""
+    welcome = CourseContent.objects.create(
+        course=course,
+        priority=1,
+        type="lesson",
+        lesson=Lesson.objects.create(title="Welcome", content="<p>Hi</p>"),
+        waiting_period=3600,
+        is_published=True,
+    )
+    gate = Gate.objects.create(title="Payment", key="payment", message="<p>Pay at https://example.com/pay</p>")
+    gate_content = CourseContent.objects.create(
+        course=course, priority=2, type="gate", gate=gate, waiting_period=3600, is_published=True
+    )
+    paid_lesson = CourseContent.objects.create(
+        course=course,
+        priority=3,
+        type="lesson",
+        lesson=Lesson.objects.create(title="Paid lesson", content="<p>Paid</p>"),
+        waiting_period=7200,
+        is_published=True,
+    )
+    return SimpleNamespace(
+        course=course, welcome=welcome, gate=gate, gate_content=gate_content, paid_lesson=paid_lesson
+    )
+
+
+@pytest.fixture
+def waiting_enrollment(db, gate_course, active_enrollment):
+    """An active enrollment that has reached the Payment gate and is held there."""
+    delivery = ContentDelivery.objects.create(enrollment=active_enrollment, course_content=gate_course.gate_content)
+    DeliverySchedule.objects.create(delivery=delivery, status=DeliveryStatus.DELIVERED)
+    return active_enrollment

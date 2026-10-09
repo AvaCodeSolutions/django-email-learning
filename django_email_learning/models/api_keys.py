@@ -37,6 +37,7 @@ class ApiKeyScope(models.TextChoices):
     """
 
     ENROLLMENTS_CREATE = "enrollments:create", "Create enrollments"
+    ENROLLMENTS_UPDATE = "enrollments:update", "Update enrollments (unlock gates)"
 
 
 def hash_secret(secret: str) -> str:

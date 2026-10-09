@@ -3,6 +3,54 @@
     margin-top: 0;
   }
 
+  // A button is drawn as it will be in the email, but as a plain element: clicking it selects
+  // it, so it can be aligned, moved or deleted, and never follows the link.
+  .email-button-node {
+    margin: 12px 0;
+  }
+
+  .email-button-node__body {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .email-button-node__button {
+    display: inline-block;
+    padding: 10px 22px;
+    border-radius: 5px;
+    cursor: default;
+    user-select: none;
+  }
+
+  // Not currentColor: that is the button's own text colour, often white.
+  .email-button-node.ProseMirror-selectednode .email-button-node__button {
+    outline: 2px solid #1976d2;
+    outline-offset: 2px;
+  }
+
+  .email-button-node__edit {
+    display: inline-flex;
+    padding: 4px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 120ms ease;
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  .email-button-node__body:hover .email-button-node__edit,
+  .email-button-node__edit:focus-visible {
+    opacity: 1;
+  }
+
+
   img {
     display: inline;
   }
