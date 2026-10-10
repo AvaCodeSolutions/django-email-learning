@@ -112,3 +112,11 @@ def test_embed_api_base_url_shape(settings):
         "SITE_BASE_URL": "https://example.com",
     }
     assert embed_api_base_url() == "https://example.com/email_learning/api/public/embed/"
+
+
+def test_embed_script_allows_cross_origin_loading(anonymous_client, settings):
+    settings.DJANGO_EMAIL_LEARNING = {**settings.DJANGO_EMAIL_LEARNING, "EMBEDDABLE_ENROLLMENT_ENABLED": True}
+
+    response = anonymous_client.get(URL, HTTP_ORIGIN="https://example.org")
+
+    assert response["Access-Control-Allow-Origin"] == "*"
