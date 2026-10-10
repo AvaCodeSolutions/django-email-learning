@@ -10,6 +10,7 @@ from django_email_learning.models import (
     Quiz,
     TransitionCondition,
 )
+from django_email_learning.services.course_graph import CourseGraph
 
 
 @pytest.fixture
@@ -125,7 +126,7 @@ def test_ancestors_are_listed_innermost_first(db, course):
     middle = ContentTrack.objects.create(course=course, name="Middle", parent_track=outer)
     inner = ContentTrack.objects.create(course=course, name="Inner", parent_track=middle)
 
-    assert inner.ancestors() == [middle, outer]
+    assert CourseGraph(course.id).ancestors(inner) == [middle, outer]
 
 
 def test_a_populated_track_cannot_be_deleted(db, course):
@@ -199,7 +200,7 @@ def nest(course, depth, prefix="t"):
 def test_nesting_is_allowed_up_to_the_limit(db, course):
     innermost = nest(course, ContentTrack.MAX_NESTING_DEPTH)
 
-    assert len(innermost.ancestors()) == ContentTrack.MAX_NESTING_DEPTH - 1
+    assert len(CourseGraph(course.id).ancestors(innermost)) == ContentTrack.MAX_NESTING_DEPTH - 1
 
 
 def test_nesting_past_the_limit_is_rejected(db, course):
@@ -227,9 +228,7 @@ def test_ancestors_terminates_on_a_cycle_already_in_the_data(db, course):
     # the table, and what a hand-written data migration or a raw SQL fix would do.
     ContentTrack.objects.filter(pk=root.pk).update(parent_track=innermost)
 
-    # Re-fetched, as production code always does: the in-memory chain still carries the
-    # related objects Django cached when they were created.
-    ancestry = ContentTrack.objects.get(pk=innermost.pk).ancestors()
+    ancestry = CourseGraph(course.id).ancestors(innermost)
 
     assert len({track.pk for track in ancestry}) == len(ancestry)
     assert innermost.pk in {track.pk for track in ancestry}
