@@ -51,6 +51,15 @@ class SendLessonCommand(AbstractCommand):
         else:
             progress = enrollment.learner_progress_percentage(extra_delivered=1)
         next_content = content.get_next()
+        # A gate the learner already holds an unlock for is walked straight through, so
+        # telling them it is pending would be wrong - what follows it is their next email.
+        while (
+            enrollment
+            and next_content
+            and next_content.gate
+            and enrollment.gate_unlocks.filter(course_content=next_content).exists()
+        ):
+            next_content = next_content.get_next()
 
         conf = settings.DJANGO_EMAIL_LEARNING
         delivery = enrollment.content_deliveries.filter(course_content=content).first() if enrollment else None

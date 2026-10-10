@@ -52,6 +52,18 @@
                     <p>{% blocktranslate with quiz_title=next_content.quiz.title delay=next_content.human_readable_waiting_period title=lesson.title %}
                         Now that you've mastered {{ title }}, it’s time to put that knowledge to the test! Your next email will be the {{ quiz_title }}. Look out for it hitting your inbox in {{ delay }}.
                         {% endblocktranslate %}</p>
+                {% elif next_content.assignment %}
+                    <p>{% blocktranslate with assignment_title=next_content.assignment.title delay=next_content.human_readable_waiting_period title=lesson.title %}
+                        Now that you've mastered {{ title }}, it’s time to put it into practice! Your next email will be the {{ assignment_title }} assignment. Look out for it hitting your inbox in {{ delay }}.
+                        {% endblocktranslate %}</p>
+                {% elif next_content.decision %}
+                    <p>{% blocktranslate with decision_title=next_content.decision.title delay=next_content.human_readable_waiting_period %}
+                        Up next, you get to choose how the course continues: {{ decision_title }}. Keep an eye out for that email—it will hit your inbox in {{ delay }}.
+                        {% endblocktranslate %}</p>
+                {% elif next_content.gate %}
+                    <p>{% blocktranslate with gate_title=next_content.gate.title %}
+                        The next part of the course is waiting on: {{ gate_title }}. As soon as that’s taken care of, we’ll carry on from here.
+                        {% endblocktranslate %}</p>
                 {% endif %}
             {% endif %}
             {% endblock %}
