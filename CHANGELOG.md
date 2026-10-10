@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.13.1] - 2026-10-10
+
+### Fixed
+
+- **"What's coming up next?" in lesson emails** now describes an assignment, a decision or a gate. Before, only a following lesson or quiz got a line, so the others left the heading with nothing under it. A gate names what the learner is waiting on, such as "Payment", instead of a delay, and a gate the learner has already unlocked is skipped in favour of what follows it. The new lines are translatable strings.
+
 ## [7.13.0] - 2026-10-09
 
 ### Added
