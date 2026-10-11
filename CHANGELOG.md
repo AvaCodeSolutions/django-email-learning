@@ -6,6 +6,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.15.0] - 2026-10-11
+
+### Added
+
+- **Illustrations on the result of an AMP quiz or decision email.** After submitting in the email, a learner sees a small illustration above the result of a blocking quiz (passed, try again, retry tomorrow, or enrollment ended) and of a decision. A non-blocking quiz shows none, since its answer feedback is the content. The quiz and decision submit endpoints return the image's absolute URL as `illustration`, or `null`. The images ship as static files under `emails/`, so run `collectstatic` on deploy; they load from `SITE_BASE_URL`, which must be a public `https` address for Gmail to fetch them.
+- **The result fades in** instead of appearing all at once.
+
+### Changed
+
+- **Buttons in AMP emails are flat and use the organization's brand colour.** Submit and Try again had a browser-default border and a fixed blue; they are now borderless, lighter (15px, medium weight, 8px corners) and drawn in the brand colour.
+- **Button text and fill always contrast by at least 4.5:1 (WCAG AA).** Buttons in course content, newsletters and gate messages, the editor's preview of them, and the AMP buttons now choose dark or white text by actual contrast with the brand colour. Before, a brightness estimate put white text on many greens, cyans and blues at under 3.2:1. Where neither text colour reaches 4.5:1, the fill is shifted a shade darker or lighter until one does; most brand colours are used exactly as set. The text colour on the public pages' brand-coloured buttons is chosen the same way. The fallback for a missing brand colour is now `#4A5EC0`, the organization default.
+
+### Fixed
+
+- **After submitting in an AMP email, focus moves to the result,** and back to the questions on "Try again", rather than staying on the button that was just hidden. This targets scrolling in Gmail's mobile app that sometimes needed a second tap after submitting.
+- **"Try again" sat a blank line too far below its message.**
+
 ## [7.14.1] - 2026-10-11
 
 ### Changed
