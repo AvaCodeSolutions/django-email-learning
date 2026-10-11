@@ -1,5 +1,5 @@
 import { Node, mergeAttributes } from '@tiptap/core';
-import { getReadableTextColor } from '../utils.js';
+import { getButtonColors } from '../utils.js';
 
 /**
  * The learner values a button's link can carry. Each is filled in per learner by the
@@ -41,7 +41,7 @@ export const exampleUrl = (href, params) => {
     }
 };
 
-const DEFAULT_BUTTON_COLOR = '#636eec';
+const DEFAULT_BUTTON_COLOR = '#4A5EC0'; // The default organization brand colour.
 // MUI's Edit icon, drawn without React since the node view is plain DOM.
 const EDIT_ICON_PATH = 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z';
 
@@ -106,8 +106,9 @@ export const EmailButton = Node.create({
             body.className = 'email-button-node__body';
             const button = document.createElement('span');
             button.className = 'email-button-node__button';
-            button.style.backgroundColor = background;
-            button.style.color = getReadableTextColor(background);
+            const colors = getButtonColors(background);
+            button.style.backgroundColor = colors.background;
+            button.style.color = colors.text;
             body.appendChild(button);
 
             if (editor.isEditable) {

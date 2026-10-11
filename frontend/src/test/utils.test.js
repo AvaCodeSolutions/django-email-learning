@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { slugify, getReadableTextColor } from '../utils.js';
+import { slugify, getReadableTextColor, getButtonColors } from '../utils.js';
 
 describe('slugify', () => {
   it('lowercases and hyphenates spaces', () => {
@@ -47,5 +47,24 @@ describe('getReadableTextColor', () => {
   it('accepts custom dark/light overrides', () => {
     expect(getReadableTextColor('#ffffff', '#111111', '#eeeeee')).toBe('#111111');
     expect(getReadableTextColor('#000000', '#111111', '#eeeeee')).toBe('#eeeeee');
+  });
+  it('picks the text colour with more contrast, not the brighter guess', () => {
+    // A brightness estimate puts white on these, at under 3.2:1.
+    expect(getReadableTextColor('#4caf50')).toBe('#232936');
+    expect(getReadableTextColor('#00bcd4')).toBe('#232936');
+    expect(getReadableTextColor('#2196f3')).toBe('#232936');
+  });
+});
+
+describe('getButtonColors', () => {
+  it('keeps a brand colour that already reads well', () => {
+    expect(getButtonColors('#4A5EC0')).toEqual({ background: '#4A5EC0', text: '#ffffff' });
+    expect(getButtonColors('#f5c518')).toEqual({ background: '#f5c518', text: '#232936' });
+  });
+
+  it('shifts a mid-tone no text colour reads on, matching the emails', () => {
+    // The same results as button_colors() in email_buttons.py.
+    expect(getButtonColors('#279372')).toEqual({ background: '#47a387', text: '#232936' });
+    expect(getButtonColors('#e91e63')).toEqual({ background: '#dd1d5e', text: '#ffffff' });
   });
 });

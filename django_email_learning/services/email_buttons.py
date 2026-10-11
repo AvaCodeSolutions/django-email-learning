@@ -38,7 +38,7 @@ _BLOCK_END = re.compile(r"</(?:p|h[1-6]|li|blockquote|pre)>|<br\s*/?>", re.IGNOR
 _BLANK_LINES = re.compile(r"\n{3,}")
 _TEXT_ALIGN = re.compile(r"text-align:\s*(left|center|right)", re.IGNORECASE)
 _HEX_COLOR = re.compile(r"^#[0-9a-fA-F]{6}$")
-DEFAULT_BUTTON_COLOR = "#636eec"
+DEFAULT_BUTTON_COLOR = "#4A5EC0"  # The default `Organization.brand_color`.
 
 
 def link_variables(enrollment_id: Optional[int] = None, email: Optional[str] = None) -> dict[str, Optional[str]]:
@@ -57,10 +57,62 @@ def render_buttons(html: str, values: Mapping[str, Optional[str]], brand_color: 
     return _ButtonRewriter(values, as_text=False, brand_color=brand_color).rewrite(html)
 
 
+DARK_TEXT = "#232936"
+LIGHT_TEXT = "#ffffff"
+MIN_CONTRAST = 4.5  # WCAG AA for normal-size text
+# Mirrored in frontend/src/utils.js, so the editor draws buttons the way emails send them.
+
+
+def _channels(color: str) -> tuple[int, int, int]:
+    return int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+
+
+def _luminance(color: str) -> float:
+    """WCAG relative luminance of a `#rrggbb` colour."""
+
+    def linear(channel: int) -> float:
+        value = channel / 255
+        return value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4
+
+    red, green, blue = (linear(channel) for channel in _channels(color))
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue
+
+
+def contrast_ratio(first: str, second: str) -> float:
+    lighter, darker = sorted((_luminance(first), _luminance(second)), reverse=True)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
 def readable_text_color(background: str) -> str:
-    """Dark or white text, whichever reads better on `background` (YIQ brightness)."""
-    red, green, blue = (int(background[i : i + 2], 16) for i in (1, 3, 5))
-    return "#232936" if (red * 299 + green * 587 + blue * 114) / 1000 >= 135 else "#ffffff"
+    """Dark or white text, whichever has the higher contrast on `background`."""
+    return DARK_TEXT if contrast_ratio(background, DARK_TEXT) > contrast_ratio(background, LIGHT_TEXT) else LIGHT_TEXT
+
+
+def button_colors(background: str) -> tuple[str, str]:
+    """A button's fill and text colour, with at least `MIN_CONTRAST` between them.
+
+    The text is dark or white, whichever reads better on `background`. Some mid-tones
+    reach neither - a brand colour such as `#279372` gets at most 3.8:1 - so the fill is
+    then moved away from the text, 5% towards black (under white text) or white (under
+    dark text) at a time, until it does. Most colours come back unchanged.
+    """
+    text = readable_text_color(background)
+    target = 0 if text == LIGHT_TEXT else 255
+    fill = background
+    step = 0
+    while contrast_ratio(fill, text) < MIN_CONTRAST:
+        step += 1
+        mix = step / 20
+        fill = "#" + "".join(
+            f"{int(channel + (target - channel) * mix + 0.5):02x}" for channel in _channels(background)
+        )
+    return fill, text
+
+
+def button_context(brand_color: Optional[str]) -> dict[str, str]:
+    """Template context for a template's own buttons, such as an AMP form's Submit."""
+    fill, text = button_colors(brand_color if brand_color and _HEX_COLOR.match(brand_color) else DEFAULT_BUTTON_COLOR)
+    return {"button_color": fill, "button_text_color": text}
 
 
 def render_as_text(html: str, values: Mapping[str, Optional[str]]) -> str:
@@ -126,11 +178,12 @@ class _ButtonRewriter(HTMLParser):
                 self.out.append("\n")
             else:
                 align = _TEXT_ALIGN.search(attributes.get("style") or "")
+                fill, text = button_colors(self.color)
                 self.out.append(
                     f'<div class="email-cta-wrap" style="text-align: {align.group(1).lower() if align else "center"};">'
                     f'<a href="{escape(self.button_url, quote=True)}" class="email-cta" target="_blank" '
-                    f'rel="noopener noreferrer" style="background-color: {self.color}; border-color: {self.color}; '
-                    f'color: {readable_text_color(self.color)} !important;">'
+                    f'rel="noopener noreferrer" style="background-color: {fill}; border-color: {fill}; '
+                    f'color: {text} !important;">'
                 )
             return
         self.out.append(self.get_starttag_text() or "")

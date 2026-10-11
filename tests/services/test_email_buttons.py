@@ -17,8 +17,12 @@ from django_email_learning.models import (
 from django_email_learning.services.command_models.send_gate_command import SendGateCommand
 from django_email_learning.services.command_models.send_lesson_command import SendLessonCommand
 from django_email_learning.services.email_buttons import (
+    button_colors,
+    button_context,
     button_url,
+    contrast_ratio,
     link_variables,
+    readable_text_color,
     render_as_text,
     render_buttons,
 )
@@ -62,9 +66,42 @@ def test_a_light_brand_colour_gets_dark_text():
     assert "color: #232936 !important" in render_buttons(BUTTON, VALUES, brand_color="#f5c518")
 
 
+@pytest.mark.parametrize(
+    "brand_color,text",
+    [("#4caf50", "#232936"), ("#00bcd4", "#232936"), ("#2196f3", "#232936"), ("#9c27b0", "#ffffff")],
+)
+def test_the_text_colour_is_the_one_with_more_contrast(brand_color, text):
+    # Brightness estimates put white on these greens and blues, at under 3.2:1.
+    assert readable_text_color(brand_color) == text
+
+
+def test_every_button_colour_pair_reaches_wcag_aa():
+    for red in range(0, 256, 15):
+        for green in range(0, 256, 15):
+            for blue in range(0, 256, 15):
+                fill, text = button_colors(f"#{red:02x}{green:02x}{blue:02x}")
+                assert contrast_ratio(fill, text) >= 4.5
+
+
+def test_a_brand_colour_that_already_reads_well_is_used_as_it_is():
+    assert button_colors("#4A5EC0") == ("#4A5EC0", "#ffffff")
+    assert button_colors("#f5c518") == ("#f5c518", "#232936")
+
+
+def test_a_mid_tone_no_text_colour_reads_on_is_shifted_until_one_does():
+    # #279372 reaches 3.8:1 at best; a shade lighter, dark text passes.
+    assert button_colors("#279372") == ("#47a387", "#232936")
+    assert render_buttons(BUTTON, VALUES, brand_color="#e91e63").count("#dd1d5e") == 2
+
+
+def test_the_template_buttons_get_the_same_colours():
+    assert button_context("#279372") == {"button_color": "#47a387", "button_text_color": "#232936"}
+    assert button_context(None) == {"button_color": "#4A5EC0", "button_text_color": "#ffffff"}
+
+
 @pytest.mark.parametrize("brand_color", [None, "", "red", "#fff", "#12345g", "#123456; background: url(x)"])
 def test_a_missing_or_malformed_brand_colour_falls_back_to_the_default(brand_color):
-    assert "background-color: #636eec;" in render_buttons(BUTTON, VALUES, brand_color=brand_color)
+    assert "background-color: #4A5EC0;" in render_buttons(BUTTON, VALUES, brand_color=brand_color)
 
 
 def test_content_without_buttons_is_left_exactly_as_it_was():
