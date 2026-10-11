@@ -87,6 +87,9 @@ def test_reaching_a_gate_emails_its_message(gate_schedule, active_enrollment):
     assert mail.outbox[0].to == [active_enrollment.learner.email]
     assert mail.outbox[0].subject == "Payment"
     assert "https://example.com/pay" in mail.outbox[0].alternatives[0][0]
+    # The title is the subject only; the body is the message itself.
+    assert "Payment" not in mail.outbox[0].body
+    assert "Payment" not in mail.outbox[0].alternatives[0][0]
 
 
 @pytest.mark.parametrize("message", ["", "<p></p>", "<p>&nbsp;</p>"])
