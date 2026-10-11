@@ -9,6 +9,7 @@ from django_email_learning.models import CourseContent
 from django_email_learning.services.command_models.abstract_command import (
     AbstractCommand,
 )
+from django_email_learning.services.email_buttons import button_context
 from django_email_learning.services.email_sender_service import email_sender_service
 from django_email_learning.services.utils import mask_email
 
@@ -49,6 +50,7 @@ class SendDecisionCommand(AbstractCommand):
             "unsubscribe_link": content.course.generate_unsubscribe_link(self.email),
             "track_open_url": track_open_url,
             **email_sender_service.organization_footer_context(content.course),
+            **button_context(content.course.organization.brand_color),
         }
         email_message = EmailMultiAlternatives(
             subject=decision.title,

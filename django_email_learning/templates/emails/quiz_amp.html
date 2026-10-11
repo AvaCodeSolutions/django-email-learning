@@ -126,8 +126,8 @@
 
 <div class="paper">
 
-<form method="post" action-xhr="{{ amp_action_url }}" on="submit-success:AMP.setState({ formState: { submitted: true } })">
-<div [hidden]="formState.submitted">
+<form method="post" action-xhr="{{ amp_action_url }}" on="submit-success:AMP.setState({ formState: { submitted: true } }),quiz-result.focus">
+<div id="quiz-questions" class="focus-target" tabindex="-1" [hidden]="formState.submitted">
 
   <div class="vertical-container">
   {% for question in quiz.questions.all %}
@@ -163,13 +163,17 @@
   </p>
 </div>
 
+    <div id="quiz-result" tabindex="-1" class="result-fade" [class]="formState.submitted ? 'result-fade result-fade-in' : 'result-fade'">
     <div submit-success>
         <template type="amp-mustache">
-        {% templatetag openvariable %}message{% templatetag closevariable %}<br />
+        {% templatetag openvariable %}#illustration{% templatetag closevariable %}
+        <div class="result-illustration"><amp-img src="{% templatetag openvariable %}illustration{% templatetag closevariable %}" width="96" height="96" layout="fixed" alt=""></amp-img></div>
+        {% templatetag openvariable %}/illustration{% templatetag closevariable %}
+        <p class="result-message">{% templatetag openvariable %}message{% templatetag closevariable %}</p>
         {% templatetag openvariable %}^passed{% templatetag closevariable %}
-        {% templatetag openvariable %}^is_invalidated{% templatetag closevariable %}<br />
+        {% templatetag openvariable %}^is_invalidated{% templatetag closevariable %}
         <p align="center">
-        <button type="button" class="button" on="tap:AMP.setState({formState: { submitted: false }})">{% translate "Try again" %}</button>
+        <button type="button" class="button" on="tap:AMP.setState({formState: { submitted: false }}),quiz-questions.focus">{% translate "Try again" %}</button>
         </p>
         {% templatetag openvariable %}/is_invalidated{% templatetag closevariable %}
         {% templatetag openvariable %}/passed{% templatetag closevariable %}
@@ -221,6 +225,7 @@
         </div>
         {% templatetag openvariable %}/quiz_data{% templatetag closevariable %}
         </template>
+    </div>
     </div>
 
     <div submit-error>

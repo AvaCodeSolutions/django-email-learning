@@ -308,14 +308,17 @@ class QuizSubmissionView(View):
             # the attempt limit and the two-strikes deactivation below never come into play.
             # Failing is a destination here, not the end of the enrollment.
             message = cls._route_after_quiz(delivery, enrollment, score, passed)
+            illustration = None
         elif passed or not quiz.is_blocking:
             delivery.valid_until = None  # Invalidate the quiz link immediately after passing
             delivery.save()
             if quiz.is_blocking:
                 delivery.update_hash()  # Invalidate the quiz link after successful submission
                 message = _("Congratulations! You have passed the quiz.")
+                illustration = "quiz-passed.png"
             else:
                 message = _("Your quiz submission has been recorded.")
+                illustration = None  # The answer feedback is the content here.
                 if QuizSubmission.objects.filter(delivery=delivery).count() >= 10:
                     delivery.update_hash()  # Invalidate the quiz link after 10 attempts to prevent abuse
 
@@ -339,6 +342,7 @@ class QuizSubmissionView(View):
                         "You have failed the quiz twice. Unfortunately, you cannot continue this course"
                         " with this enrollment. You can enroll again to retake the course."
                     )
+                    illustration = "quiz-enrollment-ended.png"
                     logger.info(
                         f"Learner ID {enrollment.learner.id} has failed the quiz twice"
                         f" for Course {enrollment.course.title}. Marking enrollment as failed."
@@ -350,6 +354,7 @@ class QuizSubmissionView(View):
                     enrollment.fail()
                 else:
                     message = _("You have failed the quiz. You will receive another chance to retake it tomorrow.")
+                    illustration = "quiz-retry-tomorrow.png"
                     logger.info(
                         f"Learner ID {enrollment.learner.id} has failed the quiz for Course {enrollment.course.title}. "
                         f"Scheduling a retry for the next day."
@@ -367,6 +372,7 @@ class QuizSubmissionView(View):
                 delivery.remind_at = None
                 delivery.save()
                 message = _(f"You have failed the quiz with score {score}. Please review the material and try again.")
+                illustration = "quiz-try-again.png"
 
         metric_service.quiz_submitted(
             course_slug=enrollment.course.slug,
@@ -383,6 +389,7 @@ class QuizSubmissionView(View):
                 "message": message,
                 "is_invalidated": is_branch_point or (quiz.limited_attempts and not passed),
                 "is_blocking": quiz.is_blocking,
+                "illustration": email_sender_service.static_url(f"emails/{illustration}") if illustration else None,
                 "quiz_data": {
                     "id": quiz.id,
                     "title": quiz.title,
@@ -731,7 +738,13 @@ class DecisionSubmissionView(View):
             return JsonResponse({"error": _("This question has already been answered.")}, status=409)
 
         logger.info(f"Learner ID {enrollment.learner.id} answered decision {decision.id} with option {option.id}.")
-        return JsonResponse({"message": _("Thanks, your answer has been recorded.")}, status=200)
+        return JsonResponse(
+            {
+                "message": _("Thanks, your answer has been recorded."),
+                "illustration": email_sender_service.static_url("emails/decision-submitted.png"),
+            },
+            status=200,
+        )
 
 
 @method_decorator(csrf_exempt, name="dispatch")

@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
+from django.templatetags.static import static
 from django.utils.module_loading import import_string
 
 if TYPE_CHECKING:
@@ -65,6 +66,10 @@ class EmailSenderService:
             return url
         site_base_url = str(settings.DJANGO_EMAIL_LEARNING.get("SITE_BASE_URL", "")).rstrip("/")
         return f"{site_base_url}{url}"
+
+    def static_url(self, path: str) -> str:
+        """Absolute URL of one of the package's static files, for use in email."""
+        return self._absolute_url(static(path))
 
     def organization_footer_context(self, course: "Course") -> dict:
         """Template context for the optional organization footer on a course's

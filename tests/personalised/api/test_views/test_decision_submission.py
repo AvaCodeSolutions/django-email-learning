@@ -117,6 +117,7 @@ def test_a_decision_without_rules_records_the_answer_and_moves_on(decision_deliv
     assert response.status_code == 200
     assert DecisionResponse.objects.get(delivery=d.delivery).option == d.deeper_dive
     assert scheduled_after(d.delivery).get().course_content == d.wrap_up
+    assert response.json()["illustration"].endswith("/emails/decision-submitted.png")
 
 
 def test_answering_the_last_content_completes_the_course(db, course, active_enrollment, anonymous_client):

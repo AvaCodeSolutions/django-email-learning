@@ -4,7 +4,7 @@ import pytest
 from django.conf import settings
 from django.urls import reverse
 
-from django_email_learning.models import ContentDelivery
+from django_email_learning.models import ContentDelivery, DeliveryStatus
 from django_email_learning.personalised.api.serializers import QuestionResponse
 from django_email_learning.personalised.api.views import QuizSubmissionView
 from django_email_learning.services import jwt_service
@@ -239,3 +239,55 @@ def test_amp_quiz_submission_accepts_domain_wide_sender(content_delivery, anonym
         headers={"Origin": REQUEST_ORIGIN},
     )
     assert response.status_code == 200
+
+
+def _submit(client, delivery, correct: bool):  # type: ignore[no-untyped-def]
+    delivery.refresh_from_db()
+    token = jwt_service.generate_jwt({"delivery_id": delivery.id, "delivery_hash": delivery.hash_value})
+    answers = [
+        {"id": q.id, "answers": list(q.answers.filter(is_correct=True).values_list("id", flat=True)) if correct else []}
+        for q in delivery.course_content.quiz.questions.all()
+    ]
+    return client.post(URL, data={"token": token, "answers": answers}, content_type="application/json").json()
+
+
+def _illustration(name: str) -> str:
+    return email_sender_service.static_url(f"emails/{name}")
+
+
+@pytest.mark.parametrize(
+    "is_blocking,limited_attempts,correct,expected",
+    [
+        (True, True, True, "quiz-passed.png"),
+        (True, True, False, "quiz-retry-tomorrow.png"),
+        (True, False, False, "quiz-try-again.png"),
+        (False, True, True, None),
+        (False, True, False, None),
+    ],
+)
+def test_the_result_names_an_illustration_for_its_outcome(
+    content_delivery, anonymous_client, is_blocking, limited_attempts, correct, expected
+):
+    quiz = content_delivery.course_content.quiz
+    quiz.is_blocking = is_blocking
+    quiz.limited_attempts = limited_attempts
+    quiz.save()
+
+    result = _submit(anonymous_client, content_delivery, correct)
+
+    assert result["illustration"] == (_illustration(expected) if expected else None)
+
+
+def test_a_second_failed_limited_attempt_names_the_enrollment_ended_illustration(content_delivery, anonymous_client):
+    quiz = content_delivery.course_content.quiz
+    quiz.is_blocking = True
+    quiz.limited_attempts = True
+    quiz.save()
+
+    _submit(anonymous_client, content_delivery, correct=False)
+    # The retry goes out the next day.
+    content_delivery.delivery_schedules.exclude(status=DeliveryStatus.DELIVERED).update(status=DeliveryStatus.DELIVERED)
+    result = _submit(anonymous_client, content_delivery, correct=False)
+
+    assert result["illustration"] == _illustration("quiz-enrollment-ended.png")
+    assert result["illustration"].startswith(("http://", "https://"))

@@ -39,7 +39,7 @@
 </p>
 
 <div class="paper">
-<form method="post" action-xhr="{{ amp_action_url }}" on="submit-success:AMP.setState({ formState: { submitted: true } })">
+<form method="post" action-xhr="{{ amp_action_url }}" on="submit-success:AMP.setState({ formState: { submitted: true } }),decision-result.focus">
 <div [hidden]="formState.submitted">
     <p>{{ decision.prompt|linebreaksbr }}</p>
     <div class="options-wrap">
@@ -56,10 +56,15 @@
     </p>
 </div>
 
+    <div id="decision-result" tabindex="-1" class="result-fade" [class]="formState.submitted ? 'result-fade result-fade-in' : 'result-fade'">
     <div submit-success>
         <template type="amp-mustache">
-        <p>{% templatetag openvariable %}message{% templatetag closevariable %}</p>
+        {% templatetag openvariable %}#illustration{% templatetag closevariable %}
+        <div class="result-illustration"><amp-img src="{% templatetag openvariable %}illustration{% templatetag closevariable %}" width="96" height="96" layout="fixed" alt=""></amp-img></div>
+        {% templatetag openvariable %}/illustration{% templatetag closevariable %}
+        <p class="result-message">{% templatetag openvariable %}message{% templatetag closevariable %}</p>
         </template>
+    </div>
     </div>
 
     <div submit-error>

@@ -23,16 +23,17 @@
                 border: solid 1px #eee;
             }
             .button {
-                padding: 14px 30px;
+                min-width: 140px;
+                padding: 10px 24px;
+                border: none;
                 border-radius: 8px;
-                font-size: 16px;
-                font-weight: 600;
-                box-shadow: 0 4px 14px rgba(36, 48, 110, 0.16);
-                background-color: #636eec;
-                color: #fff;
+                font-family: inherit;
+                font-size: 15px;
+                font-weight: 500;
+                background-color: {{ button_color|default:"#4A5EC0" }};
+                color: {{ button_text_color|default:"#ffffff" }};
             }
             .button:hover {
-                background-color: #6e00a5;
                 cursor: pointer;
             }
             .email-title {
@@ -55,6 +56,33 @@
             }
             p {
                 padding: 0 15px;
+            }
+            /* A submitted form's result fades in. amp-form only shows [submit-success] by
+               flipping display, which cannot transition, so the fade runs on a wrapper that
+               is always rendered and gains .result-fade-in once the result is in place.
+               Opacity only: a transform would move the result onto its own compositing
+               layer, which mobile webviews are prone to mishandle touch scrolling over. */
+            .result-fade {
+                opacity: 0;
+            }
+            .result-fade-in {
+                opacity: 1;
+                transition: opacity 0.3s ease-out;
+            }
+            /* After a submit, focus moves to the result (and back to the questions on
+               "Try again"), so it never stays on a button that has just been hidden -
+               which mobile webviews can mishandle as touches until focus moves on. These
+               boxes are not interactive, so they need no focus ring. */
+            .result-fade:focus,
+            .focus-target:focus {
+                outline: none;
+            }
+            .result-illustration {
+                margin: 12px 0 4px;
+                text-align: center;
+            }
+            .result-message {
+                text-align: center;
             }
             {% block extra_styles %}{% endblock %}
         </style>
