@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.14.1] - 2026-10-11
+
+### Changed
+
+- **A gate's message email no longer repeats the gate's title above the message.** The title is already the subject, so the body now opens with the message itself. The plain-text part drops its title line too. Projects that override `emails/gate.html` or `emails/gate.txt` are unaffected.
+
 ## [7.14.0] - 2026-10-10
 
 ### Changed
