@@ -19,6 +19,7 @@ TEMPLATES = [
     ["personalised", "command_result"],
     ["personalised", "certificate"],
     ["personalised", "certificate_form"],
+    ["personalised", "decision_public"],
     ["public", "organization"],
     ["public", "course"],
 ]
