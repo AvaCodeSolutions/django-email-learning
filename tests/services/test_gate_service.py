@@ -192,6 +192,17 @@ def test_unlocking_before_the_learner_arrives_is_kept_for_later(
     assert received["unlocked"][0]["was_waiting"] is False
 
 
+def test_an_integration_can_unlock_a_waiting_learner(gate_course, waiting_enrollment):
+    result = unlock_gate(waiting_enrollment, gate_course.gate_content, GateUnlockSource.INTEGRATION)
+
+    assert result.outcome == UnlockOutcome.UNLOCKED
+    unlock = GateUnlock.objects.get(enrollment=waiting_enrollment)
+    assert unlock.source == GateUnlockSource.INTEGRATION
+    assert unlock.unlocked_by is None
+    assert unlock.api_key is None
+    assert next_contents(waiting_enrollment) == ["Paid lesson"]
+
+
 def test_progress_leaves_out_a_gate_unlocked_in_advance(
     gate_course, gate_schedule, active_enrollment, superadmin_client
 ):

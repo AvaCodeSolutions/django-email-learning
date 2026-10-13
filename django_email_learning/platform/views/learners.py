@@ -36,6 +36,7 @@ class Learners(BasePlatformView):
             "gate_unlock_source_api": _("Unlocked through the API"),
             "gate_unlock_source_admin": _("Unlocked by %(user)s"),
             "gate_unlock_source_timeout": _("Timed out and continued"),
+            "gate_unlock_source_integration": _("Unlocked by an integration"),
             "waiting": _("Waiting"),
             "waiting_at_gate": _("Waiting at gate: %(gate)s"),
             "path_status_waiting": _("Waiting"),

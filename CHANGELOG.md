@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [Unreleased]
+
+### Added
+
+- **`GateUnlockSource.INTEGRATION`, for gates unlocked by the host project's own code.** A project that unlocks gates itself - for example from a payment provider's webhook - can pass it to `unlock_gate()` rather than recording the unlock as `api` or `admin`. The learner's timeline shows it as "Unlocked by an integration". Run `migrate`: the migration only updates the field's choices, so it doesn't touch existing rows.
+
 ## [7.15.1] - 2026-10-13
 
 ### Fixed

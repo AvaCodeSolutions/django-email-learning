@@ -29,6 +29,7 @@ class GateUnlockSource(models.TextChoices):
     API = "api", "API"
     ADMIN = "admin", "Admin"
     TIMEOUT = "timeout", "Timeout"
+    INTEGRATION = "integration", "Integration"
 
 
 class GateUnlock(models.Model):
