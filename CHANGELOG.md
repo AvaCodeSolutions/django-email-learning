@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.16.1] - 2026-10-13
+
+### Fixed
+
+- **The page a learner opens to answer a decision point now works in the published package.** The build script left `decision_public.html` out of the templates it rewrites, so the packaged page still pointed at the Vite dev asset instead of the built script and stylesheet. The page has been broken this way since decision points were added in 7.2.0.
+
 ## [7.16.0] - 2026-10-13
 
 ### Added
