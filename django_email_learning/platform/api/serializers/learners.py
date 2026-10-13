@@ -210,8 +210,12 @@ def learner_path(enrollment: Enrollment) -> list[PathStepResponse]:
         .order_by("id")
     )
     waiting = waiting_gate_delivery(enrollment)
+    unlocked_gates = set(GateUnlock.objects.filter(enrollment=enrollment).values_list("course_content_id", flat=True))
     for delivery in deliveries:
         statuses = {schedule.status for schedule in delivery.delivery_schedules.all()}
+        if delivery.course_content_id in unlocked_gates and DeliveryStatus.DELIVERED not in statuses:
+            # Unlocked before the learner got there, so they pass it without stopping.
+            continue
         if waiting is not None and delivery.id == waiting.id:
             status = "waiting"
         elif DeliveryStatus.DELIVERED in statuses:

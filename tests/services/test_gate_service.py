@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 from django.core import mail
+from django.urls import reverse
 from django.utils import timezone
 
 from django_email_learning.jobs.deactivate_inactive_enrollments_job import DeactivateInactiveEnrollmentsJob
@@ -120,6 +121,23 @@ def test_a_gate_unlocked_in_advance_is_walked_through(
     assert waiting_gate_delivery(active_enrollment) is None
     assert received["reached"] == []
     assert mail.outbox == []
+    # Skipped rather than delivered, so the learner's progress shows no stop at the gate.
+    gate_schedule.refresh_from_db()
+    assert gate_schedule.status == DeliveryStatus.CANCELED
+
+
+def test_a_gate_unlocked_after_its_message_went_out_stays_delivered(gate_course, gate_schedule, active_enrollment):
+    def unlock_while_sending(self):
+        GateUnlock.objects.create(
+            enrollment=active_enrollment, course_content=gate_course.gate_content, source=GateUnlockSource.API
+        )
+
+    with patch.object(SendGateCommand, "execute", unlock_while_sending):
+        DeliverContentsJob().process_delivery(gate_schedule)
+
+    gate_schedule.refresh_from_db()
+    assert gate_schedule.status == DeliveryStatus.DELIVERED
+    assert next_contents(active_enrollment) == ["Paid lesson"]
 
 
 def test_a_gate_timeout_counts_from_when_the_learner_reaches_it(gate_course, gate_schedule):
@@ -172,6 +190,26 @@ def test_unlocking_before_the_learner_arrives_is_kept_for_later(
     assert GateUnlock.objects.filter(enrollment=active_enrollment).exists()
     assert ContentDelivery.objects.filter(enrollment=active_enrollment).count() == 0
     assert received["unlocked"][0]["was_waiting"] is False
+
+
+def test_progress_leaves_out_a_gate_unlocked_in_advance(
+    gate_course, gate_schedule, active_enrollment, superadmin_client
+):
+    GateUnlock.objects.create(
+        enrollment=active_enrollment, course_content=gate_course.gate_content, source=GateUnlockSource.API
+    )
+    DeliverContentsJob().process_delivery(gate_schedule)
+
+    data = superadmin_client.get(
+        reverse(
+            "django_email_learning:api_platform:enrollments_detail",
+            kwargs={"enrollment_id": active_enrollment.id, "organization_id": gate_course.course.organization_id},
+        )
+    ).json()
+
+    assert [step["type"] for step in data["path"]] == ["lesson"]
+    assert [event["type"] for event in data["events"] if event["type"] == "content_sent"] == []
+    assert [event["type"] for event in data["events"] if event["type"] == "gate_unlocked"] == ["gate_unlocked"]
 
 
 def test_an_unverified_enrollment_can_be_unlocked_in_advance(gate_course, enrollment):

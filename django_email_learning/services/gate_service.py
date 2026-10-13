@@ -78,20 +78,28 @@ def reach_gate(delivery_schedule: DeliverySchedule) -> None:
     if gate is None:
         raise ValueError(f"CourseContent {content.id} has no gate.")
 
+    message_sent = False
     if gate.has_message and not _is_unlocked(delivery.enrollment_id, content.id):
         SendGateCommand(
             content_id=content.id, enrollment_id=delivery.enrollment_id, email=delivery.enrollment.learner.email
         ).execute()
+        message_sent = True
 
     with transaction.atomic():
         enrollment = Enrollment.objects.select_for_update().get(id=delivery.enrollment_id)
-        delivery_schedule.status = DeliveryStatus.DELIVERED
-        delivery_schedule.save()
 
         if _is_unlocked(enrollment.id, content.id):
             logger.info(f"Enrollment {enrollment.id} reached gate {gate.key!r} already unlocked; moving on.")
+            # A gate unlocked in advance is skipped, not delivered: the learner never stopped
+            # there, so it is no step on their route. Only an unlock that landed after the
+            # message went out leaves it delivered, since the learner did get that email.
+            delivery_schedule.status = DeliveryStatus.DELIVERED if message_sent else DeliveryStatus.CANCELED
+            delivery_schedule.save()
             _move_past(delivery, enrollment)
             return
+
+        delivery_schedule.status = DeliveryStatus.DELIVERED
+        delivery_schedule.save()
 
         if gate.timeout_days > 0:
             delivery.valid_until = timezone.now() + timedelta(days=gate.timeout_days)
