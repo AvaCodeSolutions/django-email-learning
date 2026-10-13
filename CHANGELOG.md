@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.15.1] - 2026-10-13
+
+### Fixed
+
+- **A gate unlocked before the learner reaches it no longer shows in their progress.** The learner already passed such a gate without stopping and without its message, but the timeline still showed "Gate reached" and the path a delivered gate step. Its delivery is now recorded as skipped (`canceled`) rather than `delivered`, and the path leaves out a gate that is unlocked but was never delivered. The "Gate unlocked" event still shows when and how it was unlocked. If the unlock lands while the gate's message is being sent, the delivery stays `delivered`, since the learner did get that email.
+
 ## [7.15.0] - 2026-10-11
 
 ### Added
