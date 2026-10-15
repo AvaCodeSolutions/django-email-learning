@@ -34,6 +34,7 @@ const WaitingAtGate = lazy(() => import("./components/WaitingAtGate.jsx"));
 
 
 const ENROLLMENT_STATUSES = ['active', 'waiting', 'completed', 'deactivated', 'canceled', 'inactive'];
+const DEFAULT_STATUS_FILTER = 'active';
 
 function Learners() {
 
@@ -49,11 +50,13 @@ function Learners() {
   const [pagesCount, setPagesCount] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const [courses, setCourses] = useState([]);
+  const [coursesLoadedFor, setCoursesLoadedFor] = useState(null);
+  const coursesLoaded = organizationId !== null && coursesLoadedFor === organizationId;
 
   // Read initial filter values from URL query params
   const urlParams = new URLSearchParams(window.location.search);
   const [courseFilter, setCourseFilter] = useState(urlParams.get('course_id') || '');
-  const [statusFilter, setStatusFilter] = useState(urlParams.get('status') || '');
+  const [statusFilter, setStatusFilter] = useState(urlParams.get('status') || DEFAULT_STATUS_FILTER);
   const [searchQs, setSearchQs] = useState('');
 
   const buildQs = () => {
@@ -225,18 +228,29 @@ function Learners() {
   }
 
   useEffect(() => {
-    if (!organizationId) {
+    // Wait for courses so a single-course default is applied before the first fetch
+    if (!organizationId || !coursesLoaded) {
       return;
     }
     reloadLearners();
-  }, [organizationId, qs, currentPage]);
+  }, [organizationId, coursesLoaded, qs, currentPage]);
 
   useEffect(() => {
     if (!organizationId) return;
     apiClient.get(`${apiBaseUrl}/organizations/${organizationId}/courses/`)
-      .then(data => setCourses(data.courses || []))
-      .catch(error => console.error('Error fetching courses:', error));
+      .then(data => {
+        const orgCourses = data.courses || [];
+        setCourses(orgCourses);
+        setCourseFilter((prev) => {
+          if (prev && orgCourses.some(c => String(c.id) === prev)) return prev;
+          return orgCourses.length === 1 ? String(orgCourses[0].id) : '';
+        });
+      })
+      .catch(error => console.error('Error fetching courses:', error))
+      .finally(() => setCoursesLoadedFor(organizationId));
   }, [organizationId]);
+
+  const defaultCourseFilter = courses.length === 1 ? String(courses[0].id) : '';
 
   const loadEnrollments = (learner) => {
     if (learner.state === 2) {
@@ -311,14 +325,14 @@ function Learners() {
   };
 
   const resetFilters = () => {
-    setCourseFilter('');
-    setStatusFilter('');
+    setCourseFilter(defaultCourseFilter);
+    setStatusFilter(DEFAULT_STATUS_FILTER);
     setSearchQs('');
     if (searcchInputRef.current) searcchInputRef.current.value = '';
     setCurrentPage(1);
   };
 
-  const isFiltered = courseFilter || statusFilter || searchQs;
+  const isFiltered = courseFilter !== defaultCourseFilter || statusFilter !== DEFAULT_STATUS_FILTER || searchQs;
 
   return (
     <Base
