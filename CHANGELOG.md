@@ -6,6 +6,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.17.1] - 2026-10-15
+
+### Changed
+
+- **Clicking a learner on the learners page opens their progress directly when there's only one enrollment to show.** With a course selected in the filter, it opens the learner's enrollment in that course. A learner with a single enrollment opens it instead of a one-row course list. Learners with several enrollments and no course selected still get the list.
+- **The learners list API returns `enrollment_id` when filtered by `course_id`**, alongside the existing `enrollment_status` and `enrollment_progress`.
+
+### Fixed
+
+- **A learner who re-enrolled in a course now shows their latest enrollment when the learners page is filtered to it.** The list picked one of their enrollments in the course in no fixed order, so a row could show the status and progress of an old deactivated enrollment.
+
 ## [7.17.0] - 2026-10-15
 
 ### Changed
