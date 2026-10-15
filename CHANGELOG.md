@@ -6,6 +6,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.17.0] - 2026-10-15
+
+### Changed
+
+- **The learners page now opens filtered to active enrollments.** The status filter starts on "Active" rather than "All Statuses". A `status` value in the URL still takes priority, and "All Statuses" can still be picked.
+- **An organization with only one course has that course selected on the learners page.** The course filter starts on that course rather than "All Courses", so the list shows each learner's progress in it. A `course_id` in the URL still takes priority. The list waits for the courses to load, so it is fetched once with the default applied.
+- **Reset on the learners page returns the filters to these defaults** rather than clearing them, and the button only shows when the filters differ from the defaults.
+
 ## [7.16.1] - 2026-10-13
 
 ### Fixed
