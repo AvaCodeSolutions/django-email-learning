@@ -116,7 +116,7 @@ def test_learners_view_status_filter_ignores_invalid_value(superadmin_client, le
 
 def test_learners_view_course_filter_includes_enrollment_progress(superadmin_client, course, course_lesson_content):
     learner = Learner.objects.create(email="progress@example.com", organization_id=1)
-    Enrollment.objects.create(learner=learner, course=course, status=EnrollmentStatus.ACTIVE)
+    enrollment = Enrollment.objects.create(learner=learner, course=course, status=EnrollmentStatus.ACTIVE)
 
     response = superadmin_client.get(f"{URL}?course_id={course.id}")
     assert response.status_code == 200
@@ -125,8 +125,23 @@ def test_learners_view_course_filter_includes_enrollment_progress(superadmin_cli
     item = data["items"][0]
     assert "enrollment_status" in item
     assert "enrollment_progress" in item
+    assert item["enrollment_id"] == enrollment.id
     assert item["enrollment_status"] == EnrollmentStatus.ACTIVE
     assert isinstance(item["enrollment_progress"], int)
+
+
+def test_learners_view_course_filter_uses_latest_enrollment(superadmin_client, course):
+    learner = Learner.objects.create(email="reenrolled@example.com", organization_id=1)
+    Enrollment.objects.create(
+        learner=learner, course=course, status=EnrollmentStatus.DEACTIVATED, deactivation_reason="canceled"
+    )
+    latest = Enrollment.objects.create(learner=learner, course=course, status=EnrollmentStatus.ACTIVE)
+
+    response = superadmin_client.get(f"{URL}?course_id={course.id}")
+    assert response.status_code == 200
+    item = response.json()["items"][0]
+    assert item["enrollment_id"] == latest.id
+    assert item["enrollment_status"] == EnrollmentStatus.ACTIVE
 
 
 def test_learners_view_without_course_filter_has_no_enrollment_progress(superadmin_client, course):
@@ -138,6 +153,7 @@ def test_learners_view_without_course_filter_has_no_enrollment_progress(superadm
     data = response.json()
     assert data["count"] == 1
     item = data["items"][0]
+    assert item.get("enrollment_id") is None
     assert item.get("enrollment_status") is None
     assert item.get("enrollment_progress") is None
 

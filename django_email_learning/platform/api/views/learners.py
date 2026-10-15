@@ -93,12 +93,12 @@ class LearnersView(PaginatedApiMixin, View):
         course_id = request.GET.get("course_id")
         self._course_id = course_id
         if course_id:
-            # Prefetch the single enrollment for this course so serialize_item
-            # can access status and progress_percentage without extra DB queries.
+            # Prefetch the learner's enrollments in this course, latest first, so
+            # serialize_item can read the current one without extra DB queries.
             learner_qs = learner_qs.prefetch_related(
                 Prefetch(
                     "enrollments",
-                    queryset=Enrollment.objects.filter(course_id=course_id),
+                    queryset=Enrollment.objects.filter(course_id=course_id).order_by("-enrolled_at", "-id"),
                     to_attr="_course_enrollment",
                 )
             )
@@ -113,6 +113,7 @@ class LearnersView(PaginatedApiMixin, View):
             enrollments: list = getattr(item, "_course_enrollment", [])
             enrollment = enrollments[0] if enrollments else None
             if enrollment:
+                data["enrollment_id"] = enrollment.id
                 data["enrollment_status"] = enrollment.status
                 data["enrollment_progress"] = enrollment.progress_percentage()
                 gate = waiting_gate(enrollment) if enrollment.status == EnrollmentStatus.ACTIVE else None

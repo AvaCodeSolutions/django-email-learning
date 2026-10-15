@@ -215,6 +215,7 @@ function Learners() {
         email: learner.email,
         photo: learner.photo || null,
         enrollmentsCount: learner.enrollments_count || { total: 0, completed: 0 },
+        enrollmentId: learner.enrollment_id ?? null,
         enrollmentStatus: learner.enrollment_status || null,
         enrollmentProgress: learner.enrollment_progress ?? null,
         enrollmentWaitingAtGate: learner.enrollment_waiting_at_gate || null,
@@ -278,10 +279,20 @@ function Learners() {
   }
 
   const showLearnerEnrollments = (learner) => {
+    // With a course filtered, the row is about that course's enrollment, so open it directly
+    if (courseFilter && learner.enrollmentId) {
+      showEnrollmentStatus(learner.enrollmentId);
+      return;
+    }
+
     setDialogOpen(true);
     setDialogContent(<LinearProgress sx={{ m: 10 }} />);
 
     const renderEnrollmentList = (enrollments) => {
+      if (enrollments.length === 1) {
+        showEnrollmentStatus(enrollments[0].id);
+        return;
+      }
       setDialogContent(
         <Box>
           <Box sx={{ px: 3, pt: 3, pb: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 2 }}>

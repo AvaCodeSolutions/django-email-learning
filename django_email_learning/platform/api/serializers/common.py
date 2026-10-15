@@ -27,6 +27,8 @@ class LearnerResponse(BaseModel):
     organization_id: int
     photo: Optional[Any] = None
     enrollments_count: EnrollmentsCount | None = None
+    # Set only when the list is filtered to a course: the learner's enrollment in it.
+    enrollment_id: Optional[int] = None
     enrollment_status: Optional[str] = None
     enrollment_progress: Optional[int] = None
 
