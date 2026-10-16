@@ -18,7 +18,9 @@ class EnrollmentCreateRequest(EmailValidatedRequest):
             "Whether the enrollment is created already verified. A verified enrollment starts "
             "active and its first content is scheduled straight away, with no verification email. "
             "Set to false to have the learner confirm their address first: the enrollment then "
-            "starts unverified and becomes active once they follow the emailed link."
+            "starts unverified and becomes active once they follow the emailed link. In a course "
+            "whose enrollments are gated, false instead sends the course's enrollment email and "
+            "the enrollment waits at the enrollment gate until it is unlocked."
         ),
     )
 
@@ -42,13 +44,17 @@ class EnrollmentResponse(BaseModel):
         default=None,
         description=(
             "The key of the gate the learner is waiting at, if their progress is held at one. "
-            "The enrollment's status stays `active` while it waits."
+            "The enrollment's status stays `active` while it waits - except at a course's "
+            "enrollment gate, which holds the enrollment `unverified` until it is unlocked."
         ),
     )
 
     @staticmethod
     def from_django_model(enrollment: Enrollment) -> "EnrollmentResponse":
         waiting = waiting_gate_delivery(enrollment) if enrollment.status == EnrollmentStatus.ACTIVE else None
+        waiting_key = waiting.course_content.gate.key if waiting and waiting.course_content.gate else None
+        if enrollment.status == EnrollmentStatus.UNVERIFIED and enrollment.course.is_enrollment_gated:
+            waiting_key = enrollment.course.enrollment_gate_key
         return EnrollmentResponse.model_validate(
             {
                 "id": enrollment.id,
@@ -57,7 +63,7 @@ class EnrollmentResponse(BaseModel):
                 "status": enrollment.status,
                 "enrolled_at": enrollment.enrolled_at,
                 "activated_at": enrollment.activated_at,
-                "waiting_at_gate": waiting.course_content.gate.key if waiting and waiting.course_content.gate else None,
+                "waiting_at_gate": waiting_key,
             }
         )
 
@@ -82,7 +88,9 @@ class GateUnlockRequest(BaseModel):
             "The key of the gate to unlock. Naming it is recommended: it also unlocks a gate the "
             "learner has not reached yet, so they pass straight through when they get there, and a "
             "late or retried call can never open a different gate than the one it was meant for. "
-            "When omitted, the gate the learner is currently waiting at is unlocked."
+            "When omitted, the gate the learner is currently waiting at is unlocked. "
+            "Naming the course's enrollment gate key confirms an enrollment that is waiting "
+            "to be confirmed."
         ),
         examples=["payment"],
     )
@@ -93,7 +101,9 @@ class GateUnlockResponse(BaseModel):
         description=(
             "`unlocked`: the learner was waiting at the gate and has moved on. "
             "`unlocked_in_advance`: the learner has not reached the gate yet and will pass it without "
-            "stopping. `already_unlocked`: nothing changed; the gate was unlocked before."
+            "stopping. `already_unlocked`: nothing changed; the gate was unlocked before. "
+            "For an enrollment gate, `unlocked` means the enrollment is now active, and "
+            "`already_unlocked` that it already was."
         )
     )
     gate: str = Field(description="The key of the gate that was unlocked.")

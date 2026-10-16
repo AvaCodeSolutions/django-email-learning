@@ -49,6 +49,21 @@ class Learners(BasePlatformView):
             "confirm_unlock_gate": _("Unlock"),
             "unlocking": _("Unlocking..."),
             "gate_unlock_failed": _("The gate could not be unlocked."),
+            "waiting_for_confirmation": _("Waiting at the enrollment gate"),
+            "enrollment_confirmed": _("Enrollment Confirmed"),
+            "enrollment_confirmed_source_api": _("Confirmed through the API"),
+            "enrollment_confirmed_source_admin": _("Confirmed by %(user)s"),
+            "enrollment_email_opened": _("Opened Enrollment Email"),
+            "enrollment_email": _("Enrollment email"),
+            "verification_email": _("Verification email"),
+            "confirm_enrollment": _("Confirm enrollment"),
+            "confirm_enrollment_title": _("Confirm this enrollment?"),
+            "confirm_enrollment_confirmation": _(
+                "The enrollment becomes active, the learner is sent the welcome email and their first content is"
+                " scheduled, as if the enrollment gate had been unlocked through the API."
+            ),
+            "confirming": _("Confirming..."),
+            "enrollment_confirm_failed": _("The enrollment could not be confirmed."),
             "gate_expired": _("Gate timed out"),
             "quiz_submitted": _("Quiz Submitted"),
             "assignment_submitted": _("Assignment Submitted"),

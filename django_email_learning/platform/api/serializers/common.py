@@ -44,6 +44,8 @@ class CourseSummaryResponse(BaseModel):
     title: str
     slug: str
     is_public: bool
+    # Whether an unverified enrollment waits for the enrollment gate rather than the learner.
+    is_enrollment_gated: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 

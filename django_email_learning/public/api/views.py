@@ -99,7 +99,7 @@ def _perform_enrollment(
         # enrollment already proves ownership of this email address.
         NewsletterSubscriber.objects.get_or_create(newsletter_id=course.newsletter_id, email=email)
 
-    return JsonResponse({"status": "enrolled"}, status=200)
+    return JsonResponse({"status": "enrolled", "confirmation": course.enrollment_confirmation}, status=200)
 
 
 def _send_newsletter_confirmation_email(subscriber: NewsletterSubscriber) -> None:

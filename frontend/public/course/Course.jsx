@@ -165,7 +165,7 @@ function Course() {
                 onClose={() => setShowEnrollmentAlert(false)}
                 sx={{ mb: 4, direction: courseDirection }}
             >
-                {localeMessages['enrollment_success']}
+                {localeMessages[course.is_enrollment_gated ? 'enrollment_gated_success' : 'enrollment_success']}
                 <Box sx={{ mt: 1.5 }}>
                     <ShareButtons
                         url={shareUrl}

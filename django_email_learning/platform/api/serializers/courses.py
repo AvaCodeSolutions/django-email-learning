@@ -15,6 +15,7 @@ from django_email_learning.models import (
     CourseInstructor,
     DecisionOption,
     DecisionPoint,
+    EnrollmentConfirmation,
     FromEmailType,
     Gate,
     ImapConnection,
@@ -41,6 +42,7 @@ from django_email_learning.platform.api.serializers.decisions import (
     DecisionUpdate,
 )
 from django_email_learning.platform.api.serializers.gates import (
+    GATE_KEY_PATTERN,
     GateCreate,
     GateResponse,
     GateUpdate,
@@ -55,8 +57,17 @@ from django_email_learning.platform.api.serializers.quizzes import (
     QuizResponse,
     UpdateQuiz,
 )
+from django_email_learning.services import enrollment_emails
 from django_email_learning.services.email_sender_service import email_sender_service
-from django_email_learning.services.sanitize import strip_html
+from django_email_learning.services.sanitize import sanitize_rich_text, strip_html
+
+# Fields of UpdateCourseRequest where an explicit null puts back the built-in default.
+COURSE_EMAIL_FIELDS = (
+    "enrollment_email_subject",
+    "enrollment_email_body",
+    "welcome_email_subject",
+    "welcome_email_body",
+)
 
 
 class Identifier(BaseModel):
@@ -272,11 +283,29 @@ class UpdateCourseRequest(BaseModel):
     show_organization_footer: Optional[bool] = Field(None, examples=[False])
     from_email_type: Optional[str] = Field(None, examples=[FromEmailType.PLATFORM_DEFAULT.value])
     instructors: Optional[list[int]] = Field(None, examples=[1, 2, 3])
+    enrollment_confirmation: Optional[EnrollmentConfirmation] = Field(
+        None,
+        examples=[EnrollmentConfirmation.GATE.value],
+        description="`link`: learners confirm by email link. `gate`: the unlock API or an admin confirms.",
+    )
+    enrollment_gate_key: Optional[str] = Field(
+        None, min_length=1, max_length=100, pattern=GATE_KEY_PATTERN, examples=["payment"]
+    )
+    # For the four below, sending null puts the built-in default back.
+    enrollment_email_subject: Optional[str] = Field(None, max_length=200)
+    enrollment_email_body: Optional[str] = None
+    welcome_email_subject: Optional[str] = Field(None, max_length=200)
+    welcome_email_body: Optional[str] = None
 
-    @field_validator("description", "target_audience")
+    @field_validator("description", "target_audience", "enrollment_email_subject", "welcome_email_subject")
     @classmethod
     def strip_html_markup(cls, value: Optional[str]) -> Optional[str]:
         return strip_html(value) if value else value
+
+    @field_validator("enrollment_email_body", "welcome_email_body")
+    @classmethod
+    def sanitize_email_body(cls, value: Optional[str]) -> Optional[str]:
+        return sanitize_rich_text(value) if value else value
 
     @field_validator("from_email_type")
     @classmethod
@@ -351,6 +380,13 @@ class UpdateCourseRequest(BaseModel):
                 if not org_user.can_act_as_instructor():
                     raise ValueError(f"OrganizationUser with id {instructor_id} does not have instructor role.")
                 CourseInstructor.objects.create(course=course, org_user=org_user)
+        if self.enrollment_confirmation is not None:
+            course.enrollment_confirmation = self.enrollment_confirmation.value
+        if self.enrollment_gate_key is not None:
+            course.enrollment_gate_key = self.enrollment_gate_key
+        for field in COURSE_EMAIL_FIELDS:
+            if field in self.model_fields_set:
+                setattr(course, field, getattr(self, field))
         return course
 
 
@@ -379,6 +415,20 @@ class CourseResponse(BaseModel):
     organization_from_email_preview: str
     domain_wide_email_enabled: bool
     instructors: Optional[list[InstructorResponse]] = None
+    enrollment_confirmation: str = EnrollmentConfirmation.LINK.value
+    enrollment_gate_key: str = ""
+    # The emails as they are sent: the course's own text, or the default while it has none.
+    enrollment_email_subject: str = ""
+    enrollment_email_body: str = ""
+    enrollment_email_customized: bool = False
+    welcome_email_subject: str = ""
+    welcome_email_body: str = ""
+    welcome_email_customized: bool = False
+    # What a null puts back, so an editor can offer to restore it before saving.
+    default_enrollment_email_subject: str = ""
+    default_enrollment_email_body: str = ""
+    default_welcome_email_subject: str = ""
+    default_welcome_email_body: str = ""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -422,6 +472,20 @@ class CourseResponse(BaseModel):
                     )
                     for instructor in course.instructors.all()
                 ],
+                "enrollment_confirmation": course.enrollment_confirmation,
+                "enrollment_gate_key": course.enrollment_gate_key,
+                "enrollment_email_subject": enrollment_emails.enrollment_email_subject(course),
+                "enrollment_email_body": enrollment_emails.enrollment_email_body(course),
+                "enrollment_email_customized": course.enrollment_email_subject is not None
+                or course.enrollment_email_body is not None,
+                "welcome_email_subject": enrollment_emails.welcome_email_subject(course),
+                "welcome_email_body": enrollment_emails.welcome_email_body(course),
+                "welcome_email_customized": course.welcome_email_subject is not None
+                or course.welcome_email_body is not None,
+                "default_enrollment_email_subject": enrollment_emails.default_enrollment_email_subject(course),
+                "default_enrollment_email_body": enrollment_emails.default_enrollment_email_body(course),
+                "default_welcome_email_subject": enrollment_emails.default_welcome_email_subject(course),
+                "default_welcome_email_body": enrollment_emails.default_welcome_email_body(course),
             }
         )
 

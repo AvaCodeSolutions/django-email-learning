@@ -4,6 +4,7 @@ from email.message import EmailMessage
 from django_email_learning.models import (
     Course,
     Enrollment,
+    EnrollmentConfirmation,
     EnrollmentStatus,
     ImapConnection,
 )
@@ -82,6 +83,7 @@ class ImapInterface(ImapInterfaceProtocol):
                 course__enabled=True,
                 activation_code=argument,
                 status=EnrollmentStatus.UNVERIFIED,
+                course__enrollment_confirmation=EnrollmentConfirmation.LINK,
             )
         except Enrollment.DoesNotExist:
             logger.warning(

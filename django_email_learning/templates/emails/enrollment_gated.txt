@@ -1,0 +1,2 @@
+{% autoescape off %}{{ message_text }}
+{% endautoescape %}

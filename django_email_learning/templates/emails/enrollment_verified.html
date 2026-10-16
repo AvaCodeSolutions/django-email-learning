@@ -8,26 +8,9 @@
 </div>
 {% endif %}
 
-<p class="email-paragraph">{% translate "Hello there," %}</p>
-
-<p class="email-paragraph">{% blocktranslate %}Congratulations! Your enrollment for <strong class="color-brand">{{ course_title }}</strong> has been successfully verified and confirmed.{% endblocktranslate %}</p>
-
-<p class="email-paragraph">{% translate "We're excited to have you join our learning community. Here's what you can expect:" %}</p>
-
-<ul class="email-list">
-    <li>{% translate "Course materials will be delivered directly to this email address" %}</li>
-    <li>{% translate "You'll receive structured lessons and assignments on a regular schedule" %}</li>
-    <li>{% translate "Interactive content and assessments will help track your progress" %}</li>
-</ul>
-
-<p class="email-paragraph">{% translate "Your learning adventure begins soon! Keep an eye on your inbox for the first lesson and welcome materials." %}</p>
-
-<h3 class="email-subtitle">{% translate "Welcome aboard!" %}</h3>
+{{ message|safe }}
 
 {% if newsletter_title %}
 <p class="email-paragraph">{% blocktranslate %}You have also been subscribed to the <strong>{{ newsletter_title }}</strong> newsletter. If you did not intend to subscribe, you can <a href="{{ newsletter_unsubscribe_url }}">unsubscribe here</a>.{% endblocktranslate %}</p>
 {% endif %}
-
-<p class="email-paragraph">{% translate "Best regards," %}<br>
-{% blocktranslate %}{{ organization_name }}{% endblocktranslate %}</p>
 {% endblock %}

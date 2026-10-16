@@ -126,7 +126,7 @@ function Organization() {
             return c;
         });
         setCourses(updatedCourses);
-        setShowSuccessMessage(true);
+        setShowSuccessMessage(course.is_enrollment_gated ? 'enrollment_gated_success' : 'enrollment_success');
     }
 
 
@@ -201,7 +201,7 @@ function Organization() {
                 onClose={() => setShowSuccessMessage(false)}
                 sx={{ mb: 4 }}
             >
-                {localeMessages['enrollment_success']}
+                {localeMessages[showSuccessMessage === 'enrollment_gated_success' ? 'enrollment_gated_success' : 'enrollment_success']}
             </Alert>
         )}
 

@@ -21,6 +21,7 @@ from django_email_learning.platform.api.views.courses import (
 )
 from django_email_learning.platform.api.views.learners import (
     CancelEnrollmentView,
+    ConfirmEnrollmentView,
     EnrollmentsStatisticsView,
     EnrollmentsView,
     EnrollmentView,
@@ -96,6 +97,7 @@ __all__ = [
     "EnrollmentsStatisticsView",
     "SendDeliveryScheduleNowView",
     "CancelEnrollmentView",
+    "ConfirmEnrollmentView",
     "UnlockGateView",
     "NewsletterView",
     "NewsletterEmbedSnippetView",

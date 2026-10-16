@@ -74,6 +74,20 @@ A learner held at a :doc:`gate <gates>` shows as *Waiting at gate* in the learne
 
 Behind the button is an admin-only endpoint, ``POST /api/platform/organizations/<id>/enrollments/<id>/gates/<course_content_id>/unlock/``. Unlocking a gate that is already unlocked changes nothing; an enrollment that has ended returns ``409``.
 
+Confirming an Enrollment
+------------------------
+
+In a course with an :doc:`enrollment gate <enrollment_emails>`, an enrollment waiting to be confirmed shows as *Waiting at the enrollment gate* in the learners list, rather than *Unverified*, and in the enrollment view. Organization admins can choose **Confirm enrollment** in the enrollment view, the same as unlocking the enrollment gate through the API.
+
+Once it is confirmed, the timeline shows **Enrollment Confirmed** with how: *Confirmed through the API*, or *Confirmed by* the admin who did it. An enrollment the learner verified through their link still shows **Learner Verified Email**.
+
+Behind the button is an admin-only endpoint, ``POST /api/platform/organizations/<id>/enrollments/<id>/confirm/``. Confirming an enrollment that is already active changes nothing; an enrollment that has ended, or one in a course without an enrollment gate, returns ``409``.
+
+Opening the First Email
+-----------------------
+
+The first email a learner is sent as they enroll, the verification email or a gated course's enrollment email, carries a tracking pixel. The first time the learner opens it, the timeline shows **Opened Enrollment Email**, saying which of the two it was. Which email was sent is recorded as it goes out, so the label stays right if the course later changes how it confirms enrollments. Like every open-tracking pixel, it is only recorded when the learner's email client loads images, so a missing open doesn't mean the email went unread.
+
 .. _learner-capacity:
 
 Learner Capacity

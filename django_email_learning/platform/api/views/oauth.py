@@ -111,6 +111,7 @@ class OauthGroupEnrollment(View):
                     VerifyEnrollmentCommand(
                         enrollment_id=enrollment.id,
                         verification_code=enrollment.activation_code,  # type: ignore[arg-type]
+                        skip_enrollment_gate=True,
                     ).execute()
                 except EnrollmentAlreadyExistsError:
                     logger.info(f"User {user.email} is already enrolled in course {handler.course_id}")

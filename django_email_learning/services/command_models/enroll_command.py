@@ -31,6 +31,7 @@ from django_email_learning.services.command_models.exceptions.learner_cap_exceed
     LearnerCapExceededError,
 )
 from django_email_learning.services.email_sender_service import email_sender_service
+from django_email_learning.services.enrollment_emails import enrollment_email_open_url, send_enrollment_email
 from django_email_learning.services.metrics_service import metric_service
 from django_email_learning.services.utils import mask_email
 
@@ -117,6 +118,12 @@ class EnrollCommand(AbstractCommand):
             self.logger.info(f"Verification email skipped for Enrollment ID: {enrollment.id} as per command parameter")
             return
 
+        if course.is_enrollment_gated:
+            # Nothing for the learner to verify: the gate confirms the enrollment, and the
+            # course's own enrollment email tells them what it is waiting for.
+            send_enrollment_email(enrollment)
+            return
+
         # Send verification email
 
         token = jwt_service.generate_jwt(
@@ -137,6 +144,7 @@ class EnrollCommand(AbstractCommand):
             "organization_name": course.organization.name,
             "support_imap_interface": course.imap_connection is not None,
             "imap_email_address": course.imap_connection.email if course.imap_connection else None,
+            "track_open_url": enrollment_email_open_url(enrollment),
             **email_sender_service.organization_footer_context(course),
         }
         subject = _("Verify your enrollment")
@@ -162,5 +170,7 @@ class EnrollCommand(AbstractCommand):
         )
         email.attach_alternative(html_content, "text/html")
         email_sender_service.send(email)
+        enrollment.enrollment_email_type = "verification"
+        enrollment.save(update_fields=["enrollment_email_type"])
 
         self.logger.info(f"Verification email sent to {mask_email(self.email)} for Enrollment ID: {enrollment.id}")
