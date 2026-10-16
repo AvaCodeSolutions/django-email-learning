@@ -76,3 +76,47 @@ describe('CommandResult unsubscribe confirmation', () => {
         expect(container.querySelector('form')).toBeNull();
     });
 });
+
+describe('CommandResult enrollment verified', () => {
+    const verifiedContext = {
+        successMessage: 'Your enrollment has been successfully verified.',
+        localeMessages: {
+            close_window_message: 'You can now close this window.',
+            share_after_enrollment: 'Know someone who would enjoy this course? Share it with them.',
+        },
+    };
+
+    it('invites the learner to share a public course instead of closing the window', () => {
+        renderWithProviders(<CommandResult />, {
+            appContext: { ...verifiedContext, shareUrl: 'https://example.com/acme/intro/', shareTitle: 'Intro' },
+        });
+
+        expect(screen.getByText('Know someone who would enjoy this course? Share it with them.')).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: 'Share on LinkedIn' })).toHaveAttribute(
+            'href',
+            expect.stringContaining(encodeURIComponent('https://example.com/acme/intro/'))
+        );
+        expect(screen.queryByText('You can now close this window.')).toBeNull();
+    });
+
+    it('falls back to the close-window hint when the course has no public page', () => {
+        renderWithProviders(<CommandResult />, { appContext: { ...verifiedContext, shareUrl: null } });
+
+        expect(screen.getByText('You can now close this window.')).toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: 'Share on LinkedIn' })).toBeNull();
+    });
+
+    it('never offers sharing on an error page', () => {
+        renderWithProviders(<CommandResult />, {
+            appContext: {
+                errorMessage: 'An error occurred during enrollment verification.',
+                ref: 'abc',
+                shareUrl: 'https://example.com/acme/intro/',
+                localeMessages: verifiedContext.localeMessages,
+            },
+        });
+
+        expect(screen.queryByRole('link', { name: 'Share on LinkedIn' })).toBeNull();
+        expect(screen.getByText('You can now close this window.')).toBeInTheDocument();
+    });
+});

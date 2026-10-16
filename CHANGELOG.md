@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [Unreleased]
+
+### Changed
+
+- **The enrollment-verified page invites the learner to share the course.** Under the success message, it shows the same "Share this course" buttons as the public course page, in place of "You can now close this window". Courses without a public page keep the close-window hint, so the learner is never given a link that doesn't open. The error and unsubscribe pages are unchanged.
+
 ## [7.19.0] - 2026-10-16
 
 ### Added

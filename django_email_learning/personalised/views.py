@@ -478,14 +478,28 @@ class VerifyEnrollmentView(BaseTemplateView):
                 organization=organization,
             )
 
+        # A course whose public page doesn't exist has no link to share, so the
+        # page falls back to the close-window hint.
+        course = enrollment.course if enrollment else None
+        share_url = course.public_url if course else None
+        share_title = course.title if course and share_url else None
         return self.render_to_response(
             context={
                 "page_title": _("Enrollment Verified"),
                 "appContext": {
                     "successMessage": _("Your enrollment has been successfully verified."),
+                    "shareUrl": share_url,
+                    "shareTitle": share_title,
                     "localeMessages": {
                         "Confirm": _("Confirm"),
                         "close_window_message": _("You can now close this window."),
+                        "share_after_enrollment": _("Know someone who would enjoy this course? Share it with them."),
+                        # Translators: PLATFORM is a social network name, such as LinkedIn.
+                        "share_on": _("Share on PLATFORM"),
+                        "share_by_email": _("Share by email"),
+                        "copy_link": _("Copy link"),
+                        "link_copied": _("Link copied"),
+                        "more_share_options": _("More sharing options"),
                     },
                 }
                 | self.get_app_context(organization),

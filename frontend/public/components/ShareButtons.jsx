@@ -8,7 +8,7 @@ import { buildShareLinks } from './shareLinks.js';
 
 const COPIED_FEEDBACK_MS = 2000;
 
-function ShareButtons({ url, title, messages, label }) {
+function ShareButtons({ url, title, messages, label, centered = false }) {
     const [copied, setCopied] = useState(false);
     const copiedTimer = useRef(null);
     const canNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
@@ -46,13 +46,13 @@ function ShareButtons({ url, title, messages, label }) {
     const moreLabel = messages['more_share_options'] || 'More options';
 
     return (
-        <Stack spacing={0.5}>
+        <Stack spacing={0.5} sx={centered ? { alignItems: 'center' } : undefined}>
             {label && (
                 <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>
                     {label}
                 </Typography>
             )}
-            <Stack direction="row" sx={{ flexWrap: 'wrap', mx: -1 }}>
+            <Stack direction="row" sx={{ flexWrap: 'wrap', mx: -1, justifyContent: centered ? 'center' : 'flex-start' }}>
                 {buildShareLinks(url, title).map(({ key, name, icon: NetworkIcon, href }) => (
                     <Tooltip key={key} title={shareOn(name)}>
                         <IconButton

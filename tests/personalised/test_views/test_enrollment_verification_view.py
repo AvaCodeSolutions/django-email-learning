@@ -38,6 +38,39 @@ def test_verification_invalid_token(anonymous_client):
     assert "The link is not valid." in response.content.decode()
 
 
+def _verify(anonymous_client, enrollment):
+    token = jwt_service.generate_jwt({"enrollment_id": enrollment.id, "verification_code": enrollment.activation_code})
+    with patch("django_email_learning.personalised.views.VerifyEnrollmentCommand"):
+        return anonymous_client.get(f"{URL}?token={token}")
+
+
+def test_verified_page_offers_sharing_a_public_course(enrollment, anonymous_client):
+    course = enrollment.course
+    course.enabled = True
+    course.is_public = True
+    course.save()
+    course.organization.is_public = True
+    course.organization.save()
+
+    app_context = _verify(anonymous_client, enrollment).context["appContext"]
+
+    assert app_context["shareUrl"] == course.public_url
+    assert app_context["shareTitle"] == course.title
+    assert "share_after_enrollment" in app_context["localeMessages"]
+
+
+def test_verified_page_has_nothing_to_share_for_a_non_public_course(enrollment, anonymous_client):
+    course = enrollment.course
+    course.enabled = True
+    course.is_public = False
+    course.save()
+
+    app_context = _verify(anonymous_client, enrollment).context["appContext"]
+
+    assert app_context["shareUrl"] is None
+    assert app_context["shareTitle"] is None
+
+
 # # TODO: Add more tests for various scenarios
 
 
