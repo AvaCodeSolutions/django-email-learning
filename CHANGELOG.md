@@ -6,6 +6,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.19.0] - 2026-10-16
+
+### Added
+
+- **The `send_enrollment_reminders` command reminds learners who haven't verified their enrollment.** Each unverified enrollment in an enabled course is reminded once, between 24 hours and 7 days after enrolling. In a course confirmed by email link, the learner gets a built-in reminder with a fresh verification link, and the IMAP verification code where the course has an IMAP connection. Enrollments older than the window are never reminded, so the first run doesn't email learners who abandoned their enrollment long ago. The window is set with `ENROLLMENT_REMINDERS` (`AFTER_HOURS`, `MAX_AGE_DAYS`) in `DJANGO_EMAIL_LEARNING`, and `--hours` / `--max-age-days` override it for one run. It can also be triggered through the jobs API at `/api/jobs/send_enrollment_reminders/`. A reminder is recorded on the enrollment as it is sent, so later runs skip it, and a failed send is retried on the next run. Schedule it alongside `deliver_contents`, for example hourly.
+- **Gated courses can send their own reminder.** The emails tab has a **Send a reminder** switch under the enrollment email, off by default. When it's on, the reminder has its own subject and body, with the same placeholders and buttons as the other emails. An empty message sends nothing.
+- **Reminders show in the learner's timeline.** It shows *Enrollment Reminder Sent* and, the first time the learner opens it, *Opened Enrollment Reminder*. Both say whether it was the verification reminder or a gated course's reminder.
+- **Admins can verify any unverified enrollment from the learners page.** In a course confirmed by email link, the enrollment view shows a **Verify enrollment** button for a learner who can't use their link. The enrollment becomes active and the learner gets the welcome email, without following the link. The timeline shows *Enrollment Confirmed* and which admin did it. `POST /api/platform/organizations/<id>/enrollments/<id>/confirm/` no longer returns `409` for courses without an enrollment gate.
+
+### Fixed
+
+- **Verification links no longer expire.** They expired an hour after the email was sent, so a learner who opened it later couldn't verify, and their enrollment stayed unverified. Links in emails sent before this release still expire. Learners whose enrollment is less than `MAX_AGE_DAYS` old get a working link in their reminder; run `send_enrollment_reminders --max-age-days <n>` once to reach older ones.
+
+Run `migrate`. The migration only adds fields, all nullable or with defaults.
+
 ## [7.18.0] - 2026-10-16
 
 ### Added
