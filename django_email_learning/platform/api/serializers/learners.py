@@ -41,6 +41,8 @@ class EventType(enum.StrEnum):
     GATE_UNLOCKED = "gate_unlocked"
     ENROLLMENT_CONFIRMED = "enrollment_confirmed"
     ENROLLMENT_EMAIL_OPENED = "enrollment_email_opened"
+    ENROLLMENT_REMINDER_SENT = "enrollment_reminder_sent"
+    ENROLLMENT_REMINDER_OPENED = "enrollment_reminder_opened"
 
 
 class DeactivatedEvent(BaseModel):
@@ -114,6 +116,19 @@ class EnrollmentEmailOpenedEvent(BaseModel):
     email: Literal["verification", "enrollment"]
 
 
+class EnrollmentReminderSentEvent(BaseModel):
+    type: Literal[EventType.ENROLLMENT_REMINDER_SENT] = Field(default=EventType.ENROLLMENT_REMINDER_SENT, exclude=True)
+    # `verification` for the built-in verification reminder, `enrollment` for a gated course's own.
+    email: Literal["verification", "enrollment"]
+
+
+class EnrollmentReminderOpenedEvent(BaseModel):
+    type: Literal[EventType.ENROLLMENT_REMINDER_OPENED] = Field(
+        default=EventType.ENROLLMENT_REMINDER_OPENED, exclude=True
+    )
+    email: Literal["verification", "enrollment"]
+
+
 class Event(BaseModel):
     type: EventType
     timestamp: datetime
@@ -128,6 +143,8 @@ class Event(BaseModel):
         | GateUnlockedEvent
         | EnrollmentConfirmedEvent
         | EnrollmentEmailOpenedEvent
+        | EnrollmentReminderSentEvent
+        | EnrollmentReminderOpenedEvent
         | None
     ) = Field(discriminator="type")  # REGISTERED, VERIFIED, COURSE_COMPLETED have no additional data
 
@@ -303,6 +320,22 @@ class EnrollmentResponse(BaseModel):
                     event_data=EnrollmentEmailOpenedEvent(email=enrollment.enrollment_email_type),  # type: ignore[arg-type]
                 )
             )
+        if enrollment.enrollment_reminder_sent_at and enrollment.enrollment_reminder_type:
+            events.append(
+                Event(
+                    type=EventType.ENROLLMENT_REMINDER_SENT,
+                    timestamp=enrollment.enrollment_reminder_sent_at,
+                    event_data=EnrollmentReminderSentEvent(email=enrollment.enrollment_reminder_type),  # type: ignore[arg-type]
+                )
+            )
+            if enrollment.enrollment_reminder_opened_at:
+                events.append(
+                    Event(
+                        type=EventType.ENROLLMENT_REMINDER_OPENED,
+                        timestamp=enrollment.enrollment_reminder_opened_at,
+                        event_data=EnrollmentReminderOpenedEvent(email=enrollment.enrollment_reminder_type),  # type: ignore[arg-type]
+                    )
+                )
         for delivery in enrollment.content_deliveries.all().order_by("id"):  # type: ignore[attr-defined]
             schedule_no = 0
             for schedule in delivery.delivery_schedules.filter(status=DeliveryStatus.DELIVERED):

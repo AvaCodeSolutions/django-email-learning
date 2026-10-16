@@ -700,6 +700,19 @@ class CourseView(BasePlatformView):
                 "Learners receive the built-in verification email with their confirmation link."
                 " Switch to an enrollment gate to write your own enrollment email."
             ),
+            "enrollment_reminder_enabled": _("Send a reminder"),
+            "enrollment_reminder_enabled_help": _(
+                "Email the learner once if their enrollment is still waiting a day after they enrolled."
+            ),
+            "enrollment_reminder_email": _("Reminder email"),
+            "enrollment_reminder_email_help": _(
+                "Sent once to learners whose enrollment is still waiting. Add a button to the page where they"
+                " complete it. Leave the message empty to send nothing."
+            ),
+            "enrollment_reminder_link_mode_info": _(
+                "Learners who haven't verified a day after enrolling are sent one built-in reminder with a fresh"
+                " verification link."
+            ),
             "welcome_email": _("Welcome email"),
             "welcome_email_help": _("Sent once the enrollment is confirmed, just before the course starts."),
             "email_subject": _("Subject"),

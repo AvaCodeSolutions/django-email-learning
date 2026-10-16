@@ -16,6 +16,7 @@ from django_email_learning.jobs.deactivate_inactive_enrollments_job import (
 )
 from django_email_learning.jobs.deliver_contents_job import DeliverContentsJob
 from django_email_learning.jobs.executor_utils import resolve_executor
+from django_email_learning.jobs.send_enrollment_reminders_job import SendEnrollmentRemindersJob
 from django_email_learning.jobs.send_newsletters_job import SendNewslettersJob
 from django_email_learning.jobs.send_reminders_job import SendRemindersJob
 from django_email_learning.models import JobExecution, JobName, JobStatus
@@ -112,6 +113,16 @@ class DeactivateInactiveEnrollmentsJobView(View):
 class SendNewslettersJobView(View):
     def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
         return _trigger_job(SendNewslettersJob(), JobName.SEND_NEWSLETTERS.value, "SendNewslettersJob")
+
+
+@method_decorator(check_api_key(), name="get")
+class SendEnrollmentRemindersJobView(View):
+    def get(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        return _trigger_job(
+            SendEnrollmentRemindersJob(),
+            JobName.SEND_ENROLLMENT_REMINDERS.value,
+            "SendEnrollmentRemindersJob",
+        )
 
 
 @method_decorator(check_api_key(), name="get")

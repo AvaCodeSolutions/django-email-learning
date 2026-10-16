@@ -13,6 +13,8 @@ Enrollment Confirmation
   The learner is emailed a verification link and confirms the enrollment by
   following it. A course with an IMAP connection also accepts a reply carrying the
   verification code. This is how every course worked before the setting existed.
+  The link doesn't expire, so a learner can verify whenever they get to the email.
+  Once the enrollment is verified, following the link again changes nothing.
 
 **Enrollment gate**
   The enrollment waits at an *enrollment gate* until something outside the course
@@ -97,6 +99,14 @@ language. **Restore default** puts it back; the change takes effect when you cli
   The editor appears only while the course uses an enrollment gate. A course
   confirmed by email link always sends the built-in verification email, so the link
   a learner needs can't be edited out of it.
+
+**Reminder email**
+  Sent once, a day after enrolling by default, to a learner whose gated enrollment is
+  still waiting. It is off by default: turn on **Send a reminder** under the enrollment
+  email to send it, and edit it like the other emails. Leave its message empty to send
+  nothing. A course confirmed by email link always sends a built-in reminder with a
+  fresh verification link instead, which can't be edited. Reminders are sent by the
+  ``send_enrollment_reminders`` command; see :doc:`../technical/management-commands`.
 
 **Welcome email**
   Sent once the enrollment is confirmed, however that happened, just before the

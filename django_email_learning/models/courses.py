@@ -82,6 +82,12 @@ class Course(models.Model):
         blank=True,
         help_text="Sent on enrollment when enrollments are gated, in place of the verification email.",
     )
+    enrollment_reminder_enabled = models.BooleanField(
+        default=False,
+        help_text="Remind learners of gated enrollments still unconfirmed. Link-confirmed courses always do.",
+    )
+    enrollment_reminder_subject = models.CharField(max_length=200, null=True, blank=True)
+    enrollment_reminder_body = models.TextField(null=True, blank=True)
     welcome_email_subject = models.CharField(max_length=200, null=True, blank=True)
     welcome_email_body = models.TextField(
         null=True,

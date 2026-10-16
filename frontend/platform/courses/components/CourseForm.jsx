@@ -28,6 +28,9 @@ const EMPTY_EMAIL_SETTINGS = {
     enrollmentGateKey: '',
     enrollmentEmailSubject: '',
     enrollmentEmailBody: '',
+    enrollmentReminderEnabled: false,
+    enrollmentReminderEmailSubject: '',
+    enrollmentReminderEmailBody: '',
     welcomeEmailSubject: '',
     welcomeEmailBody: '',
 };
@@ -37,6 +40,9 @@ const emailSettingsFrom = (data) => ({
     enrollmentGateKey: data.enrollment_gate_key || '',
     enrollmentEmailSubject: data.enrollment_email_subject || '',
     enrollmentEmailBody: data.enrollment_email_body || '',
+    enrollmentReminderEnabled: Boolean(data.enrollment_reminder_enabled),
+    enrollmentReminderEmailSubject: data.enrollment_reminder_subject || '',
+    enrollmentReminderEmailBody: data.enrollment_reminder_body || '',
     welcomeEmailSubject: data.welcome_email_subject || '',
     welcomeEmailBody: data.welcome_email_body || '',
 });
@@ -44,6 +50,8 @@ const emailSettingsFrom = (data) => ({
 const emailDefaultsFrom = (data) => ({
     enrollmentEmailSubject: data.default_enrollment_email_subject || '',
     enrollmentEmailBody: data.default_enrollment_email_body || '',
+    enrollmentReminderEmailSubject: data.default_enrollment_reminder_subject || '',
+    enrollmentReminderEmailBody: data.default_enrollment_reminder_body || '',
     welcomeEmailSubject: data.default_welcome_email_subject || '',
     welcomeEmailBody: data.default_welcome_email_body || '',
 });
@@ -53,10 +61,9 @@ const emailDefaultsFrom = (data) => ({
  * sent as nulls, so it keeps following the default (and the course's language) instead of
  * freezing today's text; otherwise only what changed is sent.
  */
-const emailUpdate = ({ prefix, current, initial, defaults, customized }) => {
+const emailUpdate = ({ prefix, apiPrefix, current, initial, defaults, customized }) => {
     const subjectKey = `${prefix}EmailSubject`;
     const bodyKey = `${prefix}EmailBody`;
-    const apiPrefix = `${prefix}_email`;
     const atDefault = current[subjectKey] === defaults[subjectKey] && current[bodyKey] === defaults[bodyKey];
     if (atDefault) {
         return customized ? { [`${apiPrefix}_subject`]: null, [`${apiPrefix}_body`]: null } : {};
@@ -154,7 +161,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     const [emailSettings, setEmailSettings] = useState(EMPTY_EMAIL_SETTINGS)
     const [initialEmailSettings, setInitialEmailSettings] = useState(EMPTY_EMAIL_SETTINGS)
     const [emailDefaults, setEmailDefaults] = useState(EMPTY_EMAIL_SETTINGS)
-    const [emailsCustomized, setEmailsCustomized] = useState({ enrollment: false, welcome: false })
+    const [emailsCustomized, setEmailsCustomized] = useState({ enrollment: false, enrollmentReminder: false, welcome: false })
     const [emailEditorVersion, setEmailEditorVersion] = useState(0)
     const [gateKeyHelperText, setGateKeyHelperText] = useState("")
     const [initialValues, setInitialValues] = useState({
@@ -196,7 +203,11 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
         setEmailSettings(emailSettingsFrom(data));
         setInitialEmailSettings(emailSettingsFrom(data));
         setEmailDefaults(emailDefaultsFrom(data));
-        setEmailsCustomized({ enrollment: Boolean(data.enrollment_email_customized), welcome: Boolean(data.welcome_email_customized) });
+        setEmailsCustomized({
+            enrollment: Boolean(data.enrollment_email_customized),
+            enrollmentReminder: Boolean(data.enrollment_reminder_customized),
+            welcome: Boolean(data.welcome_email_customized),
+        });
         setEmailEditorVersion((version) => version + 1);
     }
 
@@ -520,13 +531,17 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
         if (emailSettings.enrollmentConfirmation !== initialEmailSettings.enrollmentConfirmation) {
             updatePayload.enrollment_confirmation = emailSettings.enrollmentConfirmation;
         }
+        if (emailSettings.enrollmentReminderEnabled !== initialEmailSettings.enrollmentReminderEnabled) {
+            updatePayload.enrollment_reminder_enabled = emailSettings.enrollmentReminderEnabled;
+        }
         if (emailSettings.enrollmentConfirmation === 'gate' && emailSettings.enrollmentGateKey.trim() !== initialEmailSettings.enrollmentGateKey) {
             updatePayload.enrollment_gate_key = emailSettings.enrollmentGateKey.trim();
         }
         Object.assign(
             updatePayload,
-            emailUpdate({ prefix: 'enrollment', current: emailSettings, initial: initialEmailSettings, defaults: emailDefaults, customized: emailsCustomized.enrollment }),
-            emailUpdate({ prefix: 'welcome', current: emailSettings, initial: initialEmailSettings, defaults: emailDefaults, customized: emailsCustomized.welcome }),
+            emailUpdate({ prefix: 'enrollment', apiPrefix: 'enrollment_email', current: emailSettings, initial: initialEmailSettings, defaults: emailDefaults, customized: emailsCustomized.enrollment }),
+            emailUpdate({ prefix: 'enrollmentReminder', apiPrefix: 'enrollment_reminder', current: emailSettings, initial: initialEmailSettings, defaults: emailDefaults, customized: emailsCustomized.enrollmentReminder }),
+            emailUpdate({ prefix: 'welcome', apiPrefix: 'welcome_email', current: emailSettings, initial: initialEmailSettings, defaults: emailDefaults, customized: emailsCustomized.welcome }),
         );
 
         apiClient.post(apiBaseUrl + '/organizations/' + activeOrganizationId + '/courses/' + courseId + '/', updatePayload)

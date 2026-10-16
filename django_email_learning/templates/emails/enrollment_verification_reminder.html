@@ -1,0 +1,35 @@
+{% extends "emails/base.html" %}
+{% load i18n %}
+
+{% block content %}
+        <p class="email-paragraph">{% translate "Hello there," %}</p>
+
+        <p class="email-paragraph">
+            {% blocktranslate %}You enrolled in <strong>{{ course_title }}</strong>, but haven't verified your email address yet.{% endblocktranslate %}
+            {% translate "Your course starts as soon as you do." %}
+        </p>
+
+        <div class="email-cta-wrap">
+            <a href="{{ verification_link }}" class="email-cta bg-brand">
+                {% translate "Verify Your Email Address" %}
+            </a>
+        </div>
+
+        {% if support_imap_interface %}
+        <div class="email-panel border-brand">
+            <h4 class="color-brand" style="margin-top: 0;">{% translate "Alternative Verification Method" %}</h4>
+            <p class="email-paragraph" style="margin-bottom: 15px;">
+                {% blocktranslate %}You can also verify your email by sending an email to <strong style="color: #495057;">{{ imap_email_address }}</strong>{% endblocktranslate %}
+                {% blocktranslate %}The subject line should start with <b>verify {{ verification_code }}</b>{% endblocktranslate %}
+            </p>
+        </div>
+        {% endif %}
+
+        <div class="email-divider-note">
+            <p>{% translate "If you didn't sign up for this course, you can safely ignore this email." %}</p>
+        </div>
+
+        <p class="email-paragraph">{% translate "Best regards," %}<br>
+        {% blocktranslate %}{{ organization_name }}{% endblocktranslate %}</p>
+        {% if track_open_url %}<img src="{{ track_open_url }}" width="1" height="1" alt="" style="display:none;" />{% endif %}
+{% endblock %}

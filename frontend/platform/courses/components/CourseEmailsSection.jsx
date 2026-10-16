@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Chip, Divider, FormControlLabel, Radio, RadioGroup, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, Divider, FormControlLabel, Radio, RadioGroup, Stack, Switch, TextField, Typography } from '@mui/material';
 import { useRef } from 'react';
 import ContentEditor from '../../../src/components/ContentEditor.jsx';
 import { useAppContext } from '../../../src/render.jsx';
@@ -157,6 +157,48 @@ function CourseEmailsSection({ values, onChange, onRestoreDefault, readOnly, gat
                 <Alert severity="info" sx={{ direction }}>
                     {localeMessages['enrollment_email_link_mode_info']
                         || 'Learners receive the built-in verification email with their confirmation link. Switch to an enrollment gate to write your own enrollment email.'}
+                </Alert>
+            )}
+            <Divider sx={{ my: 2 }} />
+            {gated ? (
+                <Box>
+                    <FormControlLabel
+                        control={(
+                            <Switch
+                                checked={values.enrollmentReminderEnabled}
+                                disabled={readOnly}
+                                onChange={(e) => onChange({ enrollmentReminderEnabled: e.target.checked })}
+                            />
+                        )}
+                        label={localeMessages['enrollment_reminder_enabled'] || 'Send a reminder'}
+                        sx={{ m: 0 }}
+                    />
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        {localeMessages['enrollment_reminder_enabled_help']
+                            || 'Email the learner once if their enrollment is still waiting a day after they enrolled.'}
+                    </Typography>
+                    {values.enrollmentReminderEnabled && (
+                        <EmailEditor
+                            title={localeMessages['enrollment_reminder_email'] || 'Reminder email'}
+                            helperText={localeMessages['enrollment_reminder_email_help']
+                                || 'Sent once to learners whose enrollment is still waiting. Add a button to the page where they complete it. Leave the message empty to send nothing.'}
+                            subjectLabel={localeMessages['email_subject'] || 'Subject'}
+                            subject={values.enrollmentReminderEmailSubject}
+                            body={values.enrollmentReminderEmailBody}
+                            onChange={({ subject, body }) => onChange({
+                                ...(subject !== undefined && { enrollmentReminderEmailSubject: subject }),
+                                ...(body !== undefined && { enrollmentReminderEmailBody: body }),
+                            })}
+                            onRestoreDefault={() => onRestoreDefault('enrollmentReminder')}
+                            readOnly={readOnly}
+                            editorKey={`enrollment-reminder-${editorVersion}-${readOnly}`}
+                        />
+                    )}
+                </Box>
+            ) : (
+                <Alert severity="info" sx={{ direction }}>
+                    {localeMessages['enrollment_reminder_link_mode_info']
+                        || 'Learners who haven\'t verified a day after enrolling are sent one built-in reminder with a fresh verification link.'}
                 </Alert>
             )}
             <Divider sx={{ my: 2 }} />

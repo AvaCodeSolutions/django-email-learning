@@ -56,6 +56,10 @@ class Learners(BasePlatformView):
             "enrollment_email_opened": _("Opened Enrollment Email"),
             "enrollment_email": _("Enrollment email"),
             "verification_email": _("Verification email"),
+            "enrollment_reminder_sent": _("Enrollment Reminder Sent"),
+            "enrollment_reminder_opened": _("Opened Enrollment Reminder"),
+            "verification_reminder": _("Verification reminder"),
+            "enrollment_reminder": _("Enrollment reminder"),
             "confirm_enrollment": _("Confirm enrollment"),
             "confirm_enrollment_title": _("Confirm this enrollment?"),
             "confirm_enrollment_confirmation": _(
@@ -63,6 +67,13 @@ class Learners(BasePlatformView):
                 " scheduled, as if the enrollment gate had been unlocked through the API."
             ),
             "confirming": _("Confirming..."),
+            "verify_enrollment": _("Verify enrollment"),
+            "verify_enrollment_title": _("Verify this enrollment?"),
+            "verify_enrollment_confirmation": _(
+                "The enrollment becomes active without the learner following their verification link. They are"
+                " sent the welcome email and their first content is scheduled. Only do this if you know the email"
+                " address is theirs."
+            ),
             "enrollment_confirm_failed": _("The enrollment could not be confirmed."),
             "gate_expired": _("Gate timed out"),
             "quiz_submitted": _("Quiz Submitted"),

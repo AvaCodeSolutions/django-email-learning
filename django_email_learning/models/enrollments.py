@@ -161,6 +161,16 @@ class Enrollment(models.Model):
         choices=[("verification", "Verification email"), ("enrollment", "Enrollment email")],
     )
     enrollment_email_opened_at = models.DateTimeField(null=True, blank=True)
+    # The one reminder an unverified enrollment can be sent (see SendEnrollmentRemindersJob):
+    # when it went out, which email it was, and when the learner first opened it.
+    enrollment_reminder_sent_at = models.DateTimeField(null=True, blank=True)
+    enrollment_reminder_type = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        choices=[("verification", "Verification reminder"), ("enrollment", "Enrollment reminder")],
+    )
+    enrollment_reminder_opened_at = models.DateTimeField(null=True, blank=True)
 
     def clean(self) -> None:
         if self.pk:

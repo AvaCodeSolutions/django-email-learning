@@ -6,6 +6,7 @@ from django_email_learning.jobs.api.views import (
     DeactivateInactiveEnrollmentsJobView,
     DeliverContentsJobView,
     JobExecutionStatusView,
+    SendEnrollmentRemindersJobView,
     SendNewslettersJobView,
     SendQuizRemindersJobView,
 )
@@ -37,6 +38,11 @@ urlpatterns = [
         "deactivate_inactive_enrollments/",
         DeactivateInactiveEnrollmentsJobView.as_view(),
         name="deactivate_inactive_enrollments",
+    ),
+    path(
+        "send_enrollment_reminders/",
+        SendEnrollmentRemindersJobView.as_view(),
+        name="send_enrollment_reminders",
     ),
     path(
         "cleanup_job_executions/",

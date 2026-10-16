@@ -71,7 +71,21 @@ def confirm_gated_enrollment(
     """Unlock `enrollment`'s course's enrollment gate, activating it if it is waiting there."""
     if not enrollment.course.is_enrollment_gated:
         raise ValueError(f"Course {enrollment.course_id} does not gate its enrollments.")
+    return confirm_enrollment(enrollment, source, unlocked_by=unlocked_by, api_key=api_key)
 
+
+def confirm_enrollment(
+    enrollment: Enrollment,
+    source: GateUnlockSource,
+    unlocked_by: Any = None,
+    api_key: Optional[ApiKey] = None,
+) -> ConfirmResult:
+    """Activate an unverified `enrollment` on someone else's word rather than the learner's.
+
+    For a gated course this is unlocking its enrollment gate. For a course confirmed by
+    email link it is an admin verifying the enrollment in the learner's place, when the
+    learner can't use their link. Either way, how and by whom is recorded for the timeline.
+    """
     with transaction.atomic():
         locked = Enrollment.objects.select_for_update().select_related("course", "learner").get(id=enrollment.id)
         if locked.status in (EnrollmentStatus.ACTIVE, EnrollmentStatus.COMPLETED):
@@ -84,6 +98,6 @@ def confirm_gated_enrollment(
         activate_enrollment(locked)
 
     actor = f"user {unlocked_by.pk}" if unlocked_by is not None else f"API key {api_key.key_id}" if api_key else source
-    logger.info(f"Enrollment gate unlocked for enrollment {locked.id} by {actor} ({source}).")
+    logger.info(f"Enrollment {locked.id} confirmed by {actor} ({source}).")
     send_welcome_email(locked)
     return ConfirmResult(ConfirmOutcome.CONFIRMED, locked.status)

@@ -26,6 +26,8 @@ const localeMessages = {
     welcome_email: 'Welcome email',
     email_subject: 'Subject',
     restore_default_email: 'Restore default',
+    enrollment_reminder_enabled: 'Send a reminder',
+    enrollment_reminder_email: 'Reminder email',
 };
 
 const DEFAULT_WELCOME = '<p>Welcome to {{ course_title }}</p>';
@@ -49,6 +51,12 @@ const courseData = (overrides = {}) => ({
     enrollment_email_subject: 'Complete your enrollment',
     enrollment_email_body: '<p>Pending</p>',
     enrollment_email_customized: false,
+    enrollment_reminder_enabled: false,
+    enrollment_reminder_subject: 'Still waiting',
+    enrollment_reminder_body: '<p>Reminder</p>',
+    enrollment_reminder_customized: false,
+    default_enrollment_reminder_subject: 'Still waiting',
+    default_enrollment_reminder_body: '<p>Reminder</p>',
     welcome_email_subject: 'Enrollment Verified',
     welcome_email_body: DEFAULT_WELCOME,
     welcome_email_customized: false,
@@ -168,5 +176,29 @@ describe('CourseForm enrollment & welcome emails tab', () => {
 
         await waitFor(() => expect(postedPayload()).not.toBeNull());
         expect(postedPayload()).toMatchObject({ welcome_email_subject: null, welcome_email_body: null });
+    });
+
+    it('turns on the gated reminder without freezing its default text', async () => {
+        mockCourse(courseData({ enrollment_confirmation: 'gate', enrollment_gate_key: 'payment' }));
+        const user = userEvent.setup();
+        await openEmailsTab(user);
+
+        expect(screen.queryByText('Reminder email')).not.toBeInTheDocument();
+        await user.click(screen.getByRole('switch', { name: 'Send a reminder' }));
+        expect(screen.getByText('Reminder email')).toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: 'Update' }));
+
+        await waitFor(() => expect(postedPayload()).not.toBeNull());
+        const payload = postedPayload();
+        expect(payload.enrollment_reminder_enabled).toBe(true);
+        expect(payload).not.toHaveProperty('enrollment_reminder_body');
+    });
+
+    it('offers no reminder switch while enrollments are confirmed by link', async () => {
+        mockCourse(courseData());
+        const user = userEvent.setup();
+        await openEmailsTab(user);
+
+        expect(screen.queryByRole('switch', { name: 'Send a reminder' })).not.toBeInTheDocument();
     });
 });

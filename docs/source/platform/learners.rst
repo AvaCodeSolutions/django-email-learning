@@ -81,12 +81,16 @@ In a course with an :doc:`enrollment gate <enrollment_emails>`, an enrollment wa
 
 Once it is confirmed, the timeline shows **Enrollment Confirmed** with how: *Confirmed through the API*, or *Confirmed by* the admin who did it. An enrollment the learner verified through their link still shows **Learner Verified Email**.
 
-Behind the button is an admin-only endpoint, ``POST /api/platform/organizations/<id>/enrollments/<id>/confirm/``. Confirming an enrollment that is already active changes nothing; an enrollment that has ended, or one in a course without an enrollment gate, returns ``409``.
+In a course confirmed by email link, an unverified enrollment shows a **Verify enrollment** button to organization admins instead, for a learner who can't use their verification link. The enrollment becomes active, the learner is sent the welcome email and their first content is scheduled, without the learner following the link, so only do it when you know the address is theirs. The timeline shows **Enrollment Confirmed** with *Confirmed by* the admin, rather than **Learner Verified Email**.
+
+Both buttons use the same admin-only endpoint, ``POST /api/platform/organizations/<id>/enrollments/<id>/confirm/``. Confirming an enrollment that is already active changes nothing; an enrollment that has ended returns ``409``.
 
 Opening the First Email
 -----------------------
 
-The first email a learner is sent as they enroll, the verification email or a gated course's enrollment email, carries a tracking pixel. The first time the learner opens it, the timeline shows **Opened Enrollment Email**, saying which of the two it was. Which email was sent is recorded as it goes out, so the label stays right if the course later changes how it confirms enrollments. Like every open-tracking pixel, it is only recorded when the learner's email client loads images, so a missing open doesn't mean the email went unread.
+The first email a learner is sent as they enroll, the verification email or a gated course's enrollment email, carries a tracking pixel. The first time the learner opens it, the timeline shows **Opened Enrollment Email**, saying which of the two it was. Which email was sent is recorded as it goes out, so the label stays right if the course later changes how it confirms enrollments.
+
+If the learner is sent a reminder because their enrollment is still unverified (see the ``send_enrollment_reminders`` command), the timeline shows **Enrollment Reminder Sent**. It also shows **Opened Enrollment Reminder** the first time they open it. Both say whether it was the verification reminder or a gated course's enrollment reminder. Like every open-tracking pixel, it is only recorded when the learner's email client loads images, so a missing open doesn't mean the email went unread.
 
 .. _learner-capacity:
 

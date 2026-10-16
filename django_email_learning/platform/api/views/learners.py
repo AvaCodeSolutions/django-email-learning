@@ -48,7 +48,7 @@ from django_email_learning.services.enrollment_cancellation_service import (
     CancellationOutcome,
     cancel_enrollment,
 )
-from django_email_learning.services.enrollment_confirmation_service import ConfirmOutcome, confirm_gated_enrollment
+from django_email_learning.services.enrollment_confirmation_service import ConfirmOutcome, confirm_enrollment
 from django_email_learning.services.gate_service import UnlockOutcome, unlock_gate
 from django_email_learning.services.manual_delivery_service import (
     ManualDeliveryOutcome,
@@ -390,11 +390,13 @@ class UnlockGateView(View):
 
 @method_decorator(accessible_for(roles={"admin"}), name="post")
 class ConfirmEnrollmentView(View):
-    """Confirms an enrollment waiting at its course's enrollment gate, on the admin's behalf.
+    """Confirms an unverified enrollment on the admin's behalf.
 
-    Admin-only, like unlocking any other gate: it lets a learner into a course past whatever
-    the gate was waiting for - a payment, a signed agreement - which is a call for an admin.
-    Confirming an enrollment that is already active changes nothing.
+    In a gated course it unlocks the enrollment gate; in a course confirmed by email link it
+    verifies the enrollment for a learner who can't use their link. Admin-only, like
+    unlocking any other gate: it lets a learner into a course without the step it was waiting
+    for - a payment, a verified address - which is a call for an admin. Confirming an
+    enrollment that is already active changes nothing.
     """
 
     def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
@@ -405,10 +407,7 @@ class ConfirmEnrollmentView(View):
         except Enrollment.DoesNotExist:
             return JsonResponse({"error": "Enrollment not found"}, status=404)
 
-        if not enrollment.course.is_enrollment_gated:
-            return JsonResponse({"error": "The course does not gate its enrollments"}, status=409)
-
-        result = confirm_gated_enrollment(enrollment, GateUnlockSource.ADMIN, unlocked_by=request.user)
+        result = confirm_enrollment(enrollment, GateUnlockSource.ADMIN, unlocked_by=request.user)
         if result.outcome == ConfirmOutcome.NOT_CONFIRMABLE:
             return JsonResponse(
                 {"error": "Enrollment has ended", "status": result.enrollment_status},

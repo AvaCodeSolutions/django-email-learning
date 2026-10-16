@@ -32,4 +32,9 @@ urlpatterns = [
         TrackEnrollmentEmailOpenView.as_view(),
         name="track_enrollment_email_open",
     ),
+    path(
+        "track/enrollment-reminder-open/<str:token>/",
+        TrackEnrollmentEmailOpenView.as_view(reminder=True),
+        name="track_enrollment_reminder_open",
+    ),
 ]

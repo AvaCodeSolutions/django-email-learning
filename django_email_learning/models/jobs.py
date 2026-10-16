@@ -11,6 +11,7 @@ class JobName(StrEnum):
     SEND_REMINDERS = "send_reminders"
     DEACTIVATE_ENROLLMENTS = "deactivate_enrollments"
     SEND_NEWSLETTERS = "send_newsletters"
+    SEND_ENROLLMENT_REMINDERS = "send_enrollment_reminders"
 
 
 class JobStatus(StrEnum):

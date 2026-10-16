@@ -725,15 +725,16 @@ class TrackOpenView(View):
 
 
 class TrackEnrollmentEmailOpenView(View):
-    """Records the first open of the email a learner is sent as they enroll: the
-    verification email, or a gated course's enrollment email. Like `TrackOpenView`, it
-    always returns the pixel.
+    """Records the first open of the email a learner is sent as they enroll - the
+    verification email, or a gated course's enrollment email - or, with `reminder`, of its
+    reminder. Like `TrackOpenView`, it always returns the pixel.
     """
 
+    reminder = False
+
     def get(self, request, token: str, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
-        enrollment_id = enrollment_id_from_open_token(token)
+        enrollment_id = enrollment_id_from_open_token(token, reminder=self.reminder)
         if enrollment_id is not None:
-            Enrollment.objects.filter(id=enrollment_id, enrollment_email_opened_at__isnull=True).update(
-                enrollment_email_opened_at=timezone.now()
-            )
+            field = "enrollment_reminder_opened_at" if self.reminder else "enrollment_email_opened_at"
+            Enrollment.objects.filter(id=enrollment_id, **{f"{field}__isnull": True}).update(**{field: timezone.now()})
         return HttpResponse(_TRANSPARENT_GIF, content_type="image/gif")

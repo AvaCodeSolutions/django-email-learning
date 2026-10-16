@@ -85,6 +85,8 @@ function Learners() {
     'reminder_sent': {icon: <NotificationsActiveIcon />, color: "#ae4ad6", title: localeMessages["reminder_sent"]},
     'email_opened': {icon: <MarkEmailReadOutlinedIcon />, color: "#0288d1", title: localeMessages["email_opened"]},
     'enrollment_email_opened': {icon: <MarkEmailReadOutlinedIcon />, color: "#0288d1", title: localeMessages["enrollment_email_opened"] || 'Opened Enrollment Email'},
+    'enrollment_reminder_sent': {icon: <NotificationsActiveIcon />, color: "#ae4ad6", title: localeMessages["enrollment_reminder_sent"] || 'Enrollment Reminder Sent'},
+    'enrollment_reminder_opened': {icon: <MarkEmailReadOutlinedIcon />, color: "#0288d1", title: localeMessages["enrollment_reminder_opened"] || 'Opened Enrollment Reminder'},
     'enrollment_confirmed': {icon: <HowToRegIcon />, color: "#66bb6a", title: localeMessages["enrollment_confirmed"] || 'Enrollment Confirmed'},
     'assignment_submitted': {icon: <AssignmentReturnedIcon />, color: "#23bca8", title: localeMessages["assignment_submitted"]},
     'assignment_reviewed': {icon: <AssignmentIndIcon />, color: "#336eb7", title: localeMessages["assignment_reviewed"]},
@@ -120,9 +122,10 @@ function Learners() {
                   />
                 </Suspense>
               )}
-              {data.status === 'unverified' && data.course.is_enrollment_gated && (
+              {data.status === 'unverified' && (
                 <Suspense fallback={null}>
                   <WaitingForConfirmation
+                    gated={data.course.is_enrollment_gated}
                     canConfirm={userRole === 'admin'}
                     confirmUrl={`${apiBaseUrl}/organizations/${organizationId}/enrollments/${enrollmentId}/confirm/`}
                     onConfirmed={() => { showEnrollmentStatus(enrollmentId); reloadLearners(); }}
@@ -198,6 +201,11 @@ function Learners() {
                   <Box><Typography>{event.event_data.email === 'enrollment'
                     ? (localeMessages["enrollment_email"] || 'Enrollment email')
                     : (localeMessages["verification_email"] || 'Verification email')}</Typography></Box>
+                </>}
+                { (event.type === "enrollment_reminder_sent" || event.type === "enrollment_reminder_opened") && <>
+                  <Box><Typography>{event.event_data.email === 'enrollment'
+                    ? (localeMessages["enrollment_reminder"] || 'Enrollment reminder')
+                    : (localeMessages["verification_reminder"] || 'Verification reminder')}</Typography></Box>
                 </>}
                 { event.type === "enrollment_confirmed" && <>
                   <Box><Typography variant="body2" color="text.secondary">{(localeMessages[`enrollment_confirmed_source_${event.event_data.source}`] || event.event_data.source).replace('%(user)s', event.event_data.confirmed_by || '')}</Typography></Box>

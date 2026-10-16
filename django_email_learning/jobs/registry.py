@@ -3,6 +3,7 @@ from django_email_learning.jobs.deactivate_inactive_enrollments_job import (
     DeactivateInactiveEnrollmentsJob,
 )
 from django_email_learning.jobs.deliver_contents_job import DeliverContentsJob
+from django_email_learning.jobs.send_enrollment_reminders_job import SendEnrollmentRemindersJob
 from django_email_learning.jobs.send_newsletters_job import SendNewslettersJob
 from django_email_learning.jobs.send_reminders_job import SendRemindersJob
 from django_email_learning.models import JobName
@@ -13,4 +14,5 @@ JOB_REGISTRY: dict[str, type] = {
     JobName.SEND_REMINDERS.value: SendRemindersJob,
     JobName.DEACTIVATE_ENROLLMENTS.value: DeactivateInactiveEnrollmentsJob,
     JobName.SEND_NEWSLETTERS.value: SendNewslettersJob,
+    JobName.SEND_ENROLLMENT_REMINDERS.value: SendEnrollmentRemindersJob,
 }

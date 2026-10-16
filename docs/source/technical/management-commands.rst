@@ -12,6 +12,7 @@ The project currently includes the following management commands:
 - ``cleanup_job_executions``
 - ``deactivate_inactive_enrollments``
 - ``deliver_contents``
+- ``send_enrollment_reminders``
 - ``send_reminders``
 - ``send_newsletters``
 - ``rotate_encryption_key``
@@ -146,6 +147,67 @@ This command:
 
 - Processes scheduled reminder notifications
 - Sends reminders for pending learner actions
+
+send_enrollment_reminders
+-------------------------
+
+The ``send_enrollment_reminders`` management command reminds learners whose enrollment
+is still **unverified** some time after they enrolled. Each enrollment is reminded at
+most once.
+
+Usage
+~~~~~
+
+.. code-block:: bash
+
+    python manage.py send_enrollment_reminders
+
+    # Override the window for this run
+    python manage.py send_enrollment_reminders --hours 12 --max-age-days 3
+
+You can also trigger it via HTTP (see :doc:`jobs-api` for the response contract):
+
+.. code-block:: http
+
+    GET /your_preferred_path/api/jobs/send_enrollment_reminders/
+    Authorization: Bearer <API_KEY>
+
+Function
+~~~~~~~~
+
+This command finds unverified enrollments in enabled courses that enrolled more than
+``AFTER_HOURS`` ago (24 by default) but less than ``MAX_AGE_DAYS`` ago (7 by default),
+and that haven't been reminded yet. It then sends each one its reminder:
+
+- **Course confirmed by email link:** a built-in reminder with a fresh verification
+  link, and the IMAP verification code when the course has an IMAP connection.
+- **Course with an enrollment gate:** only when the course turns **Send a reminder**
+  on, with the course's own reminder text. See
+  :doc:`../platform/enrollment_emails`. A gated course whose reminder message is empty
+  sends nothing.
+
+The reminder is recorded on the enrollment as it is sent, so later runs skip it, and
+two runs at the same time can't both send it. If sending fails, the record is cleared
+again, so the next run retries. The reminder carries its own tracking pixel. Its send
+and its first open both show in the learner's timeline.
+
+Enrollments older than ``MAX_AGE_DAYS`` are never reminded. That way the first run
+after an upgrade doesn't email learners who abandoned their enrollment long ago. Set
+the window in ``DJANGO_EMAIL_LEARNING``:
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        # ...
+        'ENROLLMENT_REMINDERS': {
+            'AFTER_HOURS': 24,
+            'MAX_AGE_DAYS': 7,
+        },
+    }
+
+``MAX_AGE_DAYS`` must cover more time than ``AFTER_HOURS``, or no enrollment would
+ever be due; the job refuses such a window. Run the command at least once a day, and
+more often (for example hourly) if reminders should go out close to ``AFTER_HOURS``.
 
 send_newsletters
 ----------------

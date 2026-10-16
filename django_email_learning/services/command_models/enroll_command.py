@@ -1,9 +1,7 @@
 from typing import Literal
 
-from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
-from django.urls import reverse
 from django.utils.translation import gettext as _
 
 from django_email_learning.models import (
@@ -14,7 +12,6 @@ from django_email_learning.models import (
     Learner,
     Organization,
 )
-from django_email_learning.services import jwt_service
 from django_email_learning.services.command_models.abstract_command import (
     AbstractCommand,
 )
@@ -31,7 +28,11 @@ from django_email_learning.services.command_models.exceptions.learner_cap_exceed
     LearnerCapExceededError,
 )
 from django_email_learning.services.email_sender_service import email_sender_service
-from django_email_learning.services.enrollment_emails import enrollment_email_open_url, send_enrollment_email
+from django_email_learning.services.enrollment_emails import (
+    enrollment_email_open_url,
+    send_enrollment_email,
+    verification_email_context,
+)
 from django_email_learning.services.metrics_service import metric_service
 from django_email_learning.services.utils import mask_email
 
@@ -126,26 +127,9 @@ class EnrollCommand(AbstractCommand):
 
         # Send verification email
 
-        token = jwt_service.generate_jwt(
-            {
-                "verification_code": enrollment.activation_code,
-                "enrollment_id": enrollment.id,
-            }
-        )
-
-        verification_relative_path = reverse("django_email_learning:personalised:verify_enrollment") + f"?token={token}"
-        DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
-        verification_link = DJANGO_EMAIL_LEARNING_SETTINGS["SITE_BASE_URL"] + verification_relative_path
-
         template_context = {
-            "course_title": course.title,
-            "verification_link": verification_link,
-            "verification_code": enrollment.activation_code,
-            "organization_name": course.organization.name,
-            "support_imap_interface": course.imap_connection is not None,
-            "imap_email_address": course.imap_connection.email if course.imap_connection else None,
+            **verification_email_context(enrollment),
             "track_open_url": enrollment_email_open_url(enrollment),
-            **email_sender_service.organization_footer_context(course),
         }
         subject = _("Verify your enrollment")
         body = render_to_string(

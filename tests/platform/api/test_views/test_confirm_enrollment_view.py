@@ -39,12 +39,25 @@ def test_confirming_is_forbidden_for_non_admins(client, gated_enrollment):
     assert gated_enrollment.status == EnrollmentStatus.UNVERIFIED
 
 
-def test_a_course_confirmed_by_link_is_refused(org_admin_client, enrollment):
+def test_an_admin_verifies_an_enrollment_in_a_course_confirmed_by_link(
+    org_admin_client, course, course_lesson_content, enrollment
+):
     response = org_admin_client.post(get_url(enrollment.id))
 
-    assert response.status_code == 409
+    assert response.status_code == 200
     enrollment.refresh_from_db()
-    assert enrollment.status == EnrollmentStatus.UNVERIFIED
+    assert enrollment.status == EnrollmentStatus.ACTIVE
+    assert enrollment.confirmation_source == "admin"
+    assert enrollment.confirmed_by is not None
+    assert [email.subject for email in mail.outbox] == ["Enrollment Verified"]
+
+    url = reverse(
+        "django_email_learning:api_platform:enrollments_detail",
+        kwargs={"organization_id": 1, "enrollment_id": enrollment.id},
+    )
+    events = {event["type"]: event for event in org_admin_client.get(url).json()["events"]}
+    assert events["enrollment_confirmed"]["event_data"]["source"] == "admin"
+    assert "verified" not in events
 
 
 def test_an_unknown_enrollment_is_not_found(org_admin_client, db):

@@ -113,3 +113,23 @@ def test_leaving_the_emails_out_keeps_them(superadmin_client, course):
     update(superadmin_client, course, title="Renamed")
 
     assert Course.objects.get(id=course.id).welcome_email_body == "<p>Custom</p>"
+
+
+def test_a_gated_course_turns_its_reminder_on_and_writes_it(superadmin_client, course):
+    body = superadmin_client.get(course_url(course)).json()
+    assert body["enrollment_reminder_enabled"] is False
+    assert body["enrollment_reminder_body"] == body["default_enrollment_reminder_body"]
+
+    response = update(
+        superadmin_client,
+        course,
+        enrollment_reminder_enabled=True,
+        enrollment_reminder_subject="Still waiting",
+        enrollment_reminder_body="<p>Pay</p><script>x</script>",
+    )
+
+    body = response.json()
+    assert body["enrollment_reminder_enabled"] is True
+    assert body["enrollment_reminder_subject"] == "Still waiting"
+    assert body["enrollment_reminder_body"] == "<p>Pay</p>x"
+    assert body["enrollment_reminder_customized"] is True

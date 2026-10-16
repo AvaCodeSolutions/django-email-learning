@@ -699,6 +699,19 @@ Optional integer controlling how long a delivery schedule may sit in ``processin
    A schedule is marked ``processing`` while its email is being sent. A worker that dies in between — a deploy restarting the container, an OOM kill, a request killed by the web server's timeout — never gets to release it, and the queue only looks for ``scheduled`` rows, so the delivery would otherwise never be retried. Each job run requeues claims older than this value and logs the ids it recovered. Raise it if a single delivery can legitimately take longer than the default to send, so an in-flight delivery is never requeued underneath the worker sending it.
 
 
+**ENROLLMENT_REMINDERS**
+
+Sets when ``send_enrollment_reminders`` reminds an unverified enrollment: ``AFTER_HOURS``
+after enrolling (default ``24``), and only while the enrollment is less than
+``MAX_AGE_DAYS`` old (default ``7``). See :doc:`technical/management-commands`.
+
+.. code-block:: python
+
+    'ENROLLMENT_REMINDERS': {
+        'AFTER_HOURS': 24,
+        'MAX_AGE_DAYS': 7,
+    }
+
 **JOB_EXECUTOR** / **JOB_EXECUTOR_MAX_WORKERS**
 
 Controls how the HTTP job-trigger endpoints (see :doc:`technical/jobs-api`) run jobs in the background.
@@ -776,5 +789,7 @@ Django Email Learning sends course content and notifications via email. Ensure y
 Management Command Scheduling
 -----------------------------
 To automate content delivery, schedule the ``deliver_contents`` management command to run at regular intervals (e.g., every 15-60 minutes) using a task scheduler like cron or Celery Beat.
+
+To remind learners who haven't verified their enrollment, also schedule ``send_enrollment_reminders``, for example hourly.
 
 See `Management Commands <technical/management-commands.html>`_ for more details.

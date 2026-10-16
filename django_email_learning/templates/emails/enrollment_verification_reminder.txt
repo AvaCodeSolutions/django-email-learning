@@ -1,0 +1,18 @@
+{% load i18n %}
+
+{% translate "Hello there," %}
+
+{% blocktranslate %}You enrolled in {{ course_title }}, but haven't verified your email address yet.{% endblocktranslate %}
+{% translate "Your course starts as soon as you do." %}
+
+{% translate "Verify your email address by visiting the link below:" %}
+{{ verification_link }}
+
+{% if support_imap_interface %}
+{% blocktranslate %}Alternatively, you can also verify your email by sending the verification code {{ verification_code }} via an email to {{ imap_email_address }}.{% endblocktranslate %}
+{% endif %}
+
+{% translate "If you didn't sign up for this course, you can safely ignore this email." %}
+
+{% translate "Best Regards," %}
+{{ organization_name }}

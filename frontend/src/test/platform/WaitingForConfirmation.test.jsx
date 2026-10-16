@@ -10,6 +10,7 @@ const localeMessages = {
     waiting_for_confirmation: 'Waiting at the enrollment gate',
     confirm_enrollment: 'Confirm enrollment',
     enrollment_confirm_failed: 'The enrollment could not be confirmed.',
+    verify_enrollment: 'Verify enrollment',
 };
 const confirmUrl = '/api/organizations/1/enrollments/5/confirm/';
 
@@ -60,5 +61,25 @@ describe('WaitingForConfirmation', () => {
         await user.click(confirmButton());
 
         expect(await screen.findByText('The enrollment could not be confirmed.')).toBeInTheDocument();
+    });
+
+    it('offers to verify an enrollment in a course confirmed by link, without the gate label', async () => {
+        global.fetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ status: 'confirmed' }) });
+        const onConfirmed = vi.fn();
+        const user = userEvent.setup();
+        renderComponent({ gated: false, onConfirmed });
+
+        expect(screen.queryByText('Waiting at the enrollment gate')).not.toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: 'Verify enrollment' }));
+        await user.click(confirmButton());
+
+        await waitFor(() => expect(onConfirmed).toHaveBeenCalled());
+        expect(global.fetch.mock.calls[0][0]).toBe(confirmUrl);
+    });
+
+    it('shows nothing to a non-admin for a course confirmed by link', () => {
+        const { container } = renderComponent({ gated: false, canConfirm: false });
+
+        expect(container).toBeEmptyDOMElement();
     });
 });

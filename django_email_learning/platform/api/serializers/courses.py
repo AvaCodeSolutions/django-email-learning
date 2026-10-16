@@ -65,6 +65,8 @@ from django_email_learning.services.sanitize import sanitize_rich_text, strip_ht
 COURSE_EMAIL_FIELDS = (
     "enrollment_email_subject",
     "enrollment_email_body",
+    "enrollment_reminder_subject",
+    "enrollment_reminder_body",
     "welcome_email_subject",
     "welcome_email_body",
 )
@@ -294,15 +296,26 @@ class UpdateCourseRequest(BaseModel):
     # For the four below, sending null puts the built-in default back.
     enrollment_email_subject: Optional[str] = Field(None, max_length=200)
     enrollment_email_body: Optional[str] = None
+    enrollment_reminder_enabled: Optional[bool] = Field(
+        None, description="Remind gated enrollments still unconfirmed. Courses confirmed by link always remind."
+    )
+    enrollment_reminder_subject: Optional[str] = Field(None, max_length=200)
+    enrollment_reminder_body: Optional[str] = None
     welcome_email_subject: Optional[str] = Field(None, max_length=200)
     welcome_email_body: Optional[str] = None
 
-    @field_validator("description", "target_audience", "enrollment_email_subject", "welcome_email_subject")
+    @field_validator(
+        "description",
+        "target_audience",
+        "enrollment_email_subject",
+        "enrollment_reminder_subject",
+        "welcome_email_subject",
+    )
     @classmethod
     def strip_html_markup(cls, value: Optional[str]) -> Optional[str]:
         return strip_html(value) if value else value
 
-    @field_validator("enrollment_email_body", "welcome_email_body")
+    @field_validator("enrollment_email_body", "enrollment_reminder_body", "welcome_email_body")
     @classmethod
     def sanitize_email_body(cls, value: Optional[str]) -> Optional[str]:
         return sanitize_rich_text(value) if value else value
@@ -384,6 +397,8 @@ class UpdateCourseRequest(BaseModel):
             course.enrollment_confirmation = self.enrollment_confirmation.value
         if self.enrollment_gate_key is not None:
             course.enrollment_gate_key = self.enrollment_gate_key
+        if self.enrollment_reminder_enabled is not None:
+            course.enrollment_reminder_enabled = self.enrollment_reminder_enabled
         for field in COURSE_EMAIL_FIELDS:
             if field in self.model_fields_set:
                 setattr(course, field, getattr(self, field))
@@ -421,12 +436,18 @@ class CourseResponse(BaseModel):
     enrollment_email_subject: str = ""
     enrollment_email_body: str = ""
     enrollment_email_customized: bool = False
+    enrollment_reminder_enabled: bool = False
+    enrollment_reminder_subject: str = ""
+    enrollment_reminder_body: str = ""
+    enrollment_reminder_customized: bool = False
     welcome_email_subject: str = ""
     welcome_email_body: str = ""
     welcome_email_customized: bool = False
     # What a null puts back, so an editor can offer to restore it before saving.
     default_enrollment_email_subject: str = ""
     default_enrollment_email_body: str = ""
+    default_enrollment_reminder_subject: str = ""
+    default_enrollment_reminder_body: str = ""
     default_welcome_email_subject: str = ""
     default_welcome_email_body: str = ""
 
@@ -478,12 +499,19 @@ class CourseResponse(BaseModel):
                 "enrollment_email_body": enrollment_emails.enrollment_email_body(course),
                 "enrollment_email_customized": course.enrollment_email_subject is not None
                 or course.enrollment_email_body is not None,
+                "enrollment_reminder_enabled": course.enrollment_reminder_enabled,
+                "enrollment_reminder_subject": enrollment_emails.enrollment_reminder_subject(course),
+                "enrollment_reminder_body": enrollment_emails.enrollment_reminder_body(course),
+                "enrollment_reminder_customized": course.enrollment_reminder_subject is not None
+                or course.enrollment_reminder_body is not None,
                 "welcome_email_subject": enrollment_emails.welcome_email_subject(course),
                 "welcome_email_body": enrollment_emails.welcome_email_body(course),
                 "welcome_email_customized": course.welcome_email_subject is not None
                 or course.welcome_email_body is not None,
                 "default_enrollment_email_subject": enrollment_emails.default_enrollment_email_subject(course),
                 "default_enrollment_email_body": enrollment_emails.default_enrollment_email_body(course),
+                "default_enrollment_reminder_subject": enrollment_emails.default_enrollment_reminder_subject(course),
+                "default_enrollment_reminder_body": enrollment_emails.default_enrollment_reminder_body(course),
                 "default_welcome_email_subject": enrollment_emails.default_welcome_email_subject(course),
                 "default_welcome_email_body": enrollment_emails.default_welcome_email_body(course),
             }
