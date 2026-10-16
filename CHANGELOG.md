@@ -6,6 +6,23 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.18.0] - 2026-10-16
+
+### Added
+
+- **Courses can confirm enrollments through an enrollment gate instead of the learner's verification link.** Under the course's new "Enrollment confirmation" setting, *Email link* is the default and works as before. With *Enrollment gate*, a new enrollment waits until an outside system confirms it, for example once a payment clears. The gate has its own key, which can't match the key of a gate in the course. Your system confirms an enrollment with the existing `POST /api/v1/enrollments/<id>/unlock/`, naming that key. The enrollment then becomes active, its first content is scheduled and the welcome email goes out. Calling it again changes nothing. Organization admins can also confirm from the enrollment view on the learners page (`POST /api/platform/organizations/<id>/enrollments/<id>/confirm/`). In a gated course, learners can't verify themselves by link or IMAP reply. Enrollments started active by an admin, a Google Groups import or the organization API with `verified: true` skip the gate as before.
+- **Editable enrollment and welcome emails.** The course edit form has a new "Enrollment & welcome emails" tab. The welcome email, sent once an enrollment is confirmed, can always be edited. In a gated course you can also edit the enrollment email, which is sent on enrollment in place of the verification email. Courses confirmed by email link keep the built-in verification email, so the link can't be removed. Subjects and bodies take `{{ course_title }}` and `{{ organization_name }}` placeholders, and buttons can carry the learner's enrollment id and email. A course that hasn't edited an email sends the default, in the course's language. **Restore default** puts it back.
+- **The learners page shows enrollments waiting at the enrollment gate.** The list shows *Waiting at the enrollment gate* instead of *Unverified*. Once an enrollment is confirmed, the timeline shows *Enrollment Confirmed* and how: through the API, or by which admin.
+- **Opens of the first enrollment email are tracked.** The verification email and the enrollment email now carry a tracking pixel. The learner's first open shows in the timeline as *Opened Enrollment Email*, naming which email it was.
+- **The public enroll endpoint returns `confirmation` (`"link"` or `"gate"`)** alongside `"status": "enrolled"`. The public course and organization pages, and the embeddable form, tell learners of a gated course that the next steps were emailed to them, instead of asking them to verify.
+- New documentation page: *Enrollment Confirmation and Emails*.
+
+### Changed
+
+- **The welcome email is rendered from the course's content.** It used to be a fixed template, and its default content is the same text. The course image still shows above it, and the newsletter unsubscribe line still follows it.
+
+Run `migrate`. The two migrations only add fields, all nullable or with defaults. Enrollments confirmed before this release have no confirmation source recorded, so their timeline still shows *Learner Verified Email*.
+
 ## [7.17.1] - 2026-10-15
 
 ### Changed
