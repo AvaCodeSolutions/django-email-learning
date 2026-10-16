@@ -1,4 +1,4 @@
-import { Alert, Box, Button, ClickAwayListener, Divider, IconButton, Link, MenuItem, Stack, TextField, Tooltip, FormControlLabel, Switch, Typography, LinearProgress, useMediaQuery, useTheme } from '@mui/material';
+import { Alert, Box, Button, ClickAwayListener, Divider, IconButton, Link, MenuItem, Stack, Tab, Tabs, TextField, Tooltip, FormControlLabel, Switch, Typography, LinearProgress, useMediaQuery, useTheme } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import RequiredTextField  from '../../../src/components/RequiredTextField.jsx';
 import AddImapConnectionForm from '../components/AddImapConnectionForm.jsx';
@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import apiClient from '../../../src/apiClient.js';
 import { slugify } from '../../../src/utils.js';
 import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
+import CourseEmailsSection from './CourseEmailsSection.jsx';
 
 const MAX_EXTERNAL_REFERENCES = 10;
 const MAX_CERTIFICATE_FIELDS = 4;
@@ -18,6 +19,57 @@ const CERTIFICATE_FIELD_VALUE_MAX_LENGTH = 100;
 const DESCRIPTION_MAX_LENGTH = 1000;
 
 const createEmptyExternalReference = () => ({ name: '', url: '' });
+
+// Same rule as a content gate's key; see GateForm.
+const GATE_KEY_PATTERN = /^[-a-zA-Z0-9_]+$/;
+
+const EMPTY_EMAIL_SETTINGS = {
+    enrollmentConfirmation: 'link',
+    enrollmentGateKey: '',
+    enrollmentEmailSubject: '',
+    enrollmentEmailBody: '',
+    welcomeEmailSubject: '',
+    welcomeEmailBody: '',
+};
+
+const emailSettingsFrom = (data) => ({
+    enrollmentConfirmation: data.enrollment_confirmation || 'link',
+    enrollmentGateKey: data.enrollment_gate_key || '',
+    enrollmentEmailSubject: data.enrollment_email_subject || '',
+    enrollmentEmailBody: data.enrollment_email_body || '',
+    welcomeEmailSubject: data.welcome_email_subject || '',
+    welcomeEmailBody: data.welcome_email_body || '',
+});
+
+const emailDefaultsFrom = (data) => ({
+    enrollmentEmailSubject: data.default_enrollment_email_subject || '',
+    enrollmentEmailBody: data.default_enrollment_email_body || '',
+    welcomeEmailSubject: data.default_welcome_email_subject || '',
+    welcomeEmailBody: data.default_welcome_email_body || '',
+});
+
+/**
+ * The fields of one email to send in an update. An email left exactly at its default is
+ * sent as nulls, so it keeps following the default (and the course's language) instead of
+ * freezing today's text; otherwise only what changed is sent.
+ */
+const emailUpdate = ({ prefix, current, initial, defaults, customized }) => {
+    const subjectKey = `${prefix}EmailSubject`;
+    const bodyKey = `${prefix}EmailBody`;
+    const apiPrefix = `${prefix}_email`;
+    const atDefault = current[subjectKey] === defaults[subjectKey] && current[bodyKey] === defaults[bodyKey];
+    if (atDefault) {
+        return customized ? { [`${apiPrefix}_subject`]: null, [`${apiPrefix}_body`]: null } : {};
+    }
+    const update = {};
+    if (current[subjectKey] !== initial[subjectKey]) {
+        update[`${apiPrefix}_subject`] = current[subjectKey].trim() || null;
+    }
+    if (current[bodyKey] !== initial[bodyKey]) {
+        update[`${apiPrefix}_body`] = current[bodyKey];
+    }
+    return update;
+};
 
 const createEmptyCertificateField = () => ({ label: '', value: '' });
 
@@ -98,6 +150,13 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     const [certificateFields, setCertificateFields] = useState([])
     const [originalCertificateFields, setOriginalCertificateFields] = useState([])
     const [certificateFieldErrors, setCertificateFieldErrors] = useState([])
+    const [formTab, setFormTab] = useState('settings')
+    const [emailSettings, setEmailSettings] = useState(EMPTY_EMAIL_SETTINGS)
+    const [initialEmailSettings, setInitialEmailSettings] = useState(EMPTY_EMAIL_SETTINGS)
+    const [emailDefaults, setEmailDefaults] = useState(EMPTY_EMAIL_SETTINGS)
+    const [emailsCustomized, setEmailsCustomized] = useState({ enrollment: false, welcome: false })
+    const [emailEditorVersion, setEmailEditorVersion] = useState(0)
+    const [gateKeyHelperText, setGateKeyHelperText] = useState("")
     const [initialValues, setInitialValues] = useState({
         title: "",
         description: "",
@@ -133,6 +192,14 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
         }
     }, [organizationIsPublic]);
 
+    const loadEmailSettings = (data) => {
+        setEmailSettings(emailSettingsFrom(data));
+        setInitialEmailSettings(emailSettingsFrom(data));
+        setEmailDefaults(emailDefaultsFrom(data));
+        setEmailsCustomized({ enrollment: Boolean(data.enrollment_email_customized), welcome: Boolean(data.welcome_email_customized) });
+        setEmailEditorVersion((version) => version + 1);
+    }
+
     useEffect(() => {
         if (!createMode && courseId) {
             apiClient.get(apiBaseUrl + '/organizations/' + activeOrganizationId + '/courses/' + courseId + '/')
@@ -148,6 +215,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setFromEmailType(data.from_email_type || 'platform_default');
                 setImageUrl(data.image);
                 setImageServerPath(data.image_path);
+                loadEmailSettings(data);
                 setInitialValues({
                     title: data.title || "",
                     description: data.description || "",
@@ -195,6 +263,33 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             });
         }
     }, [createMode, courseId]);
+
+    const handleRestoreDefaultEmail = (email) => {
+        setEmailSettings((current) => ({
+            ...current,
+            [`${email}EmailSubject`]: emailDefaults[`${email}EmailSubject`],
+            [`${email}EmailBody`]: emailDefaults[`${email}EmailBody`],
+        }));
+        setEmailEditorVersion((version) => version + 1);
+    }
+
+    const validateEmailSettings = () => {
+        if (emailSettings.enrollmentConfirmation !== 'gate') {
+            setGateKeyHelperText("");
+            return true;
+        }
+        const key = emailSettings.enrollmentGateKey.trim();
+        if (!key) {
+            setGateKeyHelperText(localeMessages["enrollment_gate_key_required"] || 'Enter a key for the enrollment gate.');
+            return false;
+        }
+        if (!GATE_KEY_PATTERN.test(key)) {
+            setGateKeyHelperText(localeMessages["enrollment_gate_key_invalid"] || 'Use only letters, numbers, hyphens and underscores.');
+            return false;
+        }
+        setGateKeyHelperText("");
+        return true;
+    }
 
     const validateForm = () => {
         let isValid = true
@@ -337,6 +432,11 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     const handleUpdateCourse = () => {
         const isValid = validateForm()
         if (!isValid) {
+            setFormTab('settings')
+            return
+        }
+        if (!validateEmailSettings()) {
+            setFormTab('emails')
             return
         }
         const normalizedExternalReferences = normalizeExternalReferences(externalReferences);
@@ -417,6 +517,18 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             updatePayload.instructors = currentInstructors;
         }
 
+        if (emailSettings.enrollmentConfirmation !== initialEmailSettings.enrollmentConfirmation) {
+            updatePayload.enrollment_confirmation = emailSettings.enrollmentConfirmation;
+        }
+        if (emailSettings.enrollmentConfirmation === 'gate' && emailSettings.enrollmentGateKey.trim() !== initialEmailSettings.enrollmentGateKey) {
+            updatePayload.enrollment_gate_key = emailSettings.enrollmentGateKey.trim();
+        }
+        Object.assign(
+            updatePayload,
+            emailUpdate({ prefix: 'enrollment', current: emailSettings, initial: initialEmailSettings, defaults: emailDefaults, customized: emailsCustomized.enrollment }),
+            emailUpdate({ prefix: 'welcome', current: emailSettings, initial: initialEmailSettings, defaults: emailDefaults, customized: emailsCustomized.welcome }),
+        );
+
         apiClient.post(apiBaseUrl + '/organizations/' + activeOrganizationId + '/courses/' + courseId + '/', updatePayload)
         .then(data => {
             if (data.error) {
@@ -438,13 +550,15 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 });
                 setOriginalExternalReferences(normalizeExternalReferences(data.external_references || normalizedExternalReferences));
                 setOriginalCertificateFields(normalizeCertificateFields(data.certificate_fields || normalizedCertificateFields));
+                loadEmailSettings(data);
+                setErrorMessage("");
                 console.log('Success:', data);
                 successCallback(data);
             }
         })
         .catch((error) => {
             console.error('Error:', error);
-            if (error instanceof apiClient.ApiError && error.status === 409 && error.body?.error) {
+            if (error instanceof apiClient.ApiError && (error.status === 409 || error.status === 400) && typeof error.body?.error === 'string') {
                 setErrorMessage(error.body.error);
                 failureCallback(error.body);
             } else {
@@ -522,6 +636,26 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     return (<Box sx={{ p: 2 }}>
               { (!createMode && courseTitle=="") ? <LinearProgress /> : <>
               { errorMessage && <Alert severity="error" sx={{ marginBottom: "10px" }}>{errorMessage}</Alert> }
+              {!createMode && (
+                <Tabs value={formTab} onChange={(_, value) => setFormTab(value)} sx={{ borderBottom: 1, borderColor: 'divider', mb: 1 }}>
+                    <Tab value="settings" label={localeMessages["course_settings_tab"] || 'Settings'} sx={{ textTransform: 'none' }} />
+                    <Tab value="emails" label={localeMessages["course_emails_tab"] || 'Enrollment & welcome emails'} sx={{ textTransform: 'none' }} />
+                </Tabs>
+              )}
+              {!createMode && formTab === 'emails' && (
+                <CourseEmailsSection
+                    values={emailSettings}
+                    onChange={(patch) => {
+                        setEmailSettings((current) => ({ ...current, ...patch }));
+                        if ('enrollmentGateKey' in patch) setGateKeyHelperText("");
+                    }}
+                    onRestoreDefault={handleRestoreDefaultEmail}
+                    readOnly={readOnly}
+                    gateKeyError={gateKeyHelperText}
+                    editorVersion={emailEditorVersion}
+                />
+              )}
+              <Box sx={{ display: !createMode && formTab !== 'settings' ? 'none' : 'block' }}>
               <RequiredTextField label={localeMessages["course_title"]} helperText={titleHelperText} fullWidth margin="normal" value={courseTitle} disabled={readOnly} onChange={(e) => {
                                     const value = e.target.value;
                                     setCourseTitle(value);
@@ -907,6 +1041,7 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                     setImageUrl(data.file_url);
                     setImageServerPath(data.file_path);
                 }} />
+              </Box>
               </Box>
                             <Box sx={{ mt: 2, textAlign: 'right' }}>
                 {!readOnly && <Button onClick={cancelCallback} sx={{ mr: 1 }}>{localeMessages["cancel"]}</Button>}

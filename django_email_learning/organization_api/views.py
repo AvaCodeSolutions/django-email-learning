@@ -65,6 +65,7 @@ from django_email_learning.services.command_models.exceptions.learner_cap_exceed
 from django_email_learning.services.command_models.verify_enrollment_command import (
     VerifyEnrollmentCommand,
 )
+from django_email_learning.services.enrollment_confirmation_service import ConfirmOutcome, confirm_gated_enrollment
 from django_email_learning.services.gate_service import UnlockOutcome, unlock_gate
 from django_email_learning.services.utils import mask_email
 
@@ -247,6 +248,7 @@ class EnrollmentsView(RateLimitedApiView):
                     VerifyEnrollmentCommand(
                         enrollment_id=enrollment.id,
                         verification_code=enrollment.activation_code,  # type: ignore[arg-type]
+                        skip_enrollment_gate=True,
                     ).execute()
                     enrollment.refresh_from_db()
         except EnrollmentAlreadyExistsError:
@@ -296,7 +298,10 @@ class GateUnlockView(RateLimitedApiView):
                 "the rest of the course straight away; if they have not reached it yet, the unlock "
                 "is kept and they pass through without stopping when they do. Calling it again "
                 "for a gate that is already unlocked changes nothing, so it is safe to retry. "
-                "The enrollment may be unverified or active, but not completed or deactivated."
+                "The enrollment may be unverified or active, but not completed or deactivated. "
+                "A course can also gate its enrollments: naming its enrollment gate key here "
+                "confirms an unverified enrollment, which becomes active, gets its first content "
+                "scheduled and is sent the course's welcome email."
             ),
             request=serializers.GateUnlockRequest,
             responses={
@@ -336,6 +341,14 @@ class GateUnlockView(RateLimitedApiView):
         except Enrollment.DoesNotExist:
             return JsonResponse({"error": "Enrollment not found"}, status=404)
 
+        course = enrollment.course
+        enrollment_gate = course.enrollment_gate_key if course.is_enrollment_gated else None
+        if enrollment_gate and (
+            payload.gate == enrollment_gate
+            or (payload.gate is None and enrollment.status == EnrollmentStatus.UNVERIFIED)
+        ):
+            return self._confirm_enrollment(request, enrollment, enrollment_gate)
+
         if payload.gate is not None:
             course_content = (
                 CourseContent.objects.filter(
@@ -367,6 +380,27 @@ class GateUnlockView(RateLimitedApiView):
         response = GateUnlockResponse(
             status=result.outcome.value,  # type: ignore[arg-type]
             gate=course_content.gate.key,  # type: ignore[union-attr]
+            enrollment=serializers.EnrollmentResponse.from_django_model(enrollment),
+        )
+        return JsonResponse(response.model_dump(mode="json"), status=200)
+
+    @staticmethod
+    def _confirm_enrollment(request, enrollment: Enrollment, gate_key: str) -> JsonResponse:  # type: ignore[no-untyped-def]
+        result = confirm_gated_enrollment(enrollment, GateUnlockSource.API, api_key=request.api_key)
+        if result.outcome == ConfirmOutcome.NOT_CONFIRMABLE:
+            return JsonResponse({"error": "The enrollment has ended"}, status=409)
+
+        logger.info(
+            "API key %s unlocked enrollment gate '%s' for enrollment %s (%s)",
+            request.api_key.key_id,
+            gate_key,
+            enrollment.id,
+            result.outcome,
+        )
+        enrollment.refresh_from_db()
+        response = GateUnlockResponse(
+            status="unlocked" if result.outcome == ConfirmOutcome.CONFIRMED else "already_unlocked",
+            gate=gate_key,
             enrollment=serializers.EnrollmentResponse.from_django_model(enrollment),
         )
         return JsonResponse(response.model_dump(mode="json"), status=200)

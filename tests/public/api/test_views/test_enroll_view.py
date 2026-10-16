@@ -1,7 +1,7 @@
 import pytest
 from django.urls import reverse
 
-from django_email_learning.models import Enrollment, EnrollmentStatus, Learner
+from django_email_learning.models import Enrollment, EnrollmentConfirmation, EnrollmentStatus, Learner
 
 URL = reverse("django_email_learning:api_public:enroll")
 
@@ -90,3 +90,15 @@ def test_enroll_view_course_not_public(anonymous_client, course):
     assert response.status_code == 404
     assert "error" in response.json()
     assert "Course not found" in response.json()["error"]
+
+
+def test_enroll_view_says_how_the_enrollment_is_confirmed(anonymous_client, course):
+    course.enabled = True
+    course.enrollment_confirmation = EnrollmentConfirmation.GATE
+    course.enrollment_gate_key = "payment"
+    course.save()
+
+    payload = {"organization_id": course.organization_id, "email": "test@example.com", "course_slug": course.slug}
+    response = anonymous_client.post(URL, data=payload, content_type="application/json")
+
+    assert response.json() == {"status": "enrolled", "confirmation": "gate"}

@@ -29,6 +29,7 @@ from django_email_learning.services.command_models.unsubscribe_command import (
 from django_email_learning.services.command_models.verify_enrollment_command import (
     VerifyEnrollmentCommand,
 )
+from django_email_learning.services.enrollment_emails import enrollment_id_from_open_token
 
 DJANGO_EMAIL_LEARNING_SETTINGS: dict = getattr(settings, "DJANGO_EMAIL_LEARNING", {})
 
@@ -720,4 +721,19 @@ class TrackOpenView(View):
         except ContentDelivery.DoesNotExist:
             pass  # Invalid hash — still return the pixel, don't error
 
+        return HttpResponse(_TRANSPARENT_GIF, content_type="image/gif")
+
+
+class TrackEnrollmentEmailOpenView(View):
+    """Records the first open of the email a learner is sent as they enroll: the
+    verification email, or a gated course's enrollment email. Like `TrackOpenView`, it
+    always returns the pixel.
+    """
+
+    def get(self, request, token: str, *args, **kwargs) -> HttpResponse:  # type: ignore[no-untyped-def]
+        enrollment_id = enrollment_id_from_open_token(token)
+        if enrollment_id is not None:
+            Enrollment.objects.filter(id=enrollment_id, enrollment_email_opened_at__isnull=True).update(
+                enrollment_email_opened_at=timezone.now()
+            )
         return HttpResponse(_TRANSPARENT_GIF, content_type="image/gif")

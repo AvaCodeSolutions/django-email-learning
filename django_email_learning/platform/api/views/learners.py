@@ -48,6 +48,7 @@ from django_email_learning.services.enrollment_cancellation_service import (
     CancellationOutcome,
     cancel_enrollment,
 )
+from django_email_learning.services.enrollment_confirmation_service import ConfirmOutcome, confirm_gated_enrollment
 from django_email_learning.services.gate_service import UnlockOutcome, unlock_gate
 from django_email_learning.services.manual_delivery_service import (
     ManualDeliveryOutcome,
@@ -98,7 +99,9 @@ class LearnersView(PaginatedApiMixin, View):
             learner_qs = learner_qs.prefetch_related(
                 Prefetch(
                     "enrollments",
-                    queryset=Enrollment.objects.filter(course_id=course_id).order_by("-enrolled_at", "-id"),
+                    queryset=Enrollment.objects.filter(course_id=course_id)
+                    .select_related("course")
+                    .order_by("-enrolled_at", "-id"),
                     to_attr="_course_enrollment",
                 )
             )
@@ -118,6 +121,9 @@ class LearnersView(PaginatedApiMixin, View):
                 data["enrollment_progress"] = enrollment.progress_percentage()
                 gate = waiting_gate(enrollment) if enrollment.status == EnrollmentStatus.ACTIVE else None
                 data["enrollment_waiting_at_gate"] = gate.title if gate else None
+                data["enrollment_awaiting_confirmation"] = (
+                    enrollment.status == EnrollmentStatus.UNVERIFIED and enrollment.course.is_enrollment_gated
+                )
         return data
 
 
@@ -203,6 +209,7 @@ class EnrollmentsView(PaginatedApiMixin, View):
             verify_command = VerifyEnrollmentCommand(
                 enrollment_id=enrollment.id,
                 verification_code=enrollment.activation_code,  # type: ignore[arg-type]
+                skip_enrollment_gate=True,
             )
             verify_command.execute()
             enrollment.refresh_from_db()
@@ -374,6 +381,35 @@ class UnlockGateView(View):
 
         result = unlock_gate(enrollment, course_content, GateUnlockSource.ADMIN, unlocked_by=request.user)
         if result.outcome == UnlockOutcome.NOT_UNLOCKABLE:
+            return JsonResponse(
+                {"error": "Enrollment has ended", "status": result.enrollment_status},
+                status=409,
+            )
+        return JsonResponse({"status": result.outcome, "enrollment_status": result.enrollment_status}, status=200)
+
+
+@method_decorator(accessible_for(roles={"admin"}), name="post")
+class ConfirmEnrollmentView(View):
+    """Confirms an enrollment waiting at its course's enrollment gate, on the admin's behalf.
+
+    Admin-only, like unlocking any other gate: it lets a learner into a course past whatever
+    the gate was waiting for - a payment, a signed agreement - which is a call for an admin.
+    Confirming an enrollment that is already active changes nothing.
+    """
+
+    def post(self, request, *args, **kwargs) -> JsonResponse:  # type: ignore[no-untyped-def]
+        try:
+            enrollment = Enrollment.objects.select_related("course").get(
+                id=kwargs["enrollment_id"], course__organization_id=kwargs["organization_id"]
+            )
+        except Enrollment.DoesNotExist:
+            return JsonResponse({"error": "Enrollment not found"}, status=404)
+
+        if not enrollment.course.is_enrollment_gated:
+            return JsonResponse({"error": "The course does not gate its enrollments"}, status=409)
+
+        result = confirm_gated_enrollment(enrollment, GateUnlockSource.ADMIN, unlocked_by=request.user)
+        if result.outcome == ConfirmOutcome.NOT_CONFIRMABLE:
             return JsonResponse(
                 {"error": "Enrollment has ended", "status": result.enrollment_status},
                 status=409,

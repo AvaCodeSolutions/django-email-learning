@@ -11,6 +11,9 @@ Nothing is asked of the learner at a gate. If the gate has a message, it is emai
 to them as they arrive, so they know what is pending, for example with a link to
 the payment page.
 
+A course can also hold the enrollment itself behind a gate, before the course
+starts. See :doc:`enrollment_emails`.
+
 Adding a Gate
 -------------
 
@@ -85,6 +88,8 @@ A gate can also be unlocked **before** the learner reaches it, through the API. 
 payment that clears on day one opens a gate placed after lesson five; the learner
 then walks through it without stopping, and gets no gate email. Unlocking is
 idempotent: unlocking a gate that is already unlocked changes nothing.
+
+.. _gates-linking-learners:
 
 Linking Learners to Your Page
 -----------------------------

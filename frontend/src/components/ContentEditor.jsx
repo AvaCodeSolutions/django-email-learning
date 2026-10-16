@@ -61,7 +61,7 @@ import 'ldrs/react/ChaoticOrbit.css'
 
 // `linkVariables` are the learner details a button's link may carry; content with no enrollment,
 // such as a newsletter, offers fewer.
-function ContentEditor({ initialContent, contentUpdateCallback, disabled = false, extraMinLines = 0, editorInstanceCallback, defaultDirection, linkVariables = ALL_LINK_VARIABLES }) {
+function ContentEditor({ initialContent, contentUpdateCallback, disabled = false, extraMinLines = 0, editorInstanceCallback, defaultDirection, linkVariables = ALL_LINK_VARIABLES, autoFocus = true }) {
     const {
         direction: appDirection,
         apiBaseUrl: rawApiBaseUrl,
@@ -155,7 +155,7 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
             Dropcursor,],
         content: initialContent,
         editable: !disabled,
-        autofocus: true,
+        autofocus: autoFocus,
         editorProps: {
             attributes: {
                 dir: direction,

@@ -165,7 +165,9 @@ _EMBED_SCRIPT_TEMPLATE = r"""(function () {
             if (result.ok && result.data.status === 'already_enrolled') {
               message.textContent = "You're already enrolled in this course.";
             } else if (result.ok) {
-              message.textContent = "You're enrolled! Check your email to confirm.";
+              message.textContent = result.data.confirmation === 'gate'
+                ? "You're enrolled! Check your email for the next steps."
+                : "You're enrolled! Check your email to confirm.";
               form.reset();
             } else {
               message.textContent = (result.data && result.data.error) || 'Something went wrong. Please try again.';

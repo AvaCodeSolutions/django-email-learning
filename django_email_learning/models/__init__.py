@@ -31,6 +31,7 @@ from .enrollments import BlockedEmail, Certificate, Enrollment, Learner
 from .enums.course_content_type import CourseContentType
 from .enums.deactivation_reason import DeactivationReason
 from .enums.delivery_status import DeliveryStatus
+from .enums.enrollment_confirmation import EnrollmentConfirmation
 from .enums.enrollment_status import EnrollmentStatus
 from .enums.from_email_type import FromEmailType
 from .gates import (

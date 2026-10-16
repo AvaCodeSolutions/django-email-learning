@@ -671,6 +671,40 @@ class CourseView(BasePlatformView):
             "certificate_field_value_required_helper_text": _(
                 "A value is required when a certificate field label is provided."
             ),
+            "course_settings_tab": _("Settings"),
+            "course_emails_tab": _("Enrollment & welcome emails"),
+            "enrollment_confirmation": _("Enrollment confirmation"),
+            "enrollment_confirmation_link": _("Email link"),
+            "enrollment_confirmation_link_help": _(
+                "Learners confirm their enrollment by clicking the link in the verification email."
+            ),
+            "enrollment_confirmation_gate": _("Enrollment gate"),
+            "enrollment_confirmation_gate_help": _(
+                "The enrollment waits until your system unlocks the enrollment gate through the API,"
+                " for example once a payment clears, or an admin confirms it."
+            ),
+            "enrollment_gate_key": _("Enrollment gate key"),
+            "enrollment_gate_key_help": _(
+                "Name this key in the unlock API call to confirm an enrollment."
+                " It must differ from the keys of the gates in the course."
+            ),
+            "enrollment_gate_key_required": _("Enter a key for the enrollment gate."),
+            "enrollment_gate_key_invalid": _("Use only letters, numbers, hyphens and underscores."),
+            "enrollment_email": _("Enrollment email"),
+            "enrollment_email_help": _(
+                "Sent as soon as a learner enrolls. Tell them what their enrollment is waiting for, and add"
+                " a button to your payment page that carries their enrollment ID."
+                " Leave the message empty to send nothing."
+            ),
+            "enrollment_email_link_mode_info": _(
+                "Learners receive the built-in verification email with their confirmation link."
+                " Switch to an enrollment gate to write your own enrollment email."
+            ),
+            "welcome_email": _("Welcome email"),
+            "welcome_email_help": _("Sent once the enrollment is confirmed, just before the course starts."),
+            "email_subject": _("Subject"),
+            "restore_default_email": _("Restore default"),
+            "email_placeholders_help": _("Placeholders, filled in as each email is sent:"),
             "course_show_organization_footer": _("Show organization branding in email footer"),
             "course_show_organization_footer_helper_text": _(
                 "Add your organization's name and social links to the footer of this course's emails."

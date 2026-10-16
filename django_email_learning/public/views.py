@@ -221,6 +221,7 @@ class OrganizationView(TemplateView):
                     is_rtl=course_lang_info["bidi"],
                     newsletter_id=course.newsletter_id,
                     newsletter_title=course.newsletter.title if course.newsletter else None,
+                    is_enrollment_gated=course.is_enrollment_gated,
                 )
                 courses.append(course_data)
             organization_data = OrganizationSerializer(
@@ -268,6 +269,10 @@ class OrganizationView(TemplateView):
                     "enrollment_success": _(
                         "We've sent a confirmation email to verify your enrollment."
                         " Please check your inbox and follow the link to complete the process."
+                        " Don't see it? Check your Spam or Junk folder."
+                    ),
+                    "enrollment_gated_success": _(
+                        "Thanks for enrolling! We've emailed you the next steps to complete your enrollment."
                         " Don't see it? Check your Spam or Junk folder."
                     ),
                     "enrollment_failed": _("Enrollment failed. Please try again."),
@@ -392,6 +397,7 @@ class CourseView(TemplateView):
             or None,
             lessons=[content.lesson.title for content in lesson_contents],  # type: ignore[union-attr]
             lesson_gates=[gate.title if (gate := gates.get(content.id)) else None for content in lesson_contents],
+            is_enrollment_gated=course.is_enrollment_gated,
         )
         organization_data = OrganizationSerializer(
             id=course.organization.id,
@@ -428,6 +434,10 @@ class CourseView(TemplateView):
                 "enrollment_success": _(
                     "We've sent a confirmation email to verify your enrollment."
                     " Please check your inbox and follow the link to complete the process."
+                    " Don't see it? Check your Spam or Junk folder."
+                ),
+                "enrollment_gated_success": _(
+                    "Thanks for enrolling! We've emailed you the next steps to complete your enrollment."
                     " Don't see it? Check your Spam or Junk folder."
                 ),
                 "enrollment_failed": _("Enrollment failed. Please try again."),

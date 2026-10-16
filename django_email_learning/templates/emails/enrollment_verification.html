@@ -35,4 +35,5 @@
 
         <p class="email-paragraph">{% translate "Best regards," %}<br>
         {% blocktranslate %}{{ organization_name }}{% endblocktranslate %}</p>
+        {% if track_open_url %}<img src="{{ track_open_url }}" width="1" height="1" alt="" style="display:none;" />{% endif %}
 {% endblock %}

@@ -23,6 +23,8 @@ class PublicCourseSerializer(BaseModel):
     newsletter_id: int | None = None
     newsletter_title: str | None = None
     instructors: list[PublicInstructorSerializer] = []
+    # Whether enrolling waits for the enrollment gate rather than an emailed verification link.
+    is_enrollment_gated: bool = False
 
     @field_serializer("description")
     def serialize_description_with_br(self, description: str | None) -> str | None:

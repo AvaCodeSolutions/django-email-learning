@@ -134,6 +134,33 @@ class Enrollment(models.Model):
         max_length=50,
     )
     activation_code = models.CharField(max_length=6, null=True, blank=True)
+    # Set when the enrollment was confirmed at its course's enrollment gate rather than by the
+    # learner: how (a `GateUnlockSource` value) and, for an admin, by whom.
+    confirmation_source = models.CharField(max_length=20, null=True, blank=True)
+    confirmed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    confirmation_api_key = models.ForeignKey(
+        "django_email_learning.ApiKey",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
+    # Which email the learner was sent as they enrolled, recorded as it goes out so the
+    # timeline names the right one even if the course later changes how it confirms
+    # enrollments; and when the learner first opened it.
+    enrollment_email_type = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        choices=[("verification", "Verification email"), ("enrollment", "Enrollment email")],
+    )
+    enrollment_email_opened_at = models.DateTimeField(null=True, blank=True)
 
     def clean(self) -> None:
         if self.pk:

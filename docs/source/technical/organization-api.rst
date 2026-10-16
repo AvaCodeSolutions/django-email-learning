@@ -205,7 +205,10 @@ a course does not need to be public — but it must be enabled.
    * - ``false``
      - The enrollment is created **unverified** and the learner is emailed a
        verification link. It becomes active — and the course starts — only
-       once they follow it.
+       once they follow it. In a course with an
+       :doc:`enrollment gate <../platform/enrollment_emails>`, the learner is
+       sent the course's enrollment email instead, and the enrollment waits until
+       the enrollment gate is unlocked.
 
 Leave it at the default when your own signup flow has already confirmed the
 address, which is the usual case for a key-authenticated integration: the
@@ -234,7 +237,8 @@ enrollment: immediately for a verified one, and when the learner follows the
 verification link otherwise.
 
 The created enrollment includes ``waiting_at_gate``: the key of the gate the
-learner is waiting at, or ``null``.
+learner is waiting at, or ``null``. An unverified enrollment in a course with an
+enrollment gate reports the enrollment gate's key.
 
 .. _unlock-a-gate:
 
@@ -277,6 +281,14 @@ now is unlocked.
        "waiting_at_gate": null
      }
    }
+
+**Confirming an enrollment.** In a course with an
+:doc:`enrollment gate <../platform/enrollment_emails>`, naming the enrollment
+gate's key confirms an unverified enrollment: it becomes active, its first content
+is scheduled and the learner is sent the course's welcome email. When ``gate`` is
+omitted and the enrollment is unverified, the enrollment gate is the one
+unlocked. The response is the same shape, with ``status`` ``unlocked``, or
+``already_unlocked`` if the enrollment was already active.
 
 ``status`` is one of:
 

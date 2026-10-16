@@ -39,6 +39,8 @@ class EventType(enum.StrEnum):
     REMINDER_SENT = "reminder_sent"
     COURSE_COMPLETED = "course_completed"
     GATE_UNLOCKED = "gate_unlocked"
+    ENROLLMENT_CONFIRMED = "enrollment_confirmed"
+    ENROLLMENT_EMAIL_OPENED = "enrollment_email_opened"
 
 
 class DeactivatedEvent(BaseModel):
@@ -98,6 +100,20 @@ class GateUnlockedEvent(BaseModel):
     unlocked_by: str | None = None
 
 
+class EnrollmentConfirmedEvent(BaseModel):
+    """The enrollment was let through its course's enrollment gate, rather than verified by the learner."""
+
+    type: Literal[EventType.ENROLLMENT_CONFIRMED] = Field(default=EventType.ENROLLMENT_CONFIRMED, exclude=True)
+    source: str
+    confirmed_by: str | None = None
+
+
+class EnrollmentEmailOpenedEvent(BaseModel):
+    type: Literal[EventType.ENROLLMENT_EMAIL_OPENED] = Field(default=EventType.ENROLLMENT_EMAIL_OPENED, exclude=True)
+    # `verification` for the built-in verification email, `enrollment` for a gated course's own.
+    email: Literal["verification", "enrollment"]
+
+
 class Event(BaseModel):
     type: EventType
     timestamp: datetime
@@ -110,6 +126,8 @@ class Event(BaseModel):
         | AssignmentReviewdEvent
         | ReminderSentEvent
         | GateUnlockedEvent
+        | EnrollmentConfirmedEvent
+        | EnrollmentEmailOpenedEvent
         | None
     ) = Field(discriminator="type")  # REGISTERED, VERIFIED, COURSE_COMPLETED have no additional data
 
@@ -258,12 +276,31 @@ class EnrollmentResponse(BaseModel):
                 event_data=None,
             )
         ]
-        if enrollment.activated_at:
+        if enrollment.activated_at and enrollment.confirmation_source:
+            events.append(
+                Event(
+                    type=EventType.ENROLLMENT_CONFIRMED,
+                    timestamp=enrollment.activated_at,
+                    event_data=EnrollmentConfirmedEvent(
+                        source=enrollment.confirmation_source,
+                        confirmed_by=enrollment.confirmed_by.get_username() if enrollment.confirmed_by else None,
+                    ),
+                )
+            )
+        elif enrollment.activated_at:
             events.append(
                 Event(
                     type=EventType.VERIFIED,
                     timestamp=enrollment.activated_at,
                     event_data=None,
+                )
+            )
+        if enrollment.enrollment_email_opened_at and enrollment.enrollment_email_type:
+            events.append(
+                Event(
+                    type=EventType.ENROLLMENT_EMAIL_OPENED,
+                    timestamp=enrollment.enrollment_email_opened_at,
+                    event_data=EnrollmentEmailOpenedEvent(email=enrollment.enrollment_email_type),  # type: ignore[arg-type]
                 )
             )
         for delivery in enrollment.content_deliveries.all().order_by("id"):  # type: ignore[attr-defined]

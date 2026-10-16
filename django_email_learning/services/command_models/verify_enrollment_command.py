@@ -1,17 +1,10 @@
 from typing import Literal
 
-from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
-from django.urls import reverse
-from django.utils import timezone
-from django.utils.translation import gettext as _
 from pydantic import Field
 
 from django_email_learning.models import (
     Enrollment,
     EnrollmentStatus,
-    NewsletterSubscriber,
 )
 from django_email_learning.services.command_models.abstract_command import (
     AbstractCommand,
@@ -22,14 +15,18 @@ from django_email_learning.services.command_models.exceptions.invalid_enrollment
 from django_email_learning.services.command_models.exceptions.invalid_verification_code_error import (
     InvalidVerificationCodeError,
 )
-from django_email_learning.services.email_sender_service import email_sender_service
-from django_email_learning.services.metrics_service import metric_service
+from django_email_learning.services.enrollment_confirmation_service import activate_enrollment
+from django_email_learning.services.enrollment_emails import send_welcome_email
 
 
 class VerifyEnrollmentCommand(AbstractCommand):
     command_name: Literal["verify_enrollment"] = "verify_enrollment"
     enrollment_id: int = Field(..., gt=0)
     verification_code: str = Field(..., pattern=r"^\d{6}$")
+    # A course with gated enrollments is confirmed through its gate, never by the learner.
+    # Trusted callers that activate an enrollment directly - an admin enrolling someone,
+    # an API key enrolling a learner already verified - set this to pass the gate.
+    skip_enrollment_gate: bool = False
 
     def execute(self) -> None:
         try:
@@ -45,72 +42,9 @@ class VerifyEnrollmentCommand(AbstractCommand):
             self.logger.error(f"Verification Failed: Invalid verification code for Enrollment ID {self.enrollment_id}")
             raise InvalidVerificationCodeError(f"Invalid verification code for Enrollment ID {self.enrollment_id}")
 
-        enrollment.status = EnrollmentStatus.ACTIVE
-        enrollment.activation_code = None
-        enrollment.save()
-        self.logger.info(f"Enrollment Verified: Enrollment ID {self.enrollment_id} has been activated")
+        if enrollment.course.is_enrollment_gated and not self.skip_enrollment_gate:
+            self.logger.error(f"Verification Failed: Enrollment ID {self.enrollment_id} is confirmed through its gate")
+            raise InvalidEnrollmentError(f"Enrollment {self.enrollment_id} must be confirmed through its gate")
 
-        enrollment.schedule_first_content_delivery()
-        self.logger.info(
-            f"Content Delivery Scheduled: First content delivery scheduled for Enrollment ID {self.enrollment_id}"
-        )
-        metric_service.user_enrollment_activated(enrollment.course.slug, enrollment.course.organization.id)
-
-        # Confirm a pre-existing linked-newsletter subscription (if any). We
-        # intentionally do not auto-create one here: opt-in is decided at
-        # enrollment time via subscribe_to_newsletter.
-        newsletter = enrollment.course.newsletter
-        newsletter_subscriber = None
-        if newsletter:
-            newsletter_subscriber = NewsletterSubscriber.objects.filter(
-                newsletter=newsletter,
-                email=enrollment.learner.email,
-            ).first()
-            if newsletter_subscriber and not newsletter_subscriber.is_confirmed:
-                newsletter_subscriber.confirmed_at = timezone.now()
-                newsletter_subscriber.save(update_fields=["confirmed_at"])
-
-        # Send confirmation email
-        subject = _("Enrollment Verified")
-        course_image_url = None
-        if enrollment.course.image:
-            image_url = enrollment.course.image.url
-            if image_url.startswith(("http://", "https://")):
-                course_image_url = image_url
-            else:
-                site_base_url = settings.DJANGO_EMAIL_LEARNING["SITE_BASE_URL"]
-                course_image_url = f"{site_base_url}".rstrip("/") + image_url
-
-        newsletter_unsubscribe_url = None
-        if newsletter_subscriber:
-            site_base_url = str(settings.DJANGO_EMAIL_LEARNING["SITE_BASE_URL"]).rstrip("/")
-            unsubscribe_path = reverse(
-                "django_email_learning:public:newsletter_unsubscribe",
-                kwargs={"token": newsletter_subscriber.unsubscribe_token},
-            )
-            newsletter_unsubscribe_url = f"{site_base_url}{unsubscribe_path}"
-
-        email_ctx = {
-            "course_title": enrollment.course.title,
-            "organization_name": enrollment.course.organization.name,
-            **email_sender_service.organization_footer_context(enrollment.course),
-        }
-        if newsletter_unsubscribe_url:
-            email_ctx["newsletter_title"] = newsletter.title  # type: ignore[union-attr]
-            email_ctx["newsletter_unsubscribe_url"] = newsletter_unsubscribe_url
-
-        body = render_to_string("emails/enrollment_verified.txt", email_ctx)
-
-        email = EmailMultiAlternatives(
-            subject=subject,
-            body=body,
-            from_email=email_sender_service.from_email_for_course(enrollment.course),
-            to=[enrollment.learner.email],
-        )
-        html_content = render_to_string(
-            "emails/enrollment_verified.html",
-            {**email_ctx, "course_image_url": course_image_url},
-        )
-        email.attach_alternative(html_content, "text/html")
-
-        email_sender_service.send(email=email)
+        activate_enrollment(enrollment)
+        send_welcome_email(enrollment)

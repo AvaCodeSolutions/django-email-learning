@@ -445,6 +445,13 @@ class CourseContent(models.Model):
             raise ValidationError(
                 {"key": gettext("Another gate in this course already uses the key '%(key)s'.") % {"key": self.gate.key}}
             )
+        if self.course.is_enrollment_gated and self.course.enrollment_gate_key == self.gate.key:
+            raise ValidationError(
+                {
+                    "key": gettext("The course's enrollment gate already uses the key '%(key)s'.")
+                    % {"key": self.gate.key}
+                }
+            )
 
     def full_clean(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
         self._validate_content()

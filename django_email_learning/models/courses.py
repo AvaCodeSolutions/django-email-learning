@@ -14,6 +14,7 @@ from django_email_learning.models.newsletters import Newsletter
 from django_email_learning.services import jwt_service
 from django_email_learning.services.public_urls import public_url_name
 
+from .enums.enrollment_confirmation import EnrollmentConfirmation
 from .enums.enrollment_status import EnrollmentStatus
 from .enums.from_email_type import FromEmailType
 from .organizations import Organization, OrganizationUser, domain_wide_email_enabled
@@ -58,6 +59,35 @@ class Course(models.Model):
         default=False,
         help_text="Show the organization name and social links in the footer of this course's emails.",
     )
+    enrollment_confirmation = models.CharField(
+        max_length=20,
+        choices=[
+            (EnrollmentConfirmation.LINK.value, "Email link"),
+            (EnrollmentConfirmation.GATE.value, "Enrollment gate"),
+        ],
+        default=EnrollmentConfirmation.LINK.value,
+        help_text="Whether learners confirm their own enrollment, or an outside system does through the API.",
+    )
+    enrollment_gate_key = models.SlugField(
+        max_length=100,
+        blank=True,
+        default="",
+        help_text="Names the enrollment gate in the unlock API. Required when enrollments are gated.",
+    )
+    # The emails below are rich text with {{ course_title }} and {{ organization_name }}
+    # placeholders; null sends the built-in default. See services/enrollment_emails.py.
+    enrollment_email_subject = models.CharField(max_length=200, null=True, blank=True)
+    enrollment_email_body = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Sent on enrollment when enrollments are gated, in place of the verification email.",
+    )
+    welcome_email_subject = models.CharField(max_length=200, null=True, blank=True)
+    welcome_email_body = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Sent once an enrollment is confirmed.",
+    )
 
     def has_branching(self) -> bool:
         """Whether any content in this course routes a learner onto a track.
@@ -94,6 +124,22 @@ class Course(models.Model):
             )
             if previous != FromEmailType.ORGANIZATION:
                 raise ValidationError({"from_email_type": "Domain-wide email is not enabled for this installation."})
+        if self.is_enrollment_gated:
+            if not self.enrollment_gate_key:
+                raise ValidationError({"enrollment_gate_key": "An enrollment gate needs a key."})
+            # Content gates and the enrollment gate share the unlock API, so their keys
+            # must not name the same thing.
+            if self.pk and self.coursecontent_set.filter(gate__key=self.enrollment_gate_key).exists():
+                raise ValidationError(
+                    {
+                        "enrollment_gate_key": "A gate in this course already uses the key '%(key)s'."
+                        % {"key": self.enrollment_gate_key}
+                    }
+                )
+
+    @property
+    def is_enrollment_gated(self) -> bool:
+        return self.enrollment_confirmation == EnrollmentConfirmation.GATE
 
     def save(self, *args: Any, **kwargs: Any) -> None:  # type: ignore[no-untyped-def]
         self.full_clean()
