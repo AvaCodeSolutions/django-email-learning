@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.20.0] - 2026-10-16
+
+### Added
+
+- **Courses can show an optional price.** The course form has a **Price** section with an amount (up to two digits after the decimal point), a currency picked from the ISO 4217 codes, and an optional subtitle. Use the subtitle to tell learners how the price applies, for example "Paid from the first lesson", "First 3 lessons free, then paid" or "One-time payment". The public course page shows the price, formatted for the currency, with the subtitle under it, above the enroll button, and adds it to the page's structured data as an `Offer`. The price is information only and nothing charges learners; take payments yourself, for example behind an enrollment or content gate. The course API takes and returns `price`, `price_currency` and `price_subtitle`; a price needs a currency, a subtitle needs a price, and sending null clears a field. Leave the price empty to show none, as before. Run `migrate` after upgrading.
+
 ## [7.19.1] - 2026-10-16
 
 ### Changed
