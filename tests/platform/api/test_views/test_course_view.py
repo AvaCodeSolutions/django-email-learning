@@ -1186,3 +1186,114 @@ def test_update_course_send_certificate(superadmin_client):
     assert update_response.status_code == 200
     assert update_response.json()["send_certificate"] is False
     assert Course.objects.get(id=course_id).send_certificate is False
+
+
+def _detail_url(course_id: int) -> str:
+    return reverse(
+        "django_email_learning:api_platform:courses_detail",
+        kwargs={"organization_id": 1, "course_id": course_id},
+    )
+
+
+def test_create_course_with_price(superadmin_client):
+    payload = valid_create_course_payload(slug=uuid.uuid4().hex)
+    payload["price"] = "49.9"
+    payload["price_currency"] = "EUR"
+    payload["price_subtitle"] = "First 3 lessons free, then <b>paid</b>"
+
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["price"] == "49.90"
+    assert body["price_currency"] == "EUR"
+    assert body["price_subtitle"] == "First 3 lessons free, then paid"
+
+
+def test_create_course_without_price(superadmin_client):
+    response = superadmin_client.post(
+        get_url(1), json.dumps(valid_create_course_payload(slug=uuid.uuid4().hex)), content_type="application/json"
+    )
+
+    assert response.status_code == 201
+    assert response.json()["price"] is None
+    assert response.json()["price_currency"] == ""
+    assert response.json()["price_subtitle"] == ""
+
+
+@pytest.mark.parametrize(
+    "price_fields",
+    [
+        {"price": "19.999", "price_currency": "USD"},
+        {"price": "-1", "price_currency": "USD"},
+        {"price": "123456789", "price_currency": "USD"},
+        {"price": "10", "price_currency": "usd"},
+        {"price": "10", "price_currency": "DOLLARS"},
+    ],
+)
+def test_create_course_rejects_invalid_price(superadmin_client, price_fields):
+    payload = {**valid_create_course_payload(slug=uuid.uuid4().hex), **price_fields}
+
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
+
+    assert response.status_code == 400
+
+
+def test_create_course_rejects_price_without_currency(superadmin_client):
+    payload = valid_create_course_payload(slug=uuid.uuid4().hex)
+    payload["price"] = "10"
+
+    response = superadmin_client.post(get_url(1), json.dumps(payload), content_type="application/json")
+
+    assert response.status_code == 409
+    assert "currency" in response.json()["error"]
+
+
+def test_update_course_sets_and_clears_price(superadmin_client):
+    create_response = superadmin_client.post(
+        get_url(1), json.dumps(valid_create_course_payload(slug=uuid.uuid4().hex)), content_type="application/json"
+    )
+    course_id = create_response.json()["id"]
+
+    response = superadmin_client.post(
+        _detail_url(course_id),
+        json.dumps({"price": 25, "price_currency": "GBP", "price_subtitle": "One-time payment"}),
+        content_type="application/json",
+    )
+    assert response.status_code == 200
+    assert response.json()["price"] == "25.00"
+    assert response.json()["price_currency"] == "GBP"
+    assert response.json()["price_subtitle"] == "One-time payment"
+
+    # Fields left out keep their value.
+    response = superadmin_client.post(
+        _detail_url(course_id), json.dumps({"price": "30.5"}), content_type="application/json"
+    )
+    assert response.status_code == 200
+    assert response.json()["price"] == "30.50"
+    assert response.json()["price_currency"] == "GBP"
+
+    response = superadmin_client.post(
+        _detail_url(course_id),
+        json.dumps({"price": None, "price_currency": None, "price_subtitle": None}),
+        content_type="application/json",
+    )
+    assert response.status_code == 200
+    assert response.json()["price"] is None
+    assert response.json()["price_currency"] == ""
+    assert response.json()["price_subtitle"] == ""
+    assert Course.objects.get(id=course_id).price is None
+
+
+def test_update_course_rejects_price_subtitle_without_price(superadmin_client):
+    create_response = superadmin_client.post(
+        get_url(1), json.dumps(valid_create_course_payload(slug=uuid.uuid4().hex)), content_type="application/json"
+    )
+    course_id = create_response.json()["id"]
+
+    response = superadmin_client.post(
+        _detail_url(course_id), json.dumps({"price_subtitle": "Paid"}), content_type="application/json"
+    )
+
+    assert response.status_code == 400
+    assert Course.objects.get(id=course_id).price_subtitle == ""

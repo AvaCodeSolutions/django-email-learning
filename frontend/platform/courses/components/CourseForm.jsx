@@ -11,6 +11,8 @@ import apiClient from '../../../src/apiClient.js';
 import { slugify } from '../../../src/utils.js';
 import { sanitizeEndpointUrl } from '../../../src/sanitizeUrl.js';
 import CourseEmailsSection from './CourseEmailsSection.jsx';
+import CoursePriceSection from './CoursePriceSection.jsx';
+import { EMPTY_PRICE_SETTINGS, priceSettingsFrom, priceUpdate, validatePriceSettings } from './coursePrice.js';
 
 const MAX_EXTERNAL_REFERENCES = 10;
 const MAX_CERTIFICATE_FIELDS = 4;
@@ -133,6 +135,9 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
     const [instructorsTooltipOpen, setInstructorsTooltipOpen] = useState(false)
     const [courseDescription, setCourseDescription] = useState("")
     const [courseTargetAudience, setCourseTargetAudience] = useState("")
+    const [priceSettings, setPriceSettings] = useState(EMPTY_PRICE_SETTINGS)
+    const [initialPriceSettings, setInitialPriceSettings] = useState(EMPTY_PRICE_SETTINGS)
+    const [priceErrors, setPriceErrors] = useState({})
     const [courseLanguage, setCourseLanguage] = useState("")
     const [isPublic, setIsPublic] = useState(createMode && organizationIsPublic)
     const [sendCertificate, setSendCertificate] = useState(true)
@@ -219,6 +224,8 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setCourseSlug(data.slug);
                 setCourseDescription(data.description);
                 setCourseTargetAudience(data.target_audience || "");
+                setPriceSettings(priceSettingsFrom(data));
+                setInitialPriceSettings(priceSettingsFrom(data));
                 setCourseLanguage(data.language || "");
                 setIsPublic(organizationIsPublic ? (data.is_public ?? true) : false);
                 setSendCertificate(data.send_certificate ?? true);
@@ -390,8 +397,14 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             return rowErrors;
         });
 
+        const nextPriceErrors = validatePriceSettings(priceSettings, localeMessages);
+        if (Object.keys(nextPriceErrors).length > 0) {
+            isValid = false;
+        }
+
         setExternalReferenceErrors(nextExternalReferenceErrors);
         setCertificateFieldErrors(nextCertificateFieldErrors);
+        setPriceErrors(nextPriceErrors);
 
         return isValid;
     }
@@ -481,6 +494,8 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             updatePayload.language = courseLanguage;
         }
 
+        Object.assign(updatePayload, priceUpdate(priceSettings, initialPriceSettings));
+
         if (isPublic !== initialValues.isPublic) {
             updatePayload.is_public = isPublic;
         }
@@ -565,6 +580,8 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 });
                 setOriginalExternalReferences(normalizeExternalReferences(data.external_references || normalizedExternalReferences));
                 setOriginalCertificateFields(normalizeCertificateFields(data.certificate_fields || normalizedCertificateFields));
+                setPriceSettings(priceSettingsFrom(data));
+                setInitialPriceSettings(priceSettingsFrom(data));
                 loadEmailSettings(data);
                 setErrorMessage("");
                 console.log('Success:', data);
@@ -597,6 +614,9 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
             slug: courseSlug,
             description: courseDescription,
             target_audience: courseTargetAudience.trim(),
+            price: priceSettings.price.trim() || null,
+            price_currency: priceSettings.price.trim() ? priceSettings.currency : null,
+            price_subtitle: priceSettings.price.trim() ? priceSettings.subtitle.trim() || null : null,
             language: courseLanguage,
             is_public: isPublic,
             send_certificate: sendCertificate,
@@ -620,6 +640,8 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 setCourseSlug("");
                 setCourseDescription("");
                 setCourseTargetAudience("");
+                setPriceSettings(EMPTY_PRICE_SETTINGS);
+                setPriceErrors({});
                 setCourseLanguage(languageOptions.length > 0 ? languageOptions[0].value : "");
                 setIsPublic(true);
                 setSendCertificate(true);
@@ -749,6 +771,15 @@ function CourseForm({successCallback, failureCallback, cancelCallback, activeOrg
                 disabled={readOnly}
                 onChange={(e) => setCourseTargetAudience(e.target.value)}
                 dir={direction}
+              />
+              <Divider sx={{ my: 2 }} />
+              <CoursePriceSection
+                value={priceSettings}
+                onChange={(next) => { setPriceSettings(next); setPriceErrors({}); }}
+                errors={priceErrors}
+                readOnly={readOnly}
+                direction={direction}
+                localeMessages={localeMessages}
               />
               <Divider sx={{ my: 2 }} />
               <Box sx={{ mt: 1 }}>

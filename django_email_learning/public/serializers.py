@@ -19,6 +19,10 @@ class PublicCourseSerializer(BaseModel):
     # Aligned with `lessons`: the title of the gate a lesson waits behind, or None.
     lesson_gates: list[str | None] = []
     target_audience: str | None = None
+    # The price as a "49.99" string, or None when the course shows no price.
+    price: str | None = None
+    price_currency: str = ""
+    price_subtitle: str = ""
     external_references: list[dict[str, str]] | None = None
     newsletter_id: int | None = None
     newsletter_title: str | None = None

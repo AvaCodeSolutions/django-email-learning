@@ -4,7 +4,7 @@ from django.conf import settings
 from django.conf.global_settings import LANGUAGES
 from django.core.exceptions import ValidationError
 from django.core.files.storage import default_storage
-from django.core.validators import MaxLengthValidator
+from django.core.validators import MaxLengthValidator, MinValueValidator, RegexValidator
 from django.db import models
 from django.urls import reverse
 from PIL import Image
@@ -48,6 +48,29 @@ class Course(models.Model):
     )
     target_audience = models.TextField(null=True, blank=True)
     is_public = models.BooleanField(default=True)
+    # An optional price, shown on the public course page. Nothing here charges learners;
+    # taking payment is up to the organization, typically behind an enrollment or content gate.
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0)],
+        help_text="Shown on the public course page. Leave empty to show no price.",
+    )
+    price_currency = models.CharField(
+        max_length=3,
+        blank=True,
+        default="",
+        validators=[RegexValidator(r"^[A-Z]{3}$", "Use a three-letter ISO 4217 currency code, such as USD.")],
+        help_text="ISO 4217 code of the price's currency, such as USD or EUR.",
+    )
+    price_subtitle = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        help_text="Shown under the price, to tell learners what it covers or when it applies.",
+    )
     send_certificate = models.BooleanField(default=True)
     from_email_type = models.CharField(
         max_length=32,
@@ -130,6 +153,10 @@ class Course(models.Model):
             )
             if previous != FromEmailType.ORGANIZATION:
                 raise ValidationError({"from_email_type": "Domain-wide email is not enabled for this installation."})
+        if self.price is not None and not self.price_currency:
+            raise ValidationError({"price_currency": "A price needs a currency."})
+        if self.price is None and self.price_subtitle:
+            raise ValidationError({"price_subtitle": "A price subtitle needs a price."})
         if self.is_enrollment_gated:
             if not self.enrollment_gate_key:
                 raise ValidationError({"enrollment_gate_key": "An enrollment gate needs a key."})

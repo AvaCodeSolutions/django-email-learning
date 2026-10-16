@@ -47,6 +47,23 @@ class Courses(BasePlatformView):
             "course_title": _("Course Title"),
             "course_description": _("Course Description"),
             "target_audience": _("Target Audience"),
+            "course_price_section": _("Price"),
+            "course_price_section_helper_text": _(
+                "Optional. Shown above the enroll button on the public course page. Leave the price empty"
+                " to show none. Only the price is shown; taking payments is up to you, for example"
+                " behind an enrollment or content gate."
+            ),
+            "course_price": _("Price"),
+            "course_price_currency": _("Currency"),
+            "course_price_subtitle": _("Price subtitle"),
+            "course_price_subtitle_helper_text": _(
+                "Optional helper text shown under the price, so learners understand how the price applies:"
+                ' for example "Paid from the first lesson", "First 3 lessons free, then paid",'
+                ' or "One-time payment".'
+            ),
+            "course_price_invalid": _("Enter an amount of 0 or more, with at most two digits after the decimal point."),
+            "course_price_currency_required": _("Choose the currency of the price."),
+            "course_price_requires_amount": _("Enter a price to show a subtitle."),
             "course_is_public": _("Public Course"),
             "course_is_public_helper_text": _(
                 "Public courses are visible on your organization's public pages."
@@ -642,6 +659,23 @@ class CourseView(BasePlatformView):
             "course_title": _("Course Title"),
             "course_description": _("Course Description"),
             "target_audience": _("Target Audience"),
+            "course_price_section": _("Price"),
+            "course_price_section_helper_text": _(
+                "Optional. Shown above the enroll button on the public course page. Leave the price empty"
+                " to show none. Only the price is shown; taking payments is up to you, for example"
+                " behind an enrollment or content gate."
+            ),
+            "course_price": _("Price"),
+            "course_price_currency": _("Currency"),
+            "course_price_subtitle": _("Price subtitle"),
+            "course_price_subtitle_helper_text": _(
+                "Optional helper text shown under the price, so learners understand how the price applies:"
+                ' for example "Paid from the first lesson", "First 3 lessons free, then paid",'
+                ' or "One-time payment".'
+            ),
+            "course_price_invalid": _("Enter an amount of 0 or more, with at most two digits after the decimal point."),
+            "course_price_currency_required": _("Choose the currency of the price."),
+            "course_price_requires_amount": _("Enter a price to show a subtitle."),
             "course_is_public": _("Public Course"),
             "course_is_public_helper_text": _(
                 "Public courses are visible on your organization's public pages."

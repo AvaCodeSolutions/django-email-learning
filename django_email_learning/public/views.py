@@ -150,6 +150,14 @@ def build_single_course_json_ld(  # type: ignore[no-untyped-def]
             "audienceType": course.target_audience,
         }
 
+    if course.price is not None:
+        course_json_ld["offers"] = {
+            "@type": "Offer",
+            "price": f"{course.price:.2f}",
+            "priceCurrency": course.price_currency,
+            "category": "Free" if course.price == 0 else "Paid",
+        }
+
     if course_data.lessons:
         course_json_ld["teaches"] = course_data.lessons
 
@@ -392,6 +400,9 @@ class CourseView(TemplateView):
             language=course.language,
             is_rtl=course_lang_info["bidi"],
             target_audience=course.target_audience,
+            price=f"{course.price:.2f}" if course.price is not None else None,
+            price_currency=course.price_currency,
+            price_subtitle=course.price_subtitle,
             instructors=instructors,
             external_references=[{"name": ref.name, "url": ref.url} for ref in course.external_references.all()]
             or None,

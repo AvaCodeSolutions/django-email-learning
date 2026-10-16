@@ -259,3 +259,38 @@ def test_course_view_shares_the_canonical_course_url(db, anonymous_client, cours
     canonical_url = f"{settings.DJANGO_EMAIL_LEARNING['SITE_BASE_URL']}{course.get_public_path()}"
     assert response.context["appContext"]["shareUrl"] == canonical_url
     assert f'<meta property="og:url" content="{canonical_url}">' in response.content.decode()
+
+
+def test_course_view_shows_price(db, anonymous_client, course, course_lesson_content):
+    course.enabled = True
+    course.price = "49.9"
+    course.price_currency = "USD"
+    course.price_subtitle = "First 3 lessons free"
+    course.save()
+
+    url = reverse(
+        "django_email_learning:public:course_page",
+        kwargs={"organization_slug": "my-organization", "course_slug": course.slug},
+    )
+    response = anonymous_client.get(url)
+
+    course_data = response.context["appContext"]["course"]
+    assert course_data["price"] == "49.90"
+    assert course_data["price_currency"] == "USD"
+    assert course_data["price_subtitle"] == "First 3 lessons free"
+    json_ld = json.loads(response.context["json_ld"])
+    assert json_ld["offers"] == {"@type": "Offer", "price": "49.90", "priceCurrency": "USD", "category": "Paid"}
+
+
+def test_course_view_without_price(db, anonymous_client, course, course_lesson_content):
+    course.enabled = True
+    course.save()
+
+    url = reverse(
+        "django_email_learning:public:course_page",
+        kwargs={"organization_slug": "my-organization", "course_slug": course.slug},
+    )
+    response = anonymous_client.get(url)
+
+    assert response.context["appContext"]["course"]["price"] is None
+    assert "offers" not in json.loads(response.context["json_ld"])

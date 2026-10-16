@@ -32,6 +32,22 @@ const sectionTitleSx = {
     fontWeight: 600,
 };
 
+/** "$49", "€19.99": whole amounts drop the cents, and the browser picks the symbol for the code. */
+const formatPrice = (price, currency) => {
+    const amount = Number(price);
+    const fractionDigits = Number.isInteger(amount) ? 0 : 2;
+    try {
+        return new Intl.NumberFormat(document.documentElement.lang || undefined, {
+            style: 'currency',
+            currency,
+            minimumFractionDigits: fractionDigits,
+            maximumFractionDigits: fractionDigits,
+        }).format(amount);
+    } catch {
+        return `${amount.toFixed(fractionDigits)} ${currency}`;
+    }
+};
+
 
 function Course() {
 
@@ -55,6 +71,7 @@ function Course() {
     const hasOrganizationPublicUrl = Boolean(organizationPublicUrl);
     const hasLessons = course.lessons && course.lessons.length > 0;
     const hasInstructors = course.instructors && course.instructors.length > 0;
+    const hasPrice = course.price != null && Boolean(course.price_currency);
 
     const courseDirection = course.is_rtl ? 'rtl' : 'ltr';
     const textAlign = courseDirection === 'rtl' ? 'right' : 'left';
@@ -262,6 +279,21 @@ function Course() {
                         </Box>
                     )}
                     <Box sx={{ p: 2 }}>
+                        {hasPrice && (
+                            <Box sx={{ mb: 1.5, textAlign }}>
+                                <Typography
+                                    data-testid="course-price"
+                                    sx={{ fontSize: '1.75rem', fontWeight: 700, color: 'text.primary', lineHeight: 1.2 }}
+                                >
+                                    {formatPrice(course.price, course.price_currency)}
+                                </Typography>
+                                {course.price_subtitle && (
+                                    <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                                        {course.price_subtitle}
+                                    </Typography>
+                                )}
+                            </Box>
+                        )}
                         <Box ref={topEnrollButtonRef}>
                             {!enrolled && (
                                 <Button

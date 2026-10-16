@@ -1,4 +1,5 @@
 import enum
+from decimal import Decimal
 from typing import Any, Callable, Optional
 
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -70,6 +71,11 @@ COURSE_EMAIL_FIELDS = (
     "welcome_email_subject",
     "welcome_email_body",
 )
+
+# Fields of UpdateCourseRequest where an explicit null clears the course's price.
+COURSE_PRICE_FIELDS = ("price", "price_currency", "price_subtitle")
+
+CURRENCY_PATTERN = r"^[A-Z]{3}$"
 
 
 class Identifier(BaseModel):
@@ -162,6 +168,18 @@ class CreateCourseRequest(BaseModel):
         ],
     )
     is_public: bool = Field(default=True, examples=[True])
+    price: Optional[Decimal] = Field(
+        None, ge=0, max_digits=10, decimal_places=2, examples=["49.99"], description="Leave empty to show no price."
+    )
+    price_currency: Optional[str] = Field(
+        None, pattern=CURRENCY_PATTERN, examples=["USD"], description="ISO 4217 currency code; required with a price."
+    )
+    price_subtitle: Optional[str] = Field(
+        None,
+        max_length=200,
+        examples=["Free for the first 3 lessons"],
+        description="Shown under the price, to tell learners what it covers or when it applies.",
+    )
     send_certificate: bool = Field(default=True, examples=[True])
     certificate_fields: Optional[list[CertificateFieldModel]] = Field(
         None,
@@ -180,7 +198,7 @@ class CreateCourseRequest(BaseModel):
         description="List of organization user IDs to be assigned as instructors for this course.",
     )
 
-    @field_validator("description", "target_audience")
+    @field_validator("description", "target_audience", "price_subtitle")
     @classmethod
     def strip_html_markup(cls, value: Optional[str]) -> Optional[str]:
         return strip_html(value) if value else value
@@ -210,6 +228,9 @@ class CreateCourseRequest(BaseModel):
             organization=organization,
             language=self.language,
             is_public=self.is_public,
+            price=self.price,
+            price_currency=self.price_currency or "",
+            price_subtitle=self.price_subtitle or "",
             send_certificate=self.send_certificate,
             show_organization_footer=self.show_organization_footer,
             from_email_type=self.from_email_type,
@@ -275,6 +296,19 @@ class UpdateCourseRequest(BaseModel):
         ],
     )
     is_public: Optional[bool] = Field(None, examples=[True])
+    # For the three below, sending null clears them.
+    price: Optional[Decimal] = Field(
+        None, ge=0, max_digits=10, decimal_places=2, examples=["49.99"], description="Leave empty to show no price."
+    )
+    price_currency: Optional[str] = Field(
+        None, pattern=CURRENCY_PATTERN, examples=["USD"], description="ISO 4217 currency code; required with a price."
+    )
+    price_subtitle: Optional[str] = Field(
+        None,
+        max_length=200,
+        examples=["Free for the first 3 lessons"],
+        description="Shown under the price, to tell learners what it covers or when it applies.",
+    )
     send_certificate: Optional[bool] = Field(None, examples=[True])
     certificate_fields: Optional[list[CertificateFieldModel]] = Field(
         None,
@@ -307,6 +341,7 @@ class UpdateCourseRequest(BaseModel):
     @field_validator(
         "description",
         "target_audience",
+        "price_subtitle",
         "enrollment_email_subject",
         "enrollment_reminder_subject",
         "welcome_email_subject",
@@ -368,6 +403,10 @@ class UpdateCourseRequest(BaseModel):
                 course.external_references.create(name=ref["name"], url=ref["url"])
         if self.is_public is not None:
             course.is_public = self.is_public
+        for field in COURSE_PRICE_FIELDS:
+            if field in self.model_fields_set:
+                value = getattr(self, field)
+                setattr(course, field, value if value is not None or field == "price" else "")
         if self.send_certificate is not None:
             course.send_certificate = self.send_certificate
         if self.certificate_fields is not None:
@@ -422,6 +461,9 @@ class CourseResponse(BaseModel):
     target_audience: Optional[str] = None
     external_references: Optional[list[dict[str, str]]] = None
     is_public: bool
+    price: Optional[str] = None
+    price_currency: str = ""
+    price_subtitle: str = ""
     send_certificate: bool
     certificate_fields: list[CertificateFieldModel] = []
     show_organization_footer: bool
@@ -476,6 +518,9 @@ class CourseResponse(BaseModel):
                 if course.external_references.exists()
                 else None,
                 "is_public": course.is_public,
+                "price": f"{course.price:.2f}" if course.price is not None else None,
+                "price_currency": course.price_currency,
+                "price_subtitle": course.price_subtitle,
                 "send_certificate": course.send_certificate,
                 "certificate_fields": [
                     {"label": field.label, "value": field.value} for field in course.certificate_fields.all()
