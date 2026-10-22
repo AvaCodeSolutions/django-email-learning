@@ -1,5 +1,6 @@
-from typing import Dict
+from typing import Dict, List, Optional
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
@@ -94,7 +95,28 @@ class SingleOrganization(BasePlatformView):
         context["appContext"]["apiKeyScopes"] = [
             {"value": value, "label": str(label)} for value, label in ApiKeyScope.choices
         ]
+        context["appContext"]["organizationCustomTabs"] = self.get_organization_custom_tabs(organization)
         return context
+
+    def get_organization_custom_tabs(self, organization: Organization) -> List[Dict[str, Optional[str]]]:
+        """
+        Extra tabs shown after the built-in ones, in order, each as
+        {name, label, componentTag, scriptUrl, styleUrl}. `name` is what ?tab=<name>
+        opens; one that clashes with a built-in tab is ignored by the page.
+        Configure via ORGANIZATION.CUSTOM_TABS in settings, or override this method
+        to build the tabs per organization (e.g. to put its id on the component tag).
+        """
+        configured = getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("ORGANIZATION", {}).get("CUSTOM_TABS", [])
+        return [
+            {
+                "name": tab["NAME"],
+                "label": str(tab["LABEL"]),
+                "componentTag": tab["COMPONENT_TAG"],
+                "scriptUrl": tab.get("SCRIPT_URL"),
+                "styleUrl": tab.get("STYLE_URL"),
+            }
+            for tab in configured
+        ]
 
     def get_locale_messages(self) -> Dict[str, str]:
         return {

@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.21.0] - 2026-10-22
+
+### Added
+
+- **The organization page can show your own tabs.** List them in `ORGANIZATION.CUSTOM_TABS` in `DJANGO_EMAIL_LEARNING`, each with a `NAME`, a `LABEL`, and the `SCRIPT_URL`, `STYLE_URL` and `COMPONENT_TAG` of a custom element, the same way as the sidebar and dashboard custom components. They come after the built-in tabs, and `?tab=<NAME>` opens one, so it can be linked to. Override `SingleOrganization.get_organization_custom_tabs()` to build them per organization.
+
 ## [7.20.0] - 2026-10-16
 
 ### Added
