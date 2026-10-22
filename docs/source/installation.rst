@@ -357,6 +357,39 @@ Optional configuration for reordering, dropping, or extending the sections shown
         },
     }
 
+**ORGANIZATION.CUSTOM_TABS**
+
+Optional list of extra tabs on an organization's page, shown in order after the built-in ones (General Info, Members, Newsletters, API Keys). Use it for settings that belong to the organization but not to the library, such as the connection to a payment provider. Like the page itself, the tabs are only shown to the organization's admins.
+
+- ``NAME``: The tab's key. ``?tab=<NAME>`` on the organization page opens it, so it can be linked to. A name that clashes with a built-in tab (``general_info``, ``members``, ``newsletters``, ``api_keys``) is ignored.
+- ``LABEL``: The tab's title. Use ``gettext_lazy`` to translate it.
+- ``SCRIPT_URL``: URL of the JavaScript that registers your custom element.
+- ``STYLE_URL``: Optional stylesheet URL for the component (use ``None`` if not needed).
+- ``COMPONENT_TAG``: HTML rendered in the tab while it is open.
+
+The component can read the organization's id from ``organizationId`` in the page's ``app-context`` JSON script. To build the tabs per organization instead, for example to put its id on the tag or to show a tab only on some plans, override ``SingleOrganization.get_organization_custom_tabs(organization)``, which returns the same tabs as ``{name, label, componentTag, scriptUrl, styleUrl}``.
+
+.. code-block:: python
+
+    from django.utils.translation import gettext_lazy as _
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
+        'ORGANIZATION': {
+            'CUSTOM_TABS': [
+                {
+                    'NAME': 'integrations',
+                    'LABEL': _('Integrations'),
+                    'SCRIPT_URL': 'url/path-to-your-component.js',
+                    'STYLE_URL': None,
+                    'COMPONENT_TAG': '<your-integrations-tab></your-integrations-tab>',
+                },
+            ],
+        },
+    }
+
 **SIDEBAR.CUSTOM_COMPONENT**
 
 Optional configuration for injecting a custom component in the platform sidebar.

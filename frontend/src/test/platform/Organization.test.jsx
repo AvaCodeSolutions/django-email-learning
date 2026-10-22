@@ -264,4 +264,67 @@ describe('Organization', () => {
 
     await waitFor(() => expect(writeText).toHaveBeenCalledWith('https://example.com/public/organization/1/'));
   });
+  describe('custom tabs', () => {
+    const organizationCustomTabs = [
+      { name: 'integrations', label: 'Integrations', componentTag: '<integrations-tab organization-id="1"></integrations-tab>' },
+    ];
+
+    it('shows a custom tab after the built-in ones and renders its component when opened', async () => {
+      const user = userEvent.setup();
+      const { container } = renderWithProviders(<Organization />, {
+        appContext: { ...baseAppContext, isOrganizationAdmin: true, organizationCustomTabs },
+      });
+
+      const tabs = await screen.findAllByRole('tab');
+      expect(tabs[tabs.length - 1]).toHaveTextContent('Integrations');
+      expect(container.querySelector('integrations-tab')).toBeNull();
+
+      await user.click(screen.getByRole('tab', { name: /Integrations/i }));
+
+      const element = container.querySelector('integrations-tab');
+      expect(element).not.toBeNull();
+      expect(element.getAttribute('organization-id')).toBe('1');
+    });
+
+    it('opens a custom tab named in the tab query string', async () => {
+      window.history.replaceState({}, '', '/organizations/1/?tab=integrations');
+      const { container } = renderWithProviders(<Organization />, {
+        appContext: { ...baseAppContext, isOrganizationAdmin: true, organizationCustomTabs },
+      });
+
+      expect(await selectedTabName()).toMatch(/Integrations/i);
+      expect(container.querySelector('integrations-tab')).not.toBeNull();
+    });
+
+    it('ignores a custom tab whose name clashes with a built-in tab', async () => {
+      renderWithProviders(<Organization />, {
+        appContext: {
+          ...baseAppContext,
+          isOrganizationAdmin: true,
+          organizationCustomTabs: [{ name: 'members', label: 'Impostor', componentTag: '<impostor-tab></impostor-tab>' }],
+        },
+      });
+
+      await screen.findByRole('tab', { name: /Members/i });
+      expect(screen.queryByRole('tab', { name: /Impostor/i })).toBeNull();
+    });
+
+    it('strips event handlers from the custom component tag', async () => {
+      window.history.replaceState({}, '', '/organizations/1/?tab=integrations');
+      const { container } = renderWithProviders(<Organization />, {
+        appContext: {
+          ...baseAppContext,
+          isOrganizationAdmin: true,
+          organizationCustomTabs: [
+            { name: 'integrations', label: 'Integrations', componentTag: '<integrations-tab onclick="alert(1)"></integrations-tab>' },
+          ],
+        },
+      });
+
+      await screen.findByRole('tab', { name: /Integrations/i });
+      const element = container.querySelector('integrations-tab');
+      expect(element).not.toBeNull();
+      expect(element.hasAttribute('onclick')).toBe(false);
+    });
+  });
 });

@@ -23,11 +23,13 @@ import InfoIcon from '@mui/icons-material/Info';
 import PublicIcon from '@mui/icons-material/Public';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import VpnKeyOutlinedIcon from '@mui/icons-material/VpnKeyOutlined';
+import ExtensionOutlinedIcon from '@mui/icons-material/ExtensionOutlined';
 import { useState, useEffect } from "react";
 import apiClient from "../../src/apiClient.js";
 import { Button } from "@mui/material";
 import render, { useAppContext } from "../../src/render";
 import { sanitizeEndpointUrl, sanitizeImageUrl, sanitizeUrl } from '../../src/sanitizeUrl.js';
+import { sanitizeComponentHtml } from '../../src/sanitizeHtml.js';
 
 const UserForm = lazy(() => import("./components/UserForm.jsx"));
 const DeleteUserDialog = lazy(() => import("./components/DeleteUserDialog.jsx"));
@@ -39,6 +41,7 @@ const NewApiKeyDialog = lazy(() => import("./components/NewApiKeyDialog.jsx"));
 const RevokeApiKeyDialog = lazy(() => import("./components/RevokeApiKeyDialog.jsx"));
 
 const DEFAULT_TAB = 'general_info';
+const BUILT_IN_TAB_NAMES = ['general_info', 'members', 'newsletters', 'api_keys'];
 
 const apiKeyStatusOf = (apiKey) => {
     if (apiKey.revoked_at) return 'revoked';
@@ -57,7 +60,7 @@ function Organization() {
     const [generalInfoFormKey, setGeneralInfoFormKey] = useState(0);
     const [publicUrlCopied, setPublicUrlCopied] = useState(false);
 
-    const { localeMessages, direction, userRole, isOrganizationAdmin, isPlatformAdmin, apiBaseUrl: rawApiBaseUrl, platformBaseUrl: rawPlatformBaseUrl, organizationId, currentUserId, availableFeatures = [] } = useAppContext();
+    const { localeMessages, direction, userRole, isOrganizationAdmin, isPlatformAdmin, apiBaseUrl: rawApiBaseUrl, platformBaseUrl: rawPlatformBaseUrl, organizationId, currentUserId, availableFeatures = [], organizationCustomTabs = [] } = useAppContext();
     const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const platformBaseUrl = sanitizeUrl(rawPlatformBaseUrl);
     const canEditOrganization = isPlatformAdmin || isOrganizationAdmin;
@@ -70,12 +73,19 @@ function Organization() {
 
     // ?tab=<name> opens a specific tab on load; anything unknown - or a tab this
     // user cannot see - falls back to the default one.
-    const availableTabs = [
+    const builtInTabs = [
         'general_info',
         'members',
         ...(newslettersEnabled ? ['newsletters'] : []),
         ...(canManageApiKeys ? ['api_keys'] : []),
     ];
+    // Tabs the deployment adds through ORGANIZATION.CUSTOM_TABS, after the built-in
+    // ones. A name that clashes with a built-in tab would make ?tab=<name> ambiguous,
+    // so such a tab is dropped rather than shadowing the built-in one.
+    const customTabs = organizationCustomTabs.filter(
+        (tab) => tab?.name && tab.componentTag && !BUILT_IN_TAB_NAMES.includes(tab.name)
+    );
+    const availableTabs = [...builtInTabs, ...customTabs.map((tab) => tab.name)];
     const [activeTab, setActiveTab] = useState(() => {
         const requestedTab = new URLSearchParams(window.location.search).get('tab');
         return availableTabs.includes(requestedTab) ? requestedTab : DEFAULT_TAB;
@@ -228,6 +238,15 @@ function Organization() {
                                 label={localeMessages["api_keys"]}
                             />
                         )}
+                        {customTabs.map((tab) => (
+                            <Tab
+                                key={tab.name}
+                                value={tab.name}
+                                icon={<ExtensionOutlinedIcon fontSize="small" />}
+                                iconPosition="start"
+                                label={tab.label}
+                            />
+                        ))}
                     </Tabs>
 
                     <Box sx={{ p: { xs: 1, sm: 2 } }}>
@@ -546,6 +565,14 @@ function Organization() {
                                 </Box>
                             </>
                         )}
+
+                        {/* Custom tabs */}
+                        {customTabs.filter((tab) => tab.name === activeTab).map((tab) => (
+                            <Box
+                                key={tab.name}
+                                dangerouslySetInnerHTML={{ __html: sanitizeComponentHtml(tab.componentTag) }}
+                            />
+                        ))}
                     </Box>
                 </Box>
             </Grid>
