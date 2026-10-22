@@ -6,6 +6,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.21.1] - 2026-10-22
+
+### Security
+
+- **`dompurify` updated to 3.4.17**: picks up the fixes for three critical advisories. [GHSA-cg2g-xh64-v4q7](https://github.com/advisories/GHSA-cg2g-xh64-v4q7): with `SAFE_FOR_TEMPLATES`, template expressions split across nodes survived in attached shadow root content on the DOM output modes. [GHSA-mrv2-3pqr-j5jr](https://github.com/advisories/GHSA-mrv2-3pqr-j5jr): with `IN_PLACE` sanitizing, a hook that removed a parent or sibling node left the event handlers of the detached subtree armed, which completes the fix for GHSA-p98j-92pf-mc4p from 7.6.1. [GHSA-c6gr-qvv4-5v3f](https://github.com/advisories/GHSA-c6gr-qvv4-5v3f): the guard against SMIL `attributeName=href` was skipped when `PARSER_MEDIA_TYPE` was `application/xhtml+xml`. 3.4.16 was inside the affected ranges. It is a runtime dependency that ships in the served assets, so the `package.json` floor is raised from `^3.4.16` to `^3.4.17` and a fresh install cannot resolve back to a vulnerable version.
+- **Development dependencies**: `vite` 8.2.2 → 8.3.5 clears six advisories (high). Among them are cross-origin script execution through custom middleware, files outside `server.fs.allow` being served, and command execution through `launch-editor`'s handling of editor CLI flags. `rolldown`, `postcss` and `nanoid` move with it. Vite only runs the frontend build and dev server, so none of this reaches the served assets or installs of `django-email-learning`. `npm audit` on the frontend now reports no vulnerabilities.
+
 ## [7.21.0] - 2026-10-22
 
 ### Added
