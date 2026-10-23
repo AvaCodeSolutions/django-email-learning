@@ -6,7 +6,8 @@ an enrollment's gate changes all live here so they agree on the rules:
 * `reach_gate` - the delivery job arrives at a gate. A learner already holding an unlock
   walks through; anyone else is emailed the gate's message, if it has one, and waits.
 * `unlock_gate` - the API or an admin unlocks it. A waiting learner moves on to what comes
-  next; one who has not got there yet keeps the unlock for when they do.
+  next; one who has not got there yet keeps the unlock for when they do. Either way they
+  are emailed the gate's unlocked message straight away, if it has one.
 * `expire_gate` - the gate's timeout passed with no unlock. Depending on the gate, the
   enrollment is deactivated or the learner continues as if it had been unlocked.
 
@@ -41,7 +42,7 @@ from django_email_learning.models import (
     GateUnlock,
     GateUnlockSource,
 )
-from django_email_learning.services.command_models.send_gate_command import SendGateCommand
+from django_email_learning.services.command_models.send_gate_command import SendGateCommand, SendGateUnlockedCommand
 from django_email_learning.services.email_sender_service import email_sender_service
 from django_email_learning.services.metrics_service import metric_service
 from django_email_learning.services.utils import mask_email
@@ -134,6 +135,16 @@ def unlock_gate(
         if not created:
             return UnlockResult(UnlockOutcome.ALREADY_UNLOCKED, locked.status)
 
+        # Read before moving past the gate, which graduates a learner it was the last step for.
+        # A timeout that continues is no unlock to tell anyone about, and an address the learner
+        # has not verified yet is not emailed.
+        if (
+            source != GateUnlockSource.TIMEOUT
+            and locked.status == EnrollmentStatus.ACTIVE
+            and course_content.gate.has_unlocked_message
+        ):
+            _send_unlocked_message_on_commit(course_content, locked)
+
         reached = (
             ContentDelivery.objects.filter(
                 enrollment=locked,
@@ -211,6 +222,15 @@ def _send_on_commit(signal_name: str, **kwargs: Any) -> None:
 
     signal = getattr(signals, signal_name)
     transaction.on_commit(lambda: signal.send(sender=Gate, **kwargs))
+
+
+def _send_unlocked_message_on_commit(course_content: CourseContent, enrollment: Enrollment) -> None:
+    command = SendGateUnlockedCommand(
+        content_id=course_content.id, enrollment_id=enrollment.id, email=enrollment.learner.email
+    )
+    # Robust: the unlock has committed by then, so failing to email about it must not
+    # report the unlock itself as failed to whoever made it.
+    transaction.on_commit(command.execute, robust=True)
 
 
 def _send_expired_email(enrollment: Enrollment, gate: Gate) -> None:

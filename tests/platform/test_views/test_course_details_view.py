@@ -113,3 +113,33 @@ def test_editor_cannot_view_course_in_another_organization(editor_client, course
 def test_view_of_nonexistent_course_is_forbidden(editor_client):
     response = editor_client.get(get_url(999999))
     assert response.status_code == 403
+
+
+def test_no_gate_editor_components_by_default(superadmin_client, course):
+    response = superadmin_client.get(get_url(course.id))
+    assert response.context["appContext"]["gateEditorComponents"] == []
+
+
+def test_gate_editor_components_come_from_settings_and_load_their_assets(superadmin_client, course, settings):
+    settings.DJANGO_EMAIL_LEARNING = {
+        **settings.DJANGO_EMAIL_LEARNING,
+        "GATE_EDITOR": {
+            "CUSTOM_COMPONENTS": [
+                {
+                    "TAG_NAME": "stripe-gate-payment",
+                    "SCRIPT_URL": "/static/stripe.js",
+                    "STYLE_URL": "/static/stripe.css",
+                },
+                {"TAG_NAME": "other-panel"},
+            ]
+        },
+    }
+
+    response = superadmin_client.get(get_url(course.id))
+
+    assert response.context["appContext"]["gateEditorComponents"] == [
+        {"tagName": "stripe-gate-payment", "scriptUrl": "/static/stripe.js", "styleUrl": "/static/stripe.css"},
+        {"tagName": "other-panel", "scriptUrl": None, "styleUrl": None},
+    ]
+    assert "/static/stripe.js" in response.context["navbarComponentScriptUrls"]
+    assert "/static/stripe.css" in response.context["navbarComponentStyleUrls"]

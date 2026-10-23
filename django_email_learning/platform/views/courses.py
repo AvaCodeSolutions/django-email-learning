@@ -1,5 +1,6 @@
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.utils.translation import get_language_info, gettext as _
@@ -232,8 +233,28 @@ class CourseView(BasePlatformView):
         context["appContext"]["newsletters"] = list(
             Newsletter.objects.filter(organization_id=organization_id).values("id", "title")
         )
+        context["appContext"]["gateEditorComponents"] = self.get_gate_editor_components(course)
         context["page_title"] = _("Course: %(title)s") % {"title": course.title}
         return context
+
+    def get_gate_editor_components(self, course: Course) -> List[Dict[str, Optional[str]]]:
+        """
+        Custom elements shown in the gate editor below the gate's settings, in order, each
+        as {tagName, scriptUrl, styleUrl}, e.g. a panel that unlocks the gate when a
+        payment arrives. The editor renders each one with the attributes `organization-id`,
+        `course-id`, `content-id` (the gate's course content, left off while the gate is not
+        saved yet) and `can-edit` ("true" or "false"). Configure via GATE_EDITOR.CUSTOM_COMPONENTS in
+        settings, or override this method to choose them per course.
+        """
+        configured = getattr(settings, "DJANGO_EMAIL_LEARNING", {}).get("GATE_EDITOR", {}).get("CUSTOM_COMPONENTS", [])
+        return [
+            {
+                "tagName": component["TAG_NAME"],
+                "scriptUrl": component.get("SCRIPT_URL"),
+                "styleUrl": component.get("STYLE_URL"),
+            }
+            for component in configured
+        ]
 
     def get_locale_messages(self) -> Dict[str, str]:
         return {
@@ -397,6 +418,14 @@ class CourseView(BasePlatformView):
             "gate_message_help": _(
                 "Emailed when a learner reaches the gate, e.g. with a payment link. Leave empty to send nothing."
             ),
+            "gate_unlocked_message_toggle": _("Email learners when the gate unlocks"),
+            "gate_unlocked_message_toggle_help": _(
+                "Sent as soon as the gate is unlocked for a learner, e.g. to confirm their payment, even if "
+                "they haven't reached it yet. Not sent when the gate times out."
+            ),
+            "gate_unlocked_subject": _("Subject"),
+            "gate_unlocked_subject_help": _("Leave empty to use the gate's title."),
+            "gate_unlocked_message": _("Message when unlocked"),
             "gate_settings": _("Gate Settings"),
             "gate_timeout": _("Timeout"),
             "gate_timeout_tooltip": _(

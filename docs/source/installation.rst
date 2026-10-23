@@ -390,6 +390,39 @@ The component can read the organization's id from ``organizationId`` in the page
         },
     }
 
+**GATE_EDITOR.CUSTOM_COMPONENTS**
+
+Optional list of custom elements shown in the gate editor, below the gate's settings, in order. Use it to add ways of unlocking a gate that belong to your project rather than the library, such as unlocking it when a learner pays through your payment provider.
+
+- ``TAG_NAME``: The custom element's name, such as ``your-gate-panel``. It must be a valid custom element name (lowercase, with a hyphen).
+- ``SCRIPT_URL``: URL of the JavaScript that registers your custom element.
+- ``STYLE_URL``: Optional stylesheet URL for the component (use ``None`` if not needed).
+
+The editor creates each element with these attributes:
+
+- ``organization-id`` and ``course-id``: The gate's organization and course.
+- ``content-id``: The id of the gate's course content. It is left off while a new gate hasn't been saved yet, so the component can ask the author to save it first.
+- ``can-edit``: ``"true"``, or ``"false"`` for viewers, who see the editor read-only.
+
+To choose the components per course instead, for example to show one only on some plans, override ``CourseView.get_gate_editor_components(course)``, which returns them as ``{tagName, scriptUrl, styleUrl}``.
+
+.. code-block:: python
+
+    DJANGO_EMAIL_LEARNING = {
+        'SITE_BASE_URL': 'https://yourdomain.com',
+        'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
+        'JWT_SECRET_KEY': 'another-very-long-random-string',
+        'GATE_EDITOR': {
+            'CUSTOM_COMPONENTS': [
+                {
+                    'TAG_NAME': 'your-gate-panel',
+                    'SCRIPT_URL': 'url/path-to-your-component.js',
+                    'STYLE_URL': None,
+                },
+            ],
+        },
+    }
+
 **SIDEBAR.CUSTOM_COMPONENT**
 
 Optional configuration for injecting a custom component in the platform sidebar.

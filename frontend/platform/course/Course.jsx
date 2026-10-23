@@ -640,6 +640,8 @@ function Course() {
                                 initialTitle={content.gate.title}
                                 initialKey={content.gate.key}
                                 initialMessage={content.gate.message}
+                                initialUnlockedSubject={content.gate.unlocked_subject}
+                                initialUnlockedMessage={content.gate.unlocked_message}
                                 initialTimeoutDays={content.gate.timeout_days}
                                 initialTimeoutAction={content.gate.timeout_action}
                                 initialWaitingPeriod={content.waiting_period}

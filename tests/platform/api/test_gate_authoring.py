@@ -78,9 +78,24 @@ def test_creating_a_gate(editor_client, course):
         "title": "Payment",
         "key": "payment",
         "message": "<p>Pay here</p>",
+        "unlocked_subject": "",
+        "unlocked_message": "",
         "timeout_days": 14,
         "timeout_action": "continue",
     }
+
+
+def test_creating_a_gate_with_an_unlocked_message(editor_client, course):
+    response = post_json(
+        editor_client,
+        contents_url(course),
+        new_gate(unlocked_subject="You're in", unlocked_message="<p>Thanks!</p><script>alert(1)</script>"),
+    )
+
+    assert response.status_code == 201
+    gate = Gate.objects.get()
+    assert gate.unlocked_subject == "You're in"
+    assert "<script>" not in gate.unlocked_message
 
 
 def test_a_gate_message_is_sanitized(editor_client, course):
@@ -115,6 +130,18 @@ def test_updating_a_gate(editor_client, gate_course):
     assert response.status_code == 200
     gate_course.gate.refresh_from_db()
     assert (gate_course.gate.title, gate_course.gate.key, gate_course.gate.timeout_days) == ("Account", "account", 3)
+
+
+def test_updating_and_clearing_a_gates_unlocked_message(editor_client, gate_course):
+    url = content_url(gate_course.gate_content)
+
+    post_json(editor_client, url, {"gate": {"unlocked_subject": "Paid", "unlocked_message": "<p>Thanks</p>"}})
+    gate_course.gate.refresh_from_db()
+    assert (gate_course.gate.unlocked_subject, gate_course.gate.unlocked_message) == ("Paid", "<p>Thanks</p>")
+
+    post_json(editor_client, url, {"gate": {"unlocked_subject": "", "unlocked_message": ""}})
+    gate_course.gate.refresh_from_db()
+    assert (gate_course.gate.unlocked_subject, gate_course.gate.unlocked_message) == ("", "")
 
 
 def test_updating_a_gate_to_a_key_already_used_is_refused(editor_client, gate_course):

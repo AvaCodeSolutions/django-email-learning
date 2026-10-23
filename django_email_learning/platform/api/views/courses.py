@@ -334,7 +334,7 @@ class SingleCourseContentView(View):
     def _update_gate(course_content: CourseContent, update: GateUpdate) -> None:
         gate = course_content.gate
         assert gate is not None
-        for field in ("title", "key", "message", "timeout_days"):
+        for field in ("title", "key", "message", "unlocked_subject", "unlocked_message", "timeout_days"):
             value = getattr(update, field)
             if value is not None:
                 setattr(gate, field, value)

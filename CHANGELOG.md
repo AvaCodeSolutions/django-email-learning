@@ -6,6 +6,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.22.0] - 2026-10-23
+
+### Added
+
+- **Gates can email learners as soon as they unlock.** The gate editor has an **Email learners when the gate unlocks** switch under the message, off by default. When it's on, the gate has an unlocked message with its own subject, which defaults to the gate's title, and the same buttons as the gate message. It is sent once, straight after the unlock commits, whether the learner was waiting at the gate or hasn't reached it yet, for example to confirm a payment. It is not sent when a timeout continues past the gate, or to an enrollment that is still unverified. A failure to send it is logged and does not undo the unlock. The platform API takes and returns `unlocked_subject` and `unlocked_message` on gates; empty sends nothing. Run `migrate` after upgrading.
+- **The gate editor can show your own components.** List them in `GATE_EDITOR.CUSTOM_COMPONENTS` in `DJANGO_EMAIL_LEARNING`, each with a `TAG_NAME`, `SCRIPT_URL` and `STYLE_URL`, for example to unlock a gate when a learner pays through your payment provider. The editor creates each one below the gate's settings with `organization-id`, `course-id`, `content-id` (left off until a new gate is saved) and `can-edit` attributes. Override `CourseView.get_gate_editor_components()` to choose them per course.
+
 ## [7.21.1] - 2026-10-22
 
 ### Security

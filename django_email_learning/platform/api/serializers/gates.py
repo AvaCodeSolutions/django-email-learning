@@ -12,11 +12,13 @@ class GateCreate(BaseModel):
     title: str = Field(min_length=1, max_length=500)
     key: str = Field(min_length=1, max_length=100, pattern=GATE_KEY_PATTERN, examples=["payment"])
     message: str = ""
+    unlocked_subject: str = Field(default="", max_length=500)
+    unlocked_message: str = ""
     timeout_days: int = Field(default=0, ge=0, examples=[14])
     timeout_action: GateTimeoutAction = GateTimeoutAction.DEACTIVATE
     type: Literal["gate"] = "gate"
 
-    @field_validator("message")
+    @field_validator("message", "unlocked_message")
     @classmethod
     def sanitize_message(cls, value: str) -> str:
         return sanitize_rich_text(value) if value else value
@@ -26,12 +28,14 @@ class GateUpdate(BaseModel):
     title: Optional[str] = Field(default=None, min_length=1, max_length=500)
     key: Optional[str] = Field(default=None, min_length=1, max_length=100, pattern=GATE_KEY_PATTERN)
     message: Optional[str] = None
+    unlocked_subject: Optional[str] = Field(default=None, max_length=500)
+    unlocked_message: Optional[str] = None
     timeout_days: Optional[int] = Field(default=None, ge=0)
     timeout_action: Optional[GateTimeoutAction] = None
 
     model_config = ConfigDict(extra="forbid")
 
-    @field_validator("message")
+    @field_validator("message", "unlocked_message")
     @classmethod
     def sanitize_message(cls, value: Optional[str]) -> Optional[str]:
         return sanitize_rich_text(value) if value else value
@@ -44,5 +48,7 @@ class GateResponse(BaseModel):
     title: str
     key: str
     message: str
+    unlocked_subject: str
+    unlocked_message: str
     timeout_days: int
     timeout_action: str

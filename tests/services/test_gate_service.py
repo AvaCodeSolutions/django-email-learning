@@ -25,7 +25,7 @@ from django_email_learning.models import (
     waiting_gate_delivery,
 )
 from django_email_learning.services import gate_service
-from django_email_learning.services.command_models.send_gate_command import SendGateCommand
+from django_email_learning.services.command_models.send_gate_command import SendGateCommand, SendGateUnlockedCommand
 from django_email_learning.services.gate_service import UnlockOutcome, unlock_gate
 from django_email_learning.signals import gate_reached, gate_unlocked
 
@@ -320,6 +320,122 @@ def test_expire_gate_leaves_an_ended_enrollment_alone(gate_course, waiting_enrol
 
     waiting_enrollment.refresh_from_db()
     assert waiting_enrollment.status == EnrollmentStatus.COMPLETED
+
+
+# ── the unlocked message ─────────────────────────────────────────────────────
+
+
+@pytest.fixture
+def unlocked_message(gate_course):
+    gate_course.gate.unlocked_message = '<p>Thanks for paying! <a href="https://example.com/start">Start</a></p>'
+    gate_course.gate.save()
+    mail.outbox.clear()
+    return gate_course.gate
+
+
+def test_unlocking_emails_the_unlocked_message(
+    gate_course, waiting_enrollment, unlocked_message, django_capture_on_commit_callbacks
+):
+    with django_capture_on_commit_callbacks(execute=True):
+        unlock_gate(waiting_enrollment, gate_course.gate_content, GateUnlockSource.INTEGRATION)
+
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == [waiting_enrollment.learner.email]
+    assert mail.outbox[0].subject == "Payment"
+    assert "Thanks for paying!" in mail.outbox[0].body
+    assert "https://example.com/start" in mail.outbox[0].alternatives[0][0]
+
+
+def test_the_unlocked_message_uses_its_own_subject_when_set(
+    gate_course, waiting_enrollment, unlocked_message, django_capture_on_commit_callbacks
+):
+    unlocked_message.unlocked_subject = "You're in"
+    unlocked_message.save()
+
+    with django_capture_on_commit_callbacks(execute=True):
+        unlock_gate(waiting_enrollment, gate_course.gate_content, GateUnlockSource.ADMIN)
+
+    assert mail.outbox[0].subject == "You're in"
+
+
+def test_unlocking_in_advance_emails_the_unlocked_message_straight_away(
+    gate_course, active_enrollment, unlocked_message, django_capture_on_commit_callbacks
+):
+    with django_capture_on_commit_callbacks(execute=True):
+        result = unlock_gate(active_enrollment, gate_course.gate_content, GateUnlockSource.API)
+
+    assert result.outcome == UnlockOutcome.UNLOCKED_IN_ADVANCE
+    assert len(mail.outbox) == 1
+
+
+def test_unlocking_the_last_step_emails_the_unlocked_message(
+    gate_course, waiting_enrollment, unlocked_message, django_capture_on_commit_callbacks
+):
+    gate_course.paid_lesson.is_published = False
+    gate_course.paid_lesson.save()
+
+    with django_capture_on_commit_callbacks(execute=True):
+        unlock_gate(waiting_enrollment, gate_course.gate_content, GateUnlockSource.ADMIN)
+
+    assert [message.subject for message in mail.outbox if message.subject == "Payment"] == ["Payment"]
+
+
+@pytest.mark.parametrize("message", ["", "<p></p>", "<p>&nbsp;</p>"])
+def test_a_gate_without_an_unlocked_message_sends_nothing_on_unlock(
+    gate_course, waiting_enrollment, message, django_capture_on_commit_callbacks
+):
+    gate_course.gate.unlocked_message = message
+    gate_course.gate.save()
+    mail.outbox.clear()
+
+    with django_capture_on_commit_callbacks(execute=True):
+        unlock_gate(waiting_enrollment, gate_course.gate_content, GateUnlockSource.API)
+
+    assert mail.outbox == []
+
+
+def test_unlocking_twice_sends_the_unlocked_message_once(
+    gate_course, waiting_enrollment, unlocked_message, django_capture_on_commit_callbacks
+):
+    with django_capture_on_commit_callbacks(execute=True):
+        unlock_gate(waiting_enrollment, gate_course.gate_content, GateUnlockSource.INTEGRATION)
+        unlock_gate(waiting_enrollment, gate_course.gate_content, GateUnlockSource.INTEGRATION)
+
+    assert len(mail.outbox) == 1
+
+
+def test_an_unverified_enrollment_is_not_sent_the_unlocked_message(
+    gate_course, enrollment, unlocked_message, django_capture_on_commit_callbacks
+):
+    with django_capture_on_commit_callbacks(execute=True):
+        unlock_gate(enrollment, gate_course.gate_content, GateUnlockSource.API)
+
+    assert mail.outbox == []
+
+
+def test_a_timeout_that_continues_sends_no_unlocked_message(
+    gate_course, waiting_enrollment, unlocked_message, django_capture_on_commit_callbacks
+):
+    gate_course.gate.timeout_days = 7
+    gate_course.gate.timeout_action = GateTimeoutAction.CONTINUE
+    gate_course.gate.save()
+
+    with django_capture_on_commit_callbacks(execute=True):
+        gate_service.expire_gate(expire_now(waiting_enrollment))
+
+    assert GateUnlock.objects.get(enrollment=waiting_enrollment).source == GateUnlockSource.TIMEOUT
+    assert mail.outbox == []
+
+
+def test_a_failing_unlocked_message_does_not_fail_the_unlock(
+    gate_course, waiting_enrollment, unlocked_message, django_capture_on_commit_callbacks
+):
+    with patch.object(SendGateUnlockedCommand, "execute", side_effect=RuntimeError("SMTP down")):
+        with django_capture_on_commit_callbacks(execute=True):
+            result = unlock_gate(waiting_enrollment, gate_course.gate_content, GateUnlockSource.INTEGRATION)
+
+    assert result.outcome == UnlockOutcome.UNLOCKED
+    assert next_contents(waiting_enrollment) == ["Paid lesson"]
 
 
 # ── the learner cap ──────────────────────────────────────────────────────────
