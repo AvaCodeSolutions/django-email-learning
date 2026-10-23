@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { createElement, useState } from 'react';
 import {
     Alert,
     Box,
@@ -27,6 +27,9 @@ import TrackSelect from './TrackSelect.jsx';
 import { errorMessageFrom, fromTrackValue, toTrackValue } from './branching.js';
 
 const KEY_PATTERN = /^[-a-zA-Z0-9_]+$/;
+// Valid custom element names, as in sanitizeHtml.js: only these are rendered from the
+// gate editor components the deployment configures.
+const CUSTOM_ELEMENT_NAME = /^[a-z][a-z0-9]*(-[a-z0-9]+)+$/;
 
 // RequiredTextField colours its helper text as an error; these fields also use it for a hint.
 const helperTextColor = (hasError) => ({ formHelperText: { sx: { color: hasError ? 'errorText.main' : 'text.secondary' } } });
@@ -53,7 +56,9 @@ const keyFromTitle = (title) => title
 
 /**
  * Authoring for a gate: a step that holds learners until it is unlocked from outside the
- * course, with an optional message emailed as they reach it and an optional timeout.
+ * course, with optional messages emailed as they reach it and as it unlocks for them, and
+ * an optional timeout. Below its settings sit any gate editor components the deployment
+ * configures (CourseView.get_gate_editor_components), e.g. a way to unlock it by payment.
  */
 const GateForm = ({
     cancelCallback,
@@ -63,6 +68,8 @@ const GateForm = ({
     initialTitle,
     initialKey,
     initialMessage,
+    initialUnlockedSubject,
+    initialUnlockedMessage,
     initialTimeoutDays,
     initialTimeoutAction,
     initialWaitingPeriod,
@@ -70,7 +77,7 @@ const GateForm = ({
     tracks = [],
     initialTrackId = null,
 }) => {
-    const { localeMessages, userRole, direction, apiBaseUrl: rawApiBaseUrl } = useAppContext();
+    const { localeMessages, userRole, direction, apiBaseUrl: rawApiBaseUrl, gateEditorComponents = [] } = useAppContext();
     const apiBaseUrl = sanitizeEndpointUrl(rawApiBaseUrl);
     const organizationId = localStorage.getItem('activeOrganizationId');
     const canEdit = userRole !== 'viewer';
@@ -81,6 +88,9 @@ const GateForm = ({
             title: initialTitle || '',
             key: initialKey || '',
             message: initialMessage || '',
+            hasUnlockedMessage: !isBlankHtml(initialUnlockedMessage),
+            unlockedSubject: initialUnlockedSubject || '',
+            unlockedMessage: initialUnlockedMessage || '',
             hasTimeout,
             timeoutDays: hasTimeout ? Number(initialTimeoutDays) : 14,
             timeoutAction: initialTimeoutAction || 'deactivate',
@@ -129,6 +139,8 @@ const GateForm = ({
         title: form.title.trim(),
         key: form.key.trim(),
         message: isBlankHtml(form.message) ? '' : form.message,
+        unlocked_subject: form.hasUnlockedMessage ? form.unlockedSubject.trim() : '',
+        unlocked_message: form.hasUnlockedMessage && !isBlankHtml(form.unlockedMessage) ? form.unlockedMessage : '',
         timeout_days: form.hasTimeout ? Number(form.timeoutDays) : 0,
         timeout_action: form.timeoutAction,
     });
@@ -230,6 +242,43 @@ const GateForm = ({
                 {localeMessages['gate_message_help']}
             </Typography>
 
+            <FormControlLabel
+                control={
+                    <Switch
+                        size="small"
+                        checked={form.hasUnlockedMessage}
+                        disabled={!canEdit}
+                        onChange={(event) => update({ hasUnlockedMessage: event.target.checked })}
+                    />
+                }
+                label={localeMessages['gate_unlocked_message_toggle'] || 'Email learners when the gate unlocks'}
+                sx={{ m: 0 }}
+            />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: form.hasUnlockedMessage ? 2 : 3 }}>
+                {localeMessages['gate_unlocked_message_toggle_help']}
+            </Typography>
+            {form.hasUnlockedMessage && (
+                <Box sx={{ mb: 3 }}>
+                    <TextField
+                        label={localeMessages['gate_unlocked_subject'] || 'Subject'}
+                        value={form.unlockedSubject}
+                        onChange={(event) => update({ unlockedSubject: event.target.value })}
+                        helperText={localeMessages['gate_unlocked_subject_help']}
+                        disabled={!canEdit}
+                        size="small"
+                        slotProps={{ htmlInput: { maxLength: 500 } }}
+                        sx={{ width: '100%', mb: 2 }}
+                    />
+                    <InputLabel sx={settingLabel}>{localeMessages['gate_unlocked_message'] || 'Message when unlocked'}</InputLabel>
+                    <ContentEditor
+                        initialContent={form.unlockedMessage}
+                        contentUpdateCallback={(unlockedMessage) => update({ unlockedMessage })}
+                        disabled={!canEdit}
+                        defaultDirection={direction}
+                    />
+                </Box>
+            )}
+
             <Typography variant="h6" sx={{ mb: 2, fontSize: '1.1rem', color: 'secondary.main' }}>
                 {localeMessages['gate_settings'] || 'Gate Settings'}
             </Typography>
@@ -312,6 +361,20 @@ const GateForm = ({
                     </Grid>
                 )}
             </Grid>
+
+            {/* A gate not saved yet has no content id, so its components get none and can say so. */}
+            {gateEditorComponents
+                .filter((component) => CUSTOM_ELEMENT_NAME.test(component?.tagName || ''))
+                .map((component) => (
+                    <Box key={component.tagName} sx={{ mt: 3 }}>
+                        {createElement(component.tagName, {
+                            'organization-id': organizationId,
+                            'course-id': String(courseId),
+                            'content-id': contentIdentifier ? String(contentIdentifier) : undefined,
+                            'can-edit': String(canEdit),
+                        })}
+                    </Box>
+                ))}
 
             <Box sx={stickyBar}>
                 <Button variant="outlined" onClick={handleCancel} sx={{ mr: 1 }}>

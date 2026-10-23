@@ -1,11 +1,11 @@
-from typing import Literal
+from typing import Literal, Optional
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.urls import reverse
 
-from django_email_learning.models import CourseContent
+from django_email_learning.models import CourseContent, Gate
 from django_email_learning.services.command_models.abstract_command import (
     AbstractCommand,
 )
@@ -18,6 +18,39 @@ class GateNotFoundError(Exception):
     pass
 
 
+def _gate_of(content_id: int) -> tuple[CourseContent, Gate]:
+    content = CourseContent.objects.get(id=content_id)
+    if not content.gate:
+        raise GateNotFoundError(f"CourseContent with ID {content_id} has no associated gate")
+    return content, content.gate
+
+
+def _send_gate_email(
+    content: CourseContent,
+    enrollment_id: int,
+    email: str,
+    subject: str,
+    message: str,
+    track_open_url: Optional[str] = None,
+) -> None:
+    button_values = link_variables(enrollment_id=enrollment_id, email=email)
+    context = {
+        "message": render_buttons(message, button_values, content.course.organization.brand_color),
+        "message_text": render_as_text(message, button_values),
+        "unsubscribe_link": content.course.generate_unsubscribe_link(email),
+        "track_open_url": track_open_url,
+        **email_sender_service.organization_footer_context(content.course),
+    }
+    email_message = EmailMultiAlternatives(
+        subject=subject,
+        body=render_to_string("emails/gate.txt", context),
+        from_email=email_sender_service.from_email_for_course(content.course),
+        to=[email],
+    )
+    email_message.attach_alternative(render_to_string("emails/gate.html", context), "text/html")
+    email_sender_service.send(email_message)
+
+
 class SendGateCommand(AbstractCommand):
     """Emails a gate's message to a learner who has just reached it."""
 
@@ -28,10 +61,7 @@ class SendGateCommand(AbstractCommand):
 
     def execute(self) -> None:
         conf = settings.DJANGO_EMAIL_LEARNING
-        content = CourseContent.objects.get(id=self.content_id)
-        if not content.gate:
-            raise GateNotFoundError(f"CourseContent with ID {self.content_id} has no associated gate")
-        gate = content.gate
+        content, gate = _gate_of(self.content_id)
         self.logger.info(f"Sending gate message for gate ID {gate.id} to email {mask_email(self.email)}")
 
         delivery = content.contentdelivery_set.filter(enrollment_id=self.enrollment_id).first()
@@ -41,20 +71,19 @@ class SendGateCommand(AbstractCommand):
             if delivery
             else None
         )
-        button_values = link_variables(enrollment_id=self.enrollment_id, email=self.email)
-        context = {
-            "gate": gate,
-            "message": render_buttons(gate.message, button_values, content.course.organization.brand_color),
-            "message_text": render_as_text(gate.message, button_values),
-            "unsubscribe_link": content.course.generate_unsubscribe_link(self.email),
-            "track_open_url": track_open_url,
-            **email_sender_service.organization_footer_context(content.course),
-        }
-        email_message = EmailMultiAlternatives(
-            subject=gate.title,
-            body=render_to_string("emails/gate.txt", context),
-            from_email=email_sender_service.from_email_for_course(content.course),
-            to=[self.email],
-        )
-        email_message.attach_alternative(render_to_string("emails/gate.html", context), "text/html")
-        email_sender_service.send(email_message)
+        _send_gate_email(content, self.enrollment_id, self.email, gate.title, gate.message, track_open_url)
+
+
+class SendGateUnlockedCommand(AbstractCommand):
+    """Emails a gate's unlocked message to a learner the gate has just opened for."""
+
+    command_name: Literal["send_gate_unlocked"] = "send_gate_unlocked"
+    content_id: int
+    enrollment_id: int
+    email: str
+
+    def execute(self) -> None:
+        content, gate = _gate_of(self.content_id)
+        self.logger.info(f"Sending unlocked message for gate ID {gate.id} to email {mask_email(self.email)}")
+        subject = gate.unlocked_subject.strip() or gate.title
+        _send_gate_email(content, self.enrollment_id, self.email, subject, gate.unlocked_message)

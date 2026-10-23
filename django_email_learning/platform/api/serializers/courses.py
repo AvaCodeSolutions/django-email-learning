@@ -650,6 +650,8 @@ class CreateCourseContentRequest(BaseModel):
                 title=self.content.title,
                 key=self.content.key,
                 message=self.content.message,
+                unlocked_subject=self.content.unlocked_subject,
+                unlocked_message=self.content.unlocked_message,
                 timeout_days=self.content.timeout_days,
                 timeout_action=self.content.timeout_action.value,
             )

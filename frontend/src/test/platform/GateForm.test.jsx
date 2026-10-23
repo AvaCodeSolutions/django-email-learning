@@ -28,11 +28,11 @@ const localeMessages = {
 
 const json = (body, status = 200) => Promise.resolve({ ok: status < 400, status, json: () => Promise.resolve(body) });
 
-const renderForm = (props = {}) => {
+const renderForm = (props = {}, appContext = {}) => {
     window.localStorage.setItem('activeOrganizationId', '1');
     return renderWithProviders(
         <GateForm courseId={5} {...props} />,
-        { appContext: { apiBaseUrl: '/api', localeMessages, userRole: 'editor' } },
+        { appContext: { apiBaseUrl: '/api', localeMessages, userRole: 'editor', ...appContext } },
     );
 };
 
@@ -63,6 +63,8 @@ describe('GateForm', () => {
                 title: 'Payment Received',
                 key: 'payment-received',
                 message: '<p>Pay here</p>',
+                unlocked_subject: '',
+                unlocked_message: '',
                 timeout_days: 0,
                 timeout_action: 'deactivate',
             },
@@ -120,5 +122,59 @@ describe('GateForm', () => {
         const gate = JSON.parse(postCall()[1].body).gate;
         expect(gate.timeout_days).toBe(14);
         expect(gate.timeout_action).toBe('continue');
+    });
+
+    it('sends an unlocked message and its subject once switched on', async () => {
+        const user = userEvent.setup();
+        renderForm({ contentId: 9, initialTitle: 'Payment', initialKey: 'payment' });
+
+        await user.click(screen.getByRole('switch', { name: 'Email learners when the gate unlocks' }));
+        await user.type(screen.getByLabelText('Subject'), " You're in ");
+        await user.type(screen.getAllByLabelText('Message editor')[1], '<p>Thanks</p>');
+        await user.click(screen.getByRole('button', { name: 'Save Gate' }));
+
+        await waitFor(() => expect(postCall()).toBeDefined());
+        const gate = JSON.parse(postCall()[1].body).gate;
+        expect(gate.unlocked_subject).toBe("You're in");
+        expect(gate.unlocked_message).toBe('<p>Thanks</p>');
+    });
+
+    it('clears the unlocked message when switched off', async () => {
+        const user = userEvent.setup();
+        renderForm({
+            contentId: 9, initialTitle: 'Payment', initialKey: 'payment',
+            initialUnlockedSubject: 'Paid', initialUnlockedMessage: '<p>Thanks</p>',
+        });
+
+        const toggle = screen.getByRole('switch', { name: 'Email learners when the gate unlocks' });
+        expect(toggle).toBeChecked();
+        await user.click(toggle);
+        await user.click(screen.getByRole('button', { name: 'Save Gate' }));
+
+        await waitFor(() => expect(postCall()).toBeDefined());
+        const gate = JSON.parse(postCall()[1].body).gate;
+        expect(gate.unlocked_subject).toBe('');
+        expect(gate.unlocked_message).toBe('');
+    });
+
+    it('renders gate editor components with the gate they act on', () => {
+        const { container } = renderForm(
+            { contentId: 9, initialTitle: 'Payment', initialKey: 'payment' },
+            { gateEditorComponents: [{ tagName: 'stripe-gate-payment' }, { tagName: 'img onerror' }] },
+        );
+
+        const element = container.querySelector('stripe-gate-payment');
+        expect(element).not.toBeNull();
+        expect(element.getAttribute('organization-id')).toBe('1');
+        expect(element.getAttribute('course-id')).toBe('5');
+        expect(element.getAttribute('content-id')).toBe('9');
+        expect(element.getAttribute('can-edit')).toBe('true');
+        expect(container.querySelector('img')).toBeNull();
+    });
+
+    it('gives gate editor components no content id before the gate is saved', () => {
+        const { container } = renderForm({}, { gateEditorComponents: [{ tagName: 'stripe-gate-payment' }] });
+
+        expect(container.querySelector('stripe-gate-payment').hasAttribute('content-id')).toBe(false);
     });
 });

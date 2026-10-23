@@ -32,6 +32,15 @@ On the course page, choose **Add → Gate**. A gate has:
 **Message to learners**
   Emailed when a learner reaches the gate. Leave it empty to send nothing.
 
+**Email learners when the gate unlocks**
+  Off by default. Turn it on to email learners as soon as the gate is unlocked for
+  them, for example to confirm that their payment arrived. It has its own
+  **Subject**, which defaults to the gate's title, and message, with the same
+  buttons as the message above. It is sent whether the learner was waiting at the
+  gate or hasn't reached it yet, but not when a timeout continues past the gate,
+  and not to an enrollment that is still unverified. Turn it off, or leave the
+  message empty, to send nothing.
+
 **Send delay**
   How long after the previous content the learner reaches the gate, like any
   other content.
@@ -88,6 +97,10 @@ A gate can also be unlocked **before** the learner reaches it, through the API. 
 payment that clears on day one opens a gate placed after lesson five; the learner
 then walks through it without stopping, and gets no gate email. Unlocking is
 idempotent: unlocking a gate that is already unlocked changes nothing.
+
+If the gate has an unlocked message, it is emailed straight away on every unlock but
+one by a timeout, whether the learner was waiting or not, and only once. A failure
+to send it is logged and does not undo the unlock.
 
 .. _gates-linking-learners:
 

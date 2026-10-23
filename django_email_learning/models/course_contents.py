@@ -191,7 +191,8 @@ class Gate(models.Model):
     Reaching a gate holds the enrollment until it is unlocked - by an API call naming the
     gate's `key`, or by an admin - so the rest of a course can depend on a payment, an
     account being created or a form being filled in. A learner is never asked anything
-    here; `message`, when set, is emailed as they arrive to tell them what is pending.
+    here; `message`, when set, is emailed as they arrive to tell them what is pending, and
+    `unlocked_message`, when set, as soon as the gate opens for them.
     """
 
     title = models.CharField(
@@ -206,6 +207,20 @@ class Gate(models.Model):
         blank=True,
         default="",
         help_text="Emailed to the learner when they reach the gate. Empty sends nothing.",
+    )
+    unlocked_subject = models.CharField(
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Subject of `unlocked_message`. Empty uses the gate's title.",
+    )
+    unlocked_message = models.TextField(
+        blank=True,
+        default="",
+        help_text=(
+            "Emailed to the learner as soon as the gate is unlocked for them, e.g. to confirm a payment. "
+            "Not sent when a timeout continues past the gate. Empty sends nothing."
+        ),
     )
     timeout_days = models.IntegerField(
         default=0,
@@ -227,7 +242,15 @@ class Gate(models.Model):
     @property
     def has_message(self) -> bool:
         """Whether `message` says anything, rather than being empty markup left by an editor."""
-        return bool(strip_tags(self.message).replace("&nbsp;", " ").strip()) or "<img" in self.message.lower()
+        return _says_something(self.message)
+
+    @property
+    def has_unlocked_message(self) -> bool:
+        return _says_something(self.unlocked_message)
+
+
+def _says_something(html: str) -> bool:
+    return bool(strip_tags(html).replace("&nbsp;", " ").strip()) or "<img" in html.lower()
 
 
 class ContentTrack(models.Model):
