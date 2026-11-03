@@ -33,6 +33,91 @@
         transition: width 0.5s ease-in-out;
         background-image: linear-gradient(to right, #7070e6, #4dd2cb);
     }
+    .course-navigation {
+        margin: 32px 0 20px;
+        padding: 20px;
+        background-color: #f8f9fc;
+        border: 1px solid #e9ebf3;
+        border-radius: 10px;
+    }
+
+    .course-progress {
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .course-progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        color: #667085;
+    }
+
+    .course-progress-header strong {
+        color: #636eec;
+        font-size: 14px;
+    }
+
+    .course-progress-track {
+        height: 7px;
+        background-color: #e5e7eb;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .course-progress-fill {
+        height: 100%;
+        background-color: #636eec;
+        border-radius: 10px;
+    }
+
+    .next-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding-top: 16px;
+    }
+
+    .next-content-icon {
+        flex-shrink: 0;
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        background-color: #eceeff;
+        color: #636eec;
+        font-size: 20px;
+    }
+
+    .next-content-details {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+    }
+
+    .next-content-label {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        color: #667085;
+    }
+
+    .next-content-details strong {
+        font-size: 15px;
+        line-height: 1.4;
+        color: #20243a;
+    }
+
+    .next-content-timing {
+        font-size: 13px;
+        color: #667085;
+    }
 {% endblock %}
 
 {% block content %}
@@ -40,39 +125,72 @@
 
         {{ lesson_content|safe }}
 
-        <div class="progress-wrapper">
-            {% block lesson_extras %}
-            {% if next_content %}
-                <h3>{% blocktranslate %}What’s coming up next?{% endblocktranslate %}</h3>
-                {% if next_content.lesson %}
-                    <p>{% blocktranslate with next_lesson_title=next_content.lesson.title delay=next_content.human_readable_waiting_period title=lesson.title %}
-                        Now that you've mastered {{ title }}, we’ll be moving on to {{ next_lesson_title }}. Keep an eye out for that email—it will hit your inbox in {{ delay }}.
-                        {% endblocktranslate %}</p>
-                {% elif next_content.quiz %}
-                    <p>{% blocktranslate with quiz_title=next_content.quiz.title delay=next_content.human_readable_waiting_period title=lesson.title %}
-                        Now that you've mastered {{ title }}, it’s time to put that knowledge to the test! Your next email will be the {{ quiz_title }}. Look out for it hitting your inbox in {{ delay }}.
-                        {% endblocktranslate %}</p>
-                {% elif next_content.assignment %}
-                    <p>{% blocktranslate with assignment_title=next_content.assignment.title delay=next_content.human_readable_waiting_period title=lesson.title %}
-                        Now that you've mastered {{ title }}, it’s time to put it into practice! Your next email will be the {{ assignment_title }} assignment. Look out for it hitting your inbox in {{ delay }}.
-                        {% endblocktranslate %}</p>
-                {% elif next_content.decision %}
-                    <p>{% blocktranslate with decision_title=next_content.decision.title delay=next_content.human_readable_waiting_period %}
-                        Up next, you get to choose how the course continues: {{ decision_title }}. Keep an eye out for that email—it will hit your inbox in {{ delay }}.
-                        {% endblocktranslate %}</p>
-                {% elif next_content.gate %}
-                    <p>{% blocktranslate with gate_title=next_content.gate.title %}
-                        The next part of the course is waiting on: {{ gate_title }}. As soon as that’s taken care of, we’ll carry on from here.
-                        {% endblocktranslate %}</p>
-                {% endif %}
-            {% endif %}
-            {% endblock %}
+        <div class="course-navigation">
+
             {% if progress is not None %}
-            <span class="progress-label">{% blocktranslate %}<b>Course Progress: {{ progress }}%</b>{% endblocktranslate %}</span>
-            <div class="progress-container">
-                <div class="progress-bar" style="width: {{ progress }}%;"></div>
-            </div>
+                <div class="course-progress">
+                    <div class="course-progress-header">
+                        <span>{% translate "YOUR COURSE PROGRESS" %}</span>
+                        <strong>{{ progress }}%</strong>
+                    </div>
+
+                    <div class="course-progress-track">
+                        <div class="course-progress-fill"
+                            style="width: {{ progress }}%;"></div>
+                    </div>
+                </div>
             {% endif %}
+
+            {% block lesson_extras %}
+                {% if next_content %}
+                    <div class="next-content">
+
+                        <div class="next-content-icon">
+                            {% if next_content.lesson %}
+                                <span>✉</span>
+                            {% elif next_content.quiz %}
+                                <span>✓</span>
+                            {% elif next_content.assignment %}
+                                <span>✎</span>
+                            {% elif next_content.decision %}
+                                <span>⑂</span>
+                            {% elif next_content.gate %}
+                                <span>🔒</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="next-content-details">
+                            <span class="next-content-label">
+                                {% translate "COMING UP NEXT" %}
+                            </span>
+
+                            {% if next_content.lesson %}
+                                <strong>{{ next_content.lesson.title }}</strong>
+                            {% elif next_content.quiz %}
+                                <strong>{{ next_content.quiz.title }}</strong>
+                            {% elif next_content.assignment %}
+                                <strong>{{ next_content.assignment.title }}</strong>
+                            {% elif next_content.decision %}
+                                <strong>{{ next_content.decision.title }}</strong>
+                            {% elif next_content.gate %}
+                                <strong>{{ next_content.gate.title }}</strong>
+                            {% endif %}
+
+                            <span class="next-content-timing">
+                                {% if next_content.gate %}
+                                    {% translate "Continue once this step is completed" %}
+                                {% else %}
+                                    {% blocktranslate with delay=next_content.human_readable_waiting_period %}
+                                        Arriving in {{ delay }}
+                                    {% endblocktranslate %}
+                                {% endif %}
+                            </span>
+                        </div>
+
+                    </div>
+                {% endif %}
+            {% endblock %}
+
         </div>
 
         <p class="email-muted-note">

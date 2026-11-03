@@ -77,13 +77,14 @@ class EmailTemplatePreview(TemplateView):
             "imap_email_address": "test@test.com",
             "subject": "Welcome to the course!",
             "lesson": lesson,
+            "lesson_content": lesson.content,
             "quiz": quiz,
             "unsubscribe_link": "https://example.com/unsubscribe",
             "protocol": "https",
             "domain": "example.com",
             "uid": "sampleuid",
             "token": "sampletoken",
-            "progress": 40,
+            "progress": 45,
             "message": (
                 "Your assignment has been reviewed and changes have been requested."
                 " Please review the feedback and update your submission accordingly."
