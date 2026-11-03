@@ -6,6 +6,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+
+## [7.23.0] - 2026-11-03
+
+### Changed
+
+- **Email template and lesson styling updated.** Minor adjustments to the base email template's width, padding, and font size. The lesson progress and title section also has a new look.
+
 ## [7.22.0] - 2026-10-23
 
 ### Added
