@@ -7,6 +7,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
 
+## [7.23.1] - 2026-11-03
+
+### Fixed
+
+- **Lesson progress layout fixed for email clients.** The flex-based progress style from the previous release isn't supported by some email providers, so it no longer uses flex.
+
 ## [7.23.0] - 2026-11-03
 
 ### Changed
