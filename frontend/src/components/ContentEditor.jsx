@@ -714,14 +714,33 @@ function ContentEditor({ initialContent, contentUpdateCallback, disabled = false
                                 }
                             },
                             '& pre': {
-                                backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'grey.700' : 'grey.50',
-                                borderRadius: 1,
-                                padding: 2,
-                                margin: '16px 0',
-                                fontFamily: 'Monaco, Consolas, monospace',
-                                fontSize: '14px',
-                                border: '1px solid',
-                                borderColor: (theme) => theme.palette.mode === 'dark' ? 'grey.800' : 'grey.100'
+                                backgroundColor: '#172033',
+                                color: '#e5eaf3',
+                                border: '1px solid #303d52',
+                                borderRadius: '8px',
+                                padding: '16px',
+                                margin: '20px 0 28px',
+                                boxSizing: 'border-box',
+                                maxWidth: '100%',
+
+                                fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", monospace',
+                                fontSize: '13px',
+                                lineHeight: 1.55,
+
+                                whiteSpace: 'pre-wrap',
+                                overflowWrap: 'anywhere',
+                                tabSize: 4,
+
+                                // Code should remain left-to-right, even in RTL courses.
+                                direction: 'ltr',
+                                textAlign: 'left',
+
+                                '& code': {
+                                    fontFamily: 'inherit',
+                                    fontSize: 'inherit',
+                                    color: 'inherit',
+                                    backgroundColor: 'transparent',
+                                },
                             },
                             '& strong': {
                                 fontWeight: 'bold'

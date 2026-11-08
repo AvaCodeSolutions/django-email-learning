@@ -80,6 +80,41 @@
                 margin: 0px !important;
                 padding: 0 16px;
             }
+            /* Generic code blocks: shared by all email templates. */
+            pre {
+                box-sizing: border-box;
+                margin: 20px 0 28px;
+                padding: 16px;
+                background-color: #172033;
+                color: #e5eaf3;
+                border: 1px solid #303d52;
+                border-radius: 8px;
+                font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+                font-size: 13px;
+                line-height: 1.55;
+                text-align: left;
+                direction: ltr;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                overflow-wrap: anywhere;
+            }
+
+            pre code {
+                padding: 0;
+                background: transparent;
+                color: inherit;
+                border: 0;
+                font-family: inherit;
+                font-size: inherit;
+                line-height: inherit;
+                white-space: inherit;
+            }
+
+            /* Keep inline code readable without giving it the full block treatment. */
+            code {
+                font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+            }
+
             .email-title {
                 margin: 0 0 25px;
                 border-bottom: 1px solid #d8d9ee;
