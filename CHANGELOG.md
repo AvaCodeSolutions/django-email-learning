@@ -6,6 +6,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.24.0] - 2026-11-08
+
+### Changed
+
+- **Code style in email updated.** style of code blocks in email is update to use dark background smaller font and spacing adjustment.
 
 ## [7.23.1] - 2026-11-03
 
