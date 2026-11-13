@@ -335,6 +335,7 @@ class QuizPublicView(BaseTemplateView):
                 return self.error_response(
                     message=_("This quiz is no longer valid."),
                     exception=ValueError("Enrollment is not active"),
+                    status_code=410,
                     title=_("Invalid Quiz"),
                 )
             quiz = delivery.course_content.quiz
