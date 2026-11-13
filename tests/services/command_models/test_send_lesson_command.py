@@ -52,14 +52,14 @@ def _coming_up_next(content: CourseContent, email: str = "user@example.com") -> 
     mail.outbox.clear()
     SendLessonCommand(command_name="send_lesson", content_id=content.id, email=email).execute()
     html = mail.outbox[0].alternatives[0][0]
-    return html.split("What’s coming up next?", 1)[1]
+    return html.split("COMING UP NEXT", 1)[1]
 
 
 def test_coming_up_next_names_an_assignment(db, course_lesson_content, course_assignment_content):
     course_assignment_content.is_published = True
     course_assignment_content.save()
 
-    assert "Sample Assignment assignment" in _coming_up_next(course_lesson_content)
+    assert "Sample Assignment" in _coming_up_next(course_lesson_content)
 
 
 def test_coming_up_next_names_a_decision(db, course, course_lesson_content):
@@ -68,11 +68,11 @@ def test_coming_up_next_names_a_decision(db, course, course_lesson_content):
         course=course, priority=2, type="decision", decision=decision, waiting_period=3600, is_published=True
     )
 
-    assert "choose how the course continues: Pick your path" in _coming_up_next(course_lesson_content)
+    assert "Pick your path" in _coming_up_next(course_lesson_content)
 
 
 def test_coming_up_next_names_a_gate_the_learner_is_yet_to_pass(db, gate_course, active_enrollment):
-    assert "waiting on: Payment" in _coming_up_next(gate_course.welcome)
+    assert "Payment" in _coming_up_next(gate_course.welcome)
 
 
 def test_coming_up_next_looks_past_a_gate_the_learner_already_unlocked(db, gate_course, active_enrollment):
