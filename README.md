@@ -1,6 +1,9 @@
+
 <p align="center">
   <img src="https://raw.githubusercontent.com/AvaCodeSolutions/django-email-learning/master/assets/Django2@2x.png" alt="Django Email Learning Logo" width="300">
-  <br><br>
+</p>
+
+<p align="center">
   <a href="https://opensource.org/licenses/BSD-3-Clause"><img src="https://img.shields.io/badge/License-BSD%203--Clause-blue.svg"></a>
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.12+-blue.svg"></a>
   <a href="https://www.djangoproject.com/"><img src="https://img.shields.io/badge/django-5.0+-green.svg"></a>
@@ -9,57 +12,78 @@
 
 # Django Email Learning
 
-A Django package for creating email-based learning platforms with IMAP integration and React frontend components.
+**Build email-based learning platforms with Django.**
+
+Django Email Learning is an open-source Django application that provides the foundation for building email-based learning platforms. Create courses, schedule lessons, deliver quizzes, track learner progress, and issue verifiable completion certificates — all through an email-first learning experience.
+
+Whether you're building an educational platform, an internal training system, or a specialized learning solution, Django Email Learning gives you a foundation to build upon.
+
+**Try it:** [Inbox Academy](https://inboxacademy.io) is a hosted learning platform built on Django Email Learning. Start a trial and experience an email-based course firsthand.
+
+**Documentation:** [django-email-learning.readthedocs.io](https://django-email-learning.readthedocs.io)
+
+**Installation:** `pip install django-email-learning`
+
+---
+
+## Why email-based learning?
+
+Traditional e-learning platforms often require learners to visit a website, log into an account, or install an application to access their learning materials.
+
+Email-based learning takes a different approach: deliver learning experiences through a channel people already use.
+
+- **Low bandwidth:** Text-based lessons require very little data and work well with slow or unstable internet connections.
+- **No additional app or account:** Learners receive lessons directly in their inbox without needing another platform login.
+- **Accessible across devices:** Email works on virtually any device with an email client.
+- **Resilience in restricted environments:** Email can provide an alternative learning channel in environments where access to websites and other platforms is limited.
+- **Learning at your own pace:** Scheduled delivery helps learners progress through structured learning journeys without having to remember to visit a platform.
+
+## What can you build?
+
+Django Email Learning provides the core components for building an email-based learning platform.
+
+- **Courses and lessons:** Organize educational content into structured courses and learning journeys.
+- **Automated content delivery:** Schedule lessons and quizzes based on configurable timing rules.
+- **Quizzes and assessments:** Deliver quizzes and collect learner responses.
+- **Progress tracking:** Track learner progress and automate transitions between course steps.
+- **Completion certificates:** Generate online certificates with QR codes for verification.
+- **Newsletters:** Manage organization-specific subscriber lists and schedule email campaigns.
+- **IMAP integration:** Integrate email-based interactions with the platform.
+- **API and automation:** Trigger platform operations through API endpoints and Django management commands.
+- **Frontend components:** Use the included React components to build platform interfaces.
 
 ## Sponsorship
 
-Support our open-source work and community projects by sponsoring us through [GitHub Sponsors](https://github.com/sponsors/AvaCodeSolutions). Depending on your sponsorship tier, we can feature your logo and link on the project’s README and documentation.
+Django Email Learning is an open-source project maintained by AvaCode Solutions.
 
-[![Sponsor us](https://img.shields.io/badge/Sponsor_our_project-white?style=for-the-badge&logo=githubsponsors)](https://github.com/sponsors/AvaCodeSolutions)
+Maintaining an open-source platform takes time and resources. Your sponsorship helps us continue improving the project, maintaining its documentation, and making email-based learning technology accessible to more developers and organizations.
 
-## What is django-email-learning?
+We welcome support from individuals and companies interested in the future of open-source educational technology.
 
-**django-email-learning** is an open-source Django app, designed to provide a complete email-based learning platform.
-It is inspired by the Darsnameh email-learning service, which unfortunately shut down in July 2017. This library aims to revive that concept and make it accessible to anyone who wants to launch a similar service.
+Depending on your sponsorship tier, we offer:
+- Recognition on the project README and documentation.
+- Company logo and website placement.
+- Visibility in project updates.
 
-If you find this project useful, a ⭐ on GitHub helps others discover it.
+**[Become a sponsor on GitHub](https://github.com/sponsors/AvaCodeSolutions)**
 
-Want to try it online first? Create a free account on [InboxAcademy](https://inboxacademy.io), our hosted platform built on top of django-email-learning.
+Every contribution helps keep the project moving forward.
 
-### Why an email learning platform?
 
-An email learning platform is a type of e-learning system where course content is delivered directly to learners’ inboxes. Platform admins can create courses, lessons, and quizzes, and configure the timing rules that determine when each next lesson or quiz is sent.
+## Need Help?
 
-The system exposes management commands and/or API endpoints that can be triggered by cron jobs or cloud schedulers to:
+Building a platform with Django Email Learning? If you need help with implementation, customization, or integration, [get in touch with AvaCode Solutions](https://avacodesolutions.com).
 
-- Track learner progress
-
-- Send lessons and quizzes via email
-
-- Handle automated transitions between course steps
-
-Additionally, the platform can issue online completion certificates that learners can verify using a QR code.
-
-### Why use email for e-learning?
-
-While modern e-learning platforms often rely heavily on video content and complex web interfaces, email remains a powerful and inclusive channel. Some of the reasons:
-
-- **Low bandwidth requirement:** Email works well in regions with slow or unstable internet.
-
-- **High accessibility:** No need to install apps or log into a portal—lessons arrive directly in the inbox.
-
-- **Resilience to censorship:** Emails are often less likely to be blocked than certain websites or platforms under restrictive governments.
-
-- **Simplicity:** Email is universal, familiar, and works on virtually any device.
+We'd be happy to discuss your project.
 
 ## Documentation
 
-Comprehensive documentation is available at [django-email-learning.readthedocs.io](https://django-email-learning.readthedocs.io), including:
+Comprehensive documentation is available at [django-email-learning.readthedocs.io](https://django-email-learning.readthedocs.io), covering:
 
-- **Installation Guide**: Step-by-step setup instructions
-- **Platform Management**: Creating organizations, courses, and managing learners
-- **Technical Reference**: Management commands and configuration
-- **Usage Examples**: Real-world implementation scenarios
+- **Installation Guide:** Set up a new project or integrate the package into an existing Django application.
+- **Platform Management:** Create organizations, courses, and manage learners.
+- **Technical Reference:** Explore management commands, API endpoints, and configuration.
+- **Usage Examples:** Learn how to configure and operate the platform.
 
 ## Installation
 
@@ -72,7 +96,9 @@ pip install django-email-learning
 django-email-learning-init
 ```
 
-This sets up a new Django project with `django_email_learning` pre-configured — virtual environment, secrets, migrations, and a superuser — in one go. See the [Installation Guide](https://django-email-learning.readthedocs.io/en/latest/installation.html) for the full walkthrough.
+This sets up a new Django project with `django_email_learning` pre-configured, including a virtual environment, secrets, migrations, and a superuser.
+
+See the [Installation Guide](https://django-email-learning.readthedocs.io/en/latest/installation.html) for the full walkthrough.
 
 ### Manual Installation
 
@@ -107,7 +133,7 @@ DJANGO_EMAIL_LEARNING = {
 }
 ```
 
-`ENCRYPTION_SECRET_KEY` should be a long random string used to protect sensitive values such as stored API Keys.
+`ENCRYPTION_SECRET_KEY` should be a long random string used to protect sensitive values such as stored API keys.
 
 #### 4. Configure Media Files
 
@@ -129,7 +155,10 @@ from django_email_learning import urls as email_learning_urls
 
 urlpatterns = [
     ...
-    path('your_preferred_path/', include(email_learning_urls, namespace='django_email_learning')),
+    path(
+        'your_preferred_path/',
+        include(email_learning_urls, namespace='django_email_learning')
+    ),
 ]
 ```
 
@@ -137,22 +166,25 @@ The platform will be accessible at `your_preferred_path/platform/`.
 
 #### Access Control Notes
 
-- **Platform Access:** You need to be logged in to access the `/platform` sub-URL, which is used for managing courses and viewing learner progress.
-
+You need to be logged in to access the `/platform` sub-URL, which is used for managing courses and viewing learner progress.
 
 ## Usage
 
 ### Newsletters
 
-django-email-learning includes a built-in newsletter system. Platform admins can create newsletters per organisation, grow a subscriber list, and schedule email campaigns (sendouts) that are delivered automatically. See the [Newsletter documentation](https://django-email-learning.readthedocs.io/en/latest/platform/newsletters.html) for the full configuration reference and usage guide.
+Django Email Learning includes a built-in newsletter system. Platform admins can create newsletters per organization, grow a subscriber list, and schedule email campaigns (sendouts) that are delivered automatically.
 
-#### Optional: auto-subscribe on course enrollment
+See the [Newsletter documentation](https://django-email-learning.readthedocs.io/en/latest/platform/newsletters.html) for configuration and usage details.
 
-Link a newsletter to a course in the platform UI (or via API). When a learner enrolls in that course they are automatically subscribed to the linked newsletter. Learners have the option to opt out by unchecking the subscription checkbox during enrollment.
+#### Optional: Auto-subscribe on Course Enrollment
+
+Link a newsletter to a course in the platform UI or through the API. When a learner enrolls in that course, they are automatically subscribed to the linked newsletter. Learners can opt out by unchecking the subscription checkbox during enrollment.
 
 ### Content Delivery
 
-This app uses the email backend defined in Django settings to deliver course content. Assuming you have active courses and enrollments, you need to schedule a job that runs the content delivery management command periodically (e.g., using cron or a cloud scheduler).
+The app uses the email backend defined in Django settings to deliver course content.
+
+Assuming you have active courses and enrollments, schedule a job that runs the content delivery management command periodically (e.g., using cron or a cloud scheduler).
 
 Execute the content delivery job using:
 
@@ -160,7 +192,7 @@ Execute the content delivery job using:
 python manage.py deliver_contents
 ```
 
-You can also trigger this job via API, which is useful when running from an external scheduler (for example, cloud scheduler services):
+You can also trigger this job via API, which is useful when running from an external scheduler:
 
 ```http
 GET /your_preferred_path/api/jobs/deliver_contents/
@@ -171,8 +203,12 @@ This endpoint requires an API key. You can generate and manage API keys from Pla
 
 ## Contributing
 
-We welcome contributions! Please read our [Contributing Guide](https://github.com/AvaCodeSolutions/django-email-learning/blob/master/CONTRIBUTING.md) to learn about our development process, how to set up the development environment, and how to submit pull requests.
+Contributions are welcome!
+
+Whether you're fixing bugs, improving documentation, suggesting features, or contributing code, we'd love to hear from you.
+
+Please read our [Contributing Guide](https://github.com/AvaCodeSolutions/django-email-learning/blob/master/CONTRIBUTING.md) to learn about our development process, development environment, and how to submit pull requests.
 
 ## License
 
-This project is licensed under the BSD 3-Clause License - see the [LICENSE](https://github.com/AvaCodeSolutions/django-email-learning/blob/master/LICENSE) file for details.
+This project is licensed under the BSD 3-Clause License. See the [LICENSE](https://github.com/AvaCodeSolutions/django-email-learning/blob/master/LICENSE) file for details.
