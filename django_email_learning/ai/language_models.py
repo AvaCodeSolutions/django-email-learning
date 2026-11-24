@@ -21,14 +21,30 @@ class LanguageModel(Enum):
        features.
     """
 
-    GPT_4O_MINI = ("gpt-4o-mini", OpenAiAdapter)
-    """OpenAI GPT-4o mini model (balanced quality and speed)."""
+    # Recommended models
+
+    GPT_6_LUNA = ("gpt-6-luna", OpenAiAdapter)
+    """OpenAI GPT-6 Luna model (efficient for focused, high-volume text tasks)."""
+
+    GPT_6_1_TERRA = ("gpt-6.1-terra", OpenAiAdapter)
+    """OpenAI GPT-6.1 Terra model (higher-quality text and reasoning)."""
+
+    GPT_6_1_SOL = ("gpt-6.1-sol", OpenAiAdapter)
+    """OpenAI GPT-6.1 Sol model (more capable reasoning for complex tasks)."""
+
+    # Deprecated models kept for backward compatibility
 
     GPT_5_NANO = ("gpt-5-nano", OpenAiAdapter)
-    """OpenAI GPT-5 nano model (smallest and fastest GPT-5 variant)."""
+    """Deprecated: scheduled for shutdown on December 11, 2026."""
 
     GPT_5_MINI = ("gpt-5-mini", OpenAiAdapter)
-    """OpenAI GPT-5 mini model (higher quality than nano, still efficient)."""
+    """Deprecated: scheduled for shutdown on December 11, 2026."""
+
+    GPT_5 = ("gpt-5", OpenAiAdapter)
+    """Deprecated: scheduled for shutdown on December 11, 2026."""
+
+    GPT_4O_MINI = ("gpt-4o-mini", OpenAiAdapter)
+    """Deprecated: scheduled for shutdown on January 14, 2027."""
 
     def __init__(self, model_name: str, adapter_class: type[AiServiceProtocol]) -> None:
         """Attach provider metadata to each model enum value.
