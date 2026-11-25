@@ -21,7 +21,7 @@ def test_edit_text_calls_model_adapter(editor_client, monkeypatch):
             calls["model"] = model
             return "Edited text"
 
-    monkeypatch.setattr(LanguageModel.GPT_5_NANO, "adapter_class", DummyAdapter)
+    monkeypatch.setattr(LanguageModel.GPT_6_LUNA, "adapter_class", DummyAdapter)
 
     response = editor_client.post(
         get_url(1),
@@ -33,7 +33,7 @@ def test_edit_text_calls_model_adapter(editor_client, monkeypatch):
     assert response.json() == {"edited_text": "Edited text"}
     assert calls == {
         "text": INPUT_TEXT,
-        "model": LanguageModel.GPT_5_NANO.model_name,
+        "model": LanguageModel.GPT_6_LUNA.model_name,
     }
 
 
@@ -46,7 +46,7 @@ def test_edit_text_accepts_markup_in_input(editor_client, monkeypatch):
             calls["model"] = model
             return "Edited markup text"
 
-    monkeypatch.setattr(LanguageModel.GPT_5_NANO, "adapter_class", DummyAdapter)
+    monkeypatch.setattr(LanguageModel.GPT_6_LUNA, "adapter_class", DummyAdapter)
 
     payload = {
         "input": "Draft <strong>text</strong> which is long enough to pass validation",
@@ -61,7 +61,7 @@ def test_edit_text_accepts_markup_in_input(editor_client, monkeypatch):
     assert response.json() == {"edited_text": "Edited markup text"}
     assert calls == {
         "text": payload["input"],
-        "model": LanguageModel.GPT_5_NANO.model_name,
+        "model": LanguageModel.GPT_6_LUNA.model_name,
     }
 
 
@@ -71,7 +71,7 @@ def test_edit_text_accessible_for_editor_admin_and_instructor(client, monkeypatc
         def edit_text(self, text: str, model: str) -> str:
             return "Edited text"
 
-    monkeypatch.setattr(LanguageModel.GPT_5_NANO, "adapter_class", DummyAdapter)
+    monkeypatch.setattr(LanguageModel.GPT_6_LUNA, "adapter_class", DummyAdapter)
 
     response = client.post(
         get_url(1),
@@ -117,7 +117,7 @@ def test_edit_text_access_allowed_by_default(editor_client, monkeypatch):
         def edit_text(self, text: str, model: str) -> str:
             return "Edited text"
 
-    monkeypatch.setattr(LanguageModel.GPT_5_NANO, "adapter_class", DummyAdapter)
+    monkeypatch.setattr(LanguageModel.GPT_6_LUNA, "adapter_class", DummyAdapter)
 
     response = editor_client.post(
         get_url(1),

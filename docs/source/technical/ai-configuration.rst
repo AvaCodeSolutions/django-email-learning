@@ -39,7 +39,7 @@ Configure AI under ``DJANGO_EMAIL_LEARNING['AI']`` in your Django ``settings.py`
         'ENCRYPTION_SECRET_KEY': 'your-very-long-random-string',
         'AI': {
             'OPENAI_API_KEY': os.environ.get('OPENAI_API_KEY'),
-            'TEXT_EDITING_MODEL': LanguageModel.GPT_4O_MINI.model_name,
+            'TEXT_EDITING_MODEL': LanguageModel.GPT_6_LUNA.model_name,
         },
     }
 
@@ -62,8 +62,21 @@ Model name used by AI text editing features.
 Available Models
 ----------------
 
-The package currently provides OpenAI-backed models:
+The package currently provides OpenAI-backed models.
 
-- ``gpt-4o-mini``
-- ``gpt-5-nano``
-- ``gpt-5-mini``
+Recommended
+~~~~~~~~~~~
+
+- ``gpt-6-luna``: efficient for focused, high-volume text tasks
+- ``gpt-6.1-terra``: higher-quality text and reasoning
+- ``gpt-6.1-sol``: more capable reasoning for complex tasks
+
+Deprecated
+~~~~~~~~~~
+
+These models are kept for backward compatibility only. Migrate to one of the
+recommended models before the shutdown dates.
+
+- ``gpt-5-nano``: scheduled for shutdown on December 11, 2026
+- ``gpt-5-mini``: scheduled for shutdown on December 11, 2026
+- ``gpt-4o-mini``: scheduled for shutdown on January 14, 2027

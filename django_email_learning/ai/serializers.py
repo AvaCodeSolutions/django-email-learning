@@ -12,4 +12,4 @@ class EditTextRequest(BaseModel):
         max_length=2000,
         description="The input to be edited by the AI model.",
     )
-    model: LanguageModel = Field(default=LanguageModel.GPT_5_NANO)
+    model: LanguageModel = Field(default=LanguageModel.GPT_6_LUNA)

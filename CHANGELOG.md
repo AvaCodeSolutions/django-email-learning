@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 Changes prior to v1.0.0 are available in the [git history](https://github.com/AvaCodeSolutions/django-email-learning/commits/master).
 
+## [7.25.0] - 2026-11-25
+
+### Changed
+
+- **Add new Open AI GPT 6 models to replace the deprecated models.** gpt-6-luna, gpt-6.1-terra and gpt-6.1-sol models are added to the Language models enum.
+
 ## [7.24.1] - 2026-11-13
 
 ### Changed
