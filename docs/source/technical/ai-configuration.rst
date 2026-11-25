@@ -79,5 +79,4 @@ recommended models before the shutdown dates.
 
 - ``gpt-5-nano``: scheduled for shutdown on December 11, 2026
 - ``gpt-5-mini``: scheduled for shutdown on December 11, 2026
-- ``gpt-5``: scheduled for shutdown on December 11, 2026
 - ``gpt-4o-mini``: scheduled for shutdown on January 14, 2027

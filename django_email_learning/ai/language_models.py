@@ -40,9 +40,6 @@ class LanguageModel(Enum):
     GPT_5_MINI = ("gpt-5-mini", OpenAiAdapter)
     """Deprecated: scheduled for shutdown on December 11, 2026."""
 
-    GPT_5 = ("gpt-5", OpenAiAdapter)
-    """Deprecated: scheduled for shutdown on December 11, 2026."""
-
     GPT_4O_MINI = ("gpt-4o-mini", OpenAiAdapter)
     """Deprecated: scheduled for shutdown on January 14, 2027."""
 
